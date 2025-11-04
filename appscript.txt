@@ -1,0 +1,184 @@
+// --- CONFIGURATION ---
+const SHEET_ID = '1Qd60FeK2UGH2wlxIBpKiMVH8XqOD0SgeFhAcqdiLMRI';
+const SHEET_NAME = 'Sheet1';
+
+// --- HELPER FUNCTIONS ---
+
+/**
+ * Creates a standardized JSON response for the web app.
+ * @param {object} data - The data payload for the response.
+ * @returns {GoogleAppsScript.Content.TextOutput} The JSON response object.
+ */
+function createJsonResponse(data) {
+  return ContentService.createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+/**
+ * Gets the header row from the sheet to find column indices dynamically.
+ * @param {GoogleAppsScript.Spreadsheet.Sheet} sheet - The user data sheet.
+ * @returns {object} An object mapping column names to their 1-based index.
+ */
+function getHeaderColumns(sheet) {
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const columnMap = {};
+  headers.forEach((header, index) => {
+    columnMap[header] = index + 1;
+  });
+  return columnMap;
+}
+
+
+// --- API ACTIONS ---
+
+/**
+ * Handles the user login request.
+ * @param {object} payload - The request payload containing userId and password.
+ * @returns {object} A success or error response object.
+ */
+function handleLogin(payload) {
+  const { userId, password } = payload;
+  if (!userId || !password) {
+    return { success: false, message: 'User ID and Password are required.' };
+  }
+
+  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAME);
+  if (!sheet) {
+    return { success: false, message: `Sheet with name "${SHEET_NAME}" not found.` };
+  }
+  const data = sheet.getDataRange().getValues();
+  const cols = getHeaderColumns(sheet);
+
+  // Proactive check for required columns
+  const requiredCols = ['UserID', 'Password', 'Role', 'UserName'];
+  for (const col of requiredCols) {
+    if (!cols[col]) {
+      return { success: false, message: `Configuration Error: Column "${col}" was not found in the sheet. Please check the sheet headers.` };
+    }
+  }
+
+  // Find the user row (skip header row)
+  const userRow = data.slice(1).find(row => String(row[cols.UserID - 1]) === String(userId));
+
+  if (!userRow) {
+    return { success: false, message: 'Invalid User ID or Password.' };
+  }
+
+  if (String(userRow[cols.Password - 1]) !== String(password)) {
+    return { success: false, message: 'Invalid User ID or Password.' };
+  }
+
+  // Update timestamps
+  const rowIndex = data.findIndex(row => String(row[cols.UserID - 1]) === String(userId)) + 2; // +2 because of slice(1) and 1-based index
+  const now = new Date();
+  
+  if (cols.FirstLogin && !userRow[cols.FirstLogin - 1]) {
+    sheet.getRange(rowIndex, cols.FirstLogin).setValue(now);
+  }
+  if (cols.LastLogin) {
+    sheet.getRange(rowIndex, cols.LastLogin).setValue(now);
+  }
+  if (cols.LastUsage) {
+    sheet.getRange(rowIndex, cols.LastUsage).setValue(now);
+  }
+  
+
+  return { 
+    success: true, 
+    userId: userRow[cols.UserID - 1], 
+    role: userRow[cols.Role - 1],
+    userName: userRow[cols.UserName - 1] 
+  };
+}
+
+/**
+ * Handles the forgot password request.
+ * @param {object} payload - The request payload containing the user's email.
+ * @returns {object} A success or error response object.
+ */
+function handleForgotPassword(payload) {
+  const { email } = payload;
+  if (!email) {
+    return { success: false, message: 'Email address is required.' };
+  }
+  
+  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAME);
+  if (!sheet) {
+    return { success: false, message: `Sheet with name "${SHEET_NAME}" not found.` };
+  }
+  const data = sheet.getDataRange().getValues();
+  const cols = getHeaderColumns(sheet);
+
+  const userRow = data.slice(1).find(row => String(row[cols.Email - 1]).toLowerCase() === String(email).toLowerCase());
+
+  if (!userRow) {
+    return { success: false, message: 'No account found with that email address.' };
+  }
+  
+  const userId = userRow[cols.UserID - 1];
+  const password = userRow[cols.Password - 1];
+  const userName = userRow[cols.UserName - 1] || 'User';
+  const subject = 'Your KA-OMS Password Recovery';
+  const body = `
+    Hello ${userName},
+
+    A password recovery request was made for your account.
+
+    Your User ID is: ${userId}
+    Your Password is: ${password}
+
+    Please log in and consider changing your password if you did not request this.
+
+    - The KA-OMS Team
+  `;
+  
+  try {
+    MailApp.sendEmail(email, subject, body);
+    return { success: true, message: 'A recovery email has been sent to you.' };
+  } catch (e) {
+    Logger.log('Failed to send email: ' + e.toString());
+    return { success: false, message: 'Could not send recovery email. Please contact support.' };
+  }
+}
+
+
+// --- MAIN ENTRY POINT ---
+
+/**
+ * Handles POST requests to the web app.
+ * @param {object} e - The event parameter containing request data.
+ * @returns {GoogleAppsScript.Content.TextOutput} A JSON response.
+ */
+function doPost(e) {
+  try {
+    const payload = JSON.parse(e.postData.contents);
+    let result;
+
+    switch (payload.action) {
+      case 'login':
+        result = handleLogin(payload);
+        break;
+      case 'forgotPassword':
+        result = handleForgotPassword(payload);
+        break;
+      default:
+        result = { success: false, message: 'Invalid action specified.' };
+    }
+    
+    return createJsonResponse(result);
+
+  } catch (error) {
+    Logger.log(error.toString());
+    // Return a more detailed error message to the client for debugging
+    return createJsonResponse({ 
+      success: false, 
+      message: 'An unexpected server error occurred.',
+      error: {
+        message: error.message,
+        stack: error.stack,
+        fileName: error.fileName,
+        lineNumber: error.lineNumber
+      }
+    });
+  }
+}
