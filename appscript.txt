@@ -39,7 +39,7 @@ function getHeaderColumns(sheet) {
 function handleLogin(payload) {
   const { userId, password } = payload;
   if (!userId || !password) {
-    return { success: false, message: 'User ID and Password are required.' };
+    return { success: false, message: 'User ID/Email and Password are required.' };
   }
 
   const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAME);
@@ -50,39 +50,67 @@ function handleLogin(payload) {
   const cols = getHeaderColumns(sheet);
 
   // Proactive check for required columns
-  const requiredCols = ['UserID', 'Password', 'Role', 'UserName'];
+  const requiredCols = ['UserID', 'Password', 'Role', 'UserName', 'Email', 'Status', 'LoginAttempts', 'LastFailedLogin'];
   for (const col of requiredCols) {
     if (!cols[col]) {
       return { success: false, message: `Configuration Error: Column "${col}" was not found in the sheet. Please check the sheet headers.` };
     }
   }
 
-  // Find the user row (skip header row)
-  const userRow = data.slice(1).find(row => String(row[cols.UserID - 1]) === String(userId));
-
-  if (!userRow) {
-    return { success: false, message: 'Invalid User ID or Password.' };
+  // Find the user row (skip header row) by either UserID or Email
+  const userRowIndex = data.slice(1).findIndex(row => 
+    String(row[cols.UserID - 1]) === String(userId) || 
+    String(row[cols.Email - 1]).toLowerCase() === String(userId).toLowerCase()
+  );
+  
+  if (userRowIndex === -1) {
+    return { success: false, message: 'Invalid User ID/Email or Password.' };
   }
 
+  const userRow = data[userRowIndex + 1];
+  const sheetRowIndex = userRowIndex + 2; // +1 for slice, +1 for 0-based to 1-based index
+
+  // 1. Check if account is locked
+  if (userRow[cols.Status - 1] === 'Locked') {
+    return { success: false, message: 'Your account has been locked due to too many failed login attempts. Please contact the admin.' };
+  }
+  
+  // 2. Check password
   if (String(userRow[cols.Password - 1]) !== String(password)) {
-    return { success: false, message: 'Invalid User ID or Password.' };
+    // Password incorrect, handle login attempts
+    const currentAttempts = parseInt(userRow[cols.LoginAttempts - 1] || 0);
+    const newAttempts = currentAttempts + 1;
+    
+    sheet.getRange(sheetRowIndex, cols.LoginAttempts).setValue(newAttempts);
+    sheet.getRange(sheetRowIndex, cols.LastFailedLogin).setValue(new Date());
+
+    if (newAttempts >= 5) {
+      sheet.getRange(sheetRowIndex, cols.Status).setValue('Locked');
+      return { success: false, message: 'Your account has been locked due to too many failed login attempts. Please contact the admin.' };
+    } else {
+      return { success: false, message: 'Invalid User ID/Email or Password.' };
+    }
+  }
+
+  // 3. Password is correct, proceed with login
+  // Reset login attempts if the column exists and has a value > 0
+  if (userRow[cols.LoginAttempts - 1]) {
+      sheet.getRange(sheetRowIndex, cols.LoginAttempts).setValue(0);
   }
 
   // Update timestamps
-  const rowIndex = data.findIndex(row => String(row[cols.UserID - 1]) === String(userId)) + 2; // +2 because of slice(1) and 1-based index
   const now = new Date();
   
   if (cols.FirstLogin && !userRow[cols.FirstLogin - 1]) {
-    sheet.getRange(rowIndex, cols.FirstLogin).setValue(now);
+    sheet.getRange(sheetRowIndex, cols.FirstLogin).setValue(now);
   }
   if (cols.LastLogin) {
-    sheet.getRange(rowIndex, cols.LastLogin).setValue(now);
+    sheet.getRange(sheetRowIndex, cols.LastLogin).setValue(now);
   }
   if (cols.LastUsage) {
-    sheet.getRange(rowIndex, cols.LastUsage).setValue(now);
+    sheet.getRange(sheetRowIndex, cols.LastUsage).setValue(now);
   }
   
-
   return { 
     success: true, 
     userId: userRow[cols.UserID - 1], 

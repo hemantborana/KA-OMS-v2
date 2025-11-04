@@ -27,6 +27,8 @@ const App = () => {
   const [userId, setUserId] = useState('');
   const [password, setPassword] = useState('');
   const [email, setEmail] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+
 
   useEffect(() => {
     try {
@@ -49,8 +51,8 @@ const App = () => {
   
   const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
-    if (!/^\d{10}$/.test(userId)) {
-        setError('User ID must be a 10-digit mobile number.');
+    if (!userId) {
+        setError('User ID (Mobile or Email) is required.');
         return;
     }
     if (!password) {
@@ -160,30 +162,38 @@ const App = () => {
       <p style={styles.subtitle}>Enamor Order Management</p>
       <form onSubmit={handleLogin} style={styles.form}>
         <div style={styles.inputGroup}>
-          <label htmlFor="userId" style={styles.label}>User ID (Mobile)</label>
+          <label htmlFor="userId" style={styles.label}>User ID (Mobile or Email)</label>
           <input
-            type="tel"
+            type="text"
             id="userId"
             value={userId}
             onChange={(e) => setUserId(e.target.value)}
             style={styles.input}
-            placeholder="10-digit mobile number"
+            placeholder="Mobile number or email"
             required
-            pattern="\d{10}"
-            title="User ID must be a 10-digit mobile number."
           />
         </div>
         <div style={styles.inputGroup}>
           <label htmlFor="password" style={styles.label}>Password</label>
-          <input
-            type="password"
-            id="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            style={styles.input}
-            placeholder="Enter your password"
-            required
-          />
+          <div style={{ position: 'relative' }}>
+            <input
+              type={showPassword ? 'text' : 'password'}
+              id="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              style={{...styles.input, paddingRight: '4rem'}}
+              placeholder="Enter your password"
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              style={styles.passwordToggle}
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+            >
+              {showPassword ? 'Hide' : 'Show'}
+            </button>
+          </div>
         </div>
         {error && <p style={styles.error} aria-live="assertive">{error}</p>}
         <button type="submit" style={styles.button} disabled={isLoading}>
@@ -369,6 +379,20 @@ const styles: { [key: string]: React.CSSProperties } = {
         borderRadius: '50%',
         borderLeftColor: '#fff',
         animation: 'spin 1s ease infinite',
+    },
+    passwordToggle: {
+        position: 'absolute',
+        right: '0.5rem',
+        top: '50%',
+        transform: 'translateY(-50%)',
+        background: 'transparent',
+        border: 'none',
+        cursor: 'pointer',
+        color: 'var(--primary-color)',
+        fontWeight: 600,
+        fontSize: '0.8rem',
+        padding: '0 0.5rem',
+        height: 'calc(100% - 4px)',
     },
 };
 
