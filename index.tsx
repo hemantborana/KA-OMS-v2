@@ -20,6 +20,65 @@ const EyeIcon = ({ closed }) => (
     </svg>
 );
 
+const imageDb = {
+    db: null,
+    init: function() {
+        return new Promise((resolve, reject) => {
+            if (this.db) {
+                resolve(this.db);
+                return;
+            }
+            const request = indexedDB.open('BrandingImageCache', 1);
+            request.onupgradeneeded = (event) => {
+                // FIX: Cast event.target to IDBOpenDBRequest to access the result property.
+                const db = (event.target as IDBOpenDBRequest).result;
+                if (!db.objectStoreNames.contains('images')) {
+                    db.createObjectStore('images', { keyPath: 'id' });
+                }
+            };
+            request.onsuccess = (event) => {
+                // FIX: Cast event.target to IDBOpenDBRequest to access the result property.
+                this.db = (event.target as IDBOpenDBRequest).result;
+                resolve(this.db);
+            };
+            request.onerror = (event) => {
+                // FIX: Cast event.target to IDBOpenDBRequest to access the error property.
+                console.error('IndexedDB error:', (event.target as IDBOpenDBRequest).error);
+                reject((event.target as IDBOpenDBRequest).error);
+            };
+        });
+    },
+    // FIX: Add return type annotation to resolve unknown type for cachedBlob.
+    getImage: function(id): Promise<Blob | null> {
+        return new Promise(async (resolve, reject) => {
+            const db = await this.init();
+            const transaction = db.transaction(['images'], 'readonly');
+            const store = transaction.objectStore('images');
+            const request = store.get(id);
+            request.onsuccess = () => {
+                resolve(request.result ? request.result.blob : null);
+            };
+            request.onerror = (event) => {
+                reject((event.target as IDBRequest).error);
+            };
+        });
+    },
+    setImage: function(id, blob) {
+        return new Promise(async (resolve, reject) => {
+            const db = await this.init();
+            const transaction = db.transaction(['images'], 'readwrite');
+            const store = transaction.objectStore('images');
+            const request = store.put({ id, blob });
+            request.onsuccess = () => {
+                resolve(request.result);
+            };
+            request.onerror = (event) => {
+                reject((event.target as IDBRequest).error);
+            };
+        });
+    }
+};
+
 const KAOMSLogin = () => {
     const [userId, setUserId] = useState('');
     const [password, setPassword] = useState('');
@@ -67,6 +126,37 @@ const KAOMSLogin = () => {
             console.error("Error parsing session data from localStorage", e);
             localStorage.removeItem('ka-oms-session');
         }
+
+        const imageUrl = 'https://i.ibb.co/GvGmzRqp/loginimage2.webp';
+        const imageKey = 'branding-image';
+        const imgElement = document.querySelector('.branding-pane-img') as HTMLImageElement;
+
+        if (!imgElement) return;
+
+        const loadImage = async () => {
+            try {
+                const cachedBlob = await imageDb.getImage(imageKey);
+                if (cachedBlob) {
+                    // FIX: The argument to createObjectURL is now correctly typed as Blob | null, and this code is inside a null check.
+                    imgElement.src = URL.createObjectURL(cachedBlob);
+                } else {
+                    const response = await fetch(imageUrl);
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    const imageBlob = await response.blob();
+                    await imageDb.setImage(imageKey, imageBlob);
+                    imgElement.src = URL.createObjectURL(imageBlob);
+                }
+            } catch (error) {
+                console.error('Failed to load or cache image:', error);
+                // Fallback to the network URL if caching fails
+                imgElement.src = imageUrl;
+            }
+        };
+
+        loadImage();
+
     }, []);
 
     const handleLogin = async (e) => {
