@@ -281,7 +281,7 @@ const KAOMSLogin = () => {
          <div style={styles.loginContainer}>
              <div style={cardStyles}>
                  <img className="app-logo-img" alt="KA-OMS Logo" style={styles.logo} />
-                 <h1 style={titleStyles}>KA-OMS</h1>
+                 <h1 style={titleStyles}>Kambeshwar Agencies</h1>
                  <p style={subtitleStyles}>Enamor Order Management</p>
 
                 {isForgotPassword ? (
