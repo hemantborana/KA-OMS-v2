@@ -19,6 +19,8 @@ const EyeIcon = ({ closed }) => (
     </svg>
 );
 
+const Spinner = () => <div style={styles.spinner}></div>;
+
 interface CachedImage {
     id: string;
     blob: Blob;
@@ -33,15 +35,12 @@ const imageDb = {
                 resolve(this.db);
                 return;
             }
-            // Version 3: This forces another upgrade to clear any potentially stuck cache.
             const request = indexedDB.open('BrandingImageCache', 3);
             request.onupgradeneeded = (event) => {
                 const db = (event.target as IDBOpenDBRequest).result;
-                // If the old object store exists, delete it to ensure a fresh start.
                 if (db.objectStoreNames.contains('images')) {
                     db.deleteObjectStore('images');
                 }
-                // Create the new, empty object store.
                 db.createObjectStore('images', { keyPath: 'id' });
             };
             request.onsuccess = (event) => {
@@ -100,25 +99,20 @@ const KAOMSLogin = () => {
     const [forgotMessage, setForgotMessage] = useState('');
     const [emailFocused, setEmailFocused] = useState(false);
     
-    // Animation state
+    // Animation and loading states
     const [isMounted, setIsMounted] = useState(false);
+    const [areImagesReady, setAreImagesReady] = useState(false);
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwrXxhHNWtz6a5bNCNNP2xvZorw6SC56neUCmsxVq54b4M8M7XvLUqL092zD054FW1w/exec';
 
     useEffect(() => {
-        const handleResize = () => {
-            setIsMobile(window.innerWidth <= 768);
-        };
+        const handleResize = () => setIsMobile(window.innerWidth <= 768);
         window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
-    }, []);
-
-    useEffect(() => {
-        setIsMounted(true); // Trigger entry animation
-        try {
-            const storedSession = localStorage.getItem('ka-oms-session');
-            if (storedSession) {
+        
+        const storedSession = localStorage.getItem('ka-oms-session');
+        if (storedSession) {
+            try {
                 const sessionData = JSON.parse(storedSession);
                 if (new Date().getTime() < sessionData.expiry) {
                     setSession(sessionData);
@@ -126,83 +120,84 @@ const KAOMSLogin = () => {
                 } else {
                     localStorage.removeItem('ka-oms-session');
                 }
+            } catch (e) {
+                console.error("Error parsing session data", e);
+                localStorage.removeItem('ka-oms-session');
             }
-        } catch (e) {
-            console.error("Error parsing session data from localStorage", e);
-            localStorage.removeItem('ka-oms-session');
         }
 
         const loadAndCacheImage = async (key: string, url: string, selector: string) => {
             const imgElement = document.querySelector(selector) as HTMLImageElement;
-            if (!imgElement) {
-                console.warn(`Image element not found with selector: ${selector}`);
-                return;
-            }
+            if (!imgElement) return;
 
             try {
                 const cachedData = await imageDb.getImage(key);
+                // For recurring users, if cache is valid, use it directly.
                 if (cachedData && cachedData.url === url) {
                     imgElement.src = URL.createObjectURL(cachedData.blob);
                 } else {
+                    // For first-time users or if URL changed, fetch and cache.
                     const response = await fetch(url);
-                    if (!response.ok) {
-                        throw new Error(`Network response was not ok for ${url}`);
-                    }
+                    if (!response.ok) throw new Error(`Network error for ${url}`);
                     const imageBlob = await response.blob();
                     await imageDb.setImage(key, imageBlob, url);
                     imgElement.src = URL.createObjectURL(imageBlob);
                 }
             } catch (error) {
-                console.error(`Failed to load or cache image for ${key}:`, error);
-                // Fallback to the network URL if caching fails
-                imgElement.src = url;
+                console.error(`Failed to load/cache image ${key}:`, error);
+                imgElement.src = url; // Fallback to network URL
+            } finally {
+                imgElement.classList.add('loaded'); // Trigger fade-in animation
             }
         };
 
-        loadAndCacheImage(
-            'branding-image', 
-            'https://i.ibb.co/sphkNfpr/Copilot-20251105-083438.png', 
-            '.branding-pane-img'
-        );
+        const initializeApp = async () => {
+            await Promise.all([
+                loadAndCacheImage(
+                    'branding-image', 
+                    'https://i.ibb.co/sphkNfpr/Copilot-20251105-083438.png', 
+                    '.branding-pane-img'
+                ),
+                loadAndCacheImage(
+                    'app-logo',
+                    'https://i.ibb.co/spDFy1wW/applogo-1.png',
+                    '.app-logo-img'
+                )
+            ]);
+            // Once all images are processed, show the form content.
+            setAreImagesReady(true);
+            setIsMounted(true); // Trigger entry animation
+            // Remove skeleton from root after react hydrates
+            document.getElementById('root')?.classList.remove('skeleton-loader');
+        };
 
-        loadAndCacheImage(
-            'app-logo',
-            'https://i.ibb.co/spDFy1wW/applogo-1.png',
-            '.app-logo-img'
-        );
+        initializeApp();
 
+        return () => window.removeEventListener('resize', handleResize);
     }, []);
 
     const handleLogin = async (e) => {
         e.preventDefault();
         setIsLoading(true);
         setError('');
-
         try {
             const response = await fetch(SCRIPT_URL, {
                 method: 'POST',
                 mode: 'cors',
                 body: JSON.stringify({ action: 'login', userId, password }),
             });
-
             const result = await response.json();
-
             if (result.success) {
-                const expiry = new Date().getTime() + 30 * 24 * 60 * 60 * 1000; // 30 days
+                const expiry = new Date().getTime() + 30 * 24 * 60 * 60 * 1000;
                 const newSession = { userId: result.userId, role: result.role, userName: result.userName, expiry };
                 localStorage.setItem('ka-oms-session', JSON.stringify(newSession));
                 setSession(newSession);
                 setIsLoggedIn(true);
             } else {
-                 let errorMessage = result.message;
-                if (result.error && result.error.message) {
-                    errorMessage += ` (Details: ${result.error.message})`;
-                }
-                setError(errorMessage);
+                setError(result.message || 'Login failed.');
             }
         } catch (err) {
             setError('An error occurred. Please check your network connection.');
-            console.error('Login error:', err);
         } finally {
             setIsLoading(false);
         }
@@ -224,11 +219,7 @@ const KAOMSLogin = () => {
                 setForgotMessage(result.message);
                 setForgotEmail('');
             } else {
-                let errorMessage = result.message;
-                if (result.error && result.error.message) {
-                    errorMessage += ` (Details: ${result.error.message})`;
-                }
-                setError(errorMessage);
+                setError(result.message || 'Password recovery failed.');
             }
         } catch (err) {
             setError('An error occurred. Please check your network connection.');
@@ -253,17 +244,8 @@ const KAOMSLogin = () => {
         opacity: isMounted ? 1 : 0,
     };
     
-    const titleStyles = {
-        ...styles.title,
-        fontSize: isMobile ? '1.5rem' : '1.75rem',
-    };
-
-    const subtitleStyles = {
-        ...styles.subtitle,
-        fontSize: isMobile ? '0.9rem' : '1rem',
-        marginBottom: isMobile ? '1.5rem' : '2rem',
-    };
-
+    const titleStyles = { ...styles.title, fontSize: isMobile ? '1.5rem' : '1.75rem' };
+    const subtitleStyles = { ...styles.subtitle, fontSize: isMobile ? '0.9rem' : '1rem', marginBottom: isMobile ? '1.5rem' : '2rem' };
 
     if (isLoggedIn && session) {
         return (
@@ -280,88 +262,49 @@ const KAOMSLogin = () => {
     return (
          <div style={styles.loginContainer}>
              <div style={cardStyles}>
-                 <img className="app-logo-img" alt="KA-OMS Logo" style={styles.logo} />
-                 <h1 style={titleStyles}>Kambeshwar Agencies</h1>
-                 <p style={subtitleStyles}>Enamor Order Management</p>
+                {!areImagesReady ? <Spinner /> : (
+                    <>
+                        <img className="app-logo-img" alt="KA-OMS Logo" style={styles.logo} />
+                        <h1 style={titleStyles}>Kambeshwar Agencies</h1>
+                        <p style={subtitleStyles}>Enamor Order Management</p>
 
-                {isForgotPassword ? (
-                    <form onSubmit={handleForgotPassword} style={styles.form}>
-                         <p style={{...styles.subtitle, marginBottom: '1.5rem', fontSize: '0.9rem'}}>Enter your email to recover your password.</p>
-                         <div style={styles.inputGroup}>
-                            <label style={{
-                                ...styles.label,
-                                ...(forgotEmail || emailFocused ? styles.labelFocused : {})
-                            }}>Email Address</label>
-                            <input
-                                type="email"
-                                value={forgotEmail}
-                                onChange={(e) => setForgotEmail(e.target.value)}
-                                onFocus={() => setEmailFocused(true)}
-                                onBlur={() => setEmailFocused(false)}
-                                style={styles.input}
-                                required
-                            />
-                        </div>
-                         {error && <p style={styles.error}>{error}</p>}
-                         {forgotMessage && <p style={styles.success}>{forgotMessage}</p>}
-                         <button type="submit" style={styles.button} disabled={isLoading}>
-                             {isLoading ? 'Sending...' : 'Send Recovery Email'}
-                         </button>
-                         <a href="#" onClick={(e) => { e.preventDefault(); setIsForgotPassword(false); setError(''); setForgotMessage(''); }} style={styles.link}>Back to Login</a>
-                    </form>
-                ) : (
-                    <form onSubmit={handleLogin} style={styles.form}>
-                        <div style={styles.inputGroup}>
-                            <label style={{
-                                ...styles.label,
-                                ...(userId || userIdFocused ? styles.labelFocused : {})
-                            }}>User ID (Mobile or Email)</label>
-                            <input
-                                type="text"
-                                value={userId}
-                                onChange={(e) => setUserId(e.target.value)}
-                                onFocus={() => setUserIdFocused(true)}
-                                onBlur={() => setUserIdFocused(false)}
-                                style={styles.input}
-                                required
-                            />
-                        </div>
-                        <div style={styles.inputGroup}>
-                             <label style={{
-                                ...styles.label,
-                                ...(password || passwordFocused ? styles.labelFocused : {})
-                            }}>Password</label>
-                            <input
-                                type={isPasswordVisible ? 'text' : 'password'}
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                onFocus={() => setPasswordFocused(true)}
-                                onBlur={() => setPasswordFocused(false)}
-                                style={styles.input}
-                                required
-                            />
-                            <button
-                                type="button"
-                                onClick={() => setIsPasswordVisible(!isPasswordVisible)}
-                                style={styles.eyeIcon}
-                                aria-label={isPasswordVisible ? "Hide password" : "Show password"}
-                            >
-                                <EyeIcon closed={!isPasswordVisible} />
-                            </button>
-                        </div>
-                        {error && <p style={styles.error}>{error}</p>}
-                        <button type="submit" style={styles.button} disabled={isLoading}>
-                            {isLoading ? 'Logging in...' : 'Login'}
-                        </button>
-                        <a href="#" onClick={(e) => { e.preventDefault(); setIsForgotPassword(true); setError(''); }} style={styles.link}>Forgot Password?</a>
-                    </form>
+                        {isForgotPassword ? (
+                            <form onSubmit={handleForgotPassword} style={styles.form}>
+                                <p style={{...styles.subtitle, marginBottom: '1.5rem', fontSize: '0.9rem'}}>Enter your email to recover your password.</p>
+                                <div style={styles.inputGroup}>
+                                    <label style={{ ...styles.label, ...(forgotEmail || emailFocused ? styles.labelFocused : {}) }}>Email Address</label>
+                                    <input type="email" value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} onFocus={() => setEmailFocused(true)} onBlur={() => setEmailFocused(false)} style={styles.input} required />
+                                </div>
+                                {error && <p style={styles.error}>{error}</p>}
+                                {forgotMessage && <p style={styles.success}>{forgotMessage}</p>}
+                                <button type="submit" style={styles.button} disabled={isLoading}>{isLoading ? 'Sending...' : 'Send Recovery Email'}</button>
+                                <a href="#" onClick={(e) => { e.preventDefault(); setIsForgotPassword(false); setError(''); setForgotMessage(''); }} style={styles.link}>Back to Login</a>
+                            </form>
+                        ) : (
+                            <form onSubmit={handleLogin} style={styles.form}>
+                                <div style={styles.inputGroup}>
+                                    <label style={{ ...styles.label, ...(userId || userIdFocused ? styles.labelFocused : {}) }}>User ID (Mobile or Email)</label>
+                                    <input type="text" value={userId} onChange={(e) => setUserId(e.target.value)} onFocus={() => setUserIdFocused(true)} onBlur={() => setUserIdFocused(false)} style={styles.input} required />
+                                </div>
+                                <div style={styles.inputGroup}>
+                                    <label style={{ ...styles.label, ...(password || passwordFocused ? styles.labelFocused : {}) }}>Password</label>
+                                    <input type={isPasswordVisible ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} onFocus={() => setPasswordFocused(true)} onBlur={() => setPasswordFocused(false)} style={styles.input} required />
+                                    <button type="button" onClick={() => setIsPasswordVisible(!isPasswordVisible)} style={styles.eyeIcon} aria-label={isPasswordVisible ? "Hide password" : "Show password"}>
+                                        <EyeIcon closed={!isPasswordVisible} />
+                                    </button>
+                                </div>
+                                {error && <p style={styles.error}>{error}</p>}
+                                <button type="submit" style={styles.button} disabled={isLoading}>{isLoading ? 'Logging in...' : 'Login'}</button>
+                                <a href="#" onClick={(e) => { e.preventDefault(); setIsForgotPassword(true); setError(''); }} style={styles.link}>Forgot Password?</a>
+                            </form>
+                        )}
+                    </>
                 )}
              </div>
          </div>
     );
 };
 
-// FIX: Add type annotation to the styles object to fix CSSProperties type errors.
 const styles: { [key: string]: React.CSSProperties } = {
     loginContainer: {
         display: 'flex',
@@ -372,6 +315,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     card: {
         width: '100%',
         maxWidth: '420px',
+        minHeight: '580px',
         padding: '2.5rem 2rem',
         backgroundColor: 'var(--card-bg)',
         backdropFilter: 'blur(10px)',
@@ -380,11 +324,16 @@ const styles: { [key: string]: React.CSSProperties } = {
         textAlign: 'center',
         border: '1px solid rgba(255, 255, 255, 0.2)',
         transition: 'transform 0.5s ease-out, opacity 0.5s ease-out, box-shadow 0.3s ease-out',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
     },
     logo: {
         width: '80px',
         height: '80px',
         marginBottom: '0.5rem',
+        margin: '0 auto 0.5rem',
+        opacity: 0, /* Hide until loaded class is added */
     },
     title: {
         color: 'var(--dark-grey)',
@@ -402,9 +351,7 @@ const styles: { [key: string]: React.CSSProperties } = {
         flexDirection: 'column',
         gap: '1.25rem',
     },
-    inputGroup: {
-        position: 'relative',
-    },
+    inputGroup: { position: 'relative' },
     input: {
         width: '100%',
         padding: '12px 15px',
@@ -424,11 +371,7 @@ const styles: { [key: string]: React.CSSProperties } = {
         pointerEvents: 'none',
         transition: 'all 0.2s ease-out',
     },
-    labelFocused: {
-        top: '5px',
-        fontSize: '0.75rem',
-        color: 'var(--brand-color)',
-    },
+    labelFocused: { top: '5px', fontSize: '0.75rem', color: 'var(--brand-color)' },
     eyeIcon: {
         position: 'absolute',
         top: '50%',
@@ -465,14 +408,19 @@ const styles: { [key: string]: React.CSSProperties } = {
         marginTop: '-0.5rem',
         marginBottom: '0.5rem',
     },
-    success: {
-        color: '#2ecc71',
-        fontSize: '0.85rem',
-        textAlign: 'center',
+    // FIX: Added a missing comma after the 'success' property.
+    success: { color: '#2ecc71', fontSize: '0.85rem', textAlign: 'center' },
+    spinner: {
+        border: '4px solid var(--light-grey)',
+        borderRadius: '50%',
+        borderTop: '4px solid var(--brand-color)',
+        width: '40px',
+        height: '40px',
+        animation: 'spin 1s linear infinite',
+        margin: 'auto',
     },
 };
 
-// --- RENDER ---
 const container = document.getElementById('root');
 if (container) {
     const root = createRoot(container);
