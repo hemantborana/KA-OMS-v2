@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 
@@ -20,55 +19,61 @@ const EyeIcon = ({ closed }) => (
     </svg>
 );
 
+interface CachedImage {
+    id: string;
+    blob: Blob;
+    url: string;
+}
+
 const imageDb = {
     db: null,
-    init: function() {
+    init: function(): Promise<IDBDatabase> {
         return new Promise((resolve, reject) => {
             if (this.db) {
                 resolve(this.db);
                 return;
             }
-            const request = indexedDB.open('BrandingImageCache', 1);
+            // Version 3: This forces another upgrade to clear any potentially stuck cache.
+            const request = indexedDB.open('BrandingImageCache', 3);
             request.onupgradeneeded = (event) => {
-                // FIX: Cast event.target to IDBOpenDBRequest to access the result property.
                 const db = (event.target as IDBOpenDBRequest).result;
-                if (!db.objectStoreNames.contains('images')) {
-                    db.createObjectStore('images', { keyPath: 'id' });
+                // If the old object store exists, delete it to ensure a fresh start.
+                if (db.objectStoreNames.contains('images')) {
+                    db.deleteObjectStore('images');
                 }
+                // Create the new, empty object store.
+                db.createObjectStore('images', { keyPath: 'id' });
             };
             request.onsuccess = (event) => {
-                // FIX: Cast event.target to IDBOpenDBRequest to access the result property.
                 this.db = (event.target as IDBOpenDBRequest).result;
                 resolve(this.db);
             };
             request.onerror = (event) => {
-                // FIX: Cast event.target to IDBOpenDBRequest to access the error property.
                 console.error('IndexedDB error:', (event.target as IDBOpenDBRequest).error);
                 reject((event.target as IDBOpenDBRequest).error);
             };
         });
     },
-    // FIX: Add return type annotation to resolve unknown type for cachedBlob.
-    getImage: function(id): Promise<Blob | null> {
+    getImage: function(id: string): Promise<CachedImage | null> {
         return new Promise(async (resolve, reject) => {
             const db = await this.init();
             const transaction = db.transaction(['images'], 'readonly');
             const store = transaction.objectStore('images');
             const request = store.get(id);
             request.onsuccess = () => {
-                resolve(request.result ? request.result.blob : null);
+                resolve(request.result || null);
             };
             request.onerror = (event) => {
                 reject((event.target as IDBRequest).error);
             };
         });
     },
-    setImage: function(id, blob) {
+    setImage: function(id: string, blob: Blob, url: string) {
         return new Promise(async (resolve, reject) => {
             const db = await this.init();
             const transaction = db.transaction(['images'], 'readwrite');
             const store = transaction.objectStore('images');
-            const request = store.put({ id, blob });
+            const request = store.put({ id, blob, url });
             request.onsuccess = () => {
                 resolve(request.result);
             };
@@ -127,7 +132,7 @@ const KAOMSLogin = () => {
             localStorage.removeItem('ka-oms-session');
         }
 
-        const imageUrl = 'https://i.ibb.co/GvGmzRqp/loginimage2.webp';
+        const imageUrl = 'https://i.ibb.co/sphkNfpr/Copilot-20251105-083438.png';
         const imageKey = 'branding-image';
         const imgElement = document.querySelector('.branding-pane-img') as HTMLImageElement;
 
@@ -135,17 +140,16 @@ const KAOMSLogin = () => {
 
         const loadImage = async () => {
             try {
-                const cachedBlob = await imageDb.getImage(imageKey);
-                if (cachedBlob) {
-                    // FIX: The argument to createObjectURL is now correctly typed as Blob | null, and this code is inside a null check.
-                    imgElement.src = URL.createObjectURL(cachedBlob);
+                const cachedData = await imageDb.getImage(imageKey);
+                if (cachedData && cachedData.url === imageUrl) {
+                    imgElement.src = URL.createObjectURL(cachedData.blob);
                 } else {
                     const response = await fetch(imageUrl);
                     if (!response.ok) {
                         throw new Error('Network response was not ok');
                     }
                     const imageBlob = await response.blob();
-                    await imageDb.setImage(imageKey, imageBlob);
+                    await imageDb.setImage(imageKey, imageBlob, imageUrl);
                     imgElement.src = URL.createObjectURL(imageBlob);
                 }
             } catch (error) {
