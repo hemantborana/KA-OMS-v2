@@ -38,8 +38,17 @@ const KAOMSLogin = () => {
     
     // Animation state
     const [isMounted, setIsMounted] = useState(false);
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwrXxhHNWtz6a5bNCNNP2xvZorw6SC56neUCmsxVq54b4M8M7XvLUqL092zD054FW1w/exec';
+
+    useEffect(() => {
+        const handleResize = () => {
+            setIsMobile(window.innerWidth <= 768);
+        };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     useEffect(() => {
         setIsMounted(true); // Trigger entry animation
@@ -134,16 +143,30 @@ const KAOMSLogin = () => {
     
     const cardStyles = {
         ...styles.card,
+        padding: isMobile ? '2.5rem 1.5rem' : '2.5rem 2rem',
+        boxShadow: isMobile ? '0 4px 15px rgba(0, 0, 0, 0.06)' : 'var(--box-shadow)',
         transform: isMounted ? 'translateY(0)' : 'translateY(20px)',
         opacity: isMounted ? 1 : 0,
     };
+    
+    const titleStyles = {
+        ...styles.title,
+        fontSize: isMobile ? '1.5rem' : '1.75rem',
+    };
+
+    const subtitleStyles = {
+        ...styles.subtitle,
+        fontSize: isMobile ? '0.9rem' : '1rem',
+        marginBottom: isMobile ? '1.5rem' : '2rem',
+    };
+
 
     if (isLoggedIn && session) {
         return (
             <div style={styles.loginContainer}>
                 <div style={cardStyles}>
-                    <h1 style={styles.title}>Welcome, {session.userName || session.userId}</h1>
-                    <p style={styles.subtitle}>Homepage Coming Soon!</p>
+                    <h1 style={titleStyles}>Welcome, {session.userName || session.userId}</h1>
+                    <p style={subtitleStyles}>Homepage Coming Soon!</p>
                     <button onClick={handleLogout} style={styles.button}>Logout</button>
                 </div>
             </div>
@@ -154,8 +177,8 @@ const KAOMSLogin = () => {
          <div style={styles.loginContainer}>
              <div style={cardStyles}>
                  <img src="https://i.ibb.co/ZR2m6c7/applogo-1.png" alt="KA-OMS Logo" style={styles.logo} />
-                 <h1 style={styles.title}>KA-OMS</h1>
-                 <p style={styles.subtitle}>Enamor Order Management</p>
+                 <h1 style={titleStyles}>KA-OMS</h1>
+                 <p style={subtitleStyles}>Enamor Order Management</p>
 
                 {isForgotPassword ? (
                     <form onSubmit={handleForgotPassword} style={styles.form}>
@@ -241,7 +264,6 @@ const styles: { [key: string]: React.CSSProperties } = {
         justifyContent: 'center',
         alignItems: 'center',
         height: '100%',
-        padding: '1rem',
     },
     card: {
         width: '100%',
@@ -253,7 +275,7 @@ const styles: { [key: string]: React.CSSProperties } = {
         boxShadow: 'var(--box-shadow)',
         textAlign: 'center',
         border: '1px solid rgba(255, 255, 255, 0.2)',
-        transition: 'transform 0.5s ease-out, opacity 0.5s ease-out',
+        transition: 'transform 0.5s ease-out, opacity 0.5s ease-out, box-shadow 0.3s ease-out',
     },
     logo: {
         width: '80px',

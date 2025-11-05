@@ -69,20 +69,18 @@
 
         /* Responsive Design */
         @media (max-width: 768px) {
-            .container {
-                flex-direction: column;
-            }
-
             .branding-pane {
-                flex: 0;
-                min-height: 200px; /* Give some space for the image */
+                display: none; /* Hide image to save space and simplify UI on mobile */
             }
 
             .form-pane {
-                flex: 1;
-                justify-content: flex-start; /* Align form to top */
-                padding-top: 2rem;
-                overflow-y: auto;
+                /* Let the form pane take up the entire screen */
+                flex-basis: 100%; 
+                padding: 1rem; /* Add padding around the card container */
+                /* Center the form card for a better presentation */
+                justify-content: center; 
+                align-items: center;
+                overflow-y: auto; /* Allow scrolling if content overflows (e.g., keyboard) */
             }
         }
     </style>
@@ -90,7 +88,7 @@
 <body>
     <div class="container">
         <div class="branding-pane">
-            <img src="/assets/images/loginimage2.webp" alt="Order management system illustration" class="branding-pane-img">
+            <img src="https://drive.google.com/uc?export=view&id=1_lkzn3ws2Ii3MSShMoaUi1MmpluySMNM" alt="Order management system illustration" class="branding-pane-img">
         </div>
         <div class="form-pane">
             <div id="root"></div>
