@@ -294,7 +294,7 @@ const styles: { [key: string]: React.CSSProperties } = {
         position: 'absolute',
         left: '15px',
         top: '15px',
-        color: '#999',
+        color: 'var(--text-color)',
         pointerEvents: 'none',
         transition: 'all 0.2s ease-out',
     },
@@ -311,7 +311,7 @@ const styles: { [key: string]: React.CSSProperties } = {
         background: 'none',
         border: 'none',
         cursor: 'pointer',
-        color: '#999',
+        color: 'var(--text-color)',
         padding: '0',
     },
     button: {
