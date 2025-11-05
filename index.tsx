@@ -132,34 +132,44 @@ const KAOMSLogin = () => {
             localStorage.removeItem('ka-oms-session');
         }
 
-        const imageUrl = 'https://i.ibb.co/sphkNfpr/Copilot-20251105-083438.png';
-        const imageKey = 'branding-image';
-        const imgElement = document.querySelector('.branding-pane-img') as HTMLImageElement;
+        const loadAndCacheImage = async (key: string, url: string, selector: string) => {
+            const imgElement = document.querySelector(selector) as HTMLImageElement;
+            if (!imgElement) {
+                console.warn(`Image element not found with selector: ${selector}`);
+                return;
+            }
 
-        if (!imgElement) return;
-
-        const loadImage = async () => {
             try {
-                const cachedData = await imageDb.getImage(imageKey);
-                if (cachedData && cachedData.url === imageUrl) {
+                const cachedData = await imageDb.getImage(key);
+                if (cachedData && cachedData.url === url) {
                     imgElement.src = URL.createObjectURL(cachedData.blob);
                 } else {
-                    const response = await fetch(imageUrl);
+                    const response = await fetch(url);
                     if (!response.ok) {
-                        throw new Error('Network response was not ok');
+                        throw new Error(`Network response was not ok for ${url}`);
                     }
                     const imageBlob = await response.blob();
-                    await imageDb.setImage(imageKey, imageBlob, imageUrl);
+                    await imageDb.setImage(key, imageBlob, url);
                     imgElement.src = URL.createObjectURL(imageBlob);
                 }
             } catch (error) {
-                console.error('Failed to load or cache image:', error);
+                console.error(`Failed to load or cache image for ${key}:`, error);
                 // Fallback to the network URL if caching fails
-                imgElement.src = imageUrl;
+                imgElement.src = url;
             }
         };
 
-        loadImage();
+        loadAndCacheImage(
+            'branding-image', 
+            'https://i.ibb.co/sphkNfpr/Copilot-20251105-083438.png', 
+            '.branding-pane-img'
+        );
+
+        loadAndCacheImage(
+            'app-logo',
+            'https://i.ibb.co/spDFy1wW/applogo-1.png',
+            '.app-logo-img'
+        );
 
     }, []);
 
@@ -270,7 +280,7 @@ const KAOMSLogin = () => {
     return (
          <div style={styles.loginContainer}>
              <div style={cardStyles}>
-                 <img src="https://i.ibb.co/ZR2m6c7/applogo-1.png" alt="KA-OMS Logo" style={styles.logo} />
+                 <img className="app-logo-img" alt="KA-OMS Logo" style={styles.logo} />
                  <h1 style={titleStyles}>KA-OMS</h1>
                  <p style={subtitleStyles}>Enamor Order Management</p>
 
