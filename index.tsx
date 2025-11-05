@@ -102,6 +102,7 @@ const KAOMSLogin = () => {
     // Animation and loading states
     const [isMounted, setIsMounted] = useState(false);
     const [areImagesReady, setAreImagesReady] = useState(false);
+    const [appLogoSrc, setAppLogoSrc] = useState('');
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwrXxhHNWtz6a5bNCNNP2xvZorw6SC56neUCmsxVq54b4M8M7XvLUqL092zD054FW1w/exec';
@@ -126,44 +127,45 @@ const KAOMSLogin = () => {
             }
         }
 
-        const loadAndCacheImage = async (key: string, url: string, selector: string) => {
-            const imgElement = document.querySelector(selector) as HTMLImageElement;
-            if (!imgElement) return;
-
+        const loadAndCacheImage = async (key: string, url: string): Promise<string> => {
             try {
                 const cachedData = await imageDb.getImage(key);
-                // For recurring users, if cache is valid, use it directly.
                 if (cachedData && cachedData.url === url) {
-                    imgElement.src = URL.createObjectURL(cachedData.blob);
-                } else {
-                    // For first-time users or if URL changed, fetch and cache.
-                    const response = await fetch(url);
-                    if (!response.ok) throw new Error(`Network error for ${url}`);
-                    const imageBlob = await response.blob();
-                    await imageDb.setImage(key, imageBlob, url);
-                    imgElement.src = URL.createObjectURL(imageBlob);
+                    return URL.createObjectURL(cachedData.blob);
                 }
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`Network error for ${url}`);
+                const imageBlob = await response.blob();
+                await imageDb.setImage(key, imageBlob, url);
+                return URL.createObjectURL(imageBlob);
             } catch (error) {
                 console.error(`Failed to load/cache image ${key}:`, error);
-                imgElement.src = url; // Fallback to network URL
-            } finally {
-                imgElement.classList.add('loaded'); // Trigger fade-in animation
+                return url; // Fallback to network URL
             }
         };
 
         const initializeApp = async () => {
-            await Promise.all([
+            const [brandingSrc, logoSrc] = await Promise.all([
                 loadAndCacheImage(
                     'branding-image', 
-                    'https://i.ibb.co/sphkNfpr/Copilot-20251105-083438.png', 
-                    '.branding-pane-img'
+                    'https://i.ibb.co/sphkNfpr/Copilot-20251105-083438.png'
                 ),
                 loadAndCacheImage(
                     'app-logo',
-                    'https://i.ibb.co/spDFy1wW/applogo-1.png',
-                    '.app-logo-img'
+                    'https://i.ibb.co/spDFy1wW/applogo-1.png'
                 )
             ]);
+
+            // Handle branding image (which is in static HTML)
+            const brandingImgElement = document.querySelector('.branding-pane-img') as HTMLImageElement;
+            if (brandingImgElement) {
+                brandingImgElement.src = brandingSrc;
+                brandingImgElement.classList.add('loaded');
+            }
+
+            // Handle app logo (which is in React) using state
+            setAppLogoSrc(logoSrc);
+            
             // Once all images are processed, show the form content.
             setAreImagesReady(true);
             setIsMounted(true); // Trigger entry animation
@@ -246,6 +248,7 @@ const KAOMSLogin = () => {
     
     const titleStyles = { ...styles.title, fontSize: isMobile ? '1.5rem' : '1.75rem' };
     const subtitleStyles = { ...styles.subtitle, fontSize: isMobile ? '0.9rem' : '1rem', marginBottom: isMobile ? '1.5rem' : '2rem' };
+    const logoStyles = { ...styles.logo, opacity: areImagesReady ? 1 : 0, transition: 'opacity 0.3s ease-in' };
 
     if (isLoggedIn && session) {
         return (
@@ -264,7 +267,7 @@ const KAOMSLogin = () => {
              <div style={cardStyles}>
                 {!areImagesReady ? <Spinner /> : (
                     <>
-                        <img className="app-logo-img" alt="KA-OMS Logo" style={styles.logo} />
+                        <img src={appLogoSrc} alt="KA-OMS Logo" style={logoStyles} />
                         <h1 style={titleStyles}>Kambeshwar Agencies</h1>
                         <p style={subtitleStyles}>Enamor Order Management</p>
 
@@ -333,7 +336,7 @@ const styles: { [key: string]: React.CSSProperties } = {
         height: '80px',
         marginBottom: '0.5rem',
         margin: '0 auto 0.5rem',
-        opacity: 0, /* Hide until loaded class is added */
+        opacity: 0, /* Initial state before loading */
     },
     title: {
         color: 'var(--dark-grey)',
@@ -408,7 +411,6 @@ const styles: { [key: string]: React.CSSProperties } = {
         marginTop: '-0.5rem',
         marginBottom: '0.5rem',
     },
-    // FIX: Added a missing comma after the 'success' property.
     success: { color: '#2ecc71', fontSize: '0.85rem', textAlign: 'center' },
     spinner: {
         border: '4px solid var(--light-grey)',
