@@ -39,9 +39,18 @@
 
         .branding-pane {
             flex: 1;
-            background-image: url('assets/images/loginimage.webp');
-            background-size: cover;
-            background-position: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .branding-pane-img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
         }
 
         .form-pane {
@@ -80,7 +89,9 @@
 </head>
 <body>
     <div class="container">
-        <div class="branding-pane"></div>
+        <div class="branding-pane">
+            <img src="/assets/images/loginimage.webp" alt="Order management system illustration" class="branding-pane-img">
+        </div>
         <div class="form-pane">
             <div id="root"></div>
         </div>
