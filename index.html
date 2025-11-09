@@ -14,6 +14,7 @@
             --light-grey: #F0F3F4;     /* A soft, cool grey from the image's background */
             --text-color: #6A7280;     /* A readable mid-grey for labels */
             --card-bg: #FFFFFF;        /* A clean white for the login card */
+            --active-bg: #eef2f7;      /* A very light blue for active nav items */
             --border-radius: 12px;
             --box-shadow: 0 10px 30px rgba(0, 0, 0, 0.07);
             --skeleton-bg: #e2e8f0;    /* A light grey for skeleton loaders */
@@ -82,10 +83,12 @@
             align-items: center;
             padding: 2rem;
             background-color: var(--light-grey);
+            transition: flex 0.3s ease-in-out;
         }
 
         #root {
             width: 100%;
+            height: 100%;
             max-width: 420px;
         }
         
