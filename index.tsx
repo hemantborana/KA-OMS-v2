@@ -182,7 +182,7 @@ const HomePage = ({ session, onLogout, appLogoSrc }) => {
                 <Sidebar activeView={activeView} onNavigate={handleNavigate} isMobile={isMobile} isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
                 <MainContent activeView={activeView} />
             </div>
-            {isMobile && <BottomNavBar activeView={activeView} onNavigate={handleNavigate} />}
+            {isMobile && activeView !== 'Entry' && <BottomNavBar activeView={activeView} onNavigate={handleNavigate} />}
         </div>
     );
 };

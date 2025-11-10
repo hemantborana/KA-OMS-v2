@@ -142,42 +142,44 @@ const StyleMatrix = ({ style, catalogData, orderItems, onQuantityChange }) => {
     return (
         <div style={styles.matrixContainer}>
             <h3 style={styles.matrixStyleTitle}>{style}</h3>
-            <div style={styles.matrixGrid}>
-                {colors.map(color => {
-                    const itemsInColor = styleData[color];
-                    const itemsBySize = itemsInColor.reduce((acc, item) => {
-                        acc[item.Size] = item;
-                        return acc;
-                    }, {});
+            <div style={styles.matrixScrollContainer}>
+                <div style={styles.matrixGrid}>
+                    {colors.map(color => {
+                        const itemsInColor = styleData[color];
+                        const itemsBySize = itemsInColor.reduce((acc, item) => {
+                            acc[item.Size] = item;
+                            return acc;
+                        }, {});
 
-                    return (
-                        <div key={color} style={getColorCardStyle(color)}>
-                            <div style={styles.colorHeader}>{color}</div>
-                            <div style={styles.sizeList}>
-                                {allSizesForStyle.map(size => {
-                                    const itemData = itemsBySize[size];
-                                    if (itemData) {
-                                        const quantity = itemsByBarcode[itemData.Barcode] || '';
-                                        return (
-                                            <div key={size} style={styles.sizeRow}>
-                                                <label style={styles.sizeLabel}>{size}</label>
-                                                <input
-                                                    type="number"
-                                                    min="0"
-                                                    style={styles.quantityInput}
-                                                    value={quantity}
-                                                    onChange={(e) => onQuantityChange(itemData, e.target.value)}
-                                                    placeholder="0"
-                                                />
-                                            </div>
-                                        );
-                                    }
-                                    return <div key={size} style={{...styles.sizeRow, visibility: 'hidden'}}>...</div>;
-                                })}
+                        return (
+                            <div key={color} style={getColorCardStyle(color)}>
+                                <div style={styles.colorHeader}>{color}</div>
+                                <div style={styles.sizeList}>
+                                    {allSizesForStyle.map(size => {
+                                        const itemData = itemsBySize[size];
+                                        if (itemData) {
+                                            const quantity = itemsByBarcode[itemData.Barcode] || '';
+                                            return (
+                                                <div key={size} style={styles.sizeRow}>
+                                                    <label style={styles.sizeLabel}>{size}</label>
+                                                    <input
+                                                        type="number"
+                                                        min="0"
+                                                        style={styles.quantityInput}
+                                                        value={quantity}
+                                                        onChange={(e) => onQuantityChange(itemData, e.target.value)}
+                                                        placeholder="0"
+                                                    />
+                                                </div>
+                                            );
+                                        }
+                                        return <div key={size} style={{...styles.sizeRow, visibility: 'hidden'}}>...</div>;
+                                    })}
+                                </div>
                             </div>
-                        </div>
-                    );
-                })}
+                        );
+                    })}
+                </div>
             </div>
         </div>
     );
@@ -236,9 +238,9 @@ export const NewOrderEntry = () => {
     const styleSearchRef = useRef(null);
     
     // UI State
-    const [isMobile, setIsMobile] = useState(window.innerWidth <= 820);
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
     const [isCartModalOpen, setIsCartModalOpen] = useState(false);
-    const [isOrderDetailsCollapsed, setIsOrderDetailsCollapsed] = useState(false);
+    const [isOrderDetailsCollapsed, setIsOrderDetailsCollapsed] = useState(window.innerWidth <= 768);
 
 
     // --- DATA FETCHING & SYNC ---
@@ -308,7 +310,7 @@ export const NewOrderEntry = () => {
     
     // --- UI INTERACTION HANDLERS ---
     useEffect(() => {
-        const handleResize = () => setIsMobile(window.innerWidth <= 820);
+        const handleResize = () => setIsMobile(window.innerWidth <= 768);
         window.addEventListener('resize', handleResize);
 
         const handleClickOutside = (event) => {
@@ -526,7 +528,7 @@ export const NewOrderEntry = () => {
 };
 
 const styles: { [key: string]: React.CSSProperties } = {
-    container: { display: 'flex', flexDirection: 'column', gap: '1.5rem', height: '100%', paddingBottom: '120px' }, // Add padding to avoid overlap with sticky bar
+    container: { display: 'flex', flexDirection: 'column', gap: '1.5rem', height: '100%', paddingBottom: '80px' },
     header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', flexShrink: 0 },
     title: { fontSize: '1.75rem', fontWeight: 600, color: 'var(--dark-grey)' },
     actions: { display: 'flex', gap: '0.75rem' },
@@ -553,9 +555,16 @@ const styles: { [key: string]: React.CSSProperties } = {
     styleResultsContainer: { position: 'absolute', top: '100%', left: 0, right: 0, backgroundColor: 'var(--card-bg)', border: '1px solid var(--skeleton-bg)', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)', zIndex: 10, display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.5rem', maxHeight: '160px', overflowY: 'auto', padding: '0.5rem' },
     styleResultItem: { padding: '0.5rem 1rem', backgroundColor: 'var(--light-grey)', color: 'var(--text-color)', border: '1px solid var(--skeleton-bg)', borderRadius: '20px', cursor: 'pointer', transition: 'all 0.2s ease', fontSize: '0.85rem', fontWeight: 500, },
     styleResultItemActive: { backgroundColor: 'var(--brand-color)', color: '#fff', borderColor: 'var(--brand-color)' },
-    matrixContainer: { marginTop: '1rem', overflowY: 'auto' },
+    matrixContainer: { marginTop: '1rem' },
     matrixStyleTitle: { fontSize: '1.5rem', fontWeight: 600, color: 'var(--dark-grey)', textAlign: 'center', marginBottom: '1.5rem' },
-    matrixGrid: { display: 'flex', flexWrap: 'wrap', gap: '1rem', justifyContent: 'center' },
+    matrixScrollContainer: {
+        display: 'flex',
+        overflowX: 'auto',
+        paddingBottom: '1rem',
+        msOverflowStyle: 'none',
+        scrollbarWidth: 'none',
+    },
+    matrixGrid: { display: 'flex', flexWrap: 'nowrap', gap: '1rem' },
     colorCard: { borderRadius: '12px', padding: '1rem', width: '150px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '0.75rem', transition: 'background-color 0.3s, color 0.3s' },
     colorHeader: { fontWeight: 600, textAlign: 'center', textTransform: 'uppercase', paddingBottom: '0.5rem', borderBottom: '1px solid rgba(100, 100, 100, 0.2)' },
     sizeList: { display: 'flex', flexDirection: 'column', gap: '0.5rem' },
@@ -576,7 +585,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     modalOverlay: { position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'flex-end', padding: '1rem' },
     modalContent: { backgroundColor: 'var(--card-bg)', width: '100%', maxWidth: '500px', maxHeight: '80vh', borderRadius: 'var(--border-radius)', display: 'flex', flexDirection: 'column', position: 'relative', animation: 'slideUp 0.3s ease-out' },
     modalCloseButton: { position: 'absolute', top: '10px', right: '15px', background: 'none', border: 'none', fontSize: '2rem', color: 'var(--text-color)', cursor: 'pointer', zIndex: 1 },
-    stickyActionBar: { position: 'fixed', bottom: '60px', left: 0, right: 0, backgroundColor: 'var(--card-bg)', padding: '0.75rem 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--skeleton-bg)', boxShadow: '0 -2px 10px rgba(0,0,0,0.05)', zIndex: 90 },
+    stickyActionBar: { position: 'fixed', bottom: '0', left: 0, right: 0, backgroundColor: 'var(--card-bg)', padding: '0.75rem 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--skeleton-bg)', boxShadow: '0 -2px 10px rgba(0,0,0,0.05)', zIndex: 90 },
     stickyCartButton: { background: 'none', border: 'none', cursor: 'pointer', color: 'var(--dark-grey)', display: 'flex', alignItems: 'center', gap: '0.5rem', position: 'relative', padding: '0.5rem' },
     cartCountBadge: { position: 'absolute', top: '-2px', right: '-5px', backgroundColor: '#e74c3c', color: 'white', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '0.75rem', fontWeight: 600, border: '2px solid var(--card-bg)' },
     stickyActionButtons: { display: 'flex', gap: '0.75rem' },
