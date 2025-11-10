@@ -5,6 +5,7 @@ import 'firebase/compat/database';
 
 // --- ICONS ---
 const PlusIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>;
+const CartIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>;
 
 // --- FIREBASE CONFIGURATION ---
 const firebaseConfig = {
@@ -228,6 +229,10 @@ export const NewOrderEntry = () => {
     const [styleSearchTerm, setStyleSearchTerm] = useState('');
     const [isStyleSearchFocused, setIsStyleSearchFocused] = useState(false);
     const styleSearchRef = useRef(null);
+    
+    // UI State
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= 820);
+    const [isCartModalOpen, setIsCartModalOpen] = useState(false);
 
 
     // --- DATA FETCHING & SYNC ---
@@ -297,6 +302,9 @@ export const NewOrderEntry = () => {
     
     // --- UI INTERACTION HANDLERS ---
     useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth <= 820);
+        window.addEventListener('resize', handleResize);
+
         const handleClickOutside = (event) => {
             if (suggestionBoxRef.current && !suggestionBoxRef.current.contains(event.target)) {
                 setIsSuggestionsVisible(false);
@@ -306,7 +314,10 @@ export const NewOrderEntry = () => {
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
+        return () => {
+            window.removeEventListener('resize', handleResize);
+            document.removeEventListener('mousedown', handleClickOutside);
+        }
     }, []);
 
     const handlePartyNameChange = (e) => {
@@ -378,8 +389,12 @@ export const NewOrderEntry = () => {
             style.toLowerCase().includes(styleSearchTerm.toLowerCase())
         );
     }, [styleSearchTerm, catalog.styles]);
+    
+    const totalQuantity = useMemo(() => items.reduce((sum, item) => sum + item.quantity, 0), [items]);
 
     // --- RENDER ---
+    const mainLayoutStyle = isMobile ? { ...styles.mainLayout, gridTemplateColumns: '1fr' } : styles.mainLayout;
+
     return (
         <div style={styles.container}>
             <div style={styles.header}>
@@ -390,7 +405,7 @@ export const NewOrderEntry = () => {
                 </div>
             </div>
             
-            <div style={styles.mainLayout}>
+            <div style={mainLayoutStyle}>
                 <div style={styles.mainPanel}>
                     <div style={styles.card}>
                         <h2 style={styles.cardTitle}>Order Details</h2>
@@ -457,10 +472,32 @@ export const NewOrderEntry = () => {
                         )}
                     </div>
                 </div>
-                <div style={styles.sidePanel}>
-                   <Cart items={items} onRemoveItem={handleRemoveItem} onClearCart={handleClearCart} />
-                </div>
+
+                {!isMobile && (
+                    <div style={styles.sidePanel}>
+                        <Cart items={items} onRemoveItem={handleRemoveItem} onClearCart={handleClearCart} />
+                    </div>
+                )}
             </div>
+
+            {isMobile && (
+                <button style={styles.floatingCartButton} onClick={() => setIsCartModalOpen(true)} aria-label="Open cart">
+                    <CartIcon />
+                    {totalQuantity > 0 && <span style={styles.floatingCartCount}>{totalQuantity}</span>}
+                </button>
+            )}
+
+            {isMobile && isCartModalOpen && (
+                <div style={styles.modalOverlay} onClick={() => setIsCartModalOpen(false)}>
+                    <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+                        <button style={styles.modalCloseButton} onClick={() => setIsCartModalOpen(false)} aria-label="Close cart">&times;</button>
+                        <Cart items={items} onRemoveItem={handleRemoveItem} onClearCart={() => {
+                            handleClearCart();
+                            setIsCartModalOpen(false);
+                        }} />
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
@@ -508,4 +545,20 @@ const styles: { [key: string]: React.CSSProperties } = {
     cartItemSubDetails: { color: 'var(--text-color)', fontSize: '0.8rem' },
     cartItemQuantity: { fontWeight: 500, color: 'var(--dark-grey)' },
     cartItemRemoveBtn: { background: 'none', border: 'none', color: 'var(--text-color)', cursor: 'pointer', fontSize: '1.5rem', padding: '0 0.5rem', lineHeight: 1 },
+    floatingCartButton: { position: 'fixed', bottom: '80px', right: '20px', width: '60px', height: '60px', borderRadius: '50%', backgroundColor: 'var(--brand-color)', color: 'white', display: 'flex', justifyContent: 'center', alignItems: 'center', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.2)', cursor: 'pointer', zIndex: 100 },
+    floatingCartCount: { position: 'absolute', top: '0', right: '0', backgroundColor: '#e74c3c', color: 'white', borderRadius: '50%', width: '22px', height: '22px', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '0.8rem', fontWeight: 600, border: '2px solid var(--brand-color)' },
+    modalOverlay: { position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'flex-end', padding: '1rem' },
+    modalContent: { backgroundColor: 'var(--card-bg)', width: '100%', maxWidth: '500px', maxHeight: '80vh', borderRadius: 'var(--border-radius)', display: 'flex', flexDirection: 'column', position: 'relative', animation: 'slideUp 0.3s ease-out' },
+    modalCloseButton: { position: 'absolute', top: '10px', right: '15px', background: 'none', border: 'none', fontSize: '2rem', color: 'var(--text-color)', cursor: 'pointer', zIndex: 1 },
 };
+
+// Add keyframes for modal animation
+const styleSheet = document.createElement("style");
+styleSheet.type = "text/css";
+styleSheet.innerText = `
+    @keyframes slideUp {
+        from { transform: translateY(100%); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+`;
+document.head.appendChild(styleSheet);
