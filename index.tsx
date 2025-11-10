@@ -20,53 +20,33 @@ const imageDb = {
 };
 
 // --- PAGE COMPONENTS ---
-const PageContent = ({ title }) => <div style={styles.pageContainer}><h1>{title}</h1><p>Functionality for this page is coming soon.</p></div>;
+const PageContent = () => <div style={styles.pageContainer}><p>Functionality for this page is coming soon.</p></div>;
 
 // --- LAYOUT COMPONENTS ---
-const Header = ({ session, onLogout, onToggleSidebar, appLogoSrc, isMobile }) => {
-    const [dropdownOpen, setDropdownOpen] = useState(false);
-    const dropdownRef = useRef(null);
-
-    useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-                setDropdownOpen(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
-
+const Header = ({ onToggleSidebar, appLogoSrc, isMobile, title }) => {
     return (
         <header style={styles.appHeader}>
             <div style={styles.headerLeft}>
                 {isMobile && <button onClick={onToggleSidebar} style={styles.menuButton}><MenuIcon /></button>}
-                <img src={appLogoSrc} alt="Logo" style={styles.headerLogo} />
-                {!isMobile && <span style={styles.headerTitle}>Kambeshwar Agencies</span>}
-            </div>
-            <div style={styles.headerRight} ref={dropdownRef}>
-                <button onClick={() => setDropdownOpen(!dropdownOpen)} style={styles.profileButton}>
-                    <UserIcon />
-                    <span style={styles.profileName}>{session.userName}</span>
-                </button>
-                {dropdownOpen && (
-                    <div style={styles.profileDropdown}>
-                        <div style={styles.dropdownInfo}>
-                            <div style={styles.dropdownUserName}>{session.userName}</div>
-                            <div style={styles.dropdownUserRole}>{session.role}</div>
-                        </div>
-                        <button onClick={onLogout} style={styles.logoutButton}>
-                            <LogoutIcon />
-                            <span>Logout</span>
-                        </button>
-                    </div>
+                {!isMobile && (
+                    <>
+                        <img src={appLogoSrc} alt="Logo" style={styles.headerLogo} />
+                        <span style={styles.headerTitle}>Kambeshwar Agencies</span>
+                    </>
                 )}
+            </div>
+            <div style={styles.headerCenter}>
+                <h1 style={styles.headerPageTitle}>{title}</h1>
+            </div>
+            <div style={styles.headerRight}>
+                {/* This empty div helps balance the grid layout for centering the title */}
             </div>
         </header>
     );
 };
 
-const Sidebar = ({ activeView, onNavigate, isMobile, isOpen, onClose }) => {
+
+const Sidebar = ({ activeView, onNavigate, isMobile, isOpen, onClose, session, onLogout }) => {
     const primaryItems = [
         { id: 'Entry', label: 'New Order Entry' },
         { id: 'Pending', label: 'Pending Orders' },
@@ -86,6 +66,19 @@ const Sidebar = ({ activeView, onNavigate, isMobile, isOpen, onClose }) => {
         <>
             {isMobile && isOpen && <div style={styles.overlay} onClick={onClose}></div>}
             <nav style={sidebarStyle}>
+                <div style={styles.sidebarHeader}>
+                     <div style={styles.sidebarUser}>
+                         <UserIcon />
+                         <div style={styles.sidebarUserInfo}>
+                             <div style={styles.sidebarUserName}>{session.userName}</div>
+                             <div style={styles.sidebarUserRole}>{session.role}</div>
+                         </div>
+                     </div>
+                     <button onClick={onLogout} style={styles.sidebarLogoutButton}>
+                         <LogoutIcon />
+                         <span>Logout</span>
+                     </button>
+                </div>
                 <div style={styles.sidebarNav}>
                     {primaryItems.map(item => (
                         <a key={item.id} href="#" onClick={(e) => { e.preventDefault(); onNavigate(item.id); }} style={activeView === item.id ? { ...styles.navItem, ...styles.navItemActive } : styles.navItem}>
@@ -123,16 +116,11 @@ const BottomNavBar = ({ activeView, onNavigate }) => {
 };
 
 const MainContent = ({ activeView }) => {
-    const pages = {
-        'Entry': 'New Order Entry', 'Pending': 'Pending Orders', 'Billing': 'Ready for Billing', 'Billed': 'Billed Orders (Archive)',
-        'Stock': 'Stock Overview', 'Update': 'Stock Updation', 'Deleted': 'Deleted Orders', 'Expired': 'Expired Orders', 'Users': 'User Management', 'Approval': 'Order Approval (Admin)'
-    };
-
     if (activeView === 'Entry') {
         return <main style={styles.mainContent}><NewOrderEntry /></main>;
     }
     
-    return <main style={styles.mainContent}><PageContent title={pages[activeView] || 'Dashboard'} /></main>;
+    return <main style={styles.mainContent}><PageContent /></main>;
 };
 
 // --- HOMEPAGE WRAPPER ---
@@ -140,6 +128,11 @@ const HomePage = ({ session, onLogout, appLogoSrc }) => {
     const [activeView, setActiveView] = useState('Entry');
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+    
+    const pages = {
+        'Entry': 'New Order Entry', 'Pending': 'Pending Orders', 'Billing': 'Ready for Billing', 'Billed': 'Billed Orders (Archive)',
+        'Stock': 'Stock Overview', 'Update': 'Stock Updation', 'Deleted': 'Deleted Orders', 'Expired': 'Expired Orders', 'Users': 'User Management', 'Approval': 'Order Approval (Admin)'
+    };
 
     useEffect(() => {
         const handleResize = () => setIsMobile(window.innerWidth <= 768);
@@ -177,9 +170,9 @@ const HomePage = ({ session, onLogout, appLogoSrc }) => {
 
     return (
         <div style={styles.appContainer}>
-            <Header session={session} onLogout={onLogout} onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} appLogoSrc={appLogoSrc} isMobile={isMobile} />
+            <Header onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} appLogoSrc={appLogoSrc} isMobile={isMobile} title={pages[activeView] || 'Dashboard'} />
             <div style={styles.appBody}>
-                <Sidebar activeView={activeView} onNavigate={handleNavigate} isMobile={isMobile} isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+                <Sidebar activeView={activeView} onNavigate={handleNavigate} isMobile={isMobile} isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} session={session} onLogout={onLogout} />
                 <MainContent activeView={activeView} />
             </div>
             {isMobile && activeView !== 'Entry' && <BottomNavBar activeView={activeView} onNavigate={handleNavigate} />}
@@ -335,24 +328,25 @@ const KAOMSLogin = () => {
 const styles: { [key: string]: React.CSSProperties } = {
     // --- App Layout ---
     appContainer: { display: 'flex', flexDirection: 'column', height: '100vh', backgroundColor: 'var(--light-grey)' },
-    appHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 1.5rem', height: '64px', backgroundColor: 'var(--card-bg)', borderBottom: '1px solid var(--skeleton-bg)', flexShrink: 0 },
+    appHeader: { display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', padding: '0 1.5rem', height: '64px', backgroundColor: 'var(--card-bg)', borderBottom: '1px solid var(--skeleton-bg)', flexShrink: 0 },
     headerLeft: { display: 'flex', alignItems: 'center', gap: '1rem' },
-    headerRight: { position: 'relative' },
+    headerCenter: { textAlign: 'center' },
+    headerRight: { justifySelf: 'end' },
     headerLogo: { height: '36px', width: '36px' },
     headerTitle: { fontSize: '1.25rem', fontWeight: 600, color: 'var(--dark-grey)' },
+    headerPageTitle: { fontSize: '1.2rem', fontWeight: 600, color: 'var(--dark-grey)', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
     menuButton: { background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', color: 'var(--dark-grey)' },
-    profileButton: { background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--dark-grey)' },
-    profileName: { fontWeight: 500 },
-    profileDropdown: { position: 'absolute', top: '120%', right: 0, backgroundColor: 'var(--card-bg)', borderRadius: 'var(--border-radius)', boxShadow: 'var(--box-shadow)', zIndex: 100, width: '220px', border: '1px solid var(--skeleton-bg)' },
-    dropdownInfo: { padding: '1rem', borderBottom: '1px solid var(--skeleton-bg)' },
-    dropdownUserName: { fontWeight: 600, color: 'var(--dark-grey)' },
-    dropdownUserRole: { fontSize: '0.8rem', color: 'var(--text-color)' },
-    logoutButton: { background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '1rem', width: '100%', color: 'var(--dark-grey)', fontSize: '0.9rem' },
     appBody: { display: 'flex', flex: 1, overflow: 'hidden' },
-    sidebar: { width: '250px', backgroundColor: '#FBFCFD', borderRight: '1px solid var(--skeleton-bg)', flexShrink: 0, transition: 'transform 0.3s ease' },
+    sidebar: { width: '250px', backgroundColor: '#FBFCFD', borderRight: '1px solid var(--skeleton-bg)', flexShrink: 0, transition: 'transform 0.3s ease', display: 'flex', flexDirection: 'column' },
     sidebarMobile: { position: 'fixed', top: 0, left: 0, height: '100%', zIndex: 200 },
     overlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 199 },
-    sidebarNav: { display: 'flex', flexDirection: 'column', padding: '1rem 0.5rem' },
+    sidebarHeader: { padding: '1.5rem', borderBottom: '1px solid var(--skeleton-bg)' },
+    sidebarUser: { display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' },
+    sidebarUserInfo: {},
+    sidebarUserName: { fontWeight: 600, color: 'var(--dark-grey)' },
+    sidebarUserRole: { fontSize: '0.8rem', color: 'var(--text-color)' },
+    sidebarLogoutButton: { background: 'none', border: '1px solid var(--skeleton-bg)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.6rem', width: '100%', color: 'var(--text-color)', fontSize: '0.9rem', borderRadius: '8px', transition: 'background-color 0.2s ease, color 0.2s ease' },
+    sidebarNav: { display: 'flex', flexDirection: 'column', padding: '1rem 0.5rem', flex: 1, overflowY: 'auto' },
     sidebarSeparator: { margin: '0.75rem 1rem', border: 'none', borderTop: '1px solid var(--skeleton-bg)' },
     navItem: { display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem 1rem', textDecoration: 'none', color: 'var(--text-color)', borderRadius: '8px', marginBottom: '0.25rem', fontWeight: 500 },
     navItemActive: { backgroundColor: 'var(--active-bg)', color: 'var(--brand-color)' },
