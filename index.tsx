@@ -27,7 +27,8 @@ const Toast: React.FC<{ message: any, type: any, onClose: any }> = ({ message, t
 };
 
 // FIX: Explicitly type the children prop for ToastProvider to fix type inference issues.
-const ToastProvider: React.FC = ({ children }) => {
+// FIX: Correctly typed `children` prop by providing an explicit type to `React.FC`. This resolves the error where `children` was not found on the props object.
+const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [toasts, setToasts] = useState([]);
     const toastId = useRef(0);
 
@@ -349,7 +350,7 @@ const HomePage = ({ session, onLogout, appLogoSrc }) => {
                 <Sidebar activeView={activeView} onNavigate={handleNavigate} isMobile={isMobile} isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} session={session} onLogout={onLogout} />
                 <MainContent activeView={activeView} onNavigate={handleNavigate} session={session} />
             </div>
-            {isMobile && <BottomNavBar activeView={activeView} onNavigate={handleNavigate} />}
+            {isMobile && activeView !== 'Entry' && <BottomNavBar activeView={activeView} onNavigate={handleNavigate} />}
         </div>
     );
 };
