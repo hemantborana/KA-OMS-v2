@@ -530,7 +530,7 @@ export const NewOrderEntry = () => {
 };
 
 const styles: { [key: string]: React.CSSProperties } = {
-    container: { display: 'flex', flexDirection: 'column', gap: '1.5rem', height: '100%', paddingBottom: '80px' },
+    container: { display: 'flex', flexDirection: 'column', gap: '1.5rem', flex: 1, paddingBottom: '80px' },
     header: { display: 'flex', justifyContent: 'flex-end', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', flexShrink: 0, minHeight: '40px' },
     title: { fontSize: '1.75rem', fontWeight: 600, color: 'var(--dark-grey)' },
     actions: { display: 'flex', gap: '0.75rem' },

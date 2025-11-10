@@ -143,7 +143,7 @@ const StockStyleGroup: React.FC<{ styleName: string; data: any; }> = ({ styleNam
                                             <span style={styles.sizeLabel}>{item.size}:</span>
                                             <span style={styles.sizeStock}>{item.stock}</span>
                                         </div>
-                                ))}
+                                    ))}
                             </div>
                         </div>
                     ))}
@@ -171,46 +171,50 @@ export const StockOverview = () => {
         const syncData = async () => {
             setIsLoading(true);
             setError('');
+            let localDataWasLoaded = false;
             
-            // 1. Load from IndexedDB first
-            let localTimestamp = '';
             try {
+                // Step 1: Attempt to load local data for a fast initial paint.
                 const [localMeta, localStock] = await Promise.all([stockDb.getMetadata(), stockDb.getAllStock()]);
-                // FIX: Add Array.isArray check as a type guard before accessing .length.
+                let localTimestamp = '';
+    
                 if (localMeta && Array.isArray(localStock) && localStock.length > 0) {
                     localTimestamp = (localMeta as any).timestamp;
                     processAndSetData(localStock, localTimestamp);
+                    localDataWasLoaded = true;
                 }
-            } catch (dbError) {
-                console.error("Error reading from IndexedDB:", dbError);
-            } finally {
-                setIsLoading(false); // Stop initial spinner after loading local data
-            }
-
-            // 2. Fetch from remote and compare
-            try {
+    
+                // Step 2: Fetch remote data.
                 const response = await fetch(STOCK_SCRIPT_URL);
+                if (!response.ok) throw new Error(`Network error: ${response.statusText}`);
                 const result = await response.json();
-
+    
                 if (result.success) {
-                    if (result.timestamp > localTimestamp) {
+                    // Step 3: Compare timestamps and update if remote is newer.
+                    if (!localTimestamp || result.timestamp > localTimestamp) {
                         await stockDb.clearAndAddStock(result.data);
                         await stockDb.setMetadata({ timestamp: result.timestamp });
                         processAndSetData(result.data, result.timestamp);
                     }
                 } else {
-                    throw new Error(result.message || 'Failed to fetch stock data.');
+                    // The script returned success:false
+                    throw new Error(result.message || 'API returned an error.');
                 }
-            } catch (fetchError) {
-                console.error("Error fetching remote data:", fetchError);
-                if (!lastUpdate) { // Only show error if no local data was loaded
-                    setError('Could not fetch latest stock. Displaying cached data if available.');
+    
+            } catch (err) {
+                console.error("Data sync error:", err);
+                // If we failed to fetch and we never loaded local data, it's a critical error.
+                if (!localDataWasLoaded) {
+                     setError('Could not load stock data. Please check your connection and try again.');
                 }
+            } finally {
+                // Step 4: Finalize loading state.
+                setIsLoading(false);
             }
         };
-
+    
         syncData();
-    }, [processAndSetData, lastUpdate]);
+    }, [processAndSetData]);
 
     const filteredStyles = useMemo(() => {
         if (!searchTerm) return Object.keys(stockData).sort();
@@ -220,11 +224,11 @@ export const StockOverview = () => {
     }, [searchTerm, stockData]);
 
     const renderContent = () => {
-        if (isLoading && Object.keys(stockData).length === 0) {
+        if (isLoading) {
             return <div style={styles.centeredMessage}><Spinner /></div>;
         }
 
-        if (error && Object.keys(stockData).length === 0) {
+        if (error) {
             return <div style={styles.centeredMessage}>{error}</div>;
         }
 
@@ -272,7 +276,7 @@ export const StockOverview = () => {
 };
 
 const styles: { [key: string]: React.CSSProperties } = {
-    container: { display: 'flex', flexDirection: 'column', gap: '1rem', height: '100%' },
+    container: { display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1 },
     headerCard: { backgroundColor: 'var(--card-bg)', padding: '1rem 1.5rem', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', display: 'flex', flexDirection: 'column', gap: '1rem' },
     headerInfo: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
     lastUpdated: { fontSize: '0.9rem', color: 'var(--text-color)', fontWeight: 500 },

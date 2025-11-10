@@ -359,7 +359,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     navItem: { display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem 1rem', textDecoration: 'none', color: 'var(--text-color)', borderRadius: '8px', marginBottom: '0.25rem', fontWeight: 500 },
     navItemActive: { backgroundColor: 'var(--active-bg)', color: 'var(--brand-color)' },
     navLabel: { fontSize: '0.9rem' },
-    mainContent: { flex: 1, overflowY: 'auto', padding: '1.5rem' },
+    mainContent: { flex: 1, overflowY: 'auto', padding: '1.5rem', display: 'flex', flexDirection: 'column' },
     bottomNav: { display: 'flex', justifyContent: 'space-around', backgroundColor: 'var(--card-bg)', borderTop: '1px solid var(--skeleton-bg)', position: 'fixed', bottom: 0, left: 0, right: 0, height: '60px', zIndex: 100 },
     bottomNavItem: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, textDecoration: 'none', color: 'var(--text-color)', gap: '2px' },
     bottomNavItemActive: { color: 'var(--brand-color)' },
