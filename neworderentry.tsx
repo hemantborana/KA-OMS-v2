@@ -96,7 +96,6 @@ const StyleMatrix = ({ style, catalogData, orderItems, onQuantityChange }) => {
     const styleData = catalogData[style] || {};
     const colors = Object.keys(styleData).sort();
 
-    // Create a comprehensive, sorted list of all unique sizes for this style
     const allSizesForStyle = useMemo(() => {
         const sizeSet = new Set<string>();
         colors.forEach(color => {
@@ -120,7 +119,6 @@ const StyleMatrix = ({ style, catalogData, orderItems, onQuantityChange }) => {
         }, {});
     }, [orderItems]);
 
-    // Helper to get dynamic styles for color cards
     const getColorCardStyle = (colorName) => {
         const baseStyle = { ...styles.colorCard };
         const upperColor = colorName.toUpperCase();
@@ -168,7 +166,6 @@ const StyleMatrix = ({ style, catalogData, orderItems, onQuantityChange }) => {
                                             </div>
                                         );
                                     }
-                                    // Render a placeholder to maintain grid alignment
                                     return <div key={size} style={{...styles.sizeRow, visibility: 'hidden'}}>...</div>;
                                 })}
                             </div>
@@ -176,6 +173,38 @@ const StyleMatrix = ({ style, catalogData, orderItems, onQuantityChange }) => {
                     );
                 })}
             </div>
+        </div>
+    );
+};
+
+const Cart = ({ items, onRemoveItem, onClearCart }) => {
+    const totalQuantity = useMemo(() => items.reduce((sum, item) => sum + item.quantity, 0), [items]);
+
+    return (
+        <div style={styles.cartContainer}>
+            <div style={styles.cartHeader}>
+                <h2 style={styles.cardTitle}>Cart</h2>
+                <span style={styles.itemCount}>{totalQuantity} Items</span>
+            </div>
+            {items.length === 0 ? (
+                <p style={styles.cartEmptyText}>Add items using the matrix to see them here.</p>
+            ) : (
+                <>
+                    <div style={styles.cartItemsList}>
+                        {items.sort((a,b) => a.fullItemData.Style.localeCompare(b.fullItemData.Style)).map(item => (
+                            <div key={item.id} style={styles.cartItem}>
+                                <div style={styles.cartItemInfo}>
+                                    <div style={styles.cartItemDetails}>{`${item.fullItemData.Style} - ${item.fullItemData.Color}`}</div>
+                                    <div style={styles.cartItemSubDetails}>{`Size: ${item.fullItemData.Size}`}</div>
+                                </div>
+                                <div style={styles.cartItemQuantity}>Qty: {item.quantity}</div>
+                                <button onClick={() => onRemoveItem(item.fullItemData)} style={styles.cartItemRemoveBtn} aria-label="Remove item">&times;</button>
+                            </div>
+                        ))}
+                    </div>
+                    <button onClick={onClearCart} style={{...styles.button, ...styles.secondaryButton, width: '100%', marginTop: 'auto'}}>Clear Cart</button>
+                </>
+            )}
         </div>
     );
 };
@@ -313,15 +342,13 @@ export const NewOrderEntry = () => {
     
             if (quantity > 0) {
                 if (existingItemIndex > -1) {
-                    // Update quantity if item exists
                     const newItems = [...currentItems];
                     newItems[existingItemIndex] = { ...newItems[existingItemIndex], quantity: quantity };
                     return newItems;
                 } else {
-                    // Add new item if it doesn't exist
                     const price = parseFloat(String(fullItemData.MRP).replace(/[^0-9.-]+/g, "")) || 0;
                     const newItem = {
-                        id: barcode, // Use barcode as a stable ID
+                        id: barcode,
                         quantity: quantity,
                         price: price,
                         fullItemData: fullItemData,
@@ -329,21 +356,21 @@ export const NewOrderEntry = () => {
                     return [...currentItems, newItem];
                 }
             } else {
-                // Remove item if quantity is 0 or less
                 if (existingItemIndex > -1) {
                     return currentItems.filter(item => item.fullItemData.Barcode !== barcode);
                 }
             }
-            return currentItems; // No change
+            return currentItems;
         });
     };
+    
+    const handleRemoveItem = (fullItemData) => {
+        handleQuantityChange(fullItemData, '0');
+    };
 
-    const { subtotal, gst, grandTotal } = useMemo(() => {
-        const subtotal = items.reduce((acc, item) => acc + (item.quantity * item.price), 0);
-        const gst = subtotal * 0.18;
-        const grandTotal = subtotal + gst;
-        return { subtotal, gst, grandTotal };
-    }, [items]);
+    const handleClearCart = () => {
+        setItems([]);
+    };
 
     const filteredStyles = useMemo(() => {
         if (!styleSearchTerm) return catalog.styles;
@@ -363,79 +390,75 @@ export const NewOrderEntry = () => {
                 </div>
             </div>
             
-            <div style={styles.formGrid}>
-                <div style={styles.card}>
-                    <h2 style={styles.cardTitle}>Order Details</h2>
-                    <div style={{...styles.inputGroup, position: 'relative'}} ref={suggestionBoxRef}>
-                        <label htmlFor="partyName" style={styles.label}>Party Name</label>
-                        <input type="text" id="partyName" style={styles.input} value={partyName} onChange={handlePartyNameChange} onFocus={() => partyName && suggestions.length > 0 && setIsSuggestionsVisible(true)} placeholder="Enter or select a customer" autoComplete="off" />
-                         {isSuggestionsVisible && suggestions.length > 0 && (
-                            <ul style={styles.suggestionsList}>
-                                {suggestions.map((s, i) => (
-                                    <li key={i} style={{...styles.suggestionItem, ...(s.startsWith('Add: ') ? styles.addSuggestionItem : {})}} onClick={() => handleSuggestionClick(s)} onMouseDown={(e) => e.preventDefault()}>
-                                        {s.startsWith('Add: ') ? `+ Add "${s.substring(5)}"` : s}
-                                    </li>
-                                ))}
-                            </ul>
-                         )}
+            <div style={styles.mainLayout}>
+                <div style={styles.mainPanel}>
+                    <div style={styles.card}>
+                        <h2 style={styles.cardTitle}>Order Details</h2>
+                        <div style={{...styles.inputGroup, position: 'relative'}} ref={suggestionBoxRef}>
+                            <label htmlFor="partyName" style={styles.label}>Party Name</label>
+                            <input type="text" id="partyName" style={styles.input} value={partyName} onChange={handlePartyNameChange} onFocus={() => partyName && suggestions.length > 0 && setIsSuggestionsVisible(true)} placeholder="Enter or select a customer" autoComplete="off" />
+                             {isSuggestionsVisible && suggestions.length > 0 && (
+                                <ul style={styles.suggestionsList}>
+                                    {suggestions.map((s, i) => (
+                                        <li key={i} style={{...styles.suggestionItem, ...(s.startsWith('Add: ') ? styles.addSuggestionItem : {})}} onClick={() => handleSuggestionClick(s)} onMouseDown={(e) => e.preventDefault()}>
+                                            {s.startsWith('Add: ') ? `+ Add "${s.substring(5)}"` : s}
+                                        </li>
+                                    ))}
+                                </ul>
+                             )}
+                        </div>
+                    </div>
+
+                    <div style={{ ...styles.card, flex: 1 }}>
+                        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem'}}>
+                          <h2 style={styles.cardTitle}>Order Items</h2>
+                          {isSyncing && <div style={styles.syncingText}>Syncing item catalog...</div>}
+                        </div>
+                        
+                        <div style={styles.styleSelectorContainer} ref={styleSearchRef}>
+                             <label htmlFor="styleSearch" style={styles.label}>Search Style</label>
+                             <input
+                                 type="text"
+                                 id="styleSearch"
+                                 style={styles.input}
+                                 placeholder="Type to search for a style..."
+                                 value={styleSearchTerm}
+                                 onChange={e => setStyleSearchTerm(e.target.value)}
+                                 onFocus={() => setIsStyleSearchFocused(true)}
+                                 disabled={isSyncing}
+                                 autoComplete="off"
+                             />
+                             {isStyleSearchFocused && filteredStyles.length > 0 && (
+                                 <div style={styles.styleResultsContainer}>
+                                     {filteredStyles.slice(0, 100).map(style => (
+                                         <button
+                                             key={style}
+                                             style={selectedStyle === style ? {...styles.styleResultItem, ...styles.styleResultItemActive} : styles.styleResultItem}
+                                             onClick={() => {
+                                                 setSelectedStyle(style);
+                                                 setStyleSearchTerm(style);
+                                                 setIsStyleSearchFocused(false);
+                                             }}
+                                         >
+                                             {style}
+                                         </button>
+                                     ))}
+                                 </div>
+                             )}
+                        </div>
+
+                        {selectedStyle && (
+                            <StyleMatrix 
+                                style={selectedStyle} 
+                                catalogData={catalog.groupedData}
+                                orderItems={items}
+                                onQuantityChange={handleQuantityChange}
+                            />
+                        )}
                     </div>
                 </div>
-
-                <div style={{ ...styles.card, gridColumn: '1 / -1' }}>
-                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem'}}>
-                      <h2 style={styles.cardTitle}>Order Items</h2>
-                      {isSyncing && <div style={styles.syncingText}>Syncing item catalog...</div>}
-                    </div>
-                    
-                    <div style={styles.styleSelectorContainer} ref={styleSearchRef}>
-                         <label htmlFor="styleSearch" style={styles.label}>Search Style</label>
-                         <input
-                             type="text"
-                             id="styleSearch"
-                             style={styles.input}
-                             placeholder="Type to search for a style..."
-                             value={styleSearchTerm}
-                             onChange={e => setStyleSearchTerm(e.target.value)}
-                             onFocus={() => setIsStyleSearchFocused(true)}
-                             disabled={isSyncing}
-                             autoComplete="off"
-                         />
-                         {isStyleSearchFocused && filteredStyles.length > 0 && (
-                             <div style={styles.styleResultsContainer}>
-                                 {filteredStyles.slice(0, 100).map(style => (
-                                     <button
-                                         key={style}
-                                         style={selectedStyle === style ? {...styles.styleResultItem, ...styles.styleResultItemActive} : styles.styleResultItem}
-                                         onClick={() => {
-                                             setSelectedStyle(style);
-                                             setStyleSearchTerm(style);
-                                             setIsStyleSearchFocused(false);
-                                         }}
-                                     >
-                                         {style}
-                                     </button>
-                                 ))}
-                             </div>
-                         )}
-                    </div>
-
-                    {selectedStyle && (
-                        <StyleMatrix 
-                            style={selectedStyle} 
-                            catalogData={catalog.groupedData}
-                            orderItems={items}
-                            onQuantityChange={handleQuantityChange}
-                        />
-                    )}
-                </div>
-
-                <div style={styles.card}>
-                    <h2 style={styles.cardTitle}>Order Summary</h2>
-                    <div style={styles.summary}>
-                        <div style={styles.summaryRow}><span>Subtotal</span><span>{subtotal.toFixed(2)}</span></div>
-                        <div style={styles.summaryRow}><span>GST (18%)</span><span>{gst.toFixed(2)}</span></div>
-                        <div style={{...styles.summaryRow, ...styles.summaryTotal}}><span>Grand Total</span><span>{grandTotal.toFixed(2)}</span></div>
-                    </div>
+                <div style={styles.sidePanel}>
+                   <Cart items={items} onRemoveItem={handleRemoveItem} onClearCart={handleClearCart} />
                 </div>
             </div>
         </div>
@@ -443,21 +466,20 @@ export const NewOrderEntry = () => {
 };
 
 const styles: { [key: string]: React.CSSProperties } = {
-    container: { display: 'flex', flexDirection: 'column', gap: '1.5rem' },
-    header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' },
+    container: { display: 'flex', flexDirection: 'column', gap: '1.5rem', height: '100%' },
+    header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', flexShrink: 0 },
     title: { fontSize: '1.75rem', fontWeight: 600, color: 'var(--dark-grey)' },
     actions: { display: 'flex', gap: '0.75rem' },
     button: { padding: '0.6rem 1.2rem', fontSize: '0.9rem', fontWeight: 500, color: '#fff', backgroundColor: 'var(--brand-color)', border: 'none', borderRadius: '8px', cursor: 'pointer', transition: 'background-color 0.3s ease' },
     secondaryButton: { backgroundColor: 'var(--light-grey)', color: 'var(--dark-grey)', border: '1px solid var(--skeleton-bg)' },
-    formGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '1.5rem' },
+    mainLayout: { display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem', flex: 1, minHeight: 0 },
+    mainPanel: { display: 'flex', flexDirection: 'column', gap: '1.5rem', minHeight: 0 },
+    sidePanel: { minHeight: 0 },
     card: { backgroundColor: 'var(--card-bg)', padding: '1.5rem', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', display: 'flex', flexDirection: 'column', gap: '1rem' },
     cardTitle: { fontSize: '1.1rem', fontWeight: 600, color: 'var(--dark-grey)', marginBottom: '0.5rem', borderBottom: '1px solid var(--skeleton-bg)', paddingBottom: '0.75rem', flexGrow: 1 },
     inputGroup: { flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem', minWidth: '200px' },
     label: { fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-color)' },
     input: { width: '100%', padding: '0.75rem', fontSize: '0.9rem', border: '1px solid var(--skeleton-bg)', borderRadius: '8px', backgroundColor: '#fff', color: 'var(--dark-grey)', transition: 'border-color 0.3s ease' },
-    summary: { display: 'flex', flexDirection: 'column', gap: '0.75rem' },
-    summaryRow: { display: 'flex', justifyContent: 'space-between', color: 'var(--text-color)', fontSize: '0.9rem' },
-    summaryTotal: { fontWeight: 600, color: 'var(--dark-grey)', fontSize: '1.1rem', marginTop: '0.5rem', paddingTop: '0.75rem', borderTop: '1px solid var(--skeleton-bg)' },
     suggestionsList: { listStyle: 'none', margin: '0.25rem 0 0', padding: '0.5rem 0', position: 'absolute', top: '100%', left: 0, right: 0, backgroundColor: 'var(--card-bg)', border: '1px solid var(--skeleton-bg)', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)', maxHeight: '200px', overflowY: 'auto', zIndex: 10, },
     suggestionItem: { padding: '0.75rem 1rem', cursor: 'pointer', fontSize: '0.9rem', color: 'var(--text-color)', },
     addSuggestionItem: { color: 'var(--brand-color)', fontWeight: 500, },
@@ -466,7 +488,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     styleResultsContainer: { position: 'absolute', top: '100%', left: 0, right: 0, backgroundColor: 'var(--card-bg)', border: '1px solid var(--skeleton-bg)', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)', zIndex: 10, display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.5rem', maxHeight: '160px', overflowY: 'auto', padding: '0.5rem' },
     styleResultItem: { padding: '0.5rem 1rem', backgroundColor: 'var(--light-grey)', color: 'var(--text-color)', border: '1px solid var(--skeleton-bg)', borderRadius: '20px', cursor: 'pointer', transition: 'all 0.2s ease', fontSize: '0.85rem', fontWeight: 500, },
     styleResultItemActive: { backgroundColor: 'var(--brand-color)', color: '#fff', borderColor: 'var(--brand-color)' },
-    matrixContainer: { marginTop: '1rem' },
+    matrixContainer: { marginTop: '1rem', overflowY: 'auto' },
     matrixStyleTitle: { fontSize: '1.5rem', fontWeight: 600, color: 'var(--dark-grey)', textAlign: 'center', marginBottom: '1.5rem' },
     matrixGrid: { display: 'flex', flexWrap: 'wrap', gap: '1rem', justifyContent: 'center' },
     colorCard: { borderRadius: '12px', padding: '1rem', width: '150px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '0.75rem', transition: 'background-color 0.3s, color 0.3s' },
@@ -475,4 +497,15 @@ const styles: { [key: string]: React.CSSProperties } = {
     sizeRow: { display: 'grid', gridTemplateColumns: '40px 1fr', alignItems: 'center', gap: '0.5rem' },
     sizeLabel: { fontSize: '0.9rem', fontWeight: 500 },
     quantityInput: { width: '100%', padding: '6px 8px', fontSize: '0.9rem', border: '1px solid var(--skeleton-bg)', borderRadius: '6px', backgroundColor: 'var(--card-bg)', color: 'var(--dark-grey)', textAlign: 'right', outline: 'none' },
+    cartContainer: { backgroundColor: 'var(--card-bg)', padding: '1.5rem', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', display: 'flex', flexDirection: 'column', height: '100%' },
+    cartHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+    itemCount: { fontSize: '0.9rem', fontWeight: 500, color: 'var(--text-color)', paddingBottom: '0.75rem' },
+    cartEmptyText: { textAlign: 'center', color: 'var(--text-color)', marginTop: '2rem', flex: 1 },
+    cartItemsList: { flex: 1, overflowY: 'auto', margin: '1rem 0', paddingRight: '0.5rem' },
+    cartItem: { display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem 0', borderBottom: '1px solid var(--skeleton-bg)' },
+    cartItemInfo: { flex: 1 },
+    cartItemDetails: { fontWeight: 500, color: 'var(--dark-grey)', fontSize: '0.9rem' },
+    cartItemSubDetails: { color: 'var(--text-color)', fontSize: '0.8rem' },
+    cartItemQuantity: { fontWeight: 500, color: 'var(--dark-grey)' },
+    cartItemRemoveBtn: { background: 'none', border: 'none', color: 'var(--text-color)', cursor: 'pointer', fontSize: '1.5rem', padding: '0 0.5rem', lineHeight: 1 },
 };
