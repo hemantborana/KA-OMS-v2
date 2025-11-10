@@ -197,6 +197,9 @@ export const NewOrderEntry = () => {
     const [catalog, setCatalog] = useState({ styles: [], groupedData: {} });
     const [selectedStyle, setSelectedStyle] = useState('');
     const [styleSearchTerm, setStyleSearchTerm] = useState('');
+    const [isStyleSearchFocused, setIsStyleSearchFocused] = useState(false);
+    const styleSearchRef = useRef(null);
+
 
     // --- DATA FETCHING & SYNC ---
     useEffect(() => {
@@ -268,6 +271,9 @@ export const NewOrderEntry = () => {
         const handleClickOutside = (event) => {
             if (suggestionBoxRef.current && !suggestionBoxRef.current.contains(event.target)) {
                 setIsSuggestionsVisible(false);
+            }
+            if (styleSearchRef.current && !styleSearchRef.current.contains(event.target)) {
+                setIsStyleSearchFocused(false);
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
@@ -381,7 +387,7 @@ export const NewOrderEntry = () => {
                       {isSyncing && <div style={styles.syncingText}>Syncing item catalog...</div>}
                     </div>
                     
-                    <div style={styles.styleSelectorContainer}>
+                    <div style={styles.styleSelectorContainer} ref={styleSearchRef}>
                          <label htmlFor="styleSearch" style={styles.label}>Search Style</label>
                          <input
                              type="text"
@@ -390,19 +396,27 @@ export const NewOrderEntry = () => {
                              placeholder="Type to search for a style..."
                              value={styleSearchTerm}
                              onChange={e => setStyleSearchTerm(e.target.value)}
+                             onFocus={() => setIsStyleSearchFocused(true)}
                              disabled={isSyncing}
+                             autoComplete="off"
                          />
-                         <div style={styles.styleResultsContainer}>
-                             {filteredStyles.slice(0, 100).map(style => ( // Limit rendered styles for performance
-                                 <button
-                                     key={style}
-                                     style={selectedStyle === style ? {...styles.styleResultItem, ...styles.styleResultItemActive} : styles.styleResultItem}
-                                     onClick={() => setSelectedStyle(style)}
-                                 >
-                                     {style}
-                                 </button>
-                             ))}
-                         </div>
+                         {isStyleSearchFocused && filteredStyles.length > 0 && (
+                             <div style={styles.styleResultsContainer}>
+                                 {filteredStyles.slice(0, 100).map(style => (
+                                     <button
+                                         key={style}
+                                         style={selectedStyle === style ? {...styles.styleResultItem, ...styles.styleResultItemActive} : styles.styleResultItem}
+                                         onClick={() => {
+                                             setSelectedStyle(style);
+                                             setStyleSearchTerm(style);
+                                             setIsStyleSearchFocused(false);
+                                         }}
+                                     >
+                                         {style}
+                                     </button>
+                                 ))}
+                             </div>
+                         )}
                     </div>
 
                     {selectedStyle && (
@@ -448,8 +462,8 @@ const styles: { [key: string]: React.CSSProperties } = {
     suggestionItem: { padding: '0.75rem 1rem', cursor: 'pointer', fontSize: '0.9rem', color: 'var(--text-color)', },
     addSuggestionItem: { color: 'var(--brand-color)', fontWeight: 500, },
     syncingText: { fontSize: '0.85rem', color: 'var(--brand-color)', fontWeight: 500, paddingBottom: '0.75rem' },
-    styleSelectorContainer: { marginBottom: '1.5rem' },
-    styleResultsContainer: { display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '1rem', maxHeight: '160px', overflowY: 'auto', padding: '0.5rem', border: '1px solid var(--skeleton-bg)', borderRadius: '8px' },
+    styleSelectorContainer: { marginBottom: '1.5rem', position: 'relative' },
+    styleResultsContainer: { position: 'absolute', top: '100%', left: 0, right: 0, backgroundColor: 'var(--card-bg)', border: '1px solid var(--skeleton-bg)', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)', zIndex: 10, display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.5rem', maxHeight: '160px', overflowY: 'auto', padding: '0.5rem' },
     styleResultItem: { padding: '0.5rem 1rem', backgroundColor: 'var(--light-grey)', color: 'var(--text-color)', border: '1px solid var(--skeleton-bg)', borderRadius: '20px', cursor: 'pointer', transition: 'all 0.2s ease', fontSize: '0.85rem', fontWeight: 500, },
     styleResultItemActive: { backgroundColor: 'var(--brand-color)', color: '#fff', borderColor: 'var(--brand-color)' },
     matrixContainer: { marginTop: '1rem' },
