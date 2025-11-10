@@ -1,14 +1,66 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
 import { NewOrderEntry } from './neworderentry';
 import { StockOverview } from './stockoverview';
+
+// --- TOAST NOTIFICATION SYSTEM ---
+const ToastContext = React.createContext(null);
+const useToast = () => React.useContext(ToastContext);
+
+// FIX: Explicitly type Toast as a React.FC to allow the 'key' prop, which is used when mapping over toasts.
+const Toast: React.FC<{ message: any, type: any, onClose: any }> = ({ message, type, onClose }) => {
+    const toastStyles = {
+        ...styles.toast,
+        backgroundColor: type === 'success' ? '#2ecc71' : '#3498db',
+    };
+
+    useEffect(() => {
+        const timer = setTimeout(onClose, 3000);
+        return () => clearTimeout(timer);
+    }, [onClose]);
+
+    return (
+        <div style={toastStyles}>
+            {message}
+        </div>
+    );
+};
+
+// FIX: Explicitly type the children prop for ToastProvider to fix type inference issues.
+const ToastProvider = ({ children }: { children: React.ReactNode }) => {
+    const [toasts, setToasts] = useState([]);
+    const toastId = useRef(0);
+
+    const showToast = useCallback((message, type = 'info') => {
+        setToasts(currentToasts => [
+            ...currentToasts,
+            { id: toastId.current++, message, type },
+        ]);
+    }, []);
+
+    const removeToast = (id) => {
+        setToasts(currentToasts => currentToasts.filter(toast => toast.id !== id));
+    };
+
+    return (
+        <ToastContext.Provider value={showToast}>
+            {children}
+            <div style={styles.toastContainer}>
+                {toasts.map(toast => (
+                    <Toast key={toast.id} message={toast.message} type={toast.type} onClose={() => removeToast(toast.id)} />
+                ))}
+            </div>
+        </ToastContext.Provider>
+    );
+};
+
 
 // --- ICON COMPONENTS ---
 const EyeIcon = ({ closed }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"> {closed ? (<><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"></path><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"></path><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"></path><line x1="2" y1="2" x2="22" y2="22"></line></>) : (<><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></>)} </svg>);
 const MenuIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>;
 const LogoutIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>;
 const UserIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>;
-const NavIcon = ({ name }) => { const icons = { Entry: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"></path><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>, Pending: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>, Billing: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>, Billed: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>, Stock: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 9v11a2 2 0 0 1-2 2H6a2 2 0 0 1-4-2V9"></path><path d="M20 13H4"></path><path d="M10 3L4 9"></path><path d="M14 3l6 6"></path></svg>, Update: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>, Deleted: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>, Expired: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>, Users: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>, Approval: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg> }; return icons[name] || null; };
+const NavIcon = ({ name }) => { const icons = { Dashboard: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>, Entry: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"></path><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>, Pending: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>, Billing: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>, Billed: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>, Stock: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 9v11a2 2 0 0 1-2 2H6a2 2 0 0 1-4-2V9"></path><path d="M20 13H4"></path><path d="M10 3L4 9"></path><path d="M14 3l6 6"></path></svg>, Update: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>, Deleted: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>, Expired: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>, Users: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>, Approval: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg> }; return icons[name] || null; };
 const Spinner = () => <div style={styles.spinner}></div>;
 
 // --- DATABASE LOGIC ---
@@ -20,8 +72,109 @@ const imageDb = {
     setImage: function(id: string, blob: Blob, url: string) { return new Promise(async (resolve, reject) => { const db = await this.init(); const transaction = db.transaction(['images'], 'readwrite'); const store = transaction.objectStore('images'); const request = store.put({ id, blob, url }); request.onsuccess = () => { resolve(request.result); }; request.onerror = (event) => { reject((event.target as IDBRequest).error); }; }); }
 };
 
+// --- STOCK DATABASE LOGIC --- (for Dashboard)
+const stockDb = {
+    db: null,
+    init: function() { return new Promise((resolve, reject) => { if (this.db) return resolve(this.db); const request = indexedDB.open('StockDataDB', 1); request.onupgradeneeded = (event) => { const db = (event.target as IDBOpenDBRequest).result; if (!db.objectStoreNames.contains('stockItems')) db.createObjectStore('stockItems', { keyPath: 'id', autoIncrement: true }); if (!db.objectStoreNames.contains('metadata')) db.createObjectStore('metadata', { keyPath: 'id' }); }; request.onsuccess = (event) => { this.db = (event.target as IDBOpenDBRequest).result; resolve(this.db); }; request.onerror = (event) => reject((event.target as IDBRequest).error); }); },
+    getAllStock: async function() { const db = await this.init(); return new Promise((resolve, reject) => { const transaction = db.transaction(['stockItems'], 'readonly'); const request = transaction.objectStore('stockItems').getAll(); request.onsuccess = () => resolve(request.result); request.onerror = (event) => reject((event.target as IDBRequest).error); }); }
+};
+
 // --- PAGE COMPONENTS ---
 const PageContent = () => <div style={styles.pageContainer}><p>Functionality for this page is coming soon.</p></div>;
+
+const Dashboard = ({ onNavigate, session }) => {
+    const [lowStockItems, setLowStockItems] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchStock = async () => {
+            setIsLoading(true);
+            try {
+                const items = await stockDb.getAllStock() as any[];
+                if (items && items.length > 0) {
+                    const filtered = items.filter(item => item.stock > 0 && item.stock <= 10)
+                                          .sort((a,b) => a.stock - b.stock)
+                                          .slice(0, 5);
+                    setLowStockItems(filtered);
+                }
+            } catch (e) {
+                console.error("Failed to load stock for dashboard", e);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchStock();
+    }, []);
+
+    const kpiCards = [
+        { title: 'Pending Orders', value: '12', icon: <NavIcon name="Pending" /> },
+        { title: 'Ready for Billing', value: '3', icon: <NavIcon name="Billing" /> },
+        { title: 'Billed (This Month)', value: '₹1,25,430', icon: <NavIcon name="Billed" /> },
+    ];
+    const recentActivities = [
+        { text: 'Order #5123 created by SalesTeam1', time: '10 min ago' },
+        { text: 'Stock updated for Style 1051', time: '1 hr ago' },
+        { text: 'Order #5122 moved to Billing', time: '3 hrs ago' },
+        { text: 'User JohnDoe logged in', time: 'Yesterday' },
+    ];
+
+    return (
+        <div style={styles.dashboardContainer}>
+            <h2 style={styles.dashboardWelcome}>Welcome back, {session.userName}!</h2>
+            <div style={styles.dashboardGrid}>
+                {/* KPI Cards */}
+                {kpiCards.map(card => (
+                    <div key={card.title} style={styles.kpiCard}>
+                        <div style={styles.kpiIcon}>{card.icon}</div>
+                        <div>
+                            <div style={styles.kpiTitle}>{card.title}</div>
+                            <div style={styles.kpiValue}>{card.value}</div>
+                        </div>
+                    </div>
+                ))}
+
+                {/* Quick Actions */}
+                <div style={styles.dashboardCard}>
+                    <h3 style={styles.cardTitle}>Quick Actions</h3>
+                    <div style={styles.quickActions}>
+                        <button style={styles.actionButton} onClick={() => onNavigate('Entry')}><NavIcon name="Entry" /> New Order</button>
+                        <button style={styles.actionButton} onClick={() => onNavigate('Stock')}><NavIcon name="Stock" /> View Stock</button>
+                        <button style={styles.actionButton} onClick={() => onNavigate('Billed')}><NavIcon name="Billed" /> View Archive</button>
+                    </div>
+                </div>
+
+                {/* Low Stock Alerts */}
+                <div style={styles.dashboardCard}>
+                    <h3 style={styles.cardTitle}>Low Stock Alerts</h3>
+                    {isLoading ? <Spinner /> : lowStockItems.length > 0 ? (
+                        <ul style={styles.itemList}>
+                            {lowStockItems.map((item: any, index) => (
+                                <li key={index} style={styles.listItem}>
+                                    <span>{item.style} - {item.color} ({item.size})</span>
+                                    <span style={styles.lowStockBadge}>{item.stock} left</span>
+                                </li>
+                            ))}
+                        </ul>
+                    ) : <p style={styles.cardText}>All stock levels are healthy.</p>}
+                </div>
+
+                {/* Recent Activity */}
+                <div style={styles.dashboardCard}>
+                    <h3 style={styles.cardTitle}>Recent Activity</h3>
+                    <ul style={styles.itemList}>
+                        {recentActivities.map((act, i) => (
+                            <li key={i} style={styles.listItem}>
+                                <span>{act.text}</span>
+                                <span style={styles.activityTime}>{act.time}</span>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 
 // --- LAYOUT COMPONENTS ---
 const Header = ({ onToggleSidebar, appLogoSrc, isMobile, title }) => {
@@ -53,6 +206,7 @@ const Header = ({ onToggleSidebar, appLogoSrc, isMobile, title }) => {
 
 const Sidebar = ({ activeView, onNavigate, isMobile, isOpen, onClose, session, onLogout }) => {
     const primaryItems = [
+        { id: 'Dashboard', label: 'Dashboard' },
         { id: 'Entry', label: 'New Order Entry' },
         { id: 'Pending', label: 'Pending Orders' },
         { id: 'Billing', label: 'Ready for Billing' },
@@ -104,10 +258,10 @@ const Sidebar = ({ activeView, onNavigate, isMobile, isOpen, onClose, session, o
 
 const BottomNavBar = ({ activeView, onNavigate }) => {
     const navItems = [
+        { id: 'Dashboard', label: 'Home' },
         { id: 'Entry', label: 'Entry' },
+        { id: 'Stock', label: 'Stock' },
         { id: 'Pending', label: 'Pending' },
-        { id: 'Billing', label: 'Billing' },
-        { id: 'Billed', label: 'Billed' },
     ];
     return (
         <nav style={styles.bottomNav}>
@@ -120,7 +274,10 @@ const BottomNavBar = ({ activeView, onNavigate }) => {
     );
 };
 
-const MainContent = ({ activeView }) => {
+const MainContent = ({ activeView, onNavigate, session }) => {
+    if (activeView === 'Dashboard') {
+        return <main style={styles.mainContent}><Dashboard onNavigate={onNavigate} session={session} /></main>;
+    }
     if (activeView === 'Entry') {
         return <main style={styles.mainContent}><NewOrderEntry /></main>;
     }
@@ -133,18 +290,26 @@ const MainContent = ({ activeView }) => {
 
 // --- HOMEPAGE WRAPPER ---
 const HomePage = ({ session, onLogout, appLogoSrc }) => {
-    const [activeView, setActiveView] = useState('Entry');
+    const [activeView, setActiveView] = useState('Dashboard');
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+    const showToast = useToast();
     
     const pages = {
-        'Entry': 'New Order Entry', 'Pending': 'Pending Orders', 'Billing': 'Ready for Billing', 'Billed': 'Billed Orders (Archive)',
+        'Dashboard': 'Dashboard', 'Entry': 'New Order Entry', 'Pending': 'Pending Orders', 'Billing': 'Ready for Billing', 'Billed': 'Billed Orders (Archive)',
         'Stock': 'Stock Overview', 'Update': 'Stock Updation', 'Deleted': 'Deleted Orders', 'Expired': 'Expired Orders', 'Users': 'User Management', 'Approval': 'Order Approval (Admin)'
     };
 
     useEffect(() => {
         const handleResize = () => setIsMobile(window.innerWidth <= 768);
         window.addEventListener('resize', handleResize);
+        
+        const handleShowToast = (e: CustomEvent) => {
+            if (showToast) {
+                showToast(e.detail.message, e.detail.type);
+            }
+        };
+        window.addEventListener('show-toast', handleShowToast as EventListener);
         
         // FIX: Cast querySelector results to HTMLElement to access the style property, as querySelector returns a generic Element type by default.
         const brandingPane = document.querySelector<HTMLElement>('.branding-pane');
@@ -161,6 +326,7 @@ const HomePage = ({ session, onLogout, appLogoSrc }) => {
 
         return () => {
             window.removeEventListener('resize', handleResize);
+            window.removeEventListener('show-toast', handleShowToast as EventListener);
             if(brandingPane) brandingPane.style.display = 'flex';
             if(formPane) {
                 formPane.style.flex = '1';
@@ -169,7 +335,7 @@ const HomePage = ({ session, onLogout, appLogoSrc }) => {
             if(rootEl) rootEl.style.maxWidth = '420px';
             document.body.style.overflow = 'hidden';
         };
-    }, [isMobile]);
+    }, [isMobile, showToast]);
 
     const handleNavigate = (view) => {
         setActiveView(view);
@@ -181,9 +347,9 @@ const HomePage = ({ session, onLogout, appLogoSrc }) => {
             <Header onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} appLogoSrc={appLogoSrc} isMobile={isMobile} title={pages[activeView] || 'Dashboard'} />
             <div style={styles.appBody}>
                 <Sidebar activeView={activeView} onNavigate={handleNavigate} isMobile={isMobile} isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} session={session} onLogout={onLogout} />
-                <MainContent activeView={activeView} />
+                <MainContent activeView={activeView} onNavigate={handleNavigate} session={session} />
             </div>
-            {isMobile && activeView !== 'Entry' && <BottomNavBar activeView={activeView} onNavigate={handleNavigate} />}
+            {isMobile && <BottomNavBar activeView={activeView} onNavigate={handleNavigate} />}
         </div>
     );
 };
@@ -365,6 +531,26 @@ const styles: { [key: string]: React.CSSProperties } = {
     bottomNavItemActive: { color: 'var(--brand-color)' },
     bottomNavLabel: { fontSize: '0.7rem' },
     pageContainer: { backgroundColor: 'var(--card-bg)', padding: '2rem', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)' },
+    // --- Dashboard Styles ---
+    dashboardContainer: { display: 'flex', flexDirection: 'column', gap: '1.5rem' },
+    dashboardWelcome: { fontSize: '1.75rem', fontWeight: 600, color: 'var(--dark-grey)' },
+    dashboardGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' },
+    dashboardCard: { backgroundColor: 'var(--card-bg)', padding: '1.5rem', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', gridColumn: 'span 1' },
+    kpiCard: { backgroundColor: 'var(--card-bg)', padding: '1.5rem', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', display: 'flex', alignItems: 'center', gap: '1.5rem' },
+    kpiIcon: { color: 'var(--brand-color)' },
+    kpiTitle: { fontSize: '0.9rem', color: 'var(--text-color)', marginBottom: '0.25rem' },
+    kpiValue: { fontSize: '1.5rem', fontWeight: 600, color: 'var(--dark-grey)' },
+    cardTitle: { fontSize: '1.1rem', fontWeight: 600, color: 'var(--dark-grey)', marginBottom: '1rem' },
+    cardText: { fontSize: '0.9rem', color: 'var(--text-color)' },
+    quickActions: { display: 'flex', flexDirection: 'column', gap: '0.75rem' },
+    actionButton: { display: 'flex', alignItems: 'center', gap: '0.75rem', width: '100%', padding: '0.75rem 1rem', fontSize: '1rem', background: 'var(--light-grey)', border: '1px solid var(--skeleton-bg)', borderRadius: '8px', cursor: 'pointer', textAlign: 'left', color: 'var(--dark-grey)', fontWeight: 500 },
+    itemList: { listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem' },
+    listItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem 0', borderBottom: '1px solid var(--light-grey)', fontSize: '0.9rem' },
+    lowStockBadge: { backgroundColor: '#fbe2e2', color: '#c0392b', padding: '0.2rem 0.5rem', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 600 },
+    activityTime: { color: 'var(--text-color)', fontSize: '0.8rem' },
+    // --- Toast Styles ---
+    toastContainer: { position: 'fixed', bottom: '20px', right: '20px', zIndex: 1000, display: 'flex', flexDirection: 'column', gap: '10px' },
+    toast: { padding: '12px 20px', borderRadius: '8px', color: 'white', boxShadow: '0 4px 15px rgba(0,0,0,0.1)', animation: 'toast-in 0.5s forwards' },
     // --- Login Styles ---
     loginContainer: { display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' },
     card: { width: '100%', maxWidth: '420px', minHeight: '580px', padding: '2.5rem 2rem', backgroundColor: 'var(--card-bg)', backdropFilter: 'blur(10px)', borderRadius: 'var(--border-radius)', boxShadow: 'var(--box-shadow)', textAlign: 'center', border: '1px solid rgba(255, 255, 255, 0.2)', transition: 'transform 0.5s ease-out, opacity 0.5s ease-out, box-shadow 0.3s ease-out', display: 'flex', flexDirection: 'column', justifyContent: 'center' },
@@ -387,7 +573,21 @@ const styles: { [key: string]: React.CSSProperties } = {
 const container = document.getElementById('root');
 if (container) {
     const root = createRoot(container);
-    root.render(<React.StrictMode><KAOMSLogin /></React.StrictMode>);
+    root.render(<React.StrictMode><ToastProvider><KAOMSLogin /></ToastProvider></React.StrictMode>);
 } else {
     console.error('Failed to find the root element');
 }
+
+const styleSheet = document.createElement("style");
+styleSheet.type = "text/css";
+styleSheet.innerText = `
+    @keyframes toast-in {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+`;
+document.head.appendChild(styleSheet);

@@ -12,6 +12,17 @@ const ChevronIcon = ({ collapsed }) => (
     </svg>
 );
 
+// --- FEEDBACK HELPERS ---
+const showToast = (message: string, type: 'info' | 'success' = 'info') => {
+    window.dispatchEvent(new CustomEvent('show-toast', { detail: { message, type } }));
+};
+
+const triggerHapticFeedback = () => {
+    if (navigator.vibrate) {
+        navigator.vibrate(50); // A short vibration
+    }
+};
+
 // --- FIREBASE CONFIGURATION ---
 const firebaseConfig = {
   apiKey: "AIzaSyBRV-i_70Xdk86bNuQQ43jiYkRNCXGvvyo",
@@ -363,6 +374,7 @@ export const NewOrderEntry = () => {
             const existingItemIndex = currentItems.findIndex(item => item.fullItemData.Barcode === barcode);
     
             if (quantity > 0) {
+                triggerHapticFeedback();
                 if (existingItemIndex > -1) {
                     const newItems = [...currentItems];
                     newItems[existingItemIndex] = { ...newItems[existingItemIndex], quantity: quantity };
@@ -394,6 +406,16 @@ export const NewOrderEntry = () => {
         setItems([]);
     };
 
+    const handleSaveDraft = () => {
+        showToast('Draft saved successfully!', 'success');
+        // Future: Implement actual draft saving logic
+    };
+
+    const handleSubmitOrder = () => {
+        showToast('Order submitted!', 'success');
+        // Future: Implement actual submission logic
+    };
+
     const filteredStyles = useMemo(() => {
         if (!styleSearchTerm) return catalog.styles;
         return catalog.styles.filter(style =>
@@ -411,8 +433,8 @@ export const NewOrderEntry = () => {
             <div style={styles.header}>
                 {!isMobile && (
                     <div style={styles.actions}>
-                        <button style={{ ...styles.button, ...styles.secondaryButton }}>Save Draft</button>
-                        <button style={styles.button}>Submit Order</button>
+                        <button onClick={handleSaveDraft} style={{ ...styles.button, ...styles.secondaryButton }}>Save Draft</button>
+                        <button onClick={handleSubmitOrder} style={styles.button}>Submit Order</button>
                     </div>
                 )}
             </div>
@@ -508,8 +530,8 @@ export const NewOrderEntry = () => {
                         {totalQuantity > 0 && <span style={styles.cartCountBadge}>{totalQuantity}</span>}
                     </button>
                     <div style={styles.stickyActionButtons}>
-                        <button style={{ ...styles.button, ...styles.secondaryButton, ...styles.stickyButton }}>Save Draft</button>
-                        <button style={{ ...styles.button, ...styles.stickyButton }}>Submit Order</button>
+                        <button onClick={handleSaveDraft} style={{ ...styles.button, ...styles.secondaryButton, ...styles.stickyButton }}>Save Draft</button>
+                        <button onClick={handleSubmitOrder} style={{ ...styles.button, ...styles.stickyButton }}>Submit Order</button>
                     </div>
                 </div>
             )}

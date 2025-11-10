@@ -4,9 +4,12 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 const SearchIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>;
 const ChevronIcon = ({ collapsed }) => <svg style={{ transform: collapsed ? 'rotate(0deg)' : 'rotate(180deg)', transition: 'transform 0.3s ease' }} xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>;
 const Spinner = () => <div style={styles.spinner}></div>;
+const CardViewIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>;
+const TableViewIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>;
+const SortIcon = ({ direction }) => <svg style={{ width: 14, height: 14, opacity: direction ? 1 : 0.3, transform: direction === 'descending' ? 'rotate(180deg)' : 'none' }} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg>;
 
 // --- CONFIGURATION ---
-const STOCK_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyY4ys2VzcsmslZj-vYieV1l-RRTp90eDMwcdANFZ3qecf8VRPgz-dNo46jqIqencqF/exec'; // Replace with your deployed script URL
+const STOCK_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyY4ys2VzcsmslZj-vYieV1l-RRTp90eDMwcdANFZ3qecf8VRPgz-dNo46jqIqencqF/exec';
 
 // --- INDEXEDDB HELPER ---
 const DB_NAME = 'StockDataDB';
@@ -116,7 +119,6 @@ const groupStockData = (data) => {
 };
 
 // --- SUB-COMPONENTS ---
-// FIX: Explicitly type component with React.FC to handle the `key` prop correctly.
 const StockStyleGroup: React.FC<{ styleName: string; data: any; }> = ({ styleName, data }) => {
     const [isCollapsed, setIsCollapsed] = useState(true);
     const sortedColors = useMemo(() => Object.keys(data.itemsByColor).sort(), [data.itemsByColor]);
@@ -153,17 +155,54 @@ const StockStyleGroup: React.FC<{ styleName: string; data: any; }> = ({ styleNam
     );
 };
 
+const StockTable = ({ items, onSort, sortConfig }) => {
+    const headers = [
+        { key: 'style', label: 'Style' },
+        { key: 'color', label: 'Color' },
+        { key: 'size', label: 'Size' },
+        { key: 'stock', label: 'Stock' },
+    ];
+    return (
+        <div style={styles.tableContainer}>
+            <table style={styles.table}>
+                <thead>
+                    <tr>
+                        {headers.map(header => (
+                            <th key={header.key} style={styles.th} onClick={() => onSort(header.key)}>
+                                <div style={styles.thContent}>
+                                    {header.label}
+                                    <SortIcon direction={sortConfig.key === header.key ? sortConfig.direction : null} />
+                                </div>
+                            </th>
+                        ))}
+                    </tr>
+                </thead>
+                <tbody>
+                    {items.map((item, index) => (
+                        <tr key={index} style={styles.tr}>
+                            <td style={styles.td}>{item.style}</td>
+                            <td style={styles.td}>{item.color}</td>
+                            <td style={styles.td}>{item.size}</td>
+                            <td style={{...styles.td, ...styles.tdStock}}>{item.stock}</td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
+    );
+}
 
 export const StockOverview = () => {
-    const [stockData, setStockData] = useState({});
+    const [allStock, setAllStock] = useState([]);
     const [lastUpdate, setLastUpdate] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
+    const [view, setView] = useState('card');
+    const [sortConfig, setSortConfig] = useState({ key: 'style', direction: 'ascending' });
 
     const processAndSetData = useCallback((items, timestamp) => {
-        const grouped = groupStockData(items);
-        setStockData(grouped);
+        setAllStock(items);
         setLastUpdate(timestamp);
     }, []);
 
@@ -174,7 +213,6 @@ export const StockOverview = () => {
             let localDataWasLoaded = false;
             
             try {
-                // Step 1: Attempt to load local data for a fast initial paint.
                 const [localMeta, localStock] = await Promise.all([stockDb.getMetadata(), stockDb.getAllStock()]);
                 let localTimestamp = '';
     
@@ -184,31 +222,26 @@ export const StockOverview = () => {
                     localDataWasLoaded = true;
                 }
     
-                // Step 2: Fetch remote data.
                 const response = await fetch(STOCK_SCRIPT_URL);
                 if (!response.ok) throw new Error(`Network error: ${response.statusText}`);
                 const result = await response.json();
     
                 if (result.success) {
-                    // Step 3: Compare timestamps and update if remote is newer.
                     if (!localTimestamp || result.timestamp > localTimestamp) {
                         await stockDb.clearAndAddStock(result.data);
                         await stockDb.setMetadata({ timestamp: result.timestamp });
                         processAndSetData(result.data, result.timestamp);
                     }
                 } else {
-                    // The script returned success:false
                     throw new Error(result.message || 'API returned an error.');
                 }
     
             } catch (err) {
                 console.error("Data sync error:", err);
-                // If we failed to fetch and we never loaded local data, it's a critical error.
                 if (!localDataWasLoaded) {
                      setError('Could not load stock data. Please check your connection and try again.');
                 }
             } finally {
-                // Step 4: Finalize loading state.
                 setIsLoading(false);
             }
         };
@@ -216,38 +249,70 @@ export const StockOverview = () => {
         syncData();
     }, [processAndSetData]);
 
-    const filteredStyles = useMemo(() => {
-        if (!searchTerm) return Object.keys(stockData).sort();
-        return Object.keys(stockData).filter(style =>
-            style.toLowerCase().includes(searchTerm.toLowerCase())
-        ).sort();
-    }, [searchTerm, stockData]);
-
-    const renderContent = () => {
-        if (isLoading) {
-            return <div style={styles.centeredMessage}><Spinner /></div>;
-        }
-
-        if (error) {
-            return <div style={styles.centeredMessage}>{error}</div>;
-        }
-
-        if (filteredStyles.length === 0) {
-            return (
-                <div style={styles.centeredMessage}>
-                    {Object.keys(stockData).length === 0 ? "No stock data available." : "No styles found for your search."}
-                </div>
+    const filteredAndSortedData = useMemo(() => {
+        let items = [...allStock];
+        if (searchTerm) {
+            const lowercasedTerm = searchTerm.toLowerCase();
+            items = items.filter(item =>
+                item.style.toLowerCase().includes(lowercasedTerm) ||
+                item.color.toLowerCase().includes(lowercasedTerm)
             );
         }
 
+        if (sortConfig.key) {
+            items.sort((a, b) => {
+                const aVal = a[sortConfig.key];
+                const bVal = b[sortConfig.key];
+                const aIsNum = !isNaN(aVal);
+                const bIsNum = !isNaN(bVal);
+
+                if (aIsNum && bIsNum) {
+                    return sortConfig.direction === 'ascending' ? aVal - bVal : bVal - aVal;
+                }
+                if (String(aVal).toLowerCase() < String(bVal).toLowerCase()) {
+                    return sortConfig.direction === 'ascending' ? -1 : 1;
+                }
+                if (String(aVal).toLowerCase() > String(bVal).toLowerCase()) {
+                    return sortConfig.direction === 'ascending' ? 1 : -1;
+                }
+                return 0;
+            });
+        }
+        return items;
+    }, [searchTerm, allStock, sortConfig]);
+
+    const requestSort = (key) => {
+        let direction = 'ascending';
+        if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+            direction = 'descending';
+        }
+        setSortConfig({ key, direction });
+    };
+
+    const renderContent = () => {
+        if (isLoading) return <div style={styles.centeredMessage}><Spinner /></div>;
+        if (error) return <div style={styles.centeredMessage}>{error}</div>;
+
+        if (filteredAndSortedData.length === 0) {
+            return (
+                <div style={styles.centeredMessage}>
+                    {allStock.length === 0 ? "No stock data available." : "No items found for your search."}
+                </div>
+            );
+        }
+        
+        if (view === 'table') {
+            return <StockTable items={filteredAndSortedData} onSort={requestSort} sortConfig={sortConfig} />;
+        }
+        
+        // Card View
+        const groupedData = groupStockData(filteredAndSortedData);
+        const styleNames = Object.keys(groupedData).sort();
+
         return (
             <div style={styles.listContainer}>
-                {filteredStyles.map(styleName => (
-                    <StockStyleGroup
-                        key={styleName}
-                        styleName={styleName}
-                        data={stockData[styleName]}
-                    />
+                {styleNames.map(styleName => (
+                    <StockStyleGroup key={styleName} styleName={styleName} data={groupedData[styleName]} />
                 ))}
             </div>
         );
@@ -258,13 +323,17 @@ export const StockOverview = () => {
             <div style={styles.headerCard}>
                 <div style={styles.headerInfo}>
                     <p style={styles.lastUpdated}>Last Updated: {formatTimestamp(lastUpdate)}</p>
+                    <div style={styles.viewToggle}>
+                        <button onClick={() => setView('card')} style={view === 'card' ? styles.toggleButtonActive : styles.toggleButton}><CardViewIcon /></button>
+                        <button onClick={() => setView('table')} style={view === 'table' ? styles.toggleButtonActive : styles.toggleButton}><TableViewIcon /></button>
+                    </div>
                 </div>
                 <div style={styles.searchContainer}>
                     <SearchIcon />
                     <input
                         type="text"
                         style={styles.searchInput}
-                        placeholder="Search by style..."
+                        placeholder="Search by style or color..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
@@ -280,6 +349,9 @@ const styles: { [key: string]: React.CSSProperties } = {
     headerCard: { backgroundColor: 'var(--card-bg)', padding: '1rem 1.5rem', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', display: 'flex', flexDirection: 'column', gap: '1rem' },
     headerInfo: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
     lastUpdated: { fontSize: '0.9rem', color: 'var(--text-color)', fontWeight: 500 },
+    viewToggle: { display: 'flex', backgroundColor: 'var(--light-grey)', borderRadius: '8px', padding: '4px' },
+    toggleButton: { background: 'none', border: 'none', padding: '6px 10px', cursor: 'pointer', color: 'var(--text-color)', borderRadius: '6px' },
+    toggleButtonActive: { background: 'var(--card-bg)', border: 'none', padding: '6px 10px', cursor: 'pointer', color: 'var(--brand-color)', borderRadius: '6px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' },
     searchContainer: { display: 'flex', alignItems: 'center', gap: '0.75rem', backgroundColor: 'var(--light-grey)', padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--skeleton-bg)' },
     searchInput: { flex: 1, border: 'none', background: 'none', outline: 'none', fontSize: '1rem', color: 'var(--dark-grey)' },
     listContainer: { flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem', paddingBottom: '1rem' },
@@ -297,4 +369,12 @@ const styles: { [key: string]: React.CSSProperties } = {
     sizeItem: { display: 'flex', justifyContent: 'space-between', backgroundColor: 'var(--light-grey)', padding: '0.5rem 0.75rem', borderRadius: '6px' },
     sizeLabel: { fontWeight: 500, color: 'var(--text-color)' },
     sizeStock: { fontWeight: 600, color: 'var(--dark-grey)' },
+    // Table Styles
+    tableContainer: { flex: 1, overflowY: 'auto', backgroundColor: 'var(--card-bg)', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)' },
+    table: { width: '100%', borderCollapse: 'collapse' },
+    th: { backgroundColor: '#f8f9fa', padding: '12px 16px', textAlign: 'left', fontWeight: 600, color: 'var(--dark-grey)', borderBottom: '2px solid var(--skeleton-bg)', cursor: 'pointer', userSelect: 'none' },
+    thContent: { display: 'flex', alignItems: 'center', gap: '8px' },
+    tr: { borderBottom: '1px solid var(--skeleton-bg)' },
+    td: { padding: '12px 16px', color: 'var(--text-color)', fontSize: '0.9rem' },
+    tdStock: { fontWeight: 600, color: 'var(--dark-grey)', textAlign: 'right' },
 };
