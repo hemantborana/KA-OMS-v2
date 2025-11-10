@@ -109,7 +109,72 @@ const itemDb = {
     }
 };
 
-const StyleMatrix = ({ style, catalogData, orderItems, onQuantityChange }) => {
+const CollapsibleColorCard: React.FC<{ color: any, itemsInColor: any, allSizesForStyle: any, itemsByBarcode: any, onQuantityChange: any, isMobile: any }> = ({ color, itemsInColor, allSizesForStyle, itemsByBarcode, onQuantityChange, isMobile }) => {
+    const [isCollapsed, setIsCollapsed] = useState(isMobile);
+
+    const itemsBySize = useMemo(() => itemsInColor.reduce((acc, item) => {
+        acc[item.Size] = item;
+        return acc;
+    }, {}), [itemsInColor]);
+
+    const getColorCardStyle = (colorName) => {
+        const baseStyle: React.CSSProperties = { ...styles.colorCard };
+        if (isMobile) {
+            baseStyle.flex = '1 1 calc(50% - 0.5rem)';
+            baseStyle.minWidth = '120px';
+            baseStyle.width = 'auto';
+        }
+        const upperColor = colorName.toUpperCase();
+        if (upperColor.includes('BLK') || upperColor.includes('BLACK') || upperColor.includes('NAVY')) {
+            baseStyle.backgroundColor = upperColor.includes('NAVY') ? '#2d3748' : '#1A202C';
+            baseStyle.color = '#FFFFFF';
+        } else {
+            baseStyle.backgroundColor = '#FFFFFF';
+            baseStyle.color = '#1A202C';
+            baseStyle.border = '1px solid var(--skeleton-bg)';
+        }
+        return baseStyle;
+    };
+
+    const colorHeaderStyle: React.CSSProperties = isMobile 
+        ? {...styles.colorHeader, cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center'} 
+        : styles.colorHeader;
+
+    return (
+        <div style={getColorCardStyle(color)}>
+            <div style={colorHeaderStyle} onClick={() => isMobile && setIsCollapsed(!isCollapsed)}>
+                <span>{color}</span>
+                {isMobile && <ChevronIcon collapsed={isCollapsed} />}
+            </div>
+            {(!isMobile || !isCollapsed) && (
+                <div style={styles.sizeList}>
+                    {allSizesForStyle.map(size => {
+                        const itemData = itemsBySize[size];
+                        if (itemData) {
+                            const quantity = itemsByBarcode[itemData.Barcode] || '';
+                            return (
+                                <div key={size} style={styles.sizeRow}>
+                                    <label style={styles.sizeLabel}>{size}</label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        style={styles.quantityInput}
+                                        value={quantity}
+                                        onChange={(e) => onQuantityChange(itemData, e.target.value)}
+                                        placeholder="0"
+                                    />
+                                </div>
+                            );
+                        }
+                        return <div key={size} style={{...styles.sizeRow, visibility: 'hidden'}}>...</div>;
+                    })}
+                </div>
+            )}
+        </div>
+    );
+};
+
+const StyleMatrix = ({ style, catalogData, orderItems, onQuantityChange, isMobile }) => {
     const styleData = catalogData[style] || {};
     const colors = Object.keys(styleData).sort();
 
@@ -136,61 +201,21 @@ const StyleMatrix = ({ style, catalogData, orderItems, onQuantityChange }) => {
         }, {});
     }, [orderItems]);
 
-    const getColorCardStyle = (colorName) => {
-        const baseStyle = { ...styles.colorCard };
-        const upperColor = colorName.toUpperCase();
-        if (upperColor.includes('BLK') || upperColor.includes('BLACK') || upperColor.includes('NAVY')) {
-            baseStyle.backgroundColor = upperColor.includes('NAVY') ? '#2d3748' : '#1A202C';
-            baseStyle.color = '#FFFFFF';
-        } else {
-            baseStyle.backgroundColor = '#FFFFFF';
-            baseStyle.color = '#1A202C';
-            baseStyle.border = '1px solid var(--skeleton-bg)';
-        }
-        return baseStyle;
-    };
-
     return (
         <div style={styles.matrixContainer}>
             <h3 style={styles.matrixStyleTitle}>{style}</h3>
-            <div style={styles.matrixScrollContainer}>
-                <div style={styles.matrixGrid}>
-                    {colors.map(color => {
-                        const itemsInColor = styleData[color];
-                        const itemsBySize = itemsInColor.reduce((acc, item) => {
-                            acc[item.Size] = item;
-                            return acc;
-                        }, {});
-
-                        return (
-                            <div key={color} style={getColorCardStyle(color)}>
-                                <div style={styles.colorHeader}>{color}</div>
-                                <div style={styles.sizeList}>
-                                    {allSizesForStyle.map(size => {
-                                        const itemData = itemsBySize[size];
-                                        if (itemData) {
-                                            const quantity = itemsByBarcode[itemData.Barcode] || '';
-                                            return (
-                                                <div key={size} style={styles.sizeRow}>
-                                                    <label style={styles.sizeLabel}>{size}</label>
-                                                    <input
-                                                        type="number"
-                                                        min="0"
-                                                        style={styles.quantityInput}
-                                                        value={quantity}
-                                                        onChange={(e) => onQuantityChange(itemData, e.target.value)}
-                                                        placeholder="0"
-                                                    />
-                                                </div>
-                                            );
-                                        }
-                                        return <div key={size} style={{...styles.sizeRow, visibility: 'hidden'}}>...</div>;
-                                    })}
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
+            <div style={styles.matrixGrid}>
+                {colors.map(color => (
+                    <CollapsibleColorCard
+                        key={color}
+                        color={color}
+                        itemsInColor={styleData[color]}
+                        allSizesForStyle={allSizesForStyle}
+                        itemsByBarcode={itemsByBarcode}
+                        onQuantityChange={onQuantityChange}
+                        isMobile={isMobile}
+                    />
+                ))}
             </div>
         </div>
     );
@@ -443,7 +468,7 @@ export const NewOrderEntry = () => {
                 <div style={styles.mainPanel}>
                     <div style={{...styles.card, gap: 0}}>
                         <div style={styles.cardHeader}>
-                           <h2 style={styles.cardTitleBare}>Order Details</h2>
+                           <h2 style={styles.cardTitleBare}>{partyName ? `Party: ${partyName}` : 'Order Details'}</h2>
                             {isMobile && partyName && (
                                 <button style={styles.collapseButton} onClick={() => setIsOrderDetailsCollapsed(!isOrderDetailsCollapsed)}>
                                     <ChevronIcon collapsed={isOrderDetailsCollapsed} />
@@ -511,6 +536,7 @@ export const NewOrderEntry = () => {
                                 catalogData={catalog.groupedData}
                                 orderItems={items}
                                 onQuantityChange={handleQuantityChange}
+                                isMobile={isMobile}
                             />
                         )}
                     </div>
@@ -552,8 +578,8 @@ export const NewOrderEntry = () => {
 };
 
 const styles: { [key: string]: React.CSSProperties } = {
-    container: { display: 'flex', flexDirection: 'column', gap: '1.5rem', flex: 1, paddingBottom: '80px' },
-    header: { display: 'flex', justifyContent: 'flex-end', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', flexShrink: 0, minHeight: '40px' },
+    container: { display: 'flex', flexDirection: 'column', flex: 1, paddingBottom: '80px' },
+    header: { display: 'flex', justifyContent: 'flex-end', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', flexShrink: 0, marginBottom: '1.5rem' },
     title: { fontSize: '1.75rem', fontWeight: 600, color: 'var(--dark-grey)' },
     actions: { display: 'flex', gap: '0.75rem' },
     button: { padding: '0.6rem 1.2rem', fontSize: '0.9rem', fontWeight: 500, color: '#fff', backgroundColor: 'var(--brand-color)', border: 'none', borderRadius: '8px', cursor: 'pointer', transition: 'background-color 0.3s ease' },
@@ -581,17 +607,10 @@ const styles: { [key: string]: React.CSSProperties } = {
     styleResultItemActive: { backgroundColor: 'var(--brand-color)', color: '#fff', borderColor: 'var(--brand-color)' },
     matrixContainer: { marginTop: '1rem' },
     matrixStyleTitle: { fontSize: '1.5rem', fontWeight: 600, color: 'var(--dark-grey)', textAlign: 'center', marginBottom: '1.5rem' },
-    matrixScrollContainer: {
-        display: 'flex',
-        overflowX: 'auto',
-        paddingBottom: '1rem',
-        msOverflowStyle: 'none',
-        scrollbarWidth: 'none',
-    },
-    matrixGrid: { display: 'flex', flexWrap: 'nowrap', gap: '1rem' },
-    colorCard: { borderRadius: '12px', padding: '1rem', width: '150px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '0.75rem', transition: 'background-color 0.3s, color 0.3s' },
-    colorHeader: { fontWeight: 600, textAlign: 'center', textTransform: 'uppercase', paddingBottom: '0.5rem', borderBottom: '1px solid rgba(100, 100, 100, 0.2)' },
-    sizeList: { display: 'flex', flexDirection: 'column', gap: '0.5rem' },
+    matrixGrid: { display: 'flex', flexWrap: 'wrap', gap: '1rem' },
+    colorCard: { borderRadius: '12px', padding: '1rem', width: '150px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '0.75rem', transition: 'all 0.3s' },
+    colorHeader: { fontWeight: 600, textAlign: 'left', textTransform: 'uppercase', paddingBottom: '0.5rem', borderBottom: '1px solid rgba(100, 100, 100, 0.2)' },
+    sizeList: { display: 'flex', flexDirection: 'column', gap: '0.5rem', paddingTop: '0.5rem' },
     sizeRow: { display: 'grid', gridTemplateColumns: '40px 1fr', alignItems: 'center', gap: '0.5rem' },
     sizeLabel: { fontSize: '0.9rem', fontWeight: 500 },
     quantityInput: { width: '100%', padding: '6px 8px', fontSize: '0.9rem', border: '1px solid var(--skeleton-bg)', borderRadius: '6px', backgroundColor: 'var(--card-bg)', color: 'var(--dark-grey)', textAlign: 'right', outline: 'none' },
