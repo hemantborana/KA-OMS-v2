@@ -6,6 +6,11 @@ import 'firebase/compat/database';
 // --- ICONS ---
 const PlusIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>;
 const CartIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>;
+const ChevronIcon = ({ collapsed }) => (
+    <svg style={{ transform: collapsed ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }} xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="18 15 12 9 6 15"></polyline>
+    </svg>
+);
 
 // --- FIREBASE CONFIGURATION ---
 const firebaseConfig = {
@@ -233,6 +238,7 @@ export const NewOrderEntry = () => {
     // UI State
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 820);
     const [isCartModalOpen, setIsCartModalOpen] = useState(false);
+    const [isOrderDetailsCollapsed, setIsOrderDetailsCollapsed] = useState(false);
 
 
     // --- DATA FETCHING & SYNC ---
@@ -399,28 +405,39 @@ export const NewOrderEntry = () => {
         <div style={styles.container}>
             <div style={styles.header}>
                 <h1 style={styles.title}>New Order Entry</h1>
-                <div style={styles.actions}>
-                    <button style={{ ...styles.button, ...styles.secondaryButton }}>Save Draft</button>
-                    <button style={styles.button}>Submit Order</button>
-                </div>
+                {!isMobile && (
+                    <div style={styles.actions}>
+                        <button style={{ ...styles.button, ...styles.secondaryButton }}>Save Draft</button>
+                        <button style={styles.button}>Submit Order</button>
+                    </div>
+                )}
             </div>
             
             <div style={mainLayoutStyle}>
                 <div style={styles.mainPanel}>
-                    <div style={styles.card}>
-                        <h2 style={styles.cardTitle}>Order Details</h2>
-                        <div style={{...styles.inputGroup, position: 'relative'}} ref={suggestionBoxRef}>
-                            <label htmlFor="partyName" style={styles.label}>Party Name</label>
-                            <input type="text" id="partyName" style={styles.input} value={partyName} onChange={handlePartyNameChange} onFocus={() => partyName && suggestions.length > 0 && setIsSuggestionsVisible(true)} placeholder="Enter or select a customer" autoComplete="off" />
-                             {isSuggestionsVisible && suggestions.length > 0 && (
-                                <ul style={styles.suggestionsList}>
-                                    {suggestions.map((s, i) => (
-                                        <li key={i} style={{...styles.suggestionItem, ...(s.startsWith('Add: ') ? styles.addSuggestionItem : {})}} onClick={() => handleSuggestionClick(s)} onMouseDown={(e) => e.preventDefault()}>
-                                            {s.startsWith('Add: ') ? `+ Add "${s.substring(5)}"` : s}
-                                        </li>
-                                    ))}
-                                </ul>
-                             )}
+                    <div style={{...styles.card, gap: 0}}>
+                        <div style={styles.cardHeader}>
+                           <h2 style={styles.cardTitleBare}>Order Details</h2>
+                            {isMobile && partyName && (
+                                <button style={styles.collapseButton} onClick={() => setIsOrderDetailsCollapsed(!isOrderDetailsCollapsed)}>
+                                    <ChevronIcon collapsed={isOrderDetailsCollapsed} />
+                                </button>
+                            )}
+                        </div>
+                         <div style={{...styles.collapsibleContent, ...(isMobile && isOrderDetailsCollapsed ? styles.collapsibleContentCollapsed : {})}}>
+                            <div style={{...styles.inputGroup, position: 'relative'}} ref={suggestionBoxRef}>
+                                <label htmlFor="partyName" style={styles.label}>Party Name</label>
+                                <input type="text" id="partyName" style={styles.input} value={partyName} onChange={handlePartyNameChange} onFocus={() => partyName && suggestions.length > 0 && setIsSuggestionsVisible(true)} placeholder="Enter or select a customer" autoComplete="off" />
+                                 {isSuggestionsVisible && suggestions.length > 0 && (
+                                    <ul style={styles.suggestionsList}>
+                                        {suggestions.map((s, i) => (
+                                            <li key={i} style={{...styles.suggestionItem, ...(s.startsWith('Add: ') ? styles.addSuggestionItem : {})}} onClick={() => handleSuggestionClick(s)} onMouseDown={(e) => e.preventDefault()}>
+                                                {s.startsWith('Add: ') ? `+ Add "${s.substring(5)}"` : s}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                 )}
+                            </div>
                         </div>
                     </div>
 
@@ -481,10 +498,16 @@ export const NewOrderEntry = () => {
             </div>
 
             {isMobile && (
-                <button style={styles.floatingCartButton} onClick={() => setIsCartModalOpen(true)} aria-label="Open cart">
-                    <CartIcon />
-                    {totalQuantity > 0 && <span style={styles.floatingCartCount}>{totalQuantity}</span>}
-                </button>
+                <div style={styles.stickyActionBar}>
+                    <button style={styles.stickyCartButton} onClick={() => setIsCartModalOpen(true)}>
+                        <CartIcon />
+                        {totalQuantity > 0 && <span style={styles.cartCountBadge}>{totalQuantity}</span>}
+                    </button>
+                    <div style={styles.stickyActionButtons}>
+                        <button style={{ ...styles.button, ...styles.secondaryButton, ...styles.stickyButton }}>Save Draft</button>
+                        <button style={{ ...styles.button, ...styles.stickyButton }}>Submit Order</button>
+                    </div>
+                </div>
             )}
 
             {isMobile && isCartModalOpen && (
@@ -503,7 +526,7 @@ export const NewOrderEntry = () => {
 };
 
 const styles: { [key: string]: React.CSSProperties } = {
-    container: { display: 'flex', flexDirection: 'column', gap: '1.5rem', height: '100%' },
+    container: { display: 'flex', flexDirection: 'column', gap: '1.5rem', height: '100%', paddingBottom: '120px' }, // Add padding to avoid overlap with sticky bar
     header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', flexShrink: 0 },
     title: { fontSize: '1.75rem', fontWeight: 600, color: 'var(--dark-grey)' },
     actions: { display: 'flex', gap: '0.75rem' },
@@ -513,7 +536,12 @@ const styles: { [key: string]: React.CSSProperties } = {
     mainPanel: { display: 'flex', flexDirection: 'column', gap: '1.5rem', minHeight: 0 },
     sidePanel: { minHeight: 0 },
     card: { backgroundColor: 'var(--card-bg)', padding: '1.5rem', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', display: 'flex', flexDirection: 'column', gap: '1rem' },
+    cardHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--skeleton-bg)', paddingBottom: '0.75rem' },
     cardTitle: { fontSize: '1.1rem', fontWeight: 600, color: 'var(--dark-grey)', marginBottom: '0.5rem', borderBottom: '1px solid var(--skeleton-bg)', paddingBottom: '0.75rem', flexGrow: 1 },
+    cardTitleBare: { fontSize: '1.1rem', fontWeight: 600, color: 'var(--dark-grey)' },
+    collapseButton: { background: 'none', border: 'none', cursor: 'pointer', padding: '0.25rem', color: 'var(--text-color)' },
+    collapsibleContent: { maxHeight: '500px', overflow: 'hidden', transition: 'max-height 0.4s ease-out, padding-top 0.4s ease-out, opacity 0.3s ease-out', paddingTop: '1rem', opacity: 1 },
+    collapsibleContentCollapsed: { maxHeight: 0, paddingTop: 0, opacity: 0 },
     inputGroup: { flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem', minWidth: '200px' },
     label: { fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-color)' },
     input: { width: '100%', padding: '0.75rem', fontSize: '0.9rem', border: '1px solid var(--skeleton-bg)', borderRadius: '8px', backgroundColor: '#fff', color: 'var(--dark-grey)', transition: 'border-color 0.3s ease' },
@@ -545,11 +573,14 @@ const styles: { [key: string]: React.CSSProperties } = {
     cartItemSubDetails: { color: 'var(--text-color)', fontSize: '0.8rem' },
     cartItemQuantity: { fontWeight: 500, color: 'var(--dark-grey)' },
     cartItemRemoveBtn: { background: 'none', border: 'none', color: 'var(--text-color)', cursor: 'pointer', fontSize: '1.5rem', padding: '0 0.5rem', lineHeight: 1 },
-    floatingCartButton: { position: 'fixed', bottom: '80px', right: '20px', width: '60px', height: '60px', borderRadius: '50%', backgroundColor: 'var(--brand-color)', color: 'white', display: 'flex', justifyContent: 'center', alignItems: 'center', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.2)', cursor: 'pointer', zIndex: 100 },
-    floatingCartCount: { position: 'absolute', top: '0', right: '0', backgroundColor: '#e74c3c', color: 'white', borderRadius: '50%', width: '22px', height: '22px', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '0.8rem', fontWeight: 600, border: '2px solid var(--brand-color)' },
     modalOverlay: { position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'flex-end', padding: '1rem' },
     modalContent: { backgroundColor: 'var(--card-bg)', width: '100%', maxWidth: '500px', maxHeight: '80vh', borderRadius: 'var(--border-radius)', display: 'flex', flexDirection: 'column', position: 'relative', animation: 'slideUp 0.3s ease-out' },
     modalCloseButton: { position: 'absolute', top: '10px', right: '15px', background: 'none', border: 'none', fontSize: '2rem', color: 'var(--text-color)', cursor: 'pointer', zIndex: 1 },
+    stickyActionBar: { position: 'fixed', bottom: '60px', left: 0, right: 0, backgroundColor: 'var(--card-bg)', padding: '0.75rem 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--skeleton-bg)', boxShadow: '0 -2px 10px rgba(0,0,0,0.05)', zIndex: 90 },
+    stickyCartButton: { background: 'none', border: 'none', cursor: 'pointer', color: 'var(--dark-grey)', display: 'flex', alignItems: 'center', gap: '0.5rem', position: 'relative', padding: '0.5rem' },
+    cartCountBadge: { position: 'absolute', top: '-2px', right: '-5px', backgroundColor: '#e74c3c', color: 'white', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '0.75rem', fontWeight: 600, border: '2px solid var(--card-bg)' },
+    stickyActionButtons: { display: 'flex', gap: '0.75rem' },
+    stickyButton: { padding: '0.5rem 1rem', fontSize: '0.85rem' },
 };
 
 // Add keyframes for modal animation
