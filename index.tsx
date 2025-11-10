@@ -66,13 +66,19 @@ const Header = ({ session, onLogout, onToggleSidebar, appLogoSrc, isMobile }) =>
 };
 
 const Sidebar = ({ activeView, onNavigate, isMobile, isOpen, onClose }) => {
-    const sidebarItems = [
+    const primaryItems = [
+        { id: 'Entry', label: 'New Order Entry' },
+        { id: 'Pending', label: 'Pending Orders' },
+        { id: 'Billing', label: 'Ready for Billing' },
+        { id: 'Billed', label: 'Billed Orders (Archive)' },
+    ];
+    const secondaryItems = [
         { id: 'Stock', label: 'Stock Overview' },
         { id: 'Update', label: 'Stock Updation' },
         { id: 'Deleted', label: 'Deleted Orders' },
         { id: 'Expired', label: 'Expired Orders' },
         { id: 'Users', label: 'User Management' },
-        { id: 'Approval', label: 'Order Approval' },
+        { id: 'Approval', label: 'Order Approval (Admin)' },
     ];
     const sidebarStyle = isMobile ? { ...styles.sidebar, ...styles.sidebarMobile, transform: isOpen ? 'translateX(0)' : 'translateX(-100%)' } : styles.sidebar;
     return (
@@ -80,7 +86,13 @@ const Sidebar = ({ activeView, onNavigate, isMobile, isOpen, onClose }) => {
             {isMobile && isOpen && <div style={styles.overlay} onClick={onClose}></div>}
             <nav style={sidebarStyle}>
                 <div style={styles.sidebarNav}>
-                    {sidebarItems.map(item => (
+                    {primaryItems.map(item => (
+                        <a key={item.id} href="#" onClick={(e) => { e.preventDefault(); onNavigate(item.id); }} style={activeView === item.id ? { ...styles.navItem, ...styles.navItemActive } : styles.navItem}>
+                            <NavIcon name={item.id} /><span style={styles.navLabel}>{item.label}</span>
+                        </a>
+                    ))}
+                    <hr style={styles.sidebarSeparator} />
+                    {secondaryItems.map(item => (
                         <a key={item.id} href="#" onClick={(e) => { e.preventDefault(); onNavigate(item.id); }} style={activeView === item.id ? { ...styles.navItem, ...styles.navItemActive } : styles.navItem}>
                             <NavIcon name={item.id} /><span style={styles.navLabel}>{item.label}</span>
                         </a>
@@ -335,6 +347,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     sidebarMobile: { position: 'fixed', top: 0, left: 0, height: '100%', zIndex: 200 },
     overlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 199 },
     sidebarNav: { display: 'flex', flexDirection: 'column', padding: '1rem 0.5rem' },
+    sidebarSeparator: { margin: '0.75rem 1rem', border: 'none', borderTop: '1px solid var(--skeleton-bg)' },
     navItem: { display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem 1rem', textDecoration: 'none', color: 'var(--text-color)', borderRadius: '8px', marginBottom: '0.25rem', fontWeight: 500 },
     navItemActive: { backgroundColor: 'var(--active-bg)', color: 'var(--brand-color)' },
     navLabel: { fontSize: '0.9rem' },
