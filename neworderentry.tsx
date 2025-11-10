@@ -5,7 +5,6 @@ import 'firebase/compat/database';
 
 // --- ICONS ---
 const PlusIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>;
-const TrashIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>;
 
 // --- FIREBASE CONFIGURATION ---
 const firebaseConfig = {
@@ -40,7 +39,6 @@ const itemDb = {
             request.onupgradeneeded = (event) => {
                 const db = (event.target as IDBOpenDBRequest).result;
                 if (!db.objectStoreNames.contains(ITEMS_STORE)) {
-                    // FIX: Changed keyPath from invalid 'Mat Code' to 'Barcode'
                     db.createObjectStore(ITEMS_STORE, { keyPath: 'Barcode' });
                 }
                 if (!db.objectStoreNames.contains(METADATA_STORE)) {
@@ -56,7 +54,7 @@ const itemDb = {
         return new Promise((resolve, reject) => {
             const transaction = db.transaction([ITEMS_STORE], 'readwrite');
             const store = transaction.objectStore(ITEMS_STORE);
-            store.clear(); // Clear old items
+            store.clear();
             items.forEach(item => store.add(item));
             transaction.oncomplete = () => resolve(true);
             transaction.onerror = (event) => reject((event.target as IDBRequest).error);
@@ -94,22 +92,111 @@ const itemDb = {
     }
 };
 
+const StyleMatrix = ({ style, catalogData, orderItems, onQuantityChange }) => {
+    const styleData = catalogData[style] || {};
+    const colors = Object.keys(styleData).sort();
+
+    // Create a comprehensive, sorted list of all unique sizes for this style
+    const allSizesForStyle = useMemo(() => {
+        const sizeSet = new Set<string>();
+        colors.forEach(color => {
+            styleData[color].forEach(item => sizeSet.add(item.Size));
+        });
+        const sizeOrder = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL'];
+        return Array.from(sizeSet).sort((a, b) => {
+            const aIndex = sizeOrder.indexOf(a);
+            const bIndex = sizeOrder.indexOf(b);
+            if (aIndex === -1 && bIndex === -1) return a.localeCompare(b);
+            if (aIndex === -1) return 1;
+            if (bIndex === -1) return -1;
+            return aIndex - bIndex;
+        });
+    }, [style, catalogData]);
+
+    const itemsByBarcode = useMemo(() => {
+        return orderItems.reduce((acc, item) => {
+            acc[item.fullItemData.Barcode] = item.quantity;
+            return acc;
+        }, {});
+    }, [orderItems]);
+
+    // Helper to get dynamic styles for color cards
+    const getColorCardStyle = (colorName) => {
+        const baseStyle = { ...styles.colorCard };
+        const upperColor = colorName.toUpperCase();
+        if (upperColor.includes('BLK') || upperColor.includes('BLACK') || upperColor.includes('NAVY')) {
+            baseStyle.backgroundColor = upperColor.includes('NAVY') ? '#2d3748' : '#1A202C';
+            baseStyle.color = '#FFFFFF';
+        } else {
+            baseStyle.backgroundColor = '#FFFFFF';
+            baseStyle.color = '#1A202C';
+            baseStyle.border = '1px solid var(--skeleton-bg)';
+        }
+        return baseStyle;
+    };
+
+    return (
+        <div style={styles.matrixContainer}>
+            <h3 style={styles.matrixStyleTitle}>{style}</h3>
+            <div style={styles.matrixGrid}>
+                {colors.map(color => {
+                    const itemsInColor = styleData[color];
+                    const itemsBySize = itemsInColor.reduce((acc, item) => {
+                        acc[item.Size] = item;
+                        return acc;
+                    }, {});
+
+                    return (
+                        <div key={color} style={getColorCardStyle(color)}>
+                            <div style={styles.colorHeader}>{color}</div>
+                            <div style={styles.sizeList}>
+                                {allSizesForStyle.map(size => {
+                                    const itemData = itemsBySize[size];
+                                    if (itemData) {
+                                        const quantity = itemsByBarcode[itemData.Barcode] || '';
+                                        return (
+                                            <div key={size} style={styles.sizeRow}>
+                                                <label style={styles.sizeLabel}>{size}</label>
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    style={styles.quantityInput}
+                                                    value={quantity}
+                                                    onChange={(e) => onQuantityChange(itemData, e.target.value)}
+                                                    placeholder="0"
+                                                />
+                                            </div>
+                                        );
+                                    }
+                                    // Render a placeholder to maintain grid alignment
+                                    return <div key={size} style={{...styles.sizeRow, visibility: 'hidden'}}>...</div>;
+                                })}
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
+};
+
 
 export const NewOrderEntry = () => {
     // --- STATE MANAGEMENT ---
     const [partyName, setPartyName] = useState('');
-    const [items, setItems] = useState([{ id: Date.now(), style: '', color: '', size: '', quantity: 1, price: 0, fullItemData: null }]);
+    const [items, setItems] = useState([]);
     
     // Party Name Suggestions State
     const [allParties, setAllParties] = useState<string[]>([]);
     const [suggestions, setSuggestions] = useState<string[]>([]);
     const [isSuggestionsVisible, setIsSuggestionsVisible] = useState(false);
     const suggestionBoxRef = useRef(null);
-    const [hoveredSuggestionIndex, setHoveredSuggestionIndex] = useState(-1);
 
     // Item Catalog State
     const [isSyncing, setIsSyncing] = useState(true);
     const [catalog, setCatalog] = useState({ styles: [], groupedData: {} });
+    const [selectedStyle, setSelectedStyle] = useState('');
+    const [styleSearchTerm, setStyleSearchTerm] = useState('');
 
     // --- DATA FETCHING & SYNC ---
     useEffect(() => {
@@ -126,54 +213,45 @@ export const NewOrderEntry = () => {
 
     useEffect(() => {
         const metadataRef = database.ref('itemData/metadata');
-
         const syncCheck = (snapshot) => {
-            // FIX: Cast Firebase snapshot value to access its properties without type errors.
             const remoteMeta = snapshot.val() as { uploadDate: string; manualSync: string; };
             if (!remoteMeta) {
                 console.error("Firebase item metadata not found!");
                 setIsSyncing(false);
-                loadItemsFromDb(); // Try to load from cache anyway
+                loadItemsFromDb();
                 return;
             }
-
             itemDb.getMetadata().then(localMeta => {
                 const needsSync = !localMeta || remoteMeta.uploadDate !== (localMeta as any).uploadDate || remoteMeta.manualSync === 'Y';
-                
                 if (needsSync) {
-                    console.log("Sync required. Fetching new item data from Firebase...");
                     setIsSyncing(true);
                     database.ref('itemData/items').once('value').then(itemSnapshot => {
-                        const items = itemSnapshot.val();
-                        if (items && Array.isArray(items)) {
-                            itemDb.clearAndAddItems(items).then(() => {
+                        const itemsData = itemSnapshot.val();
+                        if (itemsData && Array.isArray(itemsData)) {
+                            itemDb.clearAndAddItems(itemsData).then(() => {
                                 itemDb.setMetadata({ uploadDate: remoteMeta.uploadDate }).then(() => {
-                                    console.log("Sync complete. Local DB updated.");
-                                    loadItemsFromDb(); // Load fresh data
+                                    loadItemsFromDb();
                                     if (remoteMeta.manualSync === 'Y') {
-                                        metadataRef.update({ manualSync: 'N' }); // Reset flag
+                                        metadataRef.update({ manualSync: 'N' });
                                     }
                                 });
                             });
                         }
                     }).finally(() => setIsSyncing(false));
                 } else {
-                    console.log("No sync needed. Loading from local DB.");
                     loadItemsFromDb();
                     setIsSyncing(false);
                 }
             });
         };
-
         metadataRef.on('value', syncCheck);
         return () => metadataRef.off('value', syncCheck);
     }, []);
 
     const loadItemsFromDb = async () => {
-        // FIX: Cast the result of getAllItems to an array to use array methods like .length and .reduce.
         const dbItems = await itemDb.getAllItems() as any[];
         if (dbItems && dbItems.length > 0) {
-            const grouped = dbItems.reduce((acc: any, item: any) => {
+            const grouped = dbItems.reduce((acc, item) => {
                 const { Style, Color } = item;
                 if (!Style || !Color) return acc;
                 if (!acc[Style]) acc[Style] = {};
@@ -220,48 +298,53 @@ export const NewOrderEntry = () => {
         setIsSuggestionsVisible(false);
     };
 
-    const handleItemChange = (id, field, value) => {
-        setItems(items.map(item => {
-            if (item.id === id) {
-                const updatedItem = { ...item, [field]: value };
-                if (field === 'style') { // Reset dependent fields
-                    updatedItem.color = '';
-                    updatedItem.size = '';
-                    updatedItem.price = 0;
-                    updatedItem.fullItemData = null;
-                }
-                if (field === 'color') { // Reset size and price
-                    updatedItem.size = '';
-                    updatedItem.price = 0;
-                    updatedItem.fullItemData = null;
-                }
-                if (field === 'size') {
-                    const fullItem = (catalog.groupedData as any)[item.style]?.[item.color]?.find(i => i.Size === value);
-                    if (fullItem) {
-                        updatedItem.fullItemData = fullItem;
-                        updatedItem.price = parseFloat(String(fullItem.MRP).replace(/[^0-9.-]+/g, "")) || 0;
-                    }
-                }
-                return updatedItem;
-            }
-            return item;
-        }));
-    };
-
-    const handleAddItem = () => {
-        setItems([...items, { id: Date.now(), style: '', color: '', size: '', quantity: 1, price: 0, fullItemData: null }]);
-    };
-
-    const handleRemoveItem = (id) => {
-        setItems(items.filter(item => item.id !== id));
-    };
+    const handleQuantityChange = (fullItemData, quantityStr) => {
+        const quantity = parseInt(quantityStr, 10) || 0;
+        const barcode = fullItemData.Barcode;
     
+        setItems(currentItems => {
+            const existingItemIndex = currentItems.findIndex(item => item.fullItemData.Barcode === barcode);
+    
+            if (quantity > 0) {
+                if (existingItemIndex > -1) {
+                    // Update quantity if item exists
+                    const newItems = [...currentItems];
+                    newItems[existingItemIndex] = { ...newItems[existingItemIndex], quantity: quantity };
+                    return newItems;
+                } else {
+                    // Add new item if it doesn't exist
+                    const price = parseFloat(String(fullItemData.MRP).replace(/[^0-9.-]+/g, "")) || 0;
+                    const newItem = {
+                        id: barcode, // Use barcode as a stable ID
+                        quantity: quantity,
+                        price: price,
+                        fullItemData: fullItemData,
+                    };
+                    return [...currentItems, newItem];
+                }
+            } else {
+                // Remove item if quantity is 0 or less
+                if (existingItemIndex > -1) {
+                    return currentItems.filter(item => item.fullItemData.Barcode !== barcode);
+                }
+            }
+            return currentItems; // No change
+        });
+    };
+
     const { subtotal, gst, grandTotal } = useMemo(() => {
         const subtotal = items.reduce((acc, item) => acc + (item.quantity * item.price), 0);
         const gst = subtotal * 0.18;
         const grandTotal = subtotal + gst;
         return { subtotal, gst, grandTotal };
     }, [items]);
+
+    const filteredStyles = useMemo(() => {
+        if (!styleSearchTerm) return catalog.styles;
+        return catalog.styles.filter(style =>
+            style.toLowerCase().includes(styleSearchTerm.toLowerCase())
+        );
+    }, [styleSearchTerm, catalog.styles]);
 
     // --- RENDER ---
     return (
@@ -283,7 +366,7 @@ export const NewOrderEntry = () => {
                          {isSuggestionsVisible && suggestions.length > 0 && (
                             <ul style={styles.suggestionsList}>
                                 {suggestions.map((s, i) => (
-                                    <li key={i} style={{...styles.suggestionItem, ...(s.startsWith('Add: ') ? styles.addSuggestionItem : {}), ...(hoveredSuggestionIndex === i ? styles.suggestionItemHover : {})}} onClick={() => handleSuggestionClick(s)} onMouseDown={(e) => e.preventDefault()} onMouseEnter={() => setHoveredSuggestionIndex(i)} onMouseLeave={() => setHoveredSuggestionIndex(-1)}>
+                                    <li key={i} style={{...styles.suggestionItem, ...(s.startsWith('Add: ') ? styles.addSuggestionItem : {})}} onClick={() => handleSuggestionClick(s)} onMouseDown={(e) => e.preventDefault()}>
                                         {s.startsWith('Add: ') ? `+ Add "${s.substring(5)}"` : s}
                                     </li>
                                 ))}
@@ -293,51 +376,43 @@ export const NewOrderEntry = () => {
                 </div>
 
                 <div style={{ ...styles.card, gridColumn: '1 / -1' }}>
-                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem'}}>
                       <h2 style={styles.cardTitle}>Order Items</h2>
                       {isSyncing && <div style={styles.syncingText}>Syncing item catalog...</div>}
                     </div>
-                    <div style={styles.itemTable}>
-                        <div style={styles.itemHeader}>
-                            <div style={{...styles.itemCell, flex: 3}}>Style</div>
-                            <div style={{...styles.itemCell, flex: 2}}>Color</div>
-                            <div style={{...styles.itemCell, flex: 1}}>Size</div>
-                            <div style={{...styles.itemCell, flex: 1, textAlign: 'right'}}>Qty</div>
-                            <div style={{...styles.itemCell, flex: 1, textAlign: 'right'}}>Price</div>
-                            <div style={{...styles.itemCell, flex: 1, textAlign: 'right'}}>Total</div>
-                            <div style={{...styles.itemCell, flex: '0 0 40px'}}></div>
-                        </div>
-                        {items.map((item) => {
-                            const availableColors = item.style ? Object.keys((catalog.groupedData as any)[item.style] || {}).sort() : [];
-                            const availableSizes = item.color ? ((catalog.groupedData as any)[item.style]?.[item.color] || []).map(i => i.Size).sort() : [];
-
-                            return (
-                            <div key={item.id} style={styles.itemRow}>
-                                <div style={{...styles.itemCell, flex: 3}}>
-                                    <select style={styles.tableInput} value={item.style} onChange={e => handleItemChange(item.id, 'style', e.target.value)} disabled={isSyncing}><option value="">Select Style</option>{catalog.styles.map(s => <option key={s} value={s}>{s}</option>)}</select>
-                                </div>
-                                <div style={{...styles.itemCell, flex: 2}}>
-                                    <select style={styles.tableInput} value={item.color} onChange={e => handleItemChange(item.id, 'color', e.target.value)} disabled={!item.style}><option value="">Select Color</option>{availableColors.map(c => <option key={c} value={c}>{c}</option>)}</select>
-                                </div>
-                                <div style={{...styles.itemCell, flex: 1}}>
-                                    <select style={styles.tableInput} value={item.size} onChange={e => handleItemChange(item.id, 'size', e.target.value)} disabled={!item.color}><option value="">Select Size</option>{availableSizes.map(s => <option key={s} value={s}>{s}</option>)}</select>
-                                </div>
-                                <div style={{...styles.itemCell, flex: 1, textAlign: 'right'}}>
-                                    <input type="number" style={{...styles.tableInput, textAlign: 'right'}} min="1" value={item.quantity} onChange={e => handleItemChange(item.id, 'quantity', parseInt(e.target.value) || 1)} />
-                                </div>
-                                <div style={{...styles.itemCell, flex: 1, textAlign: 'right'}}>
-                                    <input type="number" style={{...styles.tableInput, textAlign: 'right'}} value={item.price} readOnly />
-                                </div>
-                                <div style={{...styles.itemCell, flex: 1, textAlign: 'right', padding: '8px', fontWeight: 500}}>
-                                    {(item.quantity * item.price).toFixed(2)}
-                                </div>
-                                <div style={{...styles.itemCell, flex: '0 0 40px', justifyContent: 'center'}}>
-                                    {items.length > 1 && <button onClick={() => handleRemoveItem(item.id)} style={styles.deleteButton}><TrashIcon /></button>}
-                                </div>
-                            </div>
-                        )})}
+                    
+                    <div style={styles.styleSelectorContainer}>
+                         <label htmlFor="styleSearch" style={styles.label}>Search Style</label>
+                         <input
+                             type="text"
+                             id="styleSearch"
+                             style={styles.input}
+                             placeholder="Type to search for a style..."
+                             value={styleSearchTerm}
+                             onChange={e => setStyleSearchTerm(e.target.value)}
+                             disabled={isSyncing}
+                         />
+                         <div style={styles.styleResultsContainer}>
+                             {filteredStyles.slice(0, 100).map(style => ( // Limit rendered styles for performance
+                                 <button
+                                     key={style}
+                                     style={selectedStyle === style ? {...styles.styleResultItem, ...styles.styleResultItemActive} : styles.styleResultItem}
+                                     onClick={() => setSelectedStyle(style)}
+                                 >
+                                     {style}
+                                 </button>
+                             ))}
+                         </div>
                     </div>
-                    <button onClick={handleAddItem} style={styles.addButton} disabled={isSyncing}><PlusIcon /> Add Item</button>
+
+                    {selectedStyle && (
+                        <StyleMatrix 
+                            style={selectedStyle} 
+                            catalogData={catalog.groupedData}
+                            orderItems={items}
+                            onQuantityChange={handleQuantityChange}
+                        />
+                    )}
                 </div>
 
                 <div style={styles.card}>
@@ -366,19 +441,24 @@ const styles: { [key: string]: React.CSSProperties } = {
     inputGroup: { flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem', minWidth: '200px' },
     label: { fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-color)' },
     input: { width: '100%', padding: '0.75rem', fontSize: '0.9rem', border: '1px solid var(--skeleton-bg)', borderRadius: '8px', backgroundColor: '#fff', color: 'var(--dark-grey)', transition: 'border-color 0.3s ease' },
-    tableInput: { width: '100%', padding: '8px', fontSize: '0.9rem', border: '1px solid var(--skeleton-bg)', borderRadius: '6px', backgroundColor: 'var(--light-grey)', color: 'var(--dark-grey)', outline: 'none', WebkitAppearance: 'none', appearance: 'none', background: 'var(--light-grey) url(\'data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%236A7280%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22/%3E%3C/svg%3E\') no-repeat right .7em top 50%', backgroundSize: '.65em auto' },
-    itemTable: { display: 'flex', flexDirection: 'column' },
-    itemHeader: { display: 'flex', padding: '0 8px', borderBottom: '1px solid var(--skeleton-bg)', marginBottom: '0.5rem', color: 'var(--text-color)', fontWeight: 500, fontSize: '0.8rem', textTransform: 'uppercase' },
-    itemRow: { display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' },
-    itemCell: { padding: '4px', display: 'flex', alignItems: 'center' },
-    deleteButton: { background: 'none', border: 'none', color: '#e74c3c', cursor: 'pointer', padding: '0.5rem', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' },
-    addButton: { alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem', background: 'none', border: '1px solid var(--brand-color)', color: 'var(--brand-color)', padding: '0.5rem 1rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 500 },
     summary: { display: 'flex', flexDirection: 'column', gap: '0.75rem' },
     summaryRow: { display: 'flex', justifyContent: 'space-between', color: 'var(--text-color)', fontSize: '0.9rem' },
     summaryTotal: { fontWeight: 600, color: 'var(--dark-grey)', fontSize: '1.1rem', marginTop: '0.5rem', paddingTop: '0.75rem', borderTop: '1px solid var(--skeleton-bg)' },
     suggestionsList: { listStyle: 'none', margin: '0.25rem 0 0', padding: '0.5rem 0', position: 'absolute', top: '100%', left: 0, right: 0, backgroundColor: 'var(--card-bg)', border: '1px solid var(--skeleton-bg)', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)', maxHeight: '200px', overflowY: 'auto', zIndex: 10, },
     suggestionItem: { padding: '0.75rem 1rem', cursor: 'pointer', fontSize: '0.9rem', color: 'var(--text-color)', },
-    suggestionItemHover: { backgroundColor: 'var(--active-bg)', },
     addSuggestionItem: { color: 'var(--brand-color)', fontWeight: 500, },
-    syncingText: { fontSize: '0.85rem', color: 'var(--brand-color)', fontWeight: 500, paddingBottom: '0.75rem' }
+    syncingText: { fontSize: '0.85rem', color: 'var(--brand-color)', fontWeight: 500, paddingBottom: '0.75rem' },
+    styleSelectorContainer: { marginBottom: '1.5rem' },
+    styleResultsContainer: { display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '1rem', maxHeight: '160px', overflowY: 'auto', padding: '0.5rem', border: '1px solid var(--skeleton-bg)', borderRadius: '8px' },
+    styleResultItem: { padding: '0.5rem 1rem', backgroundColor: 'var(--light-grey)', color: 'var(--text-color)', border: '1px solid var(--skeleton-bg)', borderRadius: '20px', cursor: 'pointer', transition: 'all 0.2s ease', fontSize: '0.85rem', fontWeight: 500, },
+    styleResultItemActive: { backgroundColor: 'var(--brand-color)', color: '#fff', borderColor: 'var(--brand-color)' },
+    matrixContainer: { marginTop: '1rem' },
+    matrixStyleTitle: { fontSize: '1.5rem', fontWeight: 600, color: 'var(--dark-grey)', textAlign: 'center', marginBottom: '1.5rem' },
+    matrixGrid: { display: 'flex', flexWrap: 'wrap', gap: '1rem', justifyContent: 'center' },
+    colorCard: { borderRadius: '12px', padding: '1rem', width: '150px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '0.75rem', transition: 'background-color 0.3s, color 0.3s' },
+    colorHeader: { fontWeight: 600, textAlign: 'center', textTransform: 'uppercase', paddingBottom: '0.5rem', borderBottom: '1px solid rgba(100, 100, 100, 0.2)' },
+    sizeList: { display: 'flex', flexDirection: 'column', gap: '0.5rem' },
+    sizeRow: { display: 'grid', gridTemplateColumns: '40px 1fr', alignItems: 'center', gap: '0.5rem' },
+    sizeLabel: { fontSize: '0.9rem', fontWeight: 500 },
+    quantityInput: { width: '100%', padding: '6px 8px', fontSize: '0.9rem', border: '1px solid var(--skeleton-bg)', borderRadius: '6px', backgroundColor: 'var(--card-bg)', color: 'var(--dark-grey)', textAlign: 'right', outline: 'none' },
 };
