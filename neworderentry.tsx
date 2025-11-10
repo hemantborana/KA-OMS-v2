@@ -240,7 +240,7 @@ export const NewOrderEntry = () => {
     // UI State
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
     const [isCartModalOpen, setIsCartModalOpen] = useState(false);
-    const [isOrderDetailsCollapsed, setIsOrderDetailsCollapsed] = useState(window.innerWidth <= 768);
+    const [isOrderDetailsCollapsed, setIsOrderDetailsCollapsed] = useState(false);
 
 
     // --- DATA FETCHING & SYNC ---
@@ -350,6 +350,9 @@ export const NewOrderEntry = () => {
             setPartyName(newParty);
         } else { setPartyName(suggestion); }
         setIsSuggestionsVisible(false);
+        if (isMobile) {
+            setIsOrderDetailsCollapsed(true);
+        }
     };
 
     const handleQuantityChange = (fullItemData, quantityStr) => {
