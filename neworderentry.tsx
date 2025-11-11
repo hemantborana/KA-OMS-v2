@@ -387,7 +387,7 @@ const StyleMatrix = ({ style, catalogData, orderItems, onQuantityChange, isMobil
     const matrixStyleTitleStyle = isMobile ? { ...styles.matrixStyleTitle, marginBottom: '0.25rem' } : styles.matrixStyleTitle;
     const matrixGridStyle = isMobile
         ? { ...styles.matrixGrid, gap: '0.5rem' }
-        : styles.matrixGrid;
+        : { ...styles.matrixGrid, justifyContent: 'flex-start' };
 
     return (
         <div style={styles.matrixContainer}>
@@ -452,7 +452,7 @@ const CartDetailModal = ({ group, items, onClose, onQuantityChange }) => {
                         </div>
                     ))}
                 </div>
-                <div style={{...styles.cartFooter, borderTop: 'none', padding: '1rem 1.5rem'}}>
+                <div style={{...styles.cartFooter, borderTop: 'none', padding: '1rem 1.25rem'}}>
                     <button onClick={onClose} style={{...styles.button, width: '100%'}}>Done</button>
                 </div>
             </div>
@@ -1011,15 +1011,15 @@ export const NewOrderEntry = () => {
 
 const styles: { [key: string]: React.CSSProperties } = {
     container: { display: 'flex', flexDirection: 'column', flex: 1 },
-    header: { display: 'flex', justifyContent: 'flex-end', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', flexShrink: 0, marginBottom: '1.5rem' },
+    header: { display: 'flex', justifyContent: 'flex-end', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', flexShrink: 0, marginBottom: '1rem' },
     title: { fontSize: '1.75rem', fontWeight: 600, color: 'var(--dark-grey)' },
     actions: { display: 'flex', gap: '0.75rem' },
     button: { padding: '0.6rem 1.2rem', fontSize: '0.9rem', fontWeight: 500, color: '#fff', backgroundColor: 'var(--brand-color)', border: 'none', borderRadius: '8px', cursor: 'pointer', transition: 'background-color 0.3s ease' },
     secondaryButton: { backgroundColor: 'var(--light-grey)', color: 'var(--dark-grey)', border: '1px solid var(--skeleton-bg)' },
-    mainLayout: { display: 'grid', gridTemplateColumns: '1fr 380px', gap: '1.5rem', flex: 1, minHeight: 0 },
+    mainLayout: { display: 'grid', gridTemplateColumns: '1fr 380px', gap: '1rem', flex: 1, minHeight: 0 },
     mainPanel: { display: 'flex', flexDirection: 'column', gap: '1.5rem', minHeight: 0 },
     sidePanel: { minHeight: 0 },
-    card: { backgroundColor: 'var(--card-bg)', padding: '1.5rem', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', display: 'flex', flexDirection: 'column', gap: '1rem' },
+    card: { backgroundColor: 'var(--card-bg)', padding: '1.25rem', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', display: 'flex', flexDirection: 'column', gap: '1rem' },
     cardHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--skeleton-bg)', paddingBottom: '0.75rem' },
     cardTitle: { fontSize: '1.1rem', fontWeight: 600, color: 'var(--dark-grey)', marginBottom: '0.5rem', borderBottom: '1px solid var(--skeleton-bg)', paddingBottom: '0.75rem', flexGrow: 1 },
     cardTitleBare: { fontSize: '1.1rem', fontWeight: 600, color: 'var(--dark-grey)' },
@@ -1054,11 +1054,11 @@ const styles: { [key: string]: React.CSSProperties } = {
     quantityControl: { display: 'flex', alignItems: 'center', justifyContent: 'flex-end', },
     quantityButton: { backgroundColor: 'var(--light-grey)', border: '1px solid var(--skeleton-bg)', color: 'var(--dark-grey)', width: '32px', height: '32px', fontSize: '1.2rem', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background-color 0.2s', lineHeight: 1, },
     cartContainer: { backgroundColor: 'var(--card-bg)', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', display: 'flex', flexDirection: 'column', height: '100%' },
-    cartHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.5rem 1.5rem 1rem', borderBottom: '1px solid var(--skeleton-bg)', flexShrink: 0 },
+    cartHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.25rem 1.25rem 1rem', borderBottom: '1px solid var(--skeleton-bg)', flexShrink: 0 },
     cartHeaderActions: { display: 'flex', alignItems: 'center', gap: '0.5rem' },
     clearCartButton: { background: 'none', border: 'none', color: 'var(--text-color)', fontSize: '0.85rem', fontWeight: 500, cursor: 'pointer' },
-    cartEmptyText: { textAlign: 'center', color: 'var(--text-color)', padding: '3rem 1.5rem', flex: 1 },
-    cartItemsList: { flex: 1, overflowY: 'auto', padding: '0.5rem 1.5rem' },
+    cartEmptyText: { textAlign: 'center', color: 'var(--text-color)', padding: '3rem 1.25rem', flex: 1 },
+    cartItemsList: { flex: 1, overflowY: 'auto', padding: '0.5rem 1.25rem' },
     cartItem: { display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem 0', borderBottom: '1px solid var(--skeleton-bg)' },
     cartGroupItem: { display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem 0', borderBottom: '1px solid var(--skeleton-bg)', width: '100%', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' },
     cartItemInfo: { flex: 1 },
@@ -1066,7 +1066,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     cartItemSubDetails: { color: 'var(--text-color)', fontSize: '0.8rem' },
     cartItemActions: { display: 'flex', alignItems: 'center', gap: '0.5rem' },
     cartItemRemoveBtn: { background: 'none', border: 'none', color: 'var(--text-color)', cursor: 'pointer', padding: '0.5rem', lineHeight: 1 },
-    cartFooter: { borderTop: '1px solid var(--skeleton-bg)', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', flexShrink: 0 },
+    cartFooter: { borderTop: '1px solid var(--skeleton-bg)', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', flexShrink: 0 },
     cartSummary: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
     summaryLabel: { fontSize: '0.85rem', color: 'var(--text-color)', marginBottom: '0.25rem' },
     summaryValue: { fontSize: '1.1rem', fontWeight: 600, color: 'var(--dark-grey)' },
