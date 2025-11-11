@@ -1,3 +1,5 @@
+
+
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 // FIX: Switched to Firebase v8 compat imports to resolve module export errors.
 import firebase from 'firebase/compat/app';
@@ -132,15 +134,19 @@ const CollapsibleColorCard: React.FC<{ color: any, itemsInColor: any, allSizesFo
         onQuantityChange(item, String(newValue));
     };
 
-    const getColorCardStyle = (colorName) => {
+    const upperColor = color.toUpperCase();
+    const isDark = upperColor.includes('BLK') || upperColor.includes('BLACK') || upperColor.includes('NAVY');
+
+    const getColorCardStyle = () => {
         const baseStyle: React.CSSProperties = { ...styles.colorCard };
         if (isMobile) {
-            baseStyle.flex = '1 1 calc(50% - 0.5rem)';
-            baseStyle.minWidth = '120px';
-            baseStyle.width = 'auto';
+            baseStyle.flex = '1 1 100%';
+            baseStyle.width = '100%';
+        } else {
+             baseStyle.width = '150px';
+             baseStyle.flexShrink = 0;
         }
-        const upperColor = colorName.toUpperCase();
-        if (upperColor.includes('BLK') || upperColor.includes('BLACK') || upperColor.includes('NAVY')) {
+        if (isDark) {
             baseStyle.backgroundColor = upperColor.includes('NAVY') ? '#2d3748' : '#1A202C';
             baseStyle.color = '#FFFFFF';
         } else {
@@ -154,9 +160,15 @@ const CollapsibleColorCard: React.FC<{ color: any, itemsInColor: any, allSizesFo
     const colorHeaderStyle: React.CSSProperties = isMobile 
         ? {...styles.colorHeader, cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center'} 
         : styles.colorHeader;
+        
+    const themedStyles = {
+        quantityInput: isDark ? { ...styles.quantityInput, backgroundColor: '#2D3748', color: '#FFFFFF', borderTop: '1px solid #4A5568', borderBottom: '1px solid #4A5568' } : styles.quantityInput,
+        quantityButton: isDark ? { ...styles.quantityButton, backgroundColor: '#4A5568', color: '#FFFFFF', border: '1px solid #4A5568' } : styles.quantityButton,
+        mrpText: isDark ? { ...styles.mrpText, color: '#A0AEC0' } : styles.mrpText,
+    };
 
     return (
-        <div style={getColorCardStyle(color)}>
+        <div style={getColorCardStyle()}>
             <div style={colorHeaderStyle} onClick={() => isMobile && setIsCollapsed(!isCollapsed)}>
                 <span>{color}</span>
                 {isMobile && <ChevronIcon collapsed={isCollapsed} />}
@@ -172,24 +184,24 @@ const CollapsibleColorCard: React.FC<{ color: any, itemsInColor: any, allSizesFo
                                 <div key={size} style={styles.sizeRow}>
                                     <div>
                                         <label style={styles.sizeLabel}>{size}</label>
-                                        {formattedMrp && <div style={styles.mrpText}>{formattedMrp}</div>}
+                                        {formattedMrp && <div style={themedStyles.mrpText}>{formattedMrp}</div>}
                                     </div>
                                     <div style={styles.quantityControl}>
                                         <button 
-                                            style={{...styles.quantityButton, borderRadius: '6px 0 0 6px'}} 
+                                            style={{...themedStyles.quantityButton, borderRadius: '6px 0 0 6px'}} 
                                             onClick={() => handleQuantityStep(itemData, quantity, -1)}
                                             aria-label="Decrease quantity"
                                         >-</button>
                                         <input
                                             type="number"
                                             min="0"
-                                            style={styles.quantityInput}
+                                            style={themedStyles.quantityInput}
                                             value={quantity}
                                             onChange={(e) => onQuantityChange(itemData, e.target.value)}
                                             placeholder="0"
                                         />
                                         <button 
-                                            style={{...styles.quantityButton, borderRadius: '0 6px 6px 0'}} 
+                                            style={{...themedStyles.quantityButton, borderRadius: '0 6px 6px 0'}} 
                                             onClick={() => handleQuantityStep(itemData, quantity, 1)}
                                             aria-label="Increase quantity"
                                         >+</button>
@@ -215,7 +227,21 @@ const StyleMatrix = ({ style, catalogData, orderItems, onQuantityChange, isMobil
             styleData[color].forEach(item => sizeSet.add(item.Size));
         });
         const sizeOrder = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL'];
+        const braSizeRegex = /(\d+)([A-Z]+)/;
+
         return Array.from(sizeSet).sort((a, b) => {
+            const aMatch = a.match(braSizeRegex);
+            const bMatch = b.match(braSizeRegex);
+            
+            if (aMatch && bMatch) {
+                const [, aBand, aCup] = aMatch;
+                const [, bBand, bCup] = bMatch;
+                if (aBand !== bBand) {
+                    return parseInt(aBand) - parseInt(bBand);
+                }
+                return aCup.localeCompare(bCup);
+            }
+
             const aIndex = sizeOrder.indexOf(a);
             const bIndex = sizeOrder.indexOf(b);
             if (aIndex === -1 && bIndex === -1) return a.localeCompare(b);
@@ -224,6 +250,7 @@ const StyleMatrix = ({ style, catalogData, orderItems, onQuantityChange, isMobil
             return aIndex - bIndex;
         });
     }, [style, catalogData]);
+
 
     const itemsByBarcode = useMemo(() => {
         return orderItems.reduce((acc, item) => {
@@ -487,18 +514,16 @@ export const NewOrderEntry = () => {
     const mainLayoutStyle = isMobile ? { ...styles.mainLayout, gridTemplateColumns: '1fr' } : styles.mainLayout;
     
     const containerStyle = isMobile 
-        ? { ...styles.container, margin: '-0.25rem', padding: '0.25rem', paddingBottom: '80px' } 
-        : styles.container;
+        ? { ...styles.container, padding: '0.5rem', paddingBottom: '80px' } 
+        : { ...styles.container, padding: '1.5rem' };
         
     const headerStyle = isMobile ? { ...styles.header, marginBottom: '0.5rem' } : styles.header;
-    const mainPanelStyle = isMobile ? { ...styles.mainPanel, gap: '0.5rem' } : styles.mainPanel;
+    const mainPanelStyle = isMobile ? { ...styles.mainPanel, gap: '1rem' } : styles.mainPanel;
 
-    const orderDetailsCardStyle = isMobile 
-        ? { ...styles.card, padding: '1rem', gap: 0 } 
-        : { ...styles.card, gap: 0 };
+    const orderDetailsCardStyle = { ...styles.card, gap: 0 };
 
     const searchItemCardStyle = isMobile
-        ? { ...styles.card, flex: 1, padding: '1rem', gap: '0.5rem' }
+        ? { ...styles.card, flex: 1, padding: '1rem', gap: '1rem' }
         : { ...styles.card, flex: 1 };
         
     return (
@@ -514,36 +539,61 @@ export const NewOrderEntry = () => {
             
             <div style={mainLayoutStyle}>
                 <div style={mainPanelStyle}>
-                    <div style={orderDetailsCardStyle}>
-                        <div style={styles.cardHeader}>
-                           <h2 style={styles.cardTitleBare}>{partyName ? `Party: ${partyName}` : 'Order Details'}</h2>
-                            {isMobile && partyName && (
-                                <button style={styles.collapseButton} onClick={() => setIsOrderDetailsCollapsed(!isOrderDetailsCollapsed)}>
-                                    <ChevronIcon collapsed={isOrderDetailsCollapsed} />
-                                </button>
-                            )}
-                        </div>
-                         <div style={{...styles.collapsibleContent, ...(isMobile && isOrderDetailsCollapsed ? styles.collapsibleContentCollapsed : {})}}>
-                            <div style={{...styles.inputGroup, position: 'relative'}} ref={suggestionBoxRef}>
-                                <label htmlFor="partyName" style={styles.label}>Party Name</label>
-                                <input type="text" id="partyName" style={styles.input} value={partyName} onChange={handlePartyNameChange} onFocus={() => partyName && suggestions.length > 0 && setIsSuggestionsVisible(true)} placeholder="Enter or select a customer" autoComplete="off" />
-                                 {isSuggestionsVisible && suggestions.length > 0 && (
-                                    <ul style={styles.suggestionsList}>
-                                        {suggestions.map((s, i) => (
-                                            <li key={i} style={{...styles.suggestionItem, ...(s.startsWith('Add: ') ? styles.addSuggestionItem : {})}} onClick={() => handleSuggestionClick(s)} onMouseDown={(e) => e.preventDefault()}>
-                                                {s.startsWith('Add: ') ? `+ Add "${s.substring(5)}"` : s}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                 )}
+                    {!isMobile && (
+                        <div style={orderDetailsCardStyle}>
+                            <div style={styles.cardHeader}>
+                               <h2 style={styles.cardTitleBare}>Order Details</h2>
+                            </div>
+                             <div style={styles.collapsibleContent}>
+                                <div style={{...styles.inputGroup, position: 'relative'}} ref={suggestionBoxRef}>
+                                    <label htmlFor="partyName" style={styles.label}>Party Name</label>
+                                    <input type="text" id="partyName" style={styles.input} value={partyName} onChange={handlePartyNameChange} onFocus={() => partyName && suggestions.length > 0 && setIsSuggestionsVisible(true)} placeholder="Enter or select a customer" autoComplete="off" />
+                                     {isSuggestionsVisible && suggestions.length > 0 && (
+                                        <ul style={styles.suggestionsList}>
+                                            {suggestions.map((s, i) => (
+                                                <li key={i} style={{...styles.suggestionItem, ...(s.startsWith('Add: ') ? styles.addSuggestionItem : {})}} onClick={() => handleSuggestionClick(s)} onMouseDown={(e) => e.preventDefault()}>
+                                                    {s.startsWith('Add: ') ? `+ Add "${s.substring(5)}"` : s}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                     )}
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    )}
 
                     <div style={searchItemCardStyle}>
+                         {isMobile && (
+                            <>
+                                <div style={styles.cardHeader}>
+                                   <h2 style={styles.cardTitleBare}>{partyName ? `Party: ${partyName}` : 'Order Details'}</h2>
+                                    {partyName && (
+                                        <button style={styles.collapseButton} onClick={() => setIsOrderDetailsCollapsed(!isOrderDetailsCollapsed)}>
+                                            <ChevronIcon collapsed={isOrderDetailsCollapsed} />
+                                        </button>
+                                    )}
+                                </div>
+                                 <div style={{...styles.collapsibleContent, ...(isOrderDetailsCollapsed ? styles.collapsibleContentCollapsed : {})}}>
+                                    <div style={{...styles.inputGroup, position: 'relative'}} ref={suggestionBoxRef}>
+                                        <label htmlFor="partyName" style={styles.label}>Party Name</label>
+                                        <input type="text" id="partyName" style={styles.input} value={partyName} onChange={handlePartyNameChange} onFocus={() => partyName && suggestions.length > 0 && setIsSuggestionsVisible(true)} placeholder="Enter or select a customer" autoComplete="off" />
+                                         {isSuggestionsVisible && suggestions.length > 0 && (
+                                            <ul style={styles.suggestionsList}>
+                                                {suggestions.map((s, i) => (
+                                                    <li key={i} style={{...styles.suggestionItem, ...(s.startsWith('Add: ') ? styles.addSuggestionItem : {})}} onClick={() => handleSuggestionClick(s)} onMouseDown={(e) => e.preventDefault()}>
+                                                        {s.startsWith('Add: ') ? `+ Add "${s.substring(5)}"` : s}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                         )}
+                                    </div>
+                                </div>
+                            </>
+                         )}
+
                         {!isMobile && (
-                             <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem'}}>
-                               <h2 style={{...styles.cardTitle, marginBottom: '0', paddingBottom: '0.5rem'}}>Search Item</h2>
+                             <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                               <h2 style={{...styles.cardTitle, marginBottom: '0', paddingBottom: '0', borderBottom: 'none'}}>Search Item</h2>
                                {isSyncing && <div style={styles.syncingText}>Syncing item catalog...</div>}
                              </div>
                         )}
@@ -627,7 +677,7 @@ export const NewOrderEntry = () => {
 };
 
 const styles: { [key: string]: React.CSSProperties } = {
-    container: { display: 'flex', flexDirection: 'column', flex: 1, paddingBottom: '80px' },
+    container: { display: 'flex', flexDirection: 'column', flex: 1 },
     header: { display: 'flex', justifyContent: 'flex-end', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', flexShrink: 0, marginBottom: '1.5rem' },
     title: { fontSize: '1.75rem', fontWeight: 600, color: 'var(--dark-grey)' },
     actions: { display: 'flex', gap: '0.75rem' },
@@ -649,15 +699,15 @@ const styles: { [key: string]: React.CSSProperties } = {
     suggestionsList: { listStyle: 'none', margin: '0.25rem 0 0', padding: '0.5rem 0', position: 'absolute', top: '100%', left: 0, right: 0, backgroundColor: 'var(--card-bg)', border: '1px solid var(--skeleton-bg)', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)', maxHeight: '200px', overflowY: 'auto', zIndex: 10, },
     suggestionItem: { padding: '0.75rem 1rem', cursor: 'pointer', fontSize: '0.9rem', color: 'var(--text-color)', },
     addSuggestionItem: { color: 'var(--brand-color)', fontWeight: 500, },
-    syncingText: { fontSize: '0.85rem', color: 'var(--brand-color)', fontWeight: 500, paddingBottom: '0.75rem' },
-    styleSelectorContainer: { marginBottom: '1.5rem', position: 'relative' },
+    syncingText: { fontSize: '0.85rem', color: 'var(--brand-color)', fontWeight: 500 },
+    styleSelectorContainer: { position: 'relative' },
     styleResultsContainer: { position: 'absolute', top: '100%', left: 0, right: 0, backgroundColor: 'var(--card-bg)', border: '1px solid var(--skeleton-bg)', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)', zIndex: 10, display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.5rem', maxHeight: '160px', overflowY: 'auto', padding: '0.5rem' },
     styleResultItem: { padding: '0.5rem 1rem', backgroundColor: 'var(--light-grey)', color: 'var(--text-color)', border: '1px solid var(--skeleton-bg)', borderRadius: '20px', cursor: 'pointer', transition: 'all 0.2s ease', fontSize: '0.85rem', fontWeight: 500, },
     styleResultItemActive: { backgroundColor: 'var(--brand-color)', color: '#fff', borderColor: 'var(--brand-color)' },
     matrixContainer: { marginTop: '1rem' },
     matrixStyleTitle: { fontSize: '1.5rem', fontWeight: 600, color: 'var(--dark-grey)', textAlign: 'center', marginBottom: '1.5rem' },
-    matrixGrid: { display: 'flex', flexWrap: 'wrap', gap: '1rem', paddingBottom: '2.5rem' },
-    colorCard: { borderRadius: '12px', padding: '1rem', width: '150px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '0.75rem', transition: 'all 0.3s' },
+    matrixGrid: { display: 'flex', flexWrap: 'wrap', gap: '1rem', paddingBottom: '1rem' },
+    colorCard: { borderRadius: '12px', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', transition: 'all 0.3s' },
     colorHeader: { fontWeight: 600, textAlign: 'left', textTransform: 'uppercase', paddingBottom: '0.5rem', borderBottom: '1px solid rgba(100, 100, 100, 0.2)' },
     sizeList: { display: 'flex', flexDirection: 'column', gap: '0.25rem', paddingTop: '0.5rem' },
     sizeRow: { display: 'grid', gridTemplateColumns: 'auto 1fr', alignItems: 'center', gap: '0.75rem' },
