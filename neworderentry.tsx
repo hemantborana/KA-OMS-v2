@@ -452,10 +452,19 @@ export const NewOrderEntry = () => {
 
     // --- RENDER ---
     const mainLayoutStyle = isMobile ? { ...styles.mainLayout, gridTemplateColumns: '1fr' } : styles.mainLayout;
+    
+    // Create mobile-specific styles to avoid cluttering JSX
+    const headerStyle = isMobile ? { ...styles.header, marginBottom: '0.5rem' } : styles.header;
+    const mainPanelStyle = isMobile ? { ...styles.mainPanel, gap: '0.5rem' } : styles.mainPanel;
+    const searchHeaderContainerStyle = isMobile ? 
+        { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' } :
+        { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' };
+    const searchCardTitleStyle = isMobile ? { ...styles.cardTitle, marginBottom: '0' } : styles.cardTitle;
+
 
     return (
         <div style={styles.container}>
-            <div style={styles.header}>
+            <div style={headerStyle}>
                 {!isMobile && (
                     <div style={styles.actions}>
                         <button onClick={handleSaveDraft} style={{ ...styles.button, ...styles.secondaryButton }}>Save Draft</button>
@@ -465,7 +474,7 @@ export const NewOrderEntry = () => {
             </div>
             
             <div style={mainLayoutStyle}>
-                <div style={styles.mainPanel}>
+                <div style={mainPanelStyle}>
                     <div style={{...styles.card, gap: 0}}>
                         <div style={styles.cardHeader}>
                            <h2 style={styles.cardTitleBare}>{partyName ? `Party: ${partyName}` : 'Order Details'}</h2>
@@ -493,13 +502,12 @@ export const NewOrderEntry = () => {
                     </div>
 
                     <div style={{ ...styles.card, flex: 1 }}>
-                        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem'}}>
-                          <h2 style={styles.cardTitle}>Order Items</h2>
+                        <div style={searchHeaderContainerStyle}>
+                          <h2 style={searchCardTitleStyle}>Search Item</h2>
                           {isSyncing && <div style={styles.syncingText}>Syncing item catalog...</div>}
                         </div>
                         
                         <div style={styles.styleSelectorContainer} ref={styleSearchRef}>
-                             <label htmlFor="styleSearch" style={styles.label}>Search Style</label>
                              <input
                                  type="text"
                                  id="styleSearch"
