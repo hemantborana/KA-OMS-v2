@@ -64,6 +64,7 @@ const LogoutIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" heig
 const UserIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>;
 const NavIcon = ({ name }) => { const icons = { Dashboard: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>, Entry: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"></path><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>, Pending: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>, Billing: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>, Billed: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>, Stock: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 9v11a2 2 0 0 1-2 2H6a2 2 0 0 1-4-2V9"></path><path d="M20 13H4"></path><path d="M10 3L4 9"></path><path d="M14 3l6 6"></path></svg>, Update: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>, Deleted: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>, Expired: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>, Users: <svg xmlns="hcom/w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>, Approval: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg> }; return icons[name] || null; };
 const Spinner = () => <div style={styles.spinner}></div>;
+const CollapseIcon = ({ collapsed }) => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: collapsed ? 'rotate(180deg)' : 'none', transition: 'transform 0.3s ease' }}><path d="m15 18-6-6 6-6"/></svg>;
 
 // --- DATABASE LOGIC ---
 interface CachedImage { id: string; blob: Blob; url: string; }
@@ -206,7 +207,7 @@ const Header = ({ onToggleSidebar, appLogoSrc, isMobile, title }) => {
 };
 
 
-const Sidebar = ({ activeView, onNavigate, isMobile, isOpen, onClose, session, onLogout }) => {
+const Sidebar = ({ activeView, onNavigate, isMobile, isOpen, onClose, session, onLogout, isCollapsed, onToggleCollapse, sidebarRef }) => {
     const primaryItems = [
         { id: 'Dashboard', label: 'Dashboard' },
         { id: 'Entry', label: 'New Order Entry' },
@@ -222,37 +223,63 @@ const Sidebar = ({ activeView, onNavigate, isMobile, isOpen, onClose, session, o
         { id: 'Users', label: 'User Management' },
         { id: 'Approval', label: 'Order Approval (Admin)' },
     ];
-    const sidebarStyle = isMobile ? { ...styles.sidebar, ...styles.sidebarMobile, transform: isOpen ? 'translateX(0)' : 'translateX(-100%)' } : styles.sidebar;
+
+    const isActuallyCollapsed = !isMobile && isCollapsed;
+
+    const sidebarStyle = isMobile
+        ? { ...styles.sidebar, ...styles.sidebarMobile, transform: isOpen ? 'translateX(0)' : 'translateX(-100%)' }
+        : isActuallyCollapsed
+            ? { ...styles.sidebar, ...styles.sidebarCollapsed }
+            : styles.sidebar;
+
+    const navItemStyle = (id) => {
+        let baseStyle = activeView === id ? { ...styles.navItem, ...styles.navItemActive } : styles.navItem;
+        if (isActuallyCollapsed) {
+            baseStyle = { ...baseStyle, justifyContent: 'center' };
+        }
+        return baseStyle;
+    };
+
     return (
         <>
             {isMobile && isOpen && <div style={styles.overlay} onClick={onClose}></div>}
-            <nav style={sidebarStyle}>
+            <nav style={sidebarStyle} ref={sidebarRef}>
                 <div style={styles.sidebarHeader}>
                      <div style={styles.sidebarUser}>
                          <UserIcon />
-                         <div style={styles.sidebarUserInfo}>
-                             <div style={styles.sidebarUserName}>{session.userName}</div>
-                             <div style={styles.sidebarUserRole}>{session.role}</div>
-                         </div>
+                         {!isActuallyCollapsed && (
+                            <div style={styles.sidebarUserInfo}>
+                               <div style={styles.sidebarUserName}>{session.userName}</div>
+                               <div style={styles.sidebarUserRole}>{session.role}</div>
+                            </div>
+                         )}
                      </div>
-                     <button onClick={onLogout} style={styles.sidebarLogoutButton}>
+                     <button onClick={onLogout} style={isActuallyCollapsed ? { ...styles.sidebarLogoutButton, ...styles.sidebarLogoutButtonCollapsed } : styles.sidebarLogoutButton}>
                          <LogoutIcon />
-                         <span>Logout</span>
+                         {!isActuallyCollapsed && <span>Logout</span>}
                      </button>
                 </div>
                 <div style={styles.sidebarNav}>
                     {primaryItems.map(item => (
-                        <a key={item.id} href="#" onClick={(e) => { e.preventDefault(); onNavigate(item.id); }} style={activeView === item.id ? { ...styles.navItem, ...styles.navItemActive } : styles.navItem}>
-                            <NavIcon name={item.id} /><span style={styles.navLabel}>{item.label}</span>
+                        <a key={item.id} href="#" onClick={(e) => { e.preventDefault(); onNavigate(item.id); }} style={navItemStyle(item.id)} title={isActuallyCollapsed ? item.label : ''}>
+                            <NavIcon name={item.id} />{!isActuallyCollapsed && <span style={styles.navLabel}>{item.label}</span>}
                         </a>
                     ))}
                     <hr style={styles.sidebarSeparator} />
                     {secondaryItems.map(item => (
-                        <a key={item.id} href="#" onClick={(e) => { e.preventDefault(); onNavigate(item.id); }} style={activeView === item.id ? { ...styles.navItem, ...styles.navItemActive } : styles.navItem}>
-                            <NavIcon name={item.id} /><span style={styles.navLabel}>{item.label}</span>
+                        <a key={item.id} href="#" onClick={(e) => { e.preventDefault(); onNavigate(item.id); }} style={navItemStyle(item.id)} title={isActuallyCollapsed ? item.label : ''}>
+                            <NavIcon name={item.id} />{!isActuallyCollapsed && <span style={styles.navLabel}>{item.label}</span>}
                         </a>
                     ))}
                 </div>
+                {!isMobile && (
+                    <div style={styles.sidebarFooter}>
+                        <button onClick={onToggleCollapse} style={isActuallyCollapsed ? {...styles.collapseButtonSidebar, justifyContent: 'center'} : styles.collapseButtonSidebar}>
+                            <CollapseIcon collapsed={isActuallyCollapsed} />
+                            {!isActuallyCollapsed && <span style={styles.navLabel}>Collapse</span>}
+                        </button>
+                    </div>
+                )}
             </nav>
         </>
     );
@@ -306,8 +333,10 @@ const MainContent = ({ activeView, onNavigate, session, isMobile }) => {
 const HomePage = ({ session, onLogout, appLogoSrc }) => {
     const [activeView, setActiveView] = useState('Dashboard');
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
     const showToast = useToast();
+    const sidebarRef = useRef(null);
     
     const pages = {
         'Dashboard': 'Dashboard', 'Entry': 'New Order Entry', 'Pending': 'Pending Orders', 'Billing': 'Ready for Billing', 'Billed': 'Billed Orders (Archive)',
@@ -324,6 +353,13 @@ const HomePage = ({ session, onLogout, appLogoSrc }) => {
             }
         };
         window.addEventListener('show-toast', handleShowToast as EventListener);
+
+        const handleClickOutside = (event) => {
+            if (!isMobile && !isSidebarCollapsed && sidebarRef.current && !sidebarRef.current.contains(event.target)) {
+                setIsSidebarCollapsed(true);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
         
         // FIX: Cast querySelector results to HTMLElement to access the style property, as querySelector returns a generic Element type by default.
         const brandingPane = document.querySelector<HTMLElement>('.branding-pane');
@@ -341,6 +377,7 @@ const HomePage = ({ session, onLogout, appLogoSrc }) => {
         return () => {
             window.removeEventListener('resize', handleResize);
             window.removeEventListener('show-toast', handleShowToast as EventListener);
+            document.removeEventListener('mousedown', handleClickOutside);
             if(brandingPane) brandingPane.style.display = 'flex';
             if(formPane) {
                 formPane.style.flex = '1';
@@ -349,18 +386,35 @@ const HomePage = ({ session, onLogout, appLogoSrc }) => {
             if(rootEl) rootEl.style.maxWidth = '420px';
             document.body.style.overflow = 'hidden';
         };
-    }, [isMobile, showToast]);
+    }, [isMobile, showToast, isSidebarCollapsed]);
 
     const handleNavigate = (view) => {
         setActiveView(view);
         if (isMobile) setIsSidebarOpen(false);
     };
 
+    const handleToggleSidebarCollapse = () => {
+        if (!isMobile) {
+            setIsSidebarCollapsed(prev => !prev);
+        }
+    };
+
     return (
         <div style={styles.appContainer}>
             <Header onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} appLogoSrc={appLogoSrc} isMobile={isMobile} title={pages[activeView] || 'Dashboard'} />
             <div style={styles.appBody}>
-                <Sidebar activeView={activeView} onNavigate={handleNavigate} isMobile={isMobile} isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} session={session} onLogout={onLogout} />
+                <Sidebar 
+                    activeView={activeView} 
+                    onNavigate={handleNavigate} 
+                    isMobile={isMobile} 
+                    isOpen={isSidebarOpen} 
+                    onClose={() => setIsSidebarOpen(false)} 
+                    session={session} 
+                    onLogout={onLogout} 
+                    isCollapsed={isSidebarCollapsed}
+                    onToggleCollapse={handleToggleSidebarCollapse}
+                    sidebarRef={sidebarRef}
+                />
                 <MainContent activeView={activeView} onNavigate={handleNavigate} session={session} isMobile={isMobile} />
             </div>
             {isMobile && activeView !== 'Entry' && <BottomNavBar activeView={activeView} onNavigate={handleNavigate} />}
@@ -516,7 +570,7 @@ const KAOMSLogin = () => {
 const styles: { [key: string]: React.CSSProperties } = {
     // --- App Layout ---
     appContainer: { display: 'flex', flexDirection: 'column', height: '100vh', backgroundColor: 'var(--light-grey)' },
-    appHeader: { display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center', padding: '0 1.5rem', height: '64px', backgroundColor: 'var(--card-bg)', borderBottom: '1px solid var(--skeleton-bg)', flexShrink: 0 },
+    appHeader: { display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center', padding: '0 1.5rem', height: '64px', backgroundColor: 'var(--card-bg)', borderBottom: '1px solid var(--skeleton-bg)', flexShrink: 0, zIndex: 10 },
     headerLeft: { gridColumn: '1', display: 'flex', alignItems: 'center', gap: '1rem', justifySelf: 'start' },
     headerCenter: { gridColumn: '2', textAlign: 'center', minWidth: 0 },
     headerRight: { gridColumn: '3', justifySelf: 'end' },
@@ -525,20 +579,24 @@ const styles: { [key: string]: React.CSSProperties } = {
     headerPageTitle: { fontSize: '1.2rem', fontWeight: 600, color: 'var(--dark-grey)', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
     menuButton: { background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', color: 'var(--dark-grey)' },
     appBody: { display: 'flex', flex: 1, overflow: 'hidden' },
-    sidebar: { width: '250px', backgroundColor: '#FBFCFD', borderRight: '1px solid var(--skeleton-bg)', flexShrink: 0, transition: 'transform 0.3s ease', display: 'flex', flexDirection: 'column' },
+    sidebar: { width: '250px', backgroundColor: '#FBFCFD', borderRight: '1px solid var(--skeleton-bg)', flexShrink: 0, transition: 'width 0.3s ease, transform 0.3s ease', display: 'flex', flexDirection: 'column' },
+    sidebarCollapsed: { width: '80px' },
     sidebarMobile: { position: 'fixed', top: 0, left: 0, height: '100%', zIndex: 200 },
     overlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 199 },
     sidebarHeader: { padding: '1.5rem', borderBottom: '1px solid var(--skeleton-bg)' },
     sidebarUser: { display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' },
-    sidebarUserInfo: {},
-    sidebarUserName: { fontWeight: 600, color: 'var(--dark-grey)' },
-    sidebarUserRole: { fontSize: '0.8rem', color: 'var(--text-color)' },
-    sidebarLogoutButton: { background: 'none', border: '1px solid var(--skeleton-bg)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.6rem', width: '100%', color: 'var(--text-color)', fontSize: '0.9rem', borderRadius: '8px', transition: 'background-color 0.2s ease, color 0.2s ease' },
+    sidebarUserInfo: { transition: 'opacity 0.2s ease' },
+    sidebarUserName: { fontWeight: 600, color: 'var(--dark-grey)', whiteSpace: 'nowrap' },
+    sidebarUserRole: { fontSize: '0.8rem', color: 'var(--text-color)', whiteSpace: 'nowrap' },
+    sidebarLogoutButton: { background: 'none', border: '1px solid var(--skeleton-bg)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.6rem', width: '100%', color: 'var(--text-color)', fontSize: '0.9rem', borderRadius: '8px', transition: 'all 0.2s ease' },
+    sidebarLogoutButtonCollapsed: { padding: '0.6rem', width: '44px', height: '44px' },
     sidebarNav: { display: 'flex', flexDirection: 'column', padding: '1rem 0.5rem', flex: 1, overflowY: 'auto' },
     sidebarSeparator: { margin: '0.75rem 1rem', border: 'none', borderTop: '1px solid var(--skeleton-bg)' },
-    navItem: { display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem 1rem', textDecoration: 'none', color: 'var(--text-color)', borderRadius: '8px', marginBottom: '0.25rem', fontWeight: 500 },
+    sidebarFooter: { marginTop: 'auto', padding: '1rem 0.5rem' },
+    collapseButtonSidebar: { background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem 1rem', width: '100%', color: 'var(--text-color)', fontSize: '0.9rem', borderRadius: '8px', transition: 'background-color 0.2s ease, color 0.2s ease', justifyContent: 'flex-start' },
+    navItem: { display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem 1rem', textDecoration: 'none', color: 'var(--text-color)', borderRadius: '8px', marginBottom: '0.25rem', fontWeight: 500, whiteSpace: 'nowrap', transition: 'background-color 0.2s, color 0.2s' },
     navItemActive: { backgroundColor: 'var(--active-bg)', color: 'var(--brand-color)' },
-    navLabel: { fontSize: '0.9rem' },
+    navLabel: { fontSize: '0.9rem', transition: 'opacity 0.2s ease-out' },
     mainContent: { flex: 1, overflowY: 'auto', padding: '1.5rem 1.25rem', display: 'flex', flexDirection: 'column' },
     bottomNav: { display: 'flex', justifyContent: 'space-around', backgroundColor: 'var(--card-bg)', borderTop: '1px solid var(--skeleton-bg)', position: 'fixed', bottom: 0, left: 0, right: 0, height: '60px', zIndex: 100 },
     bottomNavItem: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, textDecoration: 'none', color: 'var(--text-color)', gap: '2px' },

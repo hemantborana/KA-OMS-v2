@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 // FIX: Switched to Firebase v8 compat imports to resolve module export errors.
 import firebase from 'firebase/compat/app';
@@ -264,7 +265,7 @@ const CollapsibleColorCard: React.FC<{ color: any, itemsInColor: any, allSizesFo
             baseStyle.padding = '0.5rem';
             baseStyle.gap = '0.5rem';
         } else {
-             baseStyle.width = '150px';
+             baseStyle.width = '190px';
              baseStyle.flexShrink = 0;
         }
         if (isDark) {
@@ -384,7 +385,9 @@ const StyleMatrix = ({ style, catalogData, orderItems, onQuantityChange, isMobil
     }, [orderItems]);
     
     const matrixStyleTitleStyle = isMobile ? { ...styles.matrixStyleTitle, marginBottom: '0.25rem' } : styles.matrixStyleTitle;
-    const matrixGridStyle = isMobile ? { ...styles.matrixGrid, gap: '0.5rem' } : styles.matrixGrid;
+    const matrixGridStyle = isMobile
+        ? { ...styles.matrixGrid, gap: '0.5rem' }
+        : styles.matrixGrid;
 
     return (
         <div style={styles.matrixContainer}>
