@@ -388,7 +388,7 @@ const CartDetailModal = ({ group, items, onClose, onQuantityChange }) => {
 };
 
 
-const Cart = ({ items, onQuantityChange, onClearCart, onSubmit, onSaveDraft, onEditGroup, isMobile }) => {
+const Cart = ({ items, onQuantityChange, onClearCart, onSubmit, onSaveDraft, onEditGroup, isMobile, isModal, onClose }) => {
     const { totalQuantity, totalValue, groupedItems } = useMemo(() => {
         const summary = { totalQuantity: 0, totalValue: 0 };
         if (!items || items.length === 0) return { ...summary, groupedItems: [] };
@@ -403,6 +403,7 @@ const Cart = ({ items, onQuantityChange, onClearCart, onSubmit, onSaveDraft, onE
             }
             acc[key].totalQuantity += item.quantity;
             return acc;
+// FIX: Explicitly typed the accumulator to resolve type inference errors on 'groups'.
         }, {} as Record<string, { style: string; color: string; totalQuantity: number; }>);
         
         const sortedGroups = Object.values(groups).sort((a, b) => a.style.localeCompare(b.style) || a.color.localeCompare(b.color));
@@ -417,9 +418,12 @@ const Cart = ({ items, onQuantityChange, onClearCart, onSubmit, onSaveDraft, onE
         <div style={styles.cartContainer}>
             <div style={styles.cartHeader}>
                 <h2 style={styles.cardTitleBare}>Order Summary</h2>
-                {items.length > 0 && (
-                    <button onClick={onClearCart} style={styles.clearCartButton}>Clear All</button>
-                )}
+                 <div style={styles.cartHeaderActions}>
+                    {items.length > 0 && (
+                        <button onClick={onClearCart} style={styles.clearCartButton}>Clear All</button>
+                    )}
+                    {isModal && <button onClick={onClose} style={styles.cartModalCloseButton}>&times;</button>}
+                </div>
             </div>
             
             {items.length === 0 ? (
@@ -793,6 +797,7 @@ export const NewOrderEntry = () => {
 
                 {!isMobile && (
                     <div style={styles.sidePanel}>
+{/* FIX: Added missing 'isModal' and 'onClose' props to the Cart component. */}
                         <Cart 
                            items={items} 
                            onQuantityChange={handleQuantityChange} 
@@ -801,6 +806,8 @@ export const NewOrderEntry = () => {
                            onSaveDraft={handleSaveDraft}
                            onEditGroup={(group) => setEditingCartGroup(group)}
                            isMobile={isMobile}
+                           isModal={false}
+                           onClose={() => {}}
                         />
                     </div>
                 )}
@@ -822,7 +829,6 @@ export const NewOrderEntry = () => {
             {isMobile && isCartModalOpen && (
                 <div style={styles.modalOverlay} onClick={() => setIsCartModalOpen(false)}>
                     <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-                        <button style={styles.modalCloseButton} onClick={() => setIsCartModalOpen(false)} aria-label="Close cart">&times;</button>
                         <Cart 
                            items={items} 
                            onQuantityChange={handleQuantityChange} 
@@ -831,6 +837,8 @@ export const NewOrderEntry = () => {
                            onSaveDraft={() => { handleSaveDraft(); setIsCartModalOpen(false); }}
                            onEditGroup={(group) => setEditingCartGroup(group)}
                            isMobile={isMobile}
+                           isModal={true}
+                           onClose={() => setIsCartModalOpen(false)}
                         />
                     </div>
                 </div>
@@ -893,6 +901,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     quantityButton: { backgroundColor: 'var(--light-grey)', border: '1px solid var(--skeleton-bg)', color: 'var(--dark-grey)', width: '32px', height: '32px', fontSize: '1.2rem', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background-color 0.2s', lineHeight: 1, },
     cartContainer: { backgroundColor: 'var(--card-bg)', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', display: 'flex', flexDirection: 'column', height: '100%' },
     cartHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.5rem 1.5rem 1rem', borderBottom: '1px solid var(--skeleton-bg)', flexShrink: 0 },
+    cartHeaderActions: { display: 'flex', alignItems: 'center', gap: '0.5rem' },
     clearCartButton: { background: 'none', border: 'none', color: 'var(--text-color)', fontSize: '0.85rem', fontWeight: 500, cursor: 'pointer' },
     cartEmptyText: { textAlign: 'center', color: 'var(--text-color)', padding: '3rem 1.5rem', flex: 1 },
     cartItemsList: { flex: 1, overflowY: 'auto', padding: '0.5rem 1.5rem' },
@@ -910,10 +919,11 @@ const styles: { [key: string]: React.CSSProperties } = {
     modalOverlay: { position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center' },
     modalContent: { backgroundColor: 'var(--card-bg)', width: '100%', maxWidth: '500px', maxHeight: '700px', borderRadius: 'var(--border-radius)', display: 'flex', flexDirection: 'column', position: 'relative', animation: 'slideUp 0.3s ease-out', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' },
     modalCloseButton: { position: 'absolute', top: '10px', right: '15px', background: 'none', border: 'none', fontSize: '2rem', color: 'var(--text-color)', cursor: 'pointer', zIndex: 1, padding: '0.5rem' },
+    cartModalCloseButton: { background: 'none', border: 'none', fontSize: '2.5rem', color: 'var(--text-color)', cursor: 'pointer', padding: 0, lineHeight: '1' },
     stickyActionBar: { position: 'fixed', bottom: '0', left: 0, right: 0, backgroundColor: 'var(--card-bg)', padding: '0.75rem 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--skeleton-bg)', boxShadow: '0 -2px 10px rgba(0,0,0,0.05)', zIndex: 90 },
     stickyCartButton: { background: 'none', border: 'none', cursor: 'pointer', color: 'var(--dark-grey)', display: 'flex', alignItems: 'center', gap: '0.5rem', position: 'relative', padding: '0.5rem' },
     cartCountBadge: { position: 'absolute', top: '-2px', right: '-5px', backgroundColor: '#e74c3c', color: 'white', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '0.75rem', fontWeight: 600, border: '2px solid var(--card-bg)' },
-    stickyActionButtons: { display: 'flex', gap: '0.75rem', width: '100%' },
+    stickyActionButtons: { display: 'flex', gap: '0.75rem' },
     stickyButton: { padding: '0.75rem 1rem', fontSize: '0.9rem' },
 };
 
