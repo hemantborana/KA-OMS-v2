@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 // FIX: Switched to Firebase v8 compat imports to resolve module export errors.
 import firebase from 'firebase/compat/app';
@@ -626,7 +625,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     styleResultItemActive: { backgroundColor: 'var(--brand-color)', color: '#fff', borderColor: 'var(--brand-color)' },
     matrixContainer: { marginTop: '1rem' },
     matrixStyleTitle: { fontSize: '1.5rem', fontWeight: 600, color: 'var(--dark-grey)', textAlign: 'center', marginBottom: '1.5rem' },
-    matrixGrid: { display: 'flex', flexWrap: 'wrap', gap: '1rem' },
+    matrixGrid: { display: 'flex', flexWrap: 'wrap', gap: '1rem', paddingBottom: '2.5rem' },
     colorCard: { borderRadius: '12px', padding: '1rem', width: '150px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '0.75rem', transition: 'all 0.3s' },
     colorHeader: { fontWeight: 600, textAlign: 'left', textTransform: 'uppercase', paddingBottom: '0.5rem', borderBottom: '1px solid rgba(100, 100, 100, 0.2)' },
     sizeList: { display: 'flex', flexDirection: 'column', gap: '0.5rem', paddingTop: '0.5rem' },
