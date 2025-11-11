@@ -141,7 +141,7 @@ const CollapsibleColorCard: React.FC<{ color: any, itemsInColor: any, allSizesFo
         if (isMobile) {
             baseStyle.flex = '1 1 140px';
             baseStyle.minWidth = '140px';
-            baseStyle.padding = '0.75rem';
+            baseStyle.padding = '0.5rem';
             baseStyle.gap = '0.5rem';
         } else {
              baseStyle.width = '150px';
@@ -532,7 +532,7 @@ export const NewOrderEntry = () => {
     const mainLayoutStyle = isMobile ? { ...styles.mainLayout, gridTemplateColumns: '1fr' } : styles.mainLayout;
     
     const containerStyle = isMobile 
-        ? { ...styles.container, padding: '0.5rem', paddingBottom: '80px' } 
+        ? { ...styles.container, padding: '0', paddingBottom: '80px' } 
         : { ...styles.container };
         
     const headerStyle = isMobile ? { ...styles.header, marginBottom: '0.5rem' } : styles.header;
@@ -541,7 +541,7 @@ export const NewOrderEntry = () => {
     const orderDetailsCardStyle = { ...styles.card, gap: 0 };
 
     const searchItemCardStyle = isMobile
-        ? { ...styles.card, flex: 1, padding: '1rem', gap: '1rem' }
+        ? { ...styles.card, flex: 1, padding: '0.5rem', gap: '1rem' }
         : { ...styles.card, flex: 1 };
         
     return (
@@ -727,7 +727,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     matrixGrid: { display: 'flex', flexWrap: 'wrap', gap: '1rem', paddingBottom: '1rem' },
     colorCard: { borderRadius: '12px', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', transition: 'all 0.3s' },
     colorHeader: { fontWeight: 600, textAlign: 'left', textTransform: 'uppercase', paddingBottom: '0.5rem', borderBottom: '1px solid rgba(100, 100, 100, 0.2)' },
-    sizeList: { display: 'flex', flexDirection: 'column', gap: '0.25rem', paddingTop: '0.5rem' },
+    sizeList: { display: 'flex', flexDirection: 'column', gap: '0.25rem' },
     sizeRow: { display: 'grid', gridTemplateColumns: 'auto 1fr', alignItems: 'center', gap: '0.75rem' },
     sizeLabel: { fontSize: '0.9rem', fontWeight: 500 },
     quantityInput: { width: '45px', height: '32px', padding: '6px 2px', fontSize: '1rem', border: '1px solid var(--skeleton-bg)', borderLeft: 'none', borderRight: 'none', backgroundColor: 'var(--card-bg)', color: 'var(--dark-grey)', textAlign: 'center', outline: 'none', borderRadius: 0, boxSizing: 'border-box', appearance: 'textfield', MozAppearance: 'textfield' },
