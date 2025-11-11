@@ -200,13 +200,16 @@ const QuantityControl: React.FC<{
 };
 
 const StockIndicator: React.FC<{ stockLevel: number }> = ({ stockLevel }) => {
-    if (typeof stockLevel !== 'number' || stockLevel < 0) {
-        return <div style={styles.stockIndicatorPlaceholder}></div>;
-    }
+    const isUnavailable = typeof stockLevel !== 'number' || stockLevel < 0;
 
     let color = null;
-    if (stockLevel === 0) {
-        color = '#e74c3c'; // Red for out of stock
+    let title = `Stock: ${stockLevel}`;
+
+    if (isUnavailable || stockLevel === 0) {
+        color = '#e74c3c'; // Red for out of stock or unavailable
+        if (isUnavailable) {
+            title = 'Stock: Unavailable';
+        }
     } else if (stockLevel >= 1 && stockLevel <= 3) {
         color = '#f1c40f'; // Yellow for low stock
     } else if (stockLevel >= 4) {
@@ -222,7 +225,7 @@ const StockIndicator: React.FC<{ stockLevel: number }> = ({ stockLevel }) => {
         backgroundColor: color,
     };
 
-    return <span style={style} title={`Stock: ${stockLevel}`} />;
+    return <span style={style} title={title} />;
 };
 
 
