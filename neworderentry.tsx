@@ -1016,7 +1016,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     actions: { display: 'flex', gap: '0.75rem' },
     button: { padding: '0.6rem 1.2rem', fontSize: '0.9rem', fontWeight: 500, color: '#fff', backgroundColor: 'var(--brand-color)', border: 'none', borderRadius: '8px', cursor: 'pointer', transition: 'background-color 0.3s ease' },
     secondaryButton: { backgroundColor: 'var(--light-grey)', color: 'var(--dark-grey)', border: '1px solid var(--skeleton-bg)' },
-    mainLayout: { display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem', flex: 1, minHeight: 0 },
+    mainLayout: { display: 'grid', gridTemplateColumns: '1fr 380px', gap: '1.5rem', flex: 1, minHeight: 0 },
     mainPanel: { display: 'flex', flexDirection: 'column', gap: '1.5rem', minHeight: 0 },
     sidePanel: { minHeight: 0 },
     card: { backgroundColor: 'var(--card-bg)', padding: '1.5rem', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', display: 'flex', flexDirection: 'column', gap: '1rem' },
