@@ -1,5 +1,4 @@
 
-
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 // FIX: Switched to Firebase v8 compat imports to resolve module export errors.
 import firebase from 'firebase/compat/app';
@@ -140,8 +139,10 @@ const CollapsibleColorCard: React.FC<{ color: any, itemsInColor: any, allSizesFo
     const getColorCardStyle = () => {
         const baseStyle: React.CSSProperties = { ...styles.colorCard };
         if (isMobile) {
-            baseStyle.flex = '1 1 100%';
-            baseStyle.width = '100%';
+            baseStyle.flex = '1 1 140px';
+            baseStyle.minWidth = '140px';
+            baseStyle.padding = '0.75rem';
+            baseStyle.gap = '0.5rem';
         } else {
              baseStyle.width = '150px';
              baseStyle.flexShrink = 0;
@@ -156,16 +157,32 @@ const CollapsibleColorCard: React.FC<{ color: any, itemsInColor: any, allSizesFo
         }
         return baseStyle;
     };
-
-    const colorHeaderStyle: React.CSSProperties = isMobile 
-        ? {...styles.colorHeader, cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center'} 
-        : styles.colorHeader;
-        
+    
     const themedStyles = {
         quantityInput: isDark ? { ...styles.quantityInput, backgroundColor: '#2D3748', color: '#FFFFFF', borderTop: '1px solid #4A5568', borderBottom: '1px solid #4A5568' } : styles.quantityInput,
         quantityButton: isDark ? { ...styles.quantityButton, backgroundColor: '#4A5568', color: '#FFFFFF', border: '1px solid #4A5568' } : styles.quantityButton,
         mrpText: isDark ? { ...styles.mrpText, color: '#A0AEC0' } : styles.mrpText,
     };
+    
+    const computedStyles = useMemo(() => {
+        const s = {
+            sizeRow: styles.sizeRow,
+            sizeLabel: styles.sizeLabel,
+            quantityButton: themedStyles.quantityButton,
+            quantityInput: themedStyles.quantityInput,
+        };
+        if (isMobile) {
+            s.sizeRow = { ...s.sizeRow, gap: '0.5rem' };
+            s.sizeLabel = { ...s.sizeLabel, fontSize: '0.85rem' };
+            s.quantityButton = { ...s.quantityButton, width: '28px', height: '28px', fontSize: '1rem' };
+            s.quantityInput = { ...s.quantityInput, width: '36px', height: '28px', fontSize: '0.9rem', padding: '4px 2px' };
+        }
+        return s;
+    }, [isMobile, themedStyles]);
+
+    const colorHeaderStyle: React.CSSProperties = isMobile 
+        ? {...styles.colorHeader, cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center'} 
+        : styles.colorHeader;
 
     return (
         <div style={getColorCardStyle()}>
@@ -181,27 +198,27 @@ const CollapsibleColorCard: React.FC<{ color: any, itemsInColor: any, allSizesFo
                             const quantity = itemsByBarcode[itemData.Barcode] || '';
                             const formattedMrp = formatMRP(itemData.MRP);
                             return (
-                                <div key={size} style={styles.sizeRow}>
+                                <div key={size} style={computedStyles.sizeRow}>
                                     <div>
-                                        <label style={styles.sizeLabel}>{size}</label>
+                                        <label style={computedStyles.sizeLabel}>{size}</label>
                                         {formattedMrp && <div style={themedStyles.mrpText}>{formattedMrp}</div>}
                                     </div>
                                     <div style={styles.quantityControl}>
                                         <button 
-                                            style={{...themedStyles.quantityButton, borderRadius: '6px 0 0 6px'}} 
+                                            style={{...computedStyles.quantityButton, borderRadius: '6px 0 0 6px'}} 
                                             onClick={() => handleQuantityStep(itemData, quantity, -1)}
                                             aria-label="Decrease quantity"
                                         >-</button>
                                         <input
                                             type="number"
                                             min="0"
-                                            style={themedStyles.quantityInput}
+                                            style={computedStyles.quantityInput}
                                             value={quantity}
                                             onChange={(e) => onQuantityChange(itemData, e.target.value)}
                                             placeholder="0"
                                         />
                                         <button 
-                                            style={{...themedStyles.quantityButton, borderRadius: '0 6px 6px 0'}} 
+                                            style={{...computedStyles.quantityButton, borderRadius: '0 6px 6px 0'}} 
                                             onClick={() => handleQuantityStep(itemData, quantity, 1)}
                                             aria-label="Increase quantity"
                                         >+</button>
@@ -260,11 +277,12 @@ const StyleMatrix = ({ style, catalogData, orderItems, onQuantityChange, isMobil
     }, [orderItems]);
     
     const matrixStyleTitleStyle = isMobile ? { ...styles.matrixStyleTitle, marginBottom: '0.25rem' } : styles.matrixStyleTitle;
+    const matrixGridStyle = isMobile ? { ...styles.matrixGrid, gap: '0.5rem' } : styles.matrixGrid;
 
     return (
         <div style={styles.matrixContainer}>
             <h3 style={matrixStyleTitleStyle}>{style}</h3>
-            <div style={styles.matrixGrid}>
+            <div style={matrixGridStyle}>
                 {colors.map(color => (
                     <CollapsibleColorCard
                         key={color}
