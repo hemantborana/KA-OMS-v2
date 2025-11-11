@@ -1042,7 +1042,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     sizeList: { display: 'flex', flexDirection: 'column', gap: '0.25rem' },
     sizeRow: { display: 'grid', gridTemplateColumns: '1fr auto', alignItems: 'center', gap: '0.75rem' },
     sizeInfoWrapper: { display: 'flex', alignItems: 'center', gap: '0.5rem' },
-    sizeLabelWrapper: { minWidth: '40px' },
+    sizeLabelWrapper: {},
     sizeLabel: { fontSize: '0.9rem', fontWeight: 500 },
     stockIndicator: { width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0 },
     stockIndicatorPlaceholder: { width: '8px', height: '8px' },
