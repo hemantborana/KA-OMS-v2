@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 // FIX: Switched to Firebase v8 compat imports to resolve module export errors.
 import firebase from 'firebase/compat/app';
@@ -45,25 +44,20 @@ if (!firebase.apps.length) {
 }
 const database = firebase.database();
 
-// --- INDEXEDDB HELPER ---
-const DB_NAME = 'ItemCatalogDB';
-const DB_VERSION = 1;
-const ITEMS_STORE = 'items';
-const METADATA_STORE = 'metadata';
-
+// --- INDEXEDDB HELPERS ---
 const itemDb = {
     db: null,
     init: function() {
         return new Promise((resolve, reject) => {
             if (this.db) { return resolve(this.db); }
-            const request = indexedDB.open(DB_NAME, DB_VERSION);
+            const request = indexedDB.open('ItemCatalogDB', 1);
             request.onupgradeneeded = (event) => {
                 const db = (event.target as IDBOpenDBRequest).result;
-                if (!db.objectStoreNames.contains(ITEMS_STORE)) {
-                    db.createObjectStore(ITEMS_STORE, { keyPath: 'Barcode' });
+                if (!db.objectStoreNames.contains('items')) {
+                    db.createObjectStore('items', { keyPath: 'Barcode' });
                 }
-                if (!db.objectStoreNames.contains(METADATA_STORE)) {
-                    db.createObjectStore(METADATA_STORE, { keyPath: 'id' });
+                if (!db.objectStoreNames.contains('metadata')) {
+                    db.createObjectStore('metadata', { keyPath: 'id' });
                 }
             };
             request.onsuccess = (event) => { this.db = (event.target as IDBOpenDBRequest).result; resolve(this.db); };
@@ -73,8 +67,8 @@ const itemDb = {
     clearAndAddItems: async function(items) {
         const db = await this.init();
         return new Promise((resolve, reject) => {
-            const transaction = db.transaction([ITEMS_STORE], 'readwrite');
-            const store = transaction.objectStore(ITEMS_STORE);
+            const transaction = db.transaction(['items'], 'readwrite');
+            const store = transaction.objectStore('items');
             store.clear();
             items.forEach(item => store.add(item));
             transaction.oncomplete = () => resolve(true);
@@ -84,8 +78,8 @@ const itemDb = {
     getAllItems: async function() {
         const db = await this.init();
         return new Promise((resolve, reject) => {
-            const transaction = db.transaction([ITEMS_STORE], 'readonly');
-            const store = transaction.objectStore(ITEMS_STORE);
+            const transaction = db.transaction(['items'], 'readonly');
+            const store = transaction.objectStore('items');
             const request = store.getAll();
             request.onsuccess = () => resolve(request.result);
             request.onerror = (event) => reject((event.target as IDBRequest).error);
@@ -94,8 +88,8 @@ const itemDb = {
     getMetadata: async function() {
         const db = await this.init();
         return new Promise((resolve, reject) => {
-            const transaction = db.transaction([METADATA_STORE], 'readonly');
-            const store = transaction.objectStore(METADATA_STORE);
+            const transaction = db.transaction(['metadata'], 'readonly');
+            const store = transaction.objectStore('metadata');
             const request = store.get('syncInfo');
             request.onsuccess = () => resolve(request.result);
             request.onerror = (event) => reject((event.target as IDBRequest).error);
@@ -104,13 +98,52 @@ const itemDb = {
     setMetadata: async function(metadata) {
         const db = await this.init();
         return new Promise((resolve, reject) => {
-            const transaction = db.transaction([METADATA_STORE], 'readwrite');
-            const store = transaction.objectStore(METADATA_STORE);
+            const transaction = db.transaction(['metadata'], 'readwrite');
+            const store = transaction.objectStore('metadata');
             store.put({ id: 'syncInfo', ...metadata });
             transaction.oncomplete = () => resolve(true);
             transaction.onerror = (event) => reject((event.target as IDBRequest).error);
         });
     }
+};
+
+const stockDb = {
+    db: null,
+    init: function() {
+        return new Promise((resolve, reject) => {
+            if (this.db) return resolve(this.db);
+            const request = indexedDB.open('StockDataDB', 1);
+            request.onupgradeneeded = (event) => {
+                const db = (event.target as IDBOpenDBRequest).result;
+                if (!db.objectStoreNames.contains('stockItems')) {
+                    db.createObjectStore('stockItems', { keyPath: 'id', autoIncrement: true });
+                }
+                if (!db.objectStoreNames.contains('metadata')) {
+                    db.createObjectStore('metadata', { keyPath: 'id' });
+                }
+            };
+            request.onsuccess = (event) => { this.db = (event.target as IDBOpenDBRequest).result; resolve(this.db); };
+            request.onerror = (event) => reject((event.target as IDBRequest).error);
+        });
+    },
+    getAllStock: async function() {
+        const db = await this.init();
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction(['stockItems'], 'readonly');
+            const store = transaction.objectStore('stockItems');
+            const request = store.getAll();
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = (event) => reject((event.target as IDBRequest).error);
+        });
+    },
+};
+
+// --- HELPER FUNCTION FOR ROBUST KEY MATCHING ---
+const normalizeKeyPart = (part: any): string => {
+    if (!part) return '';
+    // Converts to string, uppercases, trims, and removes all non-alphanumeric characters
+    // This ensures 'EVE BLU' matches 'EVEBLU', and 'A-039' matches 'A039'
+    return String(part).toUpperCase().trim().replace(/[^A-Z0-9]/g, '');
 };
 
 const QuantityControl: React.FC<{
@@ -166,8 +199,35 @@ const QuantityControl: React.FC<{
     );
 };
 
+const StockIndicator: React.FC<{ stockLevel: number }> = ({ stockLevel }) => {
+    if (typeof stockLevel !== 'number' || stockLevel < 0) {
+        return <div style={styles.stockIndicatorPlaceholder}></div>;
+    }
 
-const CollapsibleColorCard: React.FC<{ color: any, itemsInColor: any, allSizesForStyle: any, itemsByBarcode: any, onQuantityChange: any, isMobile: any }> = ({ color, itemsInColor, allSizesForStyle, itemsByBarcode, onQuantityChange, isMobile }) => {
+    let color = null;
+    if (stockLevel === 0) {
+        color = '#e74c3c'; // Red for out of stock
+    } else if (stockLevel >= 1 && stockLevel <= 3) {
+        color = '#f1c40f'; // Yellow for low stock
+    } else if (stockLevel >= 4) {
+        color = '#2ecc71'; // Green for healthy stock
+    }
+
+    if (!color) {
+        return <div style={styles.stockIndicatorPlaceholder}></div>;
+    }
+
+    const style = {
+        ...styles.stockIndicator,
+        backgroundColor: color,
+    };
+
+    return <span style={style} title={`Stock: ${stockLevel}`} />;
+};
+
+
+
+const CollapsibleColorCard: React.FC<{ color: any, itemsInColor: any, allSizesForStyle: any, itemsByBarcode: any, onQuantityChange: any, isMobile: any, stockData: any }> = ({ color, itemsInColor, allSizesForStyle, itemsByBarcode, onQuantityChange, isMobile, stockData }) => {
     const [isCollapsed, setIsCollapsed] = useState(isMobile);
 
     const itemsBySize = useMemo(() => itemsInColor.reduce((acc, item) => {
@@ -225,7 +285,7 @@ const CollapsibleColorCard: React.FC<{ color: any, itemsInColor: any, allSizesFo
             sizeLabel: styles.sizeLabel,
         };
         if (isMobile) {
-            s.sizeRow = { ...s.sizeRow, gap: '0.5rem' };
+            s.sizeRow = { ...s.sizeRow, gridTemplateColumns: '1fr auto', gap: '0.5rem' };
             s.sizeLabel = { ...s.sizeLabel, fontSize: '0.85rem' };
         }
         return s;
@@ -248,11 +308,17 @@ const CollapsibleColorCard: React.FC<{ color: any, itemsInColor: any, allSizesFo
                         if (itemData) {
                             const quantity = itemsByBarcode[itemData.Barcode] || '';
                             const formattedMrp = formatMRP(itemData.MRP);
+                            const stockKey = `${normalizeKeyPart(itemData.Style)}-${normalizeKeyPart(itemData.Color)}-${normalizeKeyPart(itemData.Size)}`;
+                            const stockLevel = stockData[stockKey];
+
                             return (
                                 <div key={size} style={computedStyles.sizeRow}>
-                                    <div>
-                                        <label style={computedStyles.sizeLabel}>{size}</label>
-                                        {formattedMrp && <div style={themedStyles.mrpText}>{formattedMrp}</div>}
+                                    <div style={styles.sizeInfoWrapper}>
+                                        <div style={styles.sizeLabelWrapper}>
+                                            <label style={computedStyles.sizeLabel}>{size}</label>
+                                            {formattedMrp && <div style={themedStyles.mrpText}>{formattedMrp}</div>}
+                                        </div>
+                                        <StockIndicator stockLevel={stockLevel} />
                                     </div>
                                     <QuantityControl 
                                         value={quantity}
@@ -272,7 +338,7 @@ const CollapsibleColorCard: React.FC<{ color: any, itemsInColor: any, allSizesFo
     );
 };
 
-const StyleMatrix = ({ style, catalogData, orderItems, onQuantityChange, isMobile }) => {
+const StyleMatrix = ({ style, catalogData, orderItems, onQuantityChange, isMobile, stockData }) => {
     const styleData = catalogData[style] || {};
     const colors = Object.keys(styleData).sort();
 
@@ -330,6 +396,7 @@ const StyleMatrix = ({ style, catalogData, orderItems, onQuantityChange, isMobil
                         itemsByBarcode={itemsByBarcode}
                         onQuantityChange={onQuantityChange}
                         isMobile={isMobile}
+                        stockData={stockData}
                     />
                 ))}
             </div>
@@ -393,7 +460,6 @@ const Cart = ({ items, onQuantityChange, onClearCart, onSubmit, onSaveDraft, onE
         const summary = { totalQuantity: 0, totalValue: 0 };
         if (!items || items.length === 0) return { ...summary, groupedItems: [] };
         
-        // FIX: Explicitly typed the accumulator for the `items.reduce` call. This ensures TypeScript correctly infers the type of the `groups` object, resolving errors on the subsequent `sort` call where `style` and `color` properties were not found on an 'unknown' type.
         const groups = items.reduce((acc, item) => {
             summary.totalQuantity += item.quantity;
             summary.totalValue += item.quantity * item.price;
@@ -403,10 +469,10 @@ const Cart = ({ items, onQuantityChange, onClearCart, onSubmit, onSaveDraft, onE
             }
             acc[key].totalQuantity += item.quantity;
             return acc;
-// FIX: Explicitly typed the accumulator to resolve type inference errors on 'groups'.
         }, {} as Record<string, { style: string; color: string; totalQuantity: number; }>);
         
-        const sortedGroups = Object.values(groups).sort((a, b) => a.style.localeCompare(b.style) || a.color.localeCompare(b.color));
+        // FIX: Explicitly typing sort parameters resolves an issue where TypeScript infers them as 'unknown' from Object.values.
+        const sortedGroups = Object.values(groups).sort((a: { style: string; color: string; }, b: { style: string; color: string; }) => a.style.localeCompare(b.style) || a.color.localeCompare(b.color));
         return { ...summary, groupedItems: sortedGroups };
     }, [items]);
 
@@ -483,12 +549,15 @@ export const NewOrderEntry = () => {
     const [styleSearchTerm, setStyleSearchTerm] = useState('');
     const [isStyleSearchFocused, setIsStyleSearchFocused] = useState(false);
     const styleSearchRef = useRef(null);
+    const [stockData, setStockData] = useState({});
     
     // UI State
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
     const [isCartModalOpen, setIsCartModalOpen] = useState(false);
     const [isOrderDetailsCollapsed, setIsOrderDetailsCollapsed] = useState(false);
     const [editingCartGroup, setEditingCartGroup] = useState(null);
+    const [draftToRestore, setDraftToRestore] = useState(null);
+    const draftSaveTimeoutRef = useRef(null);
 
 
     // --- DATA FETCHING & SYNC ---
@@ -538,8 +607,66 @@ export const NewOrderEntry = () => {
             });
         };
         metadataRef.on('value', syncCheck);
+        
+        const loadStockData = async () => {
+            const stockItems = await stockDb.getAllStock() as any[];
+            if (stockItems && stockItems.length > 0) {
+                const stockMap = stockItems.reduce((acc, item) => {
+                    if (item.style && item.color && item.size) {
+                       const key = `${normalizeKeyPart(item.style)}-${normalizeKeyPart(item.color)}-${normalizeKeyPart(item.size)}`;
+                       acc[key] = item.stock;
+                    }
+                    return acc;
+                }, {});
+                setStockData(stockMap);
+            }
+        };
+        loadStockData();
         return () => metadataRef.off('value', syncCheck);
     }, []);
+
+    // --- DRAFT MANAGEMENT ---
+    useEffect(() => {
+        if (draftSaveTimeoutRef.current) clearTimeout(draftSaveTimeoutRef.current);
+        draftSaveTimeoutRef.current = setTimeout(() => {
+            if (partyName || items.length > 0) {
+                localStorage.setItem('ka-oms-order-draft', JSON.stringify({ partyName, items }));
+            } else {
+                localStorage.removeItem('ka-oms-order-draft');
+            }
+        }, 1500);
+        return () => clearTimeout(draftSaveTimeoutRef.current);
+    }, [partyName, items]);
+
+    useEffect(() => {
+        const savedDraft = localStorage.getItem('ka-oms-order-draft');
+        if (savedDraft) {
+            try {
+                const parsed = JSON.parse(savedDraft);
+                if (parsed.partyName || (parsed.items && parsed.items.length > 0)) {
+                    setDraftToRestore(parsed);
+                }
+            } catch (e) {
+                console.error("Failed to parse saved draft", e);
+                localStorage.removeItem('ka-oms-order-draft');
+            }
+        }
+    }, []);
+
+    const handleRestoreDraft = () => {
+        if (draftToRestore) {
+            setPartyName(draftToRestore.partyName);
+            setItems(draftToRestore.items);
+        }
+        setDraftToRestore(null);
+        showToast('Draft restored successfully!', 'success');
+    };
+
+    const handleDiscardDraft = () => {
+        localStorage.removeItem('ka-oms-order-draft');
+        setDraftToRestore(null);
+    };
+
 
     const loadItemsFromDb = async () => {
         const dbItems = await itemDb.getAllItems() as any[];
@@ -643,16 +770,19 @@ export const NewOrderEntry = () => {
 
     const handleClearCart = () => {
         setItems([]);
+        localStorage.removeItem('ka-oms-order-draft');
     };
 
     const handleSaveDraft = () => {
         showToast('Draft saved successfully!', 'success');
-        // Future: Implement actual draft saving logic
+        localStorage.setItem('ka-oms-order-draft', JSON.stringify({ partyName, items }));
     };
 
     const handleSubmitOrder = () => {
         showToast('Order submitted!', 'success');
-        // Future: Implement actual submission logic
+        setItems([]);
+        setPartyName('');
+        localStorage.removeItem('ka-oms-order-draft');
     };
 
     const filteredStyles = useMemo(() => {
@@ -682,6 +812,19 @@ export const NewOrderEntry = () => {
         
     return (
         <div style={containerStyle}>
+            {draftToRestore && (
+                <div style={styles.draftRestoreOverlay}>
+                    <div style={styles.draftRestoreModal}>
+                        <h3 style={styles.draftRestoreTitle}>Unsaved Order Found</h3>
+                        <p style={styles.draftRestoreText}>Would you like to restore your previous unsaved order?</p>
+                        <div style={styles.draftRestoreActions}>
+                            <button onClick={handleDiscardDraft} style={{...styles.button, ...styles.secondaryButton}}>Discard</button>
+                            <button onClick={handleRestoreDraft} style={styles.button}>Restore</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div style={headerStyle}>
                 {!isMobile && (
                     <div style={styles.actions}>
@@ -790,6 +933,7 @@ export const NewOrderEntry = () => {
                                 orderItems={items}
                                 onQuantityChange={handleQuantityChange}
                                 isMobile={isMobile}
+                                stockData={stockData}
                             />
                         )}
                     </div>
@@ -893,8 +1037,12 @@ const styles: { [key: string]: React.CSSProperties } = {
     colorCard: { borderRadius: '12px', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', transition: 'all 0.3s' },
     colorHeader: { fontWeight: 600, textAlign: 'left', textTransform: 'uppercase', paddingBottom: '0.5rem', borderBottom: '1px solid rgba(100, 100, 100, 0.2)' },
     sizeList: { display: 'flex', flexDirection: 'column', gap: '0.25rem' },
-    sizeRow: { display: 'grid', gridTemplateColumns: 'auto 1fr', alignItems: 'center', gap: '0.75rem' },
+    sizeRow: { display: 'grid', gridTemplateColumns: '1fr auto', alignItems: 'center', gap: '0.75rem' },
+    sizeInfoWrapper: { display: 'flex', alignItems: 'center', gap: '0.5rem' },
+    sizeLabelWrapper: { minWidth: '40px' },
     sizeLabel: { fontSize: '0.9rem', fontWeight: 500 },
+    stockIndicator: { width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0 },
+    stockIndicatorPlaceholder: { width: '8px', height: '8px' },
     quantityInput: { width: '45px', height: '32px', padding: '6px 2px', fontSize: '1rem', border: '1px solid var(--skeleton-bg)', borderLeft: 'none', borderRight: 'none', backgroundColor: 'var(--card-bg)', color: 'var(--dark-grey)', textAlign: 'center', outline: 'none', borderRadius: 0, boxSizing: 'border-box', appearance: 'textfield', MozAppearance: 'textfield' },
     mrpText: { fontSize: '0.75rem', color: 'var(--text-color)', textAlign: 'left', padding: '2px 0 0', lineHeight: '1' },
     quantityControl: { display: 'flex', alignItems: 'center', justifyContent: 'flex-end', },
@@ -925,6 +1073,11 @@ const styles: { [key: string]: React.CSSProperties } = {
     cartCountBadge: { position: 'absolute', top: '-2px', right: '-5px', backgroundColor: '#e74c3c', color: 'white', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '0.75rem', fontWeight: 600, border: '2px solid var(--card-bg)' },
     stickyActionButtons: { display: 'flex', gap: '0.75rem' },
     stickyButton: { padding: '0.75rem 1rem', fontSize: '0.9rem' },
+    draftRestoreOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center' },
+    draftRestoreModal: { backgroundColor: 'var(--card-bg)', padding: '2rem', borderRadius: 'var(--border-radius)', boxShadow: 'var(--box-shadow)', maxWidth: '400px', width: '90%', textAlign: 'center' },
+    draftRestoreTitle: { fontSize: '1.25rem', fontWeight: 600, color: 'var(--dark-grey)', marginBottom: '0.5rem' },
+    draftRestoreText: { color: 'var(--text-color)', marginBottom: '1.5rem' },
+    draftRestoreActions: { display: 'flex', gap: '1rem', justifyContent: 'center' },
 };
 
 // Add keyframes for modal animation
