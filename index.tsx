@@ -285,7 +285,7 @@ const MainContent = ({ activeView, onNavigate, session, isMobile }) => {
             mainStyle = { ...styles.mainContent, padding: 0 };
         } else {
             // Other views need padding to avoid the bottom nav bar
-            mainStyle = { ...styles.mainContent, padding: '0.5rem', paddingBottom: '70px' };
+            mainStyle = { ...styles.mainContent, padding: '0.5rem 0.25rem', paddingBottom: '70px' };
         }
     }
 
@@ -335,7 +335,7 @@ const HomePage = ({ session, onLogout, appLogoSrc }) => {
             formPane.style.flex = '1 0 100%';
             formPane.style.padding = '0';
         }
-        if(rootEl) rootEl.style.maxWidth = '100vw';
+        if(rootEl) rootEl.style.maxWidth = '100%';
         document.body.style.overflow = 'auto';
 
         return () => {
