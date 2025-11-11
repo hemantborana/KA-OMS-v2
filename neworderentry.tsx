@@ -164,18 +164,18 @@ const CollapsibleColorCard: React.FC<{ color: any, itemsInColor: any, allSizesFo
                             const formattedMrp = formatMRP(itemData.MRP);
                             return (
                                 <div key={size} style={styles.sizeRow}>
-                                    <label style={styles.sizeLabel}>{size}</label>
                                     <div>
-                                        <input
-                                            type="number"
-                                            min="0"
-                                            style={styles.quantityInput}
-                                            value={quantity}
-                                            onChange={(e) => onQuantityChange(itemData, e.target.value)}
-                                            placeholder="0"
-                                        />
+                                        <label style={styles.sizeLabel}>{size}</label>
                                         {formattedMrp && <div style={styles.mrpText}>{formattedMrp}</div>}
                                     </div>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        style={styles.quantityInput}
+                                        value={quantity}
+                                        onChange={(e) => onQuantityChange(itemData, e.target.value)}
+                                        placeholder="0"
+                                    />
                                 </div>
                             );
                         }
@@ -642,10 +642,10 @@ const styles: { [key: string]: React.CSSProperties } = {
     colorCard: { borderRadius: '12px', padding: '1rem', width: '150px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '0.75rem', transition: 'all 0.3s' },
     colorHeader: { fontWeight: 600, textAlign: 'left', textTransform: 'uppercase', paddingBottom: '0.5rem', borderBottom: '1px solid rgba(100, 100, 100, 0.2)' },
     sizeList: { display: 'flex', flexDirection: 'column', gap: '0.25rem', paddingTop: '0.5rem' },
-    sizeRow: { display: 'grid', gridTemplateColumns: '40px 1fr', alignItems: 'center', gap: '0.5rem' },
+    sizeRow: { display: 'grid', gridTemplateColumns: '60px 1fr', alignItems: 'center', gap: '0.5rem' },
     sizeLabel: { fontSize: '0.9rem', fontWeight: 500 },
     quantityInput: { width: '100%', padding: '6px 8px', fontSize: '0.9rem', border: '1px solid var(--skeleton-bg)', borderRadius: '6px', backgroundColor: 'var(--card-bg)', color: 'var(--dark-grey)', textAlign: 'right', outline: 'none' },
-    mrpText: { fontSize: '0.75rem', color: 'var(--text-color)', textAlign: 'right', padding: '2px 8px 0', lineHeight: '1' },
+    mrpText: { fontSize: '0.75rem', color: 'var(--text-color)', textAlign: 'left', padding: '2px 0 0', lineHeight: '1' },
     cartContainer: { backgroundColor: 'var(--card-bg)', padding: '1.5rem', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', display: 'flex', flexDirection: 'column', height: '100%' },
     cartHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
     itemCount: { fontSize: '0.9rem', fontWeight: 500, color: 'var(--text-color)', paddingBottom: '0.75rem' },
