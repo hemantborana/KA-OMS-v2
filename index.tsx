@@ -516,7 +516,7 @@ const KAOMSLogin = () => {
 const styles: { [key: string]: React.CSSProperties } = {
     // --- App Layout ---
     appContainer: { display: 'flex', flexDirection: 'column', height: '100vh', backgroundColor: 'var(--light-grey)' },
-    appHeader: { display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', padding: '0 1.5rem', height: '64px', backgroundColor: 'var(--card-bg)', borderBottom: '1px solid var(--skeleton-bg)', flexShrink: 0 },
+    appHeader: { display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center', padding: '0 1.5rem', height: '64px', backgroundColor: 'var(--card-bg)', borderBottom: '1px solid var(--skeleton-bg)', flexShrink: 0 },
     headerLeft: { gridColumn: '1', display: 'flex', alignItems: 'center', gap: '1rem', justifySelf: 'start' },
     headerCenter: { gridColumn: '2', textAlign: 'center', minWidth: 0 },
     headerRight: { gridColumn: '3', justifySelf: 'end' },
@@ -548,7 +548,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     // --- Dashboard Styles ---
     dashboardContainer: { display: 'flex', flexDirection: 'column', gap: '1.5rem' },
     dashboardWelcome: { fontSize: '1.75rem', fontWeight: 600, color: 'var(--dark-grey)' },
-    dashboardGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' },
+    dashboardGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' },
     dashboardCard: { backgroundColor: 'var(--card-bg)', padding: '1.5rem', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', gridColumn: 'span 1' },
     kpiCard: { backgroundColor: 'var(--card-bg)', padding: '1.5rem', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', display: 'flex', alignItems: 'center', gap: '1.5rem' },
     kpiIcon: { color: 'var(--brand-color)' },
