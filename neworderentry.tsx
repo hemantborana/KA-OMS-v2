@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 // FIX: Switched to Firebase v8 compat imports to resolve module export errors.
 import firebase from 'firebase/compat/app';
@@ -200,10 +201,12 @@ const StyleMatrix = ({ style, catalogData, orderItems, onQuantityChange, isMobil
             return acc;
         }, {});
     }, [orderItems]);
+    
+    const matrixStyleTitleStyle = isMobile ? { ...styles.matrixStyleTitle, marginBottom: '0.25rem' } : styles.matrixStyleTitle;
 
     return (
         <div style={styles.matrixContainer}>
-            <h3 style={styles.matrixStyleTitle}>{style}</h3>
+            <h3 style={matrixStyleTitleStyle}>{style}</h3>
             <div style={styles.matrixGrid}>
                 {colors.map(color => (
                     <CollapsibleColorCard
@@ -453,17 +456,23 @@ export const NewOrderEntry = () => {
     // --- RENDER ---
     const mainLayoutStyle = isMobile ? { ...styles.mainLayout, gridTemplateColumns: '1fr' } : styles.mainLayout;
     
-    // Create mobile-specific styles to avoid cluttering JSX
+    const containerStyle = isMobile 
+        ? { ...styles.container, margin: '-0.5rem', padding: '0.5rem', paddingBottom: '80px' } 
+        : styles.container;
+        
     const headerStyle = isMobile ? { ...styles.header, marginBottom: '0.5rem' } : styles.header;
     const mainPanelStyle = isMobile ? { ...styles.mainPanel, gap: '0.5rem' } : styles.mainPanel;
-    const searchHeaderContainerStyle = isMobile ? 
-        { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' } :
-        { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' };
-    const searchCardTitleStyle = isMobile ? { ...styles.cardTitle, marginBottom: '0' } : styles.cardTitle;
 
+    const orderDetailsCardStyle = isMobile 
+        ? { ...styles.card, padding: '1rem', gap: 0 } 
+        : { ...styles.card, gap: 0 };
 
+    const searchItemCardStyle = isMobile
+        ? { ...styles.card, flex: 1, padding: '1rem', gap: '0.5rem' }
+        : { ...styles.card, flex: 1 };
+        
     return (
-        <div style={styles.container}>
+        <div style={containerStyle}>
             <div style={headerStyle}>
                 {!isMobile && (
                     <div style={styles.actions}>
@@ -475,7 +484,7 @@ export const NewOrderEntry = () => {
             
             <div style={mainLayoutStyle}>
                 <div style={mainPanelStyle}>
-                    <div style={{...styles.card, gap: 0}}>
+                    <div style={orderDetailsCardStyle}>
                         <div style={styles.cardHeader}>
                            <h2 style={styles.cardTitleBare}>{partyName ? `Party: ${partyName}` : 'Order Details'}</h2>
                             {isMobile && partyName && (
@@ -501,11 +510,13 @@ export const NewOrderEntry = () => {
                         </div>
                     </div>
 
-                    <div style={{ ...styles.card, flex: 1 }}>
-                        <div style={searchHeaderContainerStyle}>
-                          <h2 style={searchCardTitleStyle}>Search Item</h2>
-                          {isSyncing && <div style={styles.syncingText}>Syncing item catalog...</div>}
-                        </div>
+                    <div style={searchItemCardStyle}>
+                        {!isMobile && (
+                             <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem'}}>
+                               <h2 style={{...styles.cardTitle, marginBottom: '0', paddingBottom: '0.5rem'}}>Search Item</h2>
+                               {isSyncing && <div style={styles.syncingText}>Syncing item catalog...</div>}
+                             </div>
+                        )}
                         
                         <div style={styles.styleSelectorContainer} ref={styleSearchRef}>
                              <input
