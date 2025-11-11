@@ -166,11 +166,11 @@ const QuantityControl: React.FC<{
             container: styles.quantityControl,
         };
         if (size === 'small') {
-            base.button = { ...base.button, width: '28px', height: '28px', fontSize: '1rem' };
-            base.input = { ...base.input, width: '36px', height: '28px', fontSize: '0.9rem', padding: '4px 2px' };
+            base.button = { ...base.button, width: '26px', height: '28px', fontSize: '1rem' };
+            base.input = { ...base.input, width: '34px', height: '28px', fontSize: '0.9rem', padding: '4px 2px' };
         } else { // default size
-             base.button = { ...base.button, width: '32px', height: '32px', fontSize: '1.2rem' };
-             base.input = { ...base.input, width: '45px', height: '32px', fontSize: '1rem', padding: '6px 2px' };
+             base.button = { ...base.button, width: '30px', height: '32px', fontSize: '1.2rem' };
+             base.input = { ...base.input, width: '40px', height: '32px', fontSize: '1rem', padding: '6px 2px' };
         }
         return base;
     }, [size, isDark]);
