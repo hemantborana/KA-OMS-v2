@@ -7,6 +7,9 @@ import 'firebase/compat/database';
 // --- ICONS ---
 const PlusIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>;
 const CartIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>;
+const TrashIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>;
+const ChevronRightIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>;
+
 const ChevronIcon = ({ collapsed }) => (
     <svg style={{ transform: collapsed ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }} xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
         <polyline points="18 15 12 9 6 15"></polyline>
@@ -110,6 +113,60 @@ const itemDb = {
     }
 };
 
+const QuantityControl: React.FC<{
+    value: string | number;
+    onChange: (value: string) => void;
+    onStep: (step: number) => void;
+    isDark?: boolean;
+    size?: 'small' | 'default';
+}> = ({ value, onChange, onStep, isDark = false, size = 'default' }) => {
+    
+    const themedStyles = {
+        quantityInput: isDark ? { ...styles.quantityInput, backgroundColor: '#2D3748', color: '#FFFFFF', borderTop: '1px solid #4A5568', borderBottom: '1px solid #4A5568' } : styles.quantityInput,
+        quantityButton: isDark ? { ...styles.quantityButton, backgroundColor: '#4A5568', color: '#FFFFFF', border: '1px solid #4A5568' } : styles.quantityButton,
+    };
+
+    const s = useMemo(() => {
+        const base = {
+            button: themedStyles.quantityButton,
+            input: themedStyles.quantityInput,
+            container: styles.quantityControl,
+        };
+        if (size === 'small') {
+            base.button = { ...base.button, width: '28px', height: '28px', fontSize: '1rem' };
+            base.input = { ...base.input, width: '36px', height: '28px', fontSize: '0.9rem', padding: '4px 2px' };
+        } else { // default size
+             base.button = { ...base.button, width: '32px', height: '32px', fontSize: '1.2rem' };
+             base.input = { ...base.input, width: '45px', height: '32px', fontSize: '1rem', padding: '6px 2px' };
+        }
+        return base;
+    }, [size, isDark]);
+
+    return (
+        <div style={s.container}>
+            <button
+                style={{ ...s.button, borderRadius: '6px 0 0 6px' }}
+                onClick={() => onStep(-1)}
+                aria-label="Decrease quantity"
+            >-</button>
+            <input
+                type="number"
+                min="0"
+                style={s.input}
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                placeholder="0"
+            />
+            <button
+                style={{ ...s.button, borderRadius: '0 6px 6px 0' }}
+                onClick={() => onStep(1)}
+                aria-label="Increase quantity"
+            >+</button>
+        </div>
+    );
+};
+
+
 const CollapsibleColorCard: React.FC<{ color: any, itemsInColor: any, allSizesForStyle: any, itemsByBarcode: any, onQuantityChange: any, isMobile: any }> = ({ color, itemsInColor, allSizesForStyle, itemsByBarcode, onQuantityChange, isMobile }) => {
     const [isCollapsed, setIsCollapsed] = useState(isMobile);
 
@@ -159,8 +216,6 @@ const CollapsibleColorCard: React.FC<{ color: any, itemsInColor: any, allSizesFo
     };
     
     const themedStyles = {
-        quantityInput: isDark ? { ...styles.quantityInput, backgroundColor: '#2D3748', color: '#FFFFFF', borderTop: '1px solid #4A5568', borderBottom: '1px solid #4A5568' } : styles.quantityInput,
-        quantityButton: isDark ? { ...styles.quantityButton, backgroundColor: '#4A5568', color: '#FFFFFF', border: '1px solid #4A5568' } : styles.quantityButton,
         mrpText: isDark ? { ...styles.mrpText, color: '#A0AEC0' } : styles.mrpText,
     };
     
@@ -168,17 +223,13 @@ const CollapsibleColorCard: React.FC<{ color: any, itemsInColor: any, allSizesFo
         const s = {
             sizeRow: styles.sizeRow,
             sizeLabel: styles.sizeLabel,
-            quantityButton: themedStyles.quantityButton,
-            quantityInput: themedStyles.quantityInput,
         };
         if (isMobile) {
             s.sizeRow = { ...s.sizeRow, gap: '0.5rem' };
             s.sizeLabel = { ...s.sizeLabel, fontSize: '0.85rem' };
-            s.quantityButton = { ...s.quantityButton, width: '28px', height: '28px', fontSize: '1rem' };
-            s.quantityInput = { ...s.quantityInput, width: '36px', height: '28px', fontSize: '0.9rem', padding: '4px 2px' };
         }
         return s;
-    }, [isMobile, themedStyles]);
+    }, [isMobile]);
 
     const colorHeaderStyle: React.CSSProperties = isMobile 
         ? {...styles.colorHeader, cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center'} 
@@ -203,26 +254,13 @@ const CollapsibleColorCard: React.FC<{ color: any, itemsInColor: any, allSizesFo
                                         <label style={computedStyles.sizeLabel}>{size}</label>
                                         {formattedMrp && <div style={themedStyles.mrpText}>{formattedMrp}</div>}
                                     </div>
-                                    <div style={styles.quantityControl}>
-                                        <button 
-                                            style={{...computedStyles.quantityButton, borderRadius: '6px 0 0 6px'}} 
-                                            onClick={() => handleQuantityStep(itemData, quantity, -1)}
-                                            aria-label="Decrease quantity"
-                                        >-</button>
-                                        <input
-                                            type="number"
-                                            min="0"
-                                            style={computedStyles.quantityInput}
-                                            value={quantity}
-                                            onChange={(e) => onQuantityChange(itemData, e.target.value)}
-                                            placeholder="0"
-                                        />
-                                        <button 
-                                            style={{...computedStyles.quantityButton, borderRadius: '0 6px 6px 0'}} 
-                                            onClick={() => handleQuantityStep(itemData, quantity, 1)}
-                                            aria-label="Increase quantity"
-                                        >+</button>
-                                    </div>
+                                    <QuantityControl 
+                                        value={quantity}
+                                        onChange={(value) => onQuantityChange(itemData, value)}
+                                        onStep={(step) => handleQuantityStep(itemData, quantity, step)}
+                                        isDark={isDark}
+                                        size={isMobile ? 'small' : 'default'}
+                                    />
                                 </div>
                             );
                         }
@@ -299,34 +337,125 @@ const StyleMatrix = ({ style, catalogData, orderItems, onQuantityChange, isMobil
     );
 };
 
-const Cart = ({ items, onRemoveItem, onClearCart }) => {
-    const totalQuantity = useMemo(() => items.reduce((sum, item) => sum + item.quantity, 0), [items]);
+const CartDetailModal = ({ group, items, onClose, onQuantityChange }) => {
+    const handleQuantityStep = (item, currentQuantity, step) => {
+        const currentVal = Number(currentQuantity) || 0;
+        const newValue = Math.max(0, currentVal + step);
+        onQuantityChange(item.fullItemData, String(newValue));
+    };
+
+    const formatCurrency = (value) => {
+        return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(value);
+    };
+
+    return (
+        <div style={styles.modalOverlay} onClick={onClose}>
+            <div style={{...styles.modalContent, height: 'auto', maxHeight: '80vh'}} onClick={(e) => e.stopPropagation()}>
+                <div style={styles.cartHeader}>
+                    <div>
+                        <h2 style={styles.cardTitleBare}>Edit Item</h2>
+                        <p style={styles.cartItemSubDetails}>{`${group.style} - ${group.color}`}</p>
+                    </div>
+                    <button style={styles.modalCloseButton} onClick={onClose} aria-label="Close edit view">&times;</button>
+                </div>
+                <div style={styles.cartItemsList}>
+                     {items.sort((a,b) => a.fullItemData.Size.localeCompare(b.fullItemData.Size, undefined, {numeric: true})).map(item => (
+                        <div key={item.id} style={styles.cartItem}>
+                            <div style={styles.cartItemInfo}>
+                                <div style={styles.cartItemDetails}>{`Size: ${item.fullItemData.Size}`}</div>
+                                <div style={styles.cartItemSubDetails}>{formatCurrency(item.price)}</div>
+                            </div>
+                            <div style={styles.cartItemActions}>
+                                <QuantityControl
+                                    value={item.quantity}
+                                    onChange={(value) => onQuantityChange(item.fullItemData, value)}
+                                    onStep={(step) => handleQuantityStep(item, item.quantity, step)}
+                                    size="small"
+                                />
+                                <button onClick={() => onQuantityChange(item.fullItemData, '0')} style={styles.cartItemRemoveBtn} aria-label="Remove item">
+                                    <TrashIcon />
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+                <div style={{...styles.cartFooter, borderTop: 'none', padding: '1rem 1.5rem'}}>
+                    <button onClick={onClose} style={{...styles.button, width: '100%'}}>Done</button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+
+const Cart = ({ items, onQuantityChange, onClearCart, onSubmit, onSaveDraft, onEditGroup, isMobile }) => {
+    const { totalQuantity, totalValue, groupedItems } = useMemo(() => {
+        const summary = { totalQuantity: 0, totalValue: 0 };
+        if (!items || items.length === 0) return { ...summary, groupedItems: [] };
+        
+        // FIX: Explicitly typed the accumulator for the `items.reduce` call. This ensures TypeScript correctly infers the type of the `groups` object, resolving errors on the subsequent `sort` call where `style` and `color` properties were not found on an 'unknown' type.
+        const groups = items.reduce((acc, item) => {
+            summary.totalQuantity += item.quantity;
+            summary.totalValue += item.quantity * item.price;
+            const key = `${item.fullItemData.Style}-${item.fullItemData.Color}`;
+            if (!acc[key]) {
+                acc[key] = { style: item.fullItemData.Style, color: item.fullItemData.Color, totalQuantity: 0 };
+            }
+            acc[key].totalQuantity += item.quantity;
+            return acc;
+        }, {} as Record<string, { style: string; color: string; totalQuantity: number; }>);
+        
+        const sortedGroups = Object.values(groups).sort((a, b) => a.style.localeCompare(b.style) || a.color.localeCompare(b.color));
+        return { ...summary, groupedItems: sortedGroups };
+    }, [items]);
+
+    const formatCurrency = (value) => {
+        return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(value);
+    };
 
     return (
         <div style={styles.cartContainer}>
             <div style={styles.cartHeader}>
-                <h2 style={styles.cardTitle}>Cart</h2>
-                <span style={styles.itemCount}>{totalQuantity} Items</span>
+                <h2 style={styles.cardTitleBare}>Order Summary</h2>
+                {items.length > 0 && (
+                    <button onClick={onClearCart} style={styles.clearCartButton}>Clear All</button>
+                )}
             </div>
+            
             {items.length === 0 ? (
-                <p style={styles.cartEmptyText}>Add items using the matrix to see them here.</p>
+                <p style={styles.cartEmptyText}>Your cart is empty. Add items from the style matrix.</p>
             ) : (
-                <>
-                    <div style={styles.cartItemsList}>
-                        {items.sort((a,b) => a.fullItemData.Style.localeCompare(b.fullItemData.Style)).map(item => (
-                            <div key={item.id} style={styles.cartItem}>
-                                <div style={styles.cartItemInfo}>
-                                    <div style={styles.cartItemDetails}>{`${item.fullItemData.Style} - ${item.fullItemData.Color}`}</div>
-                                    <div style={styles.cartItemSubDetails}>{`Size: ${item.fullItemData.Size}`}</div>
-                                </div>
-                                <div style={styles.cartItemQuantity}>Qty: {item.quantity}</div>
-                                <button onClick={() => onRemoveItem(item.fullItemData)} style={styles.cartItemRemoveBtn} aria-label="Remove item">&times;</button>
+                <div style={styles.cartItemsList}>
+                    {groupedItems.map(group => (
+                        <button key={`${group.style}-${group.color}`} style={styles.cartGroupItem} onClick={() => onEditGroup(group)}>
+                            <div style={styles.cartItemInfo}>
+                                <div style={styles.cartItemDetails}>{`${group.style} - ${group.color}`}</div>
+                                <div style={styles.cartItemSubDetails}>{`Total Qty: ${group.totalQuantity}`}</div>
                             </div>
-                        ))}
-                    </div>
-                    <button onClick={onClearCart} style={{...styles.button, ...styles.secondaryButton, width: '100%', marginTop: 'auto'}}>Clear Cart</button>
-                </>
+                            <ChevronRightIcon />
+                        </button>
+                    ))}
+                </div>
             )}
+
+            <div style={styles.cartFooter}>
+                <div style={styles.cartSummary}>
+                    <div>
+                        <div style={styles.summaryLabel}>Total Quantity</div>
+                        <div style={styles.summaryValue}>{totalQuantity} Items</div>
+                    </div>
+                    <div>
+                        <div style={styles.summaryLabel}>Total Value</div>
+                        <div style={styles.summaryValue}>{formatCurrency(totalValue)}</div>
+                    </div>
+                </div>
+                {isMobile && (
+                     <div style={styles.stickyActionButtons}>
+                        <button onClick={onSaveDraft} style={{ ...styles.button, ...styles.secondaryButton, ...styles.stickyButton, flex: 1 }}>Save Draft</button>
+                        <button onClick={onSubmit} style={{ ...styles.button, ...styles.stickyButton, flex: 1 }}>Submit Order</button>
+                    </div>
+                )}
+            </div>
         </div>
     );
 };
@@ -355,6 +484,7 @@ export const NewOrderEntry = () => {
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
     const [isCartModalOpen, setIsCartModalOpen] = useState(false);
     const [isOrderDetailsCollapsed, setIsOrderDetailsCollapsed] = useState(false);
+    const [editingCartGroup, setEditingCartGroup] = useState(null);
 
 
     // --- DATA FETCHING & SYNC ---
@@ -470,14 +600,20 @@ export const NewOrderEntry = () => {
     };
 
     const handleQuantityChange = (fullItemData, quantityStr) => {
-        const quantity = parseInt(quantityStr, 10) || 0;
+        const quantity = parseInt(quantityStr, 10);
         const barcode = fullItemData.Barcode;
-    
+        
+        if (isNaN(quantity)) { // Handles empty input
+             setItems(currentItems => currentItems.filter(item => item.fullItemData.Barcode !== barcode));
+             return;
+        }
+
         setItems(currentItems => {
             const existingItemIndex = currentItems.findIndex(item => item.fullItemData.Barcode === barcode);
     
             if (quantity > 0) {
-                triggerHapticFeedback();
+                if(existingItemIndex === -1) triggerHapticFeedback(); // Vibrate only on adding a new item
+                
                 if (existingItemIndex > -1) {
                     const newItems = [...currentItems];
                     newItems[existingItemIndex] = { ...newItems[existingItemIndex], quantity: quantity };
@@ -499,10 +635,6 @@ export const NewOrderEntry = () => {
             }
             return currentItems;
         });
-    };
-    
-    const handleRemoveItem = (fullItemData) => {
-        handleQuantityChange(fullItemData, '0');
     };
 
     const handleClearCart = () => {
@@ -661,7 +793,15 @@ export const NewOrderEntry = () => {
 
                 {!isMobile && (
                     <div style={styles.sidePanel}>
-                        <Cart items={items} onRemoveItem={handleRemoveItem} onClearCart={handleClearCart} />
+                        <Cart 
+                           items={items} 
+                           onQuantityChange={handleQuantityChange} 
+                           onClearCart={handleClearCart} 
+                           onSubmit={handleSubmitOrder}
+                           onSaveDraft={handleSaveDraft}
+                           onEditGroup={(group) => setEditingCartGroup(group)}
+                           isMobile={isMobile}
+                        />
                     </div>
                 )}
             </div>
@@ -678,17 +818,34 @@ export const NewOrderEntry = () => {
                     </div>
                 </div>
             )}
-
+            
             {isMobile && isCartModalOpen && (
                 <div style={styles.modalOverlay} onClick={() => setIsCartModalOpen(false)}>
                     <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
                         <button style={styles.modalCloseButton} onClick={() => setIsCartModalOpen(false)} aria-label="Close cart">&times;</button>
-                        <Cart items={items} onRemoveItem={handleRemoveItem} onClearCart={() => {
-                            handleClearCart();
-                            setIsCartModalOpen(false);
-                        }} />
+                        <Cart 
+                           items={items} 
+                           onQuantityChange={handleQuantityChange} 
+                           onClearCart={() => { handleClearCart(); setIsCartModalOpen(false); }} 
+                           onSubmit={() => { handleSubmitOrder(); setIsCartModalOpen(false); }}
+                           onSaveDraft={() => { handleSaveDraft(); setIsCartModalOpen(false); }}
+                           onEditGroup={(group) => setEditingCartGroup(group)}
+                           isMobile={isMobile}
+                        />
                     </div>
                 </div>
+            )}
+            
+            {editingCartGroup && (
+                <CartDetailModal
+                    group={editingCartGroup}
+                    items={items.filter(item => 
+                        item.fullItemData.Style === editingCartGroup.style && 
+                        item.fullItemData.Color === editingCartGroup.color
+                    )}
+                    onClose={() => setEditingCartGroup(null)}
+                    onQuantityChange={handleQuantityChange}
+                />
             )}
         </div>
     );
@@ -734,25 +891,30 @@ const styles: { [key: string]: React.CSSProperties } = {
     mrpText: { fontSize: '0.75rem', color: 'var(--text-color)', textAlign: 'left', padding: '2px 0 0', lineHeight: '1' },
     quantityControl: { display: 'flex', alignItems: 'center', justifyContent: 'flex-end', },
     quantityButton: { backgroundColor: 'var(--light-grey)', border: '1px solid var(--skeleton-bg)', color: 'var(--dark-grey)', width: '32px', height: '32px', fontSize: '1.2rem', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background-color 0.2s', lineHeight: 1, },
-    cartContainer: { backgroundColor: 'var(--card-bg)', padding: '1.5rem', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', display: 'flex', flexDirection: 'column', height: '100%' },
-    cartHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-    itemCount: { fontSize: '0.9rem', fontWeight: 500, color: 'var(--text-color)', paddingBottom: '0.75rem' },
-    cartEmptyText: { textAlign: 'center', color: 'var(--text-color)', marginTop: '2rem', flex: 1 },
-    cartItemsList: { flex: 1, overflowY: 'auto', margin: '1rem 0', paddingRight: '0.5rem' },
-    cartItem: { display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem 0', borderBottom: '1px solid var(--skeleton-bg)' },
+    cartContainer: { backgroundColor: 'var(--card-bg)', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', display: 'flex', flexDirection: 'column', height: '100%' },
+    cartHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.5rem 1.5rem 1rem', borderBottom: '1px solid var(--skeleton-bg)', flexShrink: 0 },
+    clearCartButton: { background: 'none', border: 'none', color: 'var(--text-color)', fontSize: '0.85rem', fontWeight: 500, cursor: 'pointer' },
+    cartEmptyText: { textAlign: 'center', color: 'var(--text-color)', padding: '3rem 1.5rem', flex: 1 },
+    cartItemsList: { flex: 1, overflowY: 'auto', padding: '0.5rem 1.5rem' },
+    cartItem: { display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem 0', borderBottom: '1px solid var(--skeleton-bg)' },
+    cartGroupItem: { display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem 0', borderBottom: '1px solid var(--skeleton-bg)', width: '100%', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' },
     cartItemInfo: { flex: 1 },
-    cartItemDetails: { fontWeight: 500, color: 'var(--dark-grey)', fontSize: '0.9rem' },
+    cartItemDetails: { fontWeight: 600, color: 'var(--dark-grey)', fontSize: '0.9rem' },
     cartItemSubDetails: { color: 'var(--text-color)', fontSize: '0.8rem' },
-    cartItemQuantity: { fontWeight: 500, color: 'var(--dark-grey)' },
-    cartItemRemoveBtn: { background: 'none', border: 'none', color: 'var(--text-color)', cursor: 'pointer', fontSize: '1.5rem', padding: '0 0.5rem', lineHeight: 1 },
-    modalOverlay: { position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'flex-end', padding: '1rem' },
-    modalContent: { backgroundColor: 'var(--card-bg)', width: '100%', maxWidth: '500px', maxHeight: '80vh', borderRadius: 'var(--border-radius)', display: 'flex', flexDirection: 'column', position: 'relative', animation: 'slideUp 0.3s ease-out' },
-    modalCloseButton: { position: 'absolute', top: '10px', right: '15px', background: 'none', border: 'none', fontSize: '2rem', color: 'var(--text-color)', cursor: 'pointer', zIndex: 1 },
+    cartItemActions: { display: 'flex', alignItems: 'center', gap: '0.5rem' },
+    cartItemRemoveBtn: { background: 'none', border: 'none', color: 'var(--text-color)', cursor: 'pointer', padding: '0.5rem', lineHeight: 1 },
+    cartFooter: { borderTop: '1px solid var(--skeleton-bg)', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', flexShrink: 0 },
+    cartSummary: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+    summaryLabel: { fontSize: '0.85rem', color: 'var(--text-color)', marginBottom: '0.25rem' },
+    summaryValue: { fontSize: '1.1rem', fontWeight: 600, color: 'var(--dark-grey)' },
+    modalOverlay: { position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center' },
+    modalContent: { backgroundColor: 'var(--card-bg)', width: '100%', maxWidth: '500px', maxHeight: '700px', borderRadius: 'var(--border-radius)', display: 'flex', flexDirection: 'column', position: 'relative', animation: 'slideUp 0.3s ease-out', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' },
+    modalCloseButton: { position: 'absolute', top: '10px', right: '15px', background: 'none', border: 'none', fontSize: '2rem', color: 'var(--text-color)', cursor: 'pointer', zIndex: 1, padding: '0.5rem' },
     stickyActionBar: { position: 'fixed', bottom: '0', left: 0, right: 0, backgroundColor: 'var(--card-bg)', padding: '0.75rem 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--skeleton-bg)', boxShadow: '0 -2px 10px rgba(0,0,0,0.05)', zIndex: 90 },
     stickyCartButton: { background: 'none', border: 'none', cursor: 'pointer', color: 'var(--dark-grey)', display: 'flex', alignItems: 'center', gap: '0.5rem', position: 'relative', padding: '0.5rem' },
     cartCountBadge: { position: 'absolute', top: '-2px', right: '-5px', backgroundColor: '#e74c3c', color: 'white', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '0.75rem', fontWeight: 600, border: '2px solid var(--card-bg)' },
-    stickyActionButtons: { display: 'flex', gap: '0.75rem' },
-    stickyButton: { padding: '0.5rem 1rem', fontSize: '0.85rem' },
+    stickyActionButtons: { display: 'flex', gap: '0.75rem', width: '100%' },
+    stickyButton: { padding: '0.75rem 1rem', fontSize: '0.9rem' },
 };
 
 // Add keyframes for modal animation
@@ -762,6 +924,16 @@ styleSheet.innerText = `
     @keyframes slideUp {
         from { transform: translateY(100%); opacity: 0; }
         to { transform: translateY(0); opacity: 1; }
+    }
+    @media (max-width: 768px) {
+      .modalContentOnMobile {
+        animation: slideUp 0.3s ease-out;
+        border-radius: var(--border-radius) var(--border-radius) 0 0;
+        height: 85vh;
+      }
+      .modalOverlayOnMobile {
+        align-items: flex-end;
+      }
     }
     input[type=number]::-webkit-outer-spin-button,
     input[type=number]::-webkit-inner-spin-button {
