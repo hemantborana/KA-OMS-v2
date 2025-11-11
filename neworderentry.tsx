@@ -533,7 +533,7 @@ export const NewOrderEntry = () => {
     
     const containerStyle = isMobile 
         ? { ...styles.container, padding: '0.5rem', paddingBottom: '80px' } 
-        : { ...styles.container, padding: '1.5rem' };
+        : { ...styles.container };
         
     const headerStyle = isMobile ? { ...styles.header, marginBottom: '0.5rem' } : styles.header;
     const mainPanelStyle = isMobile ? { ...styles.mainPanel, gap: '1rem' } : styles.mainPanel;
