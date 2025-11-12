@@ -4,11 +4,30 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
 
+// --- Firebase Drafts Configuration ---
+const DRAFTS_REF = 'KA-OMS-v2-Draft';
+
+// --- Type definitions for order items and drafts ---
+interface OrderItem {
+    id: string;
+    quantity: number;
+    price: number;
+    fullItemData: Record<string, any>;
+}
+
+interface Draft {
+    items: OrderItem[];
+    timestamp: string;
+}
+
 // --- ICONS ---
 const PlusIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>;
 const CartIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>;
 const TrashIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>;
 const ChevronRightIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>;
+const FolderIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>;
+const RestoreIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>;
+const ClockIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>;
 
 const ChevronIcon = ({ collapsed }) => (
     <svg style={{ transform: collapsed ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }} xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -17,7 +36,7 @@ const ChevronIcon = ({ collapsed }) => (
 );
 
 // --- FEEDBACK HELPERS ---
-const showToast = (message: string, type: 'info' | 'success' = 'info') => {
+const showToast = (message: string, type: 'info' | 'success' | 'error' = 'info') => {
     window.dispatchEvent(new CustomEvent('show-toast', { detail: { message, type } }));
 };
 
@@ -461,7 +480,7 @@ const CartDetailModal = ({ group, items, onClose, onQuantityChange }) => {
 };
 
 
-const Cart = ({ items, onQuantityChange, onClearCart, onSubmit, onSaveDraft, onEditGroup, isMobile, isModal, onClose }) => {
+const Cart = ({ items, onQuantityChange, onClearCart, onSubmit, onSaveDraft, onEditGroup, isMobile, isModal, onClose, draftButton }) => {
     const { totalQuantity, totalValue, groupedItems } = useMemo(() => {
         const summary = { totalQuantity: 0, totalValue: 0 };
         if (!items || items.length === 0) return { ...summary, groupedItems: [] };
@@ -527,10 +546,104 @@ const Cart = ({ items, onQuantityChange, onClearCart, onSubmit, onSaveDraft, onE
                 </div>
                 {isMobile && (
                      <div style={styles.stickyActionButtons}>
-                        <button onClick={onSaveDraft} style={{ ...styles.button, ...styles.secondaryButton, ...styles.stickyButton, flex: 1 }}>Save Draft</button>
+                        {draftButton}
                         <button onClick={onSubmit} style={{ ...styles.button, ...styles.stickyButton, flex: 1 }}>Submit Order</button>
                     </div>
                 )}
+            </div>
+        </div>
+    );
+};
+
+// FIX: Added strong typing to component props and internal state/functions to resolve multiple TypeScript errors.
+interface DraftsModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    drafts: Record<string, Draft>;
+    onRestore: (partyName: string) => void;
+    onDelete: (partyName: string) => void;
+}
+
+const DraftsModal: React.FC<DraftsModalProps> = ({ isOpen, onClose, drafts, onRestore, onDelete }) => {
+    const [expandedDraft, setExpandedDraft] = useState<string | null>(null);
+
+    if (!isOpen) return null;
+
+    const sortedDrafts = Object.entries(drafts).sort(([, a], [, b]) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+    const formatTimestamp = (isoString: string) => {
+        if (!isoString) return 'Unknown time';
+        return new Date(isoString).toLocaleString('en-IN', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+        });
+    };
+    
+    const totalQuantity = (items: OrderItem[]) => items.reduce((sum, item) => sum + item.quantity, 0);
+
+    return (
+        <div style={styles.modalOverlay} onClick={onClose}>
+            <div style={{...styles.modalContent, height: 'auto', maxHeight: '85vh', maxWidth: '600px'}} onClick={(e) => e.stopPropagation()}>
+                <div style={styles.cartHeader}>
+                    <div style={{display: 'flex', alignItems: 'center', gap: '0.75rem'}}>
+                        <FolderIcon />
+                        <h2 style={styles.cardTitleBare}>Saved Drafts</h2>
+                    </div>
+                    <button style={styles.modalCloseButton} onClick={onClose} aria-label="Close drafts view">&times;</button>
+                </div>
+                <div style={styles.draftsList}>
+                    {sortedDrafts.length === 0 ? (
+                        <p style={styles.cartEmptyText}>You have no saved drafts.</p>
+                    ) : (
+                        sortedDrafts.map(([partyName, draft]) => (
+                            <div key={partyName} style={styles.draftItem}>
+                                <div style={styles.draftHeader} onClick={() => setExpandedDraft(expandedDraft === partyName ? null : partyName)}>
+                                    <div style={styles.draftInfo}>
+                                        <p style={styles.draftPartyName}>{partyName}</p>
+                                        <div style={styles.draftMeta}>
+                                            <span style={styles.draftTimestamp}><ClockIcon /> {formatTimestamp(draft.timestamp)}</span>
+                                            <span>|</span>
+                                            <span>{totalQuantity(draft.items)} items</span>
+                                        </div>
+                                    </div>
+                                    <div style={styles.draftActions}>
+                                         <button onClick={(e) => { e.stopPropagation(); onDelete(partyName); }} style={styles.draftActionButton} aria-label={`Delete draft for ${partyName}`}>
+                                            <TrashIcon />
+                                        </button>
+                                        <button onClick={(e) => { e.stopPropagation(); onRestore(partyName); }} style={{...styles.draftActionButton, ...styles.draftRestoreButton}} aria-label={`Restore draft for ${partyName}`}>
+                                            <RestoreIcon />
+                                        </button>
+                                        <ChevronIcon collapsed={expandedDraft !== partyName} />
+                                    </div>
+                                </div>
+                                {expandedDraft === partyName && (
+                                    <div style={styles.draftItemsDetails}>
+                                        <div style={styles.draftItemsHeader}>
+                                            <span>Style</span>
+                                            <span>Color</span>
+                                            <span>Size</span>
+                                            <span>Qty</span>
+                                        </div>
+                                        <ul>
+                                            {draft.items.map(item => (
+                                                <li key={item.id} style={styles.draftItemRow}>
+                                                    <span>{item.fullItemData.Style}</span>
+                                                    <span>{item.fullItemData.Color}</span>
+                                                    <span>{item.fullItemData.Size}</span>
+                                                    <span>{item.quantity}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
+                            </div>
+                        ))
+                    )}
+                </div>
             </div>
         </div>
     );
@@ -540,7 +653,8 @@ const Cart = ({ items, onQuantityChange, onClearCart, onSubmit, onSaveDraft, onE
 export const NewOrderEntry = () => {
     // --- STATE MANAGEMENT ---
     const [partyName, setPartyName] = useState('');
-    const [items, setItems] = useState([]);
+// FIX: Strongly type the items state using the OrderItem interface.
+    const [items, setItems] = useState<OrderItem[]>([]);
     
     // Party Name Suggestions State
     const [allParties, setAllParties] = useState<string[]>([]);
@@ -562,8 +676,11 @@ export const NewOrderEntry = () => {
     const [isCartModalOpen, setIsCartModalOpen] = useState(false);
     const [isOrderDetailsCollapsed, setIsOrderDetailsCollapsed] = useState(false);
     const [editingCartGroup, setEditingCartGroup] = useState(null);
-    const [draftToRestore, setDraftToRestore] = useState(null);
-    const draftSaveTimeoutRef = useRef(null);
+// FIX: Strongly type the drafts state using the Draft interface. This resolves multiple TypeScript errors.
+    const [drafts, setDrafts] = useState<Record<string, Draft>>({});
+    const [isDraftModalOpen, setIsDraftModalOpen] = useState(false);
+
+    const partyHasExistingDraft = useMemo(() => partyName && drafts[partyName], [partyName, drafts]);
 
 
     // --- DATA FETCHING & SYNC ---
@@ -633,44 +750,68 @@ export const NewOrderEntry = () => {
 
     // --- DRAFT MANAGEMENT ---
     useEffect(() => {
-        if (draftSaveTimeoutRef.current) clearTimeout(draftSaveTimeoutRef.current);
-        draftSaveTimeoutRef.current = setTimeout(() => {
-            if (partyName || items.length > 0) {
-                localStorage.setItem('ka-oms-order-draft', JSON.stringify({ partyName, items }));
-            } else {
-                localStorage.removeItem('ka-oms-order-draft');
-            }
-        }, 1500);
-        return () => clearTimeout(draftSaveTimeoutRef.current);
-    }, [partyName, items]);
+        const draftsRef = database.ref(DRAFTS_REF);
+        const listener = draftsRef.on('value', (snapshot) => {
+            const data = snapshot.val();
+            setDrafts(data || {});
+        });
 
-    useEffect(() => {
-        const savedDraft = localStorage.getItem('ka-oms-order-draft');
-        if (savedDraft) {
-            try {
-                const parsed = JSON.parse(savedDraft);
-                if (parsed.items && parsed.items.length > 0) {
-                    setDraftToRestore(parsed);
-                }
-            } catch (e) {
-                console.error("Failed to parse saved draft", e);
-                localStorage.removeItem('ka-oms-order-draft');
-            }
-        }
+        // Cleanup listener on unmount
+        return () => draftsRef.off('value', listener);
     }, []);
 
-    const handleRestoreDraft = () => {
-        if (draftToRestore) {
-            setPartyName(draftToRestore.partyName);
-            setItems(draftToRestore.items);
+    const handleSaveDraft = () => {
+        if (!partyName) {
+            showToast('Please enter a party name to save a draft.', 'error');
+            return;
         }
-        setDraftToRestore(null);
-        showToast('Draft restored successfully!', 'success');
+        if (items.length === 0) {
+            showToast('Cannot save an empty order as a draft.', 'error');
+            return;
+        }
+
+        const performSave = () => {
+            const newDraft = { items, timestamp: new Date().toISOString() };
+            database.ref(`${DRAFTS_REF}/${partyName}`).set(newDraft)
+                .then(() => {
+                    showToast('Draft saved successfully!', 'success');
+                })
+                .catch((error) => {
+                    console.error("Error saving draft:", error);
+                    showToast('Failed to save draft.', 'error');
+                });
+        };
+
+        if (partyHasExistingDraft) {
+            if (window.confirm(`A draft for "${partyName}" already exists. Do you want to replace it?`)) {
+                performSave();
+            }
+        } else {
+            performSave();
+        }
+    };
+    
+    const handleRestoreDraft = (partyNameToRestore) => {
+        const draft = drafts[partyNameToRestore];
+        if (draft) {
+            setPartyName(partyNameToRestore);
+            setItems(draft.items);
+            setIsDraftModalOpen(false);
+            showToast(`Draft for ${partyNameToRestore} restored!`, 'success');
+        }
     };
 
-    const handleDiscardDraft = () => {
-        localStorage.removeItem('ka-oms-order-draft');
-        setDraftToRestore(null);
+    const handleDeleteDraft = (partyNameToDelete) => {
+        if (window.confirm(`Are you sure you want to delete the draft for "${partyNameToDelete}"? This cannot be undone.`)) {
+            database.ref(`${DRAFTS_REF}/${partyNameToDelete}`).remove()
+                .then(() => {
+                    showToast('Draft deleted.', 'success');
+                })
+                .catch((error) => {
+                    console.error("Error deleting draft:", error);
+                    showToast('Failed to delete draft.', 'error');
+                });
+        }
     };
 
 
@@ -723,13 +864,17 @@ export const NewOrderEntry = () => {
     };
 
     const handleSuggestionClick = (suggestion) => {
+        let finalPartyName = '';
         if (suggestion.startsWith('Add: ')) {
             const newParty = suggestion.substring(5).trim();
             if (!allParties.some(p => p.toLowerCase() === newParty.toLowerCase())) {
                 database.ref('PartyData').push().set({ name: newParty });
             }
-            setPartyName(newParty);
-        } else { setPartyName(suggestion); }
+            finalPartyName = newParty;
+        } else { 
+            finalPartyName = suggestion;
+        }
+        setPartyName(finalPartyName);
         setIsSuggestionsVisible(false);
         if (isMobile) {
             setIsOrderDetailsCollapsed(true);
@@ -757,7 +902,7 @@ export const NewOrderEntry = () => {
                     return newItems;
                 } else {
                     const price = parseFloat(String(fullItemData.MRP).replace(/[^0-9.-]+/g, "")) || 0;
-                    const newItem = {
+                    const newItem: OrderItem = {
                         id: barcode,
                         quantity: quantity,
                         price: price,
@@ -776,19 +921,21 @@ export const NewOrderEntry = () => {
 
     const handleClearCart = () => {
         setItems([]);
-        localStorage.removeItem('ka-oms-order-draft');
     };
-
-    const handleSaveDraft = () => {
-        showToast('Draft saved successfully!', 'success');
-        localStorage.setItem('ka-oms-order-draft', JSON.stringify({ partyName, items }));
-    };
-
+    
     const handleSubmitOrder = () => {
+        if (!partyName || items.length === 0) {
+            showToast('Party name and items are required to submit an order.', 'error');
+            return;
+        }
+
         showToast('Order submitted!', 'success');
+        // If a draft existed for this party, clear it upon submission
+        if (partyHasExistingDraft) {
+            database.ref(`${DRAFTS_REF}/${partyName}`).remove();
+        }
         setItems([]);
         setPartyName('');
-        localStorage.removeItem('ka-oms-order-draft');
     };
 
     const filteredStyles = useMemo(() => {
@@ -800,6 +947,46 @@ export const NewOrderEntry = () => {
     
     const totalQuantity = useMemo(() => items.reduce((sum, item) => sum + item.quantity, 0), [items]);
 
+    const renderDraftButton = (isMobileButton = false) => {
+        const buttonStyle = isMobileButton 
+            ? { ...styles.button, ...styles.stickyButton, flex: 1 } 
+            : { ...styles.button };
+            
+        if (partyName && partyHasExistingDraft) {
+            return (
+                <button
+                    onClick={() => setIsDraftModalOpen(true)}
+                    style={{ ...buttonStyle, backgroundColor: '#c0392b', color: '#fff', border: 'none' }}
+                >
+                    Draft Exists
+                </button>
+            );
+        }
+    
+        if (!partyName) {
+            return (
+                <button
+                    onClick={() => setIsDraftModalOpen(true)}
+                    style={{ ...buttonStyle, ...styles.secondaryButton }}
+                    disabled={Object.keys(drafts).length === 0}
+                >
+                    Open Drafts
+                </button>
+            );
+        }
+    
+        // Party name selected, but no draft exists
+        return (
+            <button
+                onClick={handleSaveDraft}
+                style={{ ...buttonStyle, ...styles.secondaryButton }}
+                disabled={items.length === 0}
+            >
+                Save Draft
+            </button>
+        );
+    };
+
     // --- RENDER ---
     const mainLayoutStyle = isMobile ? { ...styles.mainLayout, gridTemplateColumns: '1fr' } : styles.mainLayout;
     
@@ -808,6 +995,7 @@ export const NewOrderEntry = () => {
         : { ...styles.container };
         
     const headerStyle = isMobile ? { ...styles.header, marginBottom: '0.5rem' } : styles.header;
+// FIX: Corrected a typo from 'mainPanel' to 'styles.mainPanel' to fix a reference error.
     const mainPanelStyle = isMobile ? { ...styles.mainPanel, gap: '1rem' } : styles.mainPanel;
 
     const orderDetailsCardStyle = { ...styles.card, gap: 0 };
@@ -818,24 +1006,19 @@ export const NewOrderEntry = () => {
         
     return (
         <div style={containerStyle}>
-            {draftToRestore && (
-                <div style={styles.draftRestoreOverlay}>
-                    <div style={styles.draftRestoreModal}>
-                        <h3 style={styles.draftRestoreTitle}>Unsaved Order Found</h3>
-                        <p style={styles.draftRestoreText}>Would you like to restore your previous unsaved order?</p>
-                        <div style={styles.draftRestoreActions}>
-                            <button onClick={handleDiscardDraft} style={{...styles.button, ...styles.secondaryButton}}>Discard</button>
-                            <button onClick={handleRestoreDraft} style={styles.button}>Restore</button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <DraftsModal
+                isOpen={isDraftModalOpen}
+                onClose={() => setIsDraftModalOpen(false)}
+                drafts={drafts}
+                onRestore={handleRestoreDraft}
+                onDelete={handleDeleteDraft}
+            />
 
             <div style={headerStyle}>
                 {!isMobile && (
                     <div style={styles.actions}>
-                        <button onClick={handleSaveDraft} style={{ ...styles.button, ...styles.secondaryButton }}>Save Draft</button>
-                        <button onClick={handleSubmitOrder} style={styles.button}>Submit Order</button>
+                        {renderDraftButton()}
+                        <button onClick={handleSubmitOrder} style={styles.button} disabled={items.length === 0 || !partyName}>Submit Order</button>
                     </div>
                 )}
             </div>
@@ -947,7 +1130,7 @@ export const NewOrderEntry = () => {
 
                 {!isMobile && (
                     <div style={styles.sidePanel}>
-{/* FIX: Added missing 'isModal' and 'onClose' props to the Cart component. */}
+{/* FIX: Added missing 'isModal', 'onClose', and 'draftButton' props to the Cart component. */}
                         <Cart 
                            items={items} 
                            onQuantityChange={handleQuantityChange} 
@@ -958,6 +1141,7 @@ export const NewOrderEntry = () => {
                            isMobile={isMobile}
                            isModal={false}
                            onClose={() => {}}
+                           draftButton={null}
                         />
                     </div>
                 )}
@@ -970,8 +1154,8 @@ export const NewOrderEntry = () => {
                         {totalQuantity > 0 && <span style={styles.cartCountBadge}>{totalQuantity}</span>}
                     </button>
                     <div style={styles.stickyActionButtons}>
-                        <button onClick={handleSaveDraft} style={{ ...styles.button, ...styles.secondaryButton, ...styles.stickyButton }}>Save Draft</button>
-                        <button onClick={handleSubmitOrder} style={{ ...styles.button, ...styles.stickyButton }}>Submit Order</button>
+                        {renderDraftButton(true)}
+                        <button onClick={handleSubmitOrder} style={{ ...styles.button, ...styles.stickyButton }} disabled={items.length === 0 || !partyName}>Submit Order</button>
                     </div>
                 </div>
             )}
@@ -984,11 +1168,12 @@ export const NewOrderEntry = () => {
                            onQuantityChange={handleQuantityChange} 
                            onClearCart={() => { handleClearCart(); setIsCartModalOpen(false); }} 
                            onSubmit={() => { handleSubmitOrder(); setIsCartModalOpen(false); }}
-                           onSaveDraft={() => { handleSaveDraft(); setIsCartModalOpen(false); }}
+                           onSaveDraft={handleSaveDraft}
                            onEditGroup={(group) => setEditingCartGroup(group)}
                            isMobile={isMobile}
                            isModal={true}
                            onClose={() => setIsCartModalOpen(false)}
+                           draftButton={renderDraftButton(true)}
                         />
                     </div>
                 </div>
@@ -1014,7 +1199,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     header: { display: 'flex', justifyContent: 'flex-end', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', flexShrink: 0, marginBottom: '1rem' },
     title: { fontSize: '1.75rem', fontWeight: 600, color: 'var(--dark-grey)' },
     actions: { display: 'flex', gap: '0.75rem' },
-    button: { padding: '0.6rem 1.2rem', fontSize: '0.9rem', fontWeight: 500, color: '#fff', backgroundColor: 'var(--brand-color)', border: 'none', borderRadius: '8px', cursor: 'pointer', transition: 'background-color 0.3s ease' },
+    button: { padding: '0.6rem 1.2rem', fontSize: '0.9rem', fontWeight: 500, color: '#fff', backgroundColor: 'var(--brand-color)', border: 'none', borderRadius: '8px', cursor: 'pointer', transition: 'all 0.3s ease' },
     secondaryButton: { backgroundColor: 'var(--light-grey)', color: 'var(--dark-grey)', border: '1px solid var(--skeleton-bg)' },
     mainLayout: { display: 'grid', gridTemplateColumns: '1fr 380px', gap: '1rem', flex: 1, minHeight: 0 },
     mainPanel: { display: 'flex', flexDirection: 'column', gap: '1.5rem', minHeight: 0 },
@@ -1077,13 +1262,21 @@ const styles: { [key: string]: React.CSSProperties } = {
     stickyActionBar: { position: 'fixed', bottom: '0', left: 0, right: 0, backgroundColor: 'var(--card-bg)', padding: '0.75rem 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--skeleton-bg)', boxShadow: '0 -2px 10px rgba(0,0,0,0.05)', zIndex: 90 },
     stickyCartButton: { background: 'none', border: 'none', cursor: 'pointer', color: 'var(--dark-grey)', display: 'flex', alignItems: 'center', gap: '0.5rem', position: 'relative', padding: '0.5rem' },
     cartCountBadge: { position: 'absolute', top: '-2px', right: '-5px', backgroundColor: '#e74c3c', color: 'white', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '0.75rem', fontWeight: 600, border: '2px solid var(--card-bg)' },
-    stickyActionButtons: { display: 'flex', gap: '0.75rem' },
+    stickyActionButtons: { display: 'flex', gap: '0.75rem', flex: 1, justifyContent: 'flex-end' },
     stickyButton: { padding: '0.75rem 1rem', fontSize: '0.9rem' },
-    draftRestoreOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center' },
-    draftRestoreModal: { backgroundColor: 'var(--card-bg)', padding: '2rem', borderRadius: 'var(--border-radius)', boxShadow: 'var(--box-shadow)', maxWidth: '400px', width: '90%', textAlign: 'center' },
-    draftRestoreTitle: { fontSize: '1.25rem', fontWeight: 600, color: 'var(--dark-grey)', marginBottom: '0.5rem' },
-    draftRestoreText: { color: 'var(--text-color)', marginBottom: '1.5rem' },
-    draftRestoreActions: { display: 'flex', gap: '1rem', justifyContent: 'center' },
+    draftsList: { flex: 1, overflowY: 'auto', padding: '0.5rem 1.25rem' },
+    draftItem: { borderBottom: '1px solid var(--skeleton-bg)', padding: '0.75rem 0' },
+    draftHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', padding: '0.5rem 0' },
+    draftInfo: { display: 'flex', flexDirection: 'column', gap: '0.25rem' },
+    draftPartyName: { fontWeight: 600, color: 'var(--dark-grey)' },
+    draftMeta: { display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-color)', fontSize: '0.8rem' },
+    draftTimestamp: { display: 'flex', alignItems: 'center', gap: '0.25rem' },
+    draftActions: { display: 'flex', alignItems: 'center', gap: '0.5rem' },
+    draftActionButton: { background: 'none', border: '1px solid var(--skeleton-bg)', color: 'var(--text-color)', cursor: 'pointer', width: '32px', height: '32px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+    draftRestoreButton: { borderColor: 'var(--brand-color)', color: 'var(--brand-color)' },
+    draftItemsDetails: { padding: '0.75rem', backgroundColor: 'var(--light-grey)', borderRadius: '8px', marginTop: '0.5rem' },
+    draftItemsHeader: { display: 'grid', gridTemplateColumns: '2fr 2fr 1fr 1fr', gap: '0.5rem', paddingBottom: '0.5rem', borderBottom: '1px solid var(--skeleton-bg)', fontWeight: '600', fontSize: '0.8rem', color: 'var(--dark-grey)' },
+    draftItemRow: { display: 'grid', gridTemplateColumns: '2fr 2fr 1fr 1fr', gap: '0.5rem', padding: '0.5rem 0', fontSize: '0.85rem' },
 };
 
 // Add keyframes for modal animation
