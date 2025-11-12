@@ -1,9 +1,12 @@
 
+
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
 import { NewOrderEntry } from './neworderentry';
 import { StockOverview } from './stockoverview';
 import { PendingOrders } from './pendingorder';
+import { ReadyForBilling } from './readyforbilling';
+import { BilledOrders } from './billedorders';
 
 // --- TOAST NOTIFICATION SYSTEM ---
 const ToastContext = React.createContext(null);
@@ -13,7 +16,7 @@ const useToast = () => React.useContext(ToastContext);
 const Toast: React.FC<{ message: any, type: any, onClose: any }> = ({ message, type, onClose }) => {
     const toastStyles = {
         ...styles.toast,
-        backgroundColor: type === 'success' ? '#2ecc71' : '#3498db',
+        backgroundColor: type === 'success' ? '#2ecc71' : type === 'error' ? '#e74c3c' : '#3498db',
     };
 
     useEffect(() => {
@@ -329,6 +332,12 @@ const MainContent = ({ activeView, onNavigate, session, isMobile }) => {
     if (activeView === 'Pending') {
         return <main style={mainStyle}><PendingOrders /></main>;
     }
+    if (activeView === 'Billing') {
+        return <main style={mainStyle}><ReadyForBilling /></main>;
+    }
+    if (activeView === 'Billed') {
+        return <main style={mainStyle}><BilledOrders /></main>;
+    }
     
     return <main style={mainStyle}><PageContent /></main>;
 };
@@ -359,8 +368,8 @@ const HomePage = ({ session, onLogout, appLogoSrc }) => {
         window.addEventListener('show-toast', handleShowToast as EventListener);
 
         const handleClickOutside = (event) => {
-            if (!isMobile && !isSidebarCollapsed && sidebarRef.current && !sidebarRef.current.contains(event.target)) {
-                setIsSidebarCollapsed(true);
+            if (isMobile && isSidebarOpen && sidebarRef.current && !sidebarRef.current.contains(event.target)) {
+                setIsSidebarOpen(false);
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
@@ -390,7 +399,7 @@ const HomePage = ({ session, onLogout, appLogoSrc }) => {
             if(rootEl) rootEl.style.maxWidth = '420px';
             document.body.style.overflow = 'hidden';
         };
-    }, [isMobile, showToast, isSidebarCollapsed]);
+    }, [isMobile, showToast, isSidebarCollapsed, isSidebarOpen]);
 
     const handleNavigate = (view) => {
         setActiveView(view);

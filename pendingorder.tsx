@@ -1,5 +1,7 @@
 
 
+
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
@@ -8,12 +10,20 @@ import 'firebase/compat/database';
 const SearchIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>;
 const ChevronIcon = ({ collapsed }) => <svg style={{ transform: collapsed ? 'rotate(0deg)' : 'rotate(180deg)', transition: 'transform 0.3s ease' }} xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>;
 const Spinner = () => <div style={styles.spinner}></div>;
+const SmallSpinner = () => <div style={{...styles.spinner, width: '20px', height: '20px', borderTop: '3px solid white', borderRight: '3px solid transparent' }}></div>;
 const SummarizedViewIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>;
 const DetailedViewIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>;
 const InfoIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>;
 const CalendarIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>;
 
 // --- TYPE DEFINITIONS ---
+// FIX: Added OrderItem interface and updated Order interface to provide strong typing for order items, resolving downstream type errors.
+interface OrderItem {
+    id: string;
+    quantity: number;
+    price: number;
+    fullItemData: Record<string, any>;
+}
 interface Order {
     orderNumber: string;
     partyName: string;
@@ -21,34 +31,50 @@ interface Order {
     totalQuantity: number;
     totalValue: number;
     orderNote?: string;
-    items: any[];
+    items: OrderItem[];
 }
 
 // --- FIREBASE CONFIGURATION ---
-const firebaseConfig = {
-    apiKey: "AIzaSyBRV-i_70Xdk86bNuQQ43jiYkRNCXGvvyo",
-    authDomain: "hcoms-221aa.firebaseapp.com",
-    databaseURL: "https://hcoms-221aa-default-rtdb.firebaseio.com",
-    projectId: "hcoms-221aa",
-    storageBucket: "hcoms-221aa.appspot.com",
-    messagingSenderId: "817694176734",
-    appId: "1:817694176734:web:176bf69333bd7119d3194f",
-    measurementId: "G-JB143EY71N"
-};
-
-if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-}
-const database = firebase.database();
 const PENDING_ORDERS_REF = 'Pending_Order_V2';
+const BILLING_ORDERS_REF = 'Ready_For_Billing_V2';
 
 // --- HELPER FUNCTIONS ---
+const showToast = (message: string, type: 'info' | 'success' | 'error' = 'info') => {
+    window.dispatchEvent(new CustomEvent('show-toast', { detail: { message, type } }));
+};
 const formatCurrency = (value) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(value || 0);
 const formatDate = (isoString) => isoString ? new Date(isoString).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A';
 const formatDateTime = (isoString) => isoString ? new Date(isoString).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : 'N/A';
 
 // --- SUB-COMPONENTS ---
-const OrderDetailModal = ({ order, onClose }) => {
+const OrderDetailModal = ({ order, onClose, onSendToBilling }) => {
+    const [srq, setSrq] = useState({});
+    const [isSending, setIsSending] = useState(false);
+
+    const handleSrqChange = (itemId, value, maxQty) => {
+        const numValue = Math.max(0, Math.min(maxQty, Number(value) || 0));
+        setSrq(prev => ({ ...prev, [itemId]: numValue }));
+    };
+
+    const handleSendClick = async () => {
+        const totalSrq = Object.values(srq).reduce((sum: number, qty: number) => sum + qty, 0);
+        if (totalSrq === 0) {
+            showToast("Please enter a quantity for at least one item.", 'error');
+            return;
+        }
+        setIsSending(true);
+        try {
+            await onSendToBilling(order, srq);
+            showToast("Items sent to billing successfully!", 'success');
+            onClose();
+        } catch (e) {
+            console.error("Failed to send to billing", e);
+            showToast("Error sending items to billing.", 'error');
+        } finally {
+            setIsSending(false);
+        }
+    };
+    
     if (!order) return null;
     return (
         <div style={styles.modalOverlay} onClick={onClose}>
@@ -69,7 +95,7 @@ const OrderDetailModal = ({ order, onClose }) => {
                     {order.orderNote && <div style={styles.modalNote}><strong>Note:</strong> {order.orderNote}</div>}
                     <div style={styles.tableContainer}>
                         <table style={styles.table}>
-                            <thead><tr><th style={styles.th}>Style</th><th style={styles.th}>Color</th><th style={styles.th}>Size</th><th style={styles.th}>Qty</th><th style={styles.th}>MRP</th><th style={styles.th}>Total</th></tr></thead>
+                            <thead><tr><th style={styles.th}>Style</th><th style={styles.th}>Color</th><th style={styles.th}>Size</th><th style={styles.th}>Ord Qty</th><th style={styles.th}>SRQ</th><th style={styles.th}>MRP</th><th style={styles.th}>Total</th></tr></thead>
                             <tbody>
                                 {order.items.map(item => (
                                     <tr key={item.id} style={styles.tr}>
@@ -77,6 +103,17 @@ const OrderDetailModal = ({ order, onClose }) => {
                                         <td style={styles.td}>{item.fullItemData.Color}</td>
                                         <td style={styles.td}>{item.fullItemData.Size}</td>
                                         <td style={styles.td}>{item.quantity}</td>
+                                        <td style={{...styles.td, ...styles.tdInput}}>
+                                            <input
+                                              type="number"
+                                              style={styles.srqInput}
+                                              value={srq[item.id] || ''}
+                                              onChange={(e) => handleSrqChange(item.id, e.target.value, item.quantity)}
+                                              placeholder="0"
+                                              max={item.quantity}
+                                              min="0"
+                                            />
+                                        </td>
                                         <td style={styles.td}>{formatCurrency(item.price)}</td>
                                         <td style={styles.td}>{formatCurrency(item.quantity * item.price)}</td>
                                     </tr>
@@ -84,6 +121,11 @@ const OrderDetailModal = ({ order, onClose }) => {
                             </tbody>
                         </table>
                     </div>
+                </div>
+                 <div style={styles.modalFooter}>
+                    <button onClick={handleSendClick} style={styles.modalActionButton} disabled={isSending}>
+                        {isSending ? <SmallSpinner /> : 'Send to Billing'}
+                    </button>
                 </div>
             </div>
         </div>
@@ -166,11 +208,10 @@ export const PendingOrders = () => {
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
     useEffect(() => {
-        const ordersRef = database.ref(PENDING_ORDERS_REF);
+        const ordersRef = firebase.database().ref(PENDING_ORDERS_REF);
         const listener = ordersRef.on('value', (snapshot) => {
             const data = snapshot.val();
             if (data) {
-                // FIX: Cast the array from Firebase to Order[] and use getTime() for safe date comparison.
                 const ordersArray = Object.values(data) as Order[];
                 ordersArray.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
                 setOrders(ordersArray);
@@ -185,6 +226,66 @@ export const PendingOrders = () => {
         });
         return () => ordersRef.off('value', listener);
     }, []);
+    
+    const handleSendToBilling = async (order, stockRemovedQuantities) => {
+        const updates = {};
+        const itemsForBilling = [];
+        const itemsRemainingInPending = [];
+
+        order.items.forEach(item => {
+            const removedQty = stockRemovedQuantities[item.id] || 0;
+            if (removedQty > 0) {
+                itemsForBilling.push({ ...item, quantity: removedQty });
+            }
+            if (item.quantity > removedQty) {
+                itemsRemainingInPending.push({ ...item, quantity: item.quantity - removedQty });
+            }
+        });
+
+        if (itemsForBilling.length === 0) {
+            throw new Error("No items with quantity > 0 were provided.");
+        }
+
+        const billingOrderRefPath = `${BILLING_ORDERS_REF}/${order.orderNumber}`;
+        const pendingOrderRefPath = `${PENDING_ORDERS_REF}/${order.orderNumber}`;
+
+        const existingBillingOrderSnap = await firebase.database().ref(billingOrderRefPath).once('value');
+        // FIX: Cast the result from Firebase to the correct Order type to enable type checking and prevent runtime errors on item properties.
+        const existingBillingOrder = existingBillingOrderSnap.val() as Order | null;
+        
+        const finalBillingItemsMap = new Map(existingBillingOrder?.items.map(i => [i.id, i]) || []);
+        itemsForBilling.forEach(newItem => {
+            const existingItem = finalBillingItemsMap.get(newItem.id);
+            if (existingItem) {
+                existingItem.quantity += newItem.quantity;
+            } else {
+                finalBillingItemsMap.set(newItem.id, newItem);
+            }
+        });
+        const finalBillingItems = Array.from(finalBillingItemsMap.values());
+
+        updates[billingOrderRefPath] = {
+            ...order,
+            items: finalBillingItems,
+            totalQuantity: finalBillingItems.reduce((sum, i) => sum + i.quantity, 0),
+            totalValue: finalBillingItems.reduce((sum, i) => sum + (i.quantity * i.price), 0),
+            status: 'Ready for Billing'
+        };
+
+        if (itemsRemainingInPending.length > 0) {
+            updates[pendingOrderRefPath] = {
+                ...order,
+                items: itemsRemainingInPending,
+                totalQuantity: itemsRemainingInPending.reduce((sum, i) => sum + i.quantity, 0),
+                totalValue: itemsRemainingInPending.reduce((sum, i) => sum + (i.quantity * i.price), 0),
+            };
+        } else {
+            updates[pendingOrderRefPath] = null;
+        }
+
+        return firebase.database().ref().update(updates);
+    };
+
 
     const filteredOrders = useMemo(() => {
         if (!searchTerm) return orders;
@@ -234,7 +335,7 @@ export const PendingOrders = () => {
                 </div>
             </div>
             {renderContent()}
-            {selectedOrder && <OrderDetailModal order={selectedOrder} onClose={() => setSelectedOrder(null)} />}
+            {selectedOrder && <OrderDetailModal order={selectedOrder} onClose={() => setSelectedOrder(null)} onSendToBilling={handleSendToBilling} />}
         </div>
     );
 };
@@ -259,7 +360,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     styleTotalStock: { fontSize: '0.85rem', color: 'var(--text-color)', fontWeight: 500 },
     styleDetails: { padding: '0 1.5rem 1.5rem', borderTop: '1px solid var(--skeleton-bg)', display: 'flex', flexDirection: 'column', gap: '0.75rem' },
     partyOrderItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem 0', borderBottom: '1px solid var(--light-grey)' },
-    partyOrderInfo: { display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' },
+    partyOrderInfo: { display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', color: 'var(--dark-grey)' },
     partyOrderMeta: { display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--text-color)', fontSize: '0.85rem' },
     detailsButton: { display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--light-grey)', border: '1px solid var(--skeleton-bg)', color: 'var(--dark-grey)', padding: '0.5rem 1rem', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500 },
     detailedListContainer: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem', paddingBottom: '1rem' },
@@ -268,7 +369,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     detailedCardTitle: { fontSize: '1.1rem', fontWeight: 600, color: 'var(--dark-grey)' },
     detailedCardOrderNum: { fontSize: '0.85rem', color: 'var(--text-color)', fontWeight: 500, backgroundColor: 'var(--light-grey)', padding: '0.25rem 0.5rem', borderRadius: '6px' },
     detailedCardBody: { padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' },
-    summaryItem: { display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' },
+    summaryItem: { display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: 'var(--dark-grey)' },
     detailedCardFooter: { marginTop: 'auto', padding: '1rem', borderTop: '1px solid var(--skeleton-bg)', display: 'flex', justifyContent: 'flex-end' },
     modalOverlay: { position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '1rem' },
     modalContent: { backgroundColor: 'var(--card-bg)', width: '100%', borderRadius: 'var(--border-radius)', display: 'flex', flexDirection: 'column', maxHeight: '90vh', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' },
@@ -276,12 +377,16 @@ const styles: { [key: string]: React.CSSProperties } = {
     modalTitle: { fontSize: '1.25rem', fontWeight: 600, color: 'var(--dark-grey)' },
     modalSubtitle: { fontSize: '0.9rem', color: 'var(--text-color)', marginTop: '0.25rem' },
     modalCloseButton: { background: 'none', border: 'none', fontSize: '2rem', color: 'var(--text-color)', cursor: 'pointer' },
-    modalBody: { padding: '1.5rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem' },
-    modalSummary: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', backgroundColor: 'var(--light-grey)', padding: '1rem', borderRadius: '8px' },
+    modalBody: { padding: '1.5rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1 },
+    modalSummary: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', backgroundColor: 'var(--light-grey)', padding: '1rem', borderRadius: '8px', color: 'var(--dark-grey)' },
     modalNote: { backgroundColor: '#fffbe6', border: '1px solid #ffe58f', padding: '1rem', borderRadius: '8px', fontSize: '0.9rem' },
     tableContainer: { overflowX: 'auto' },
     table: { width: '100%', borderCollapse: 'collapse' },
-    th: { backgroundColor: '#f8f9fa', padding: '10px 12px', textAlign: 'left', fontWeight: 600, color: 'var(--dark-grey)', borderBottom: '2px solid var(--skeleton-bg)' },
+    th: { backgroundColor: '#f8f9fa', padding: '10px 12px', textAlign: 'left', fontWeight: 600, color: 'var(--dark-grey)', borderBottom: '2px solid var(--skeleton-bg)', whiteSpace: 'nowrap' },
     tr: { borderBottom: '1px solid var(--skeleton-bg)' },
-    td: { padding: '10px 12px', color: 'var(--text-color)', fontSize: '0.9rem' },
+    td: { padding: '10px 12px', color: 'var(--text-color)', fontSize: '0.9rem', textAlign: 'center' },
+    tdInput: { padding: '4px' },
+    srqInput: { width: '60px', padding: '8px', textAlign: 'center', border: '1px solid var(--skeleton-bg)', borderRadius: '6px', fontSize: '0.9rem' },
+    modalFooter: { padding: '1.5rem', borderTop: '1px solid var(--skeleton-bg)', display: 'flex', justifyContent: 'flex-end' },
+    modalActionButton: { padding: '0.75rem 1.5rem', fontSize: '1rem', fontWeight: 500, color: '#fff', backgroundColor: 'var(--brand-color)', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: '150px' },
 };

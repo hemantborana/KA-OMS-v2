@@ -1,3 +1,4 @@
+
 // FIX: Removed extraneous "START OF FILE" markers from the top of this file.
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 // FIX: Switched to Firebase v8 compat imports to resolve module export errors.
@@ -396,8 +397,8 @@ const Cart = ({ items, onQuantityChange, onClearCart, onEditGroup, isModal, onCl
             if (!acc[key]) acc[key] = { style: item.fullItemData.Style, color: item.fullItemData.Color, totalQuantity: 0 };
             acc[key].totalQuantity += item.quantity; return acc;
         }, {} as Record<string, { style: string; color: string; totalQuantity: number; }>);
-        // FIX: Provide the full type for the sort callback parameters to prevent type errors.
-        const sortedGroups = Object.values(groups).sort((a: { style: string; color: string; totalQuantity: number; }, b: { style: string; color: string; totalQuantity: number; }) => a.style.localeCompare(b.style) || a.color.localeCompare(b.color));
+        // FIX: Explicitly cast the result of `Object.values` to ensure correct type inference for the sort function's parameters, resolving errors with property access on `unknown` types.
+        const sortedGroups = (Object.values(groups) as { style: string; color: string; totalQuantity: number; }[]).sort((a, b) => a.style.localeCompare(b.style) || a.color.localeCompare(b.color));
         return { ...summary, groupedItems: sortedGroups };
     }, [items]);
 
@@ -873,14 +874,14 @@ const styles: { [key: string]: React.CSSProperties } = {
     draftItemsHeader: { display: 'grid', gridTemplateColumns: '2fr 2fr 1fr 1fr', gap: '0.5rem', paddingBottom: '0.5rem', borderBottom: '1px solid var(--skeleton-bg)', fontWeight: '600', fontSize: '0.8rem', color: 'var(--dark-grey)' },
     draftItemRow: { display: 'grid', gridTemplateColumns: '2fr 2fr 1fr 1fr', gap: '0.5rem', padding: '0.5rem 0', fontSize: '0.85rem' },
     confirmationBody: { padding: '1rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', overflowY: 'auto' },
-    confirmationSection: {},
+    confirmationSection: { color: 'var(--dark-grey)' },
     confirmationSectionTitle: { fontSize: '0.9rem', fontWeight: 600, color: 'var(--dark-grey)', marginBottom: '0.75rem', borderBottom: '1px solid var(--skeleton-bg)', paddingBottom: '0.5rem' },
     notesTextarea: { width: '100%', minHeight: '80px', padding: '0.75rem', fontSize: '0.9rem', border: '1px solid var(--skeleton-bg)', borderRadius: '8px', resize: 'vertical' },
     predefinedNotesContainer: { display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1rem' },
     predefinedNoteButton: { background: 'var(--light-grey)', border: '1px solid var(--skeleton-bg)', borderRadius: '20px', padding: '0.4rem 0.8rem', fontSize: '0.8rem', cursor: 'pointer' },
     successIconContainer: { margin: '0 auto', },
     successDetails: { border: '1px solid var(--skeleton-bg)', borderRadius: '8px', marginTop: '1.5rem', textAlign: 'left' },
-    successDetailItem: { display: 'flex', justifyContent: 'space-between', padding: '0.75rem 1rem', borderBottom: '1px solid var(--skeleton-bg)' },
+    successDetailItem: { display: 'flex', justifyContent: 'space-between', padding: '0.75rem 1rem', borderBottom: '1px solid var(--skeleton-bg)', color: 'var(--dark-grey)' },
     spinner: { border: '3px solid rgba(255,255,255,0.3)', borderRadius: '50%', borderTop: '3px solid #fff', width: '20px', height: '20px', animation: 'spin 1s linear infinite' },
 
 };
