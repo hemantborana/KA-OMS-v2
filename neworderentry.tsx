@@ -649,7 +649,7 @@ export const NewOrderEntry = () => {
         if (savedDraft) {
             try {
                 const parsed = JSON.parse(savedDraft);
-                if (parsed.partyName || (parsed.items && parsed.items.length > 0)) {
+                if (parsed.items && parsed.items.length > 0) {
                     setDraftToRestore(parsed);
                 }
             } catch (e) {
