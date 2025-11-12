@@ -7,6 +7,9 @@ import { StockOverview } from './stockoverview';
 import { PendingOrders } from './pendingorder';
 import { ReadyForBilling } from './readyforbilling';
 import { BilledOrders } from './billedorders';
+import firebase from 'firebase/compat/app';
+import 'firebase/compat/database';
+
 
 // --- TOAST NOTIFICATION SYSTEM ---
 const ToastContext = React.createContext(null);
@@ -69,6 +72,7 @@ const UserIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height
 const NavIcon = ({ name }) => { const icons = { Dashboard: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>, Entry: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"></path><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>, Pending: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>, Billing: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>, Billed: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>, Stock: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 9v11a2 2 0 0 1-2 2H6a2 2 0 0 1-4-2V9"></path><path d="M20 13H4"></path><path d="M10 3L4 9"></path><path d="M14 3l6 6"></path></svg>, Update: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>, Deleted: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>, Expired: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>, Users: <svg xmlns="hcom/w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>, Approval: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg> }; return icons[name] || null; };
 const Spinner = () => <div style={styles.spinner}></div>;
 const CollapseIcon = ({ collapsed }) => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: collapsed ? 'rotate(180deg)' : 'none', transition: 'transform 0.3s ease' }}><path d="m15 18-6-6 6-6"/></svg>;
+const AlertTriangleIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.46 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>;
 
 // --- DATABASE LOGIC ---
 interface CachedImage { id: string; blob: Blob; url: string; }
@@ -79,105 +83,110 @@ const imageDb = {
     setImage: function(id: string, blob: Blob, url: string) { return new Promise(async (resolve, reject) => { const db = await this.init(); const transaction = db.transaction(['images'], 'readwrite'); const store = transaction.objectStore('images'); const request = store.put({ id, blob, url }); request.onsuccess = () => { resolve(request.result); }; request.onerror = (event) => { reject((event.target as IDBRequest).error); }; }); }
 };
 
-// --- STOCK DATABASE LOGIC --- (for Dashboard)
-const stockDb = {
-    db: null,
-    init: function() { return new Promise((resolve, reject) => { if (this.db) return resolve(this.db); const request = indexedDB.open('StockDataDB', 1); request.onupgradeneeded = (event) => { const db = (event.target as IDBOpenDBRequest).result; if (!db.objectStoreNames.contains('stockItems')) db.createObjectStore('stockItems', { keyPath: 'id', autoIncrement: true }); if (!db.objectStoreNames.contains('metadata')) db.createObjectStore('metadata', { keyPath: 'id' }); }; request.onsuccess = (event) => { this.db = (event.target as IDBOpenDBRequest).result; resolve(this.db); }; request.onerror = (event) => reject((event.target as IDBRequest).error); }); },
-    getAllStock: async function() { const db = await this.init(); return new Promise((resolve, reject) => { const transaction = db.transaction(['stockItems'], 'readonly'); const request = transaction.objectStore('stockItems').getAll(); request.onsuccess = () => resolve(request.result); request.onerror = (event) => reject((event.target as IDBRequest).error); }); }
-};
-
 // --- PAGE COMPONENTS ---
 const PageContent = () => <div style={styles.pageContainer}><p>Functionality for this page is coming soon.</p></div>;
 
 const Dashboard = ({ onNavigate, session }) => {
-    const [lowStockItems, setLowStockItems] = useState([]);
+    const [stats, setStats] = useState({ pending: 0, billing: 0, overdue: 0 });
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        const fetchStock = async () => {
-            setIsLoading(true);
+        const refs = [
+            firebase.database().ref('Pending_Order_V2'),
+            firebase.database().ref('Ready_For_Billing_V2'),
+        ];
+
+        const listeners = refs.map(ref => {
+            const listener = ref.on('value', () => {
+                // This is just to trigger a re-fetch when any node changes.
+                // The main logic is consolidated below.
+                fetchStats();
+            });
+            return { ref, listener };
+        });
+
+        const fetchStats = async () => {
             try {
-                const items = await stockDb.getAllStock() as any[];
-                if (items && items.length > 0) {
-                    const filtered = items.filter(item => item.stock > 0 && item.stock <= 10)
-                                          .sort((a,b) => a.stock - b.stock)
-                                          .slice(0, 5);
-                    setLowStockItems(filtered);
-                }
+                const [pendingSnapshot, billingSnapshot] = await Promise.all(refs.map(r => r.once('value')));
+                const pendingData = pendingSnapshot.val() || {};
+                const billingData = billingSnapshot.val() || {};
+                
+                const pendingOrders = Object.values(pendingData) as any[];
+                const billingOrders = Object.values(billingData) as any[];
+                
+                const fortyEightHoursAgo = new Date().getTime() - (48 * 60 * 60 * 1000);
+                const overdueCount = pendingOrders.filter(order => new Date(order.timestamp).getTime() < fortyEightHoursAgo).length;
+
+                setStats({
+                    pending: pendingOrders.length,
+                    billing: billingOrders.length,
+                    overdue: overdueCount,
+                });
             } catch (e) {
-                console.error("Failed to load stock for dashboard", e);
+                console.error("Failed to fetch dashboard stats", e);
             } finally {
                 setIsLoading(false);
             }
         };
-        fetchStock();
-    }, []);
 
+        fetchStats();
+
+        return () => {
+            listeners.forEach(({ ref, listener }) => ref.off('value', listener));
+        };
+    }, []);
+    
     const kpiCards = [
-        { title: 'Pending Orders', value: '12', icon: <NavIcon name="Pending" /> },
-        { title: 'Ready for Billing', value: '3', icon: <NavIcon name="Billing" /> },
-        { title: 'Billed (This Month)', value: '₹1,25,430', icon: <NavIcon name="Billed" /> },
+        { title: 'Pending Orders', value: stats.pending, icon: <NavIcon name="Pending" /> },
+        { title: 'Ready for Billing', value: stats.billing, icon: <NavIcon name="Billing" /> },
     ];
-    const recentActivities = [
-        { text: 'Order #5123 created by SalesTeam1', time: '10 min ago' },
-        { text: 'Stock updated for Style 1051', time: '1 hr ago' },
-        { text: 'Order #5122 moved to Billing', time: '3 hrs ago' },
-        { text: 'User JohnDoe logged in', time: 'Yesterday' },
-    ];
+
+    const actionCard = stats.overdue > 0 ? {
+        title: 'Action Required',
+        value: `${stats.overdue} Orders Overdue`,
+        icon: <AlertTriangleIcon />,
+        style: styles.kpiCardAlert,
+        onClick: () => onNavigate('Pending')
+    } : null;
 
     return (
         <div style={styles.dashboardContainer}>
             <h2 style={styles.dashboardWelcome}>Welcome back, {session.userName}!</h2>
-            <div style={styles.dashboardGrid}>
-                {/* KPI Cards */}
-                {kpiCards.map(card => (
-                    <div key={card.title} style={styles.kpiCard}>
-                        <div style={styles.kpiIcon}>{card.icon}</div>
-                        <div>
-                            <div style={styles.kpiTitle}>{card.title}</div>
-                            <div style={styles.kpiValue}>{card.value}</div>
+            {isLoading ? <div style={{display: 'flex', justifyContent: 'center', padding: '2rem'}}><Spinner /></div> : (
+                <div style={styles.dashboardGrid}>
+                    {/* KPI Cards */}
+                    {kpiCards.map(card => (
+                        <div key={card.title} style={styles.kpiCard}>
+                            <div style={styles.kpiIcon}>{card.icon}</div>
+                            <div>
+                                <div style={styles.kpiTitle}>{card.title}</div>
+                                <div style={styles.kpiValue}>{card.value}</div>
+                            </div>
+                        </div>
+                    ))}
+
+                    {/* Action Card */}
+                    {actionCard && (
+                         <div key={actionCard.title} style={{...styles.kpiCard, ...actionCard.style, cursor: 'pointer'}} onClick={actionCard.onClick}>
+                            <div style={{...styles.kpiIcon, color: '#c0392b'}}>{actionCard.icon}</div>
+                            <div>
+                                <div style={styles.kpiTitle}>{actionCard.title}</div>
+                                <div style={styles.kpiValue}>{actionCard.value}</div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Quick Actions */}
+                    <div style={{...styles.dashboardCard, gridColumn: 'span 2'}}>
+                        <h3 style={styles.cardTitle}>Quick Actions</h3>
+                        <div style={styles.quickActions}>
+                            <button style={styles.actionButton} onClick={() => onNavigate('Entry')}><NavIcon name="Entry" /> New Order</button>
+                            <button style={styles.actionButton} onClick={() => onNavigate('Stock')}><NavIcon name="Stock" /> View Stock</button>
+                            <button style={styles.actionButton} onClick={() => onNavigate('Billed')}><NavIcon name="Billed" /> View Billed Archive</button>
                         </div>
                     </div>
-                ))}
-
-                {/* Quick Actions */}
-                <div style={styles.dashboardCard}>
-                    <h3 style={styles.cardTitle}>Quick Actions</h3>
-                    <div style={styles.quickActions}>
-                        <button style={styles.actionButton} onClick={() => onNavigate('Entry')}><NavIcon name="Entry" /> New Order</button>
-                        <button style={styles.actionButton} onClick={() => onNavigate('Stock')}><NavIcon name="Stock" /> View Stock</button>
-                        <button style={styles.actionButton} onClick={() => onNavigate('Billed')}><NavIcon name="Billed" /> View Archive</button>
-                    </div>
                 </div>
-
-                {/* Low Stock Alerts */}
-                <div style={styles.dashboardCard}>
-                    <h3 style={styles.cardTitle}>Low Stock Alerts</h3>
-                    {isLoading ? <Spinner /> : lowStockItems.length > 0 ? (
-                        <ul style={styles.itemList}>
-                            {lowStockItems.map((item: any, index) => (
-                                <li key={index} style={styles.listItem}>
-                                    <span>{item.style} - {item.color} ({item.size})</span>
-                                    <span style={styles.lowStockBadge}>{item.stock} left</span>
-                                </li>
-                            ))}
-                        </ul>
-                    ) : <p style={styles.cardText}>All stock levels are healthy.</p>}
-                </div>
-
-                {/* Recent Activity */}
-                <div style={styles.dashboardCard}>
-                    <h3 style={styles.cardTitle}>Recent Activity</h3>
-                    <ul style={styles.itemList}>
-                        {recentActivities.map((act, i) => (
-                            <li key={i} style={styles.listItem}>
-                                <span>{act.text}</span>
-                                <span style={styles.activityTime}>{act.time}</span>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            </div>
+            )}
         </div>
     );
 };
@@ -619,15 +628,16 @@ const styles: { [key: string]: React.CSSProperties } = {
     // --- Dashboard Styles ---
     dashboardContainer: { display: 'flex', flexDirection: 'column', gap: '1.5rem' },
     dashboardWelcome: { fontSize: '1.75rem', fontWeight: 600, color: 'var(--dark-grey)' },
-    dashboardGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' },
+    dashboardGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' },
     dashboardCard: { backgroundColor: 'var(--card-bg)', padding: '1.5rem', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', gridColumn: 'span 1' },
     kpiCard: { backgroundColor: 'var(--card-bg)', padding: '1.5rem', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', display: 'flex', alignItems: 'center', gap: '1.5rem' },
+    kpiCardAlert: { backgroundColor: '#fbe2e2', border: '1px solid #e74c3c' },
     kpiIcon: { color: 'var(--brand-color)' },
     kpiTitle: { fontSize: '0.9rem', color: 'var(--text-color)', marginBottom: '0.25rem' },
     kpiValue: { fontSize: '1.5rem', fontWeight: 600, color: 'var(--dark-grey)' },
     cardTitle: { fontSize: '1.1rem', fontWeight: 600, color: 'var(--dark-grey)', marginBottom: '1rem' },
     cardText: { fontSize: '0.9rem', color: 'var(--text-color)' },
-    quickActions: { display: 'flex', flexDirection: 'column', gap: '0.75rem' },
+    quickActions: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem' },
     actionButton: { display: 'flex', alignItems: 'center', gap: '0.75rem', width: '100%', padding: '0.75rem 1rem', fontSize: '1rem', background: 'var(--light-grey)', border: '1px solid var(--skeleton-bg)', borderRadius: '8px', cursor: 'pointer', textAlign: 'left', color: 'var(--dark-grey)', fontWeight: 500 },
     itemList: { listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem' },
     listItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem 0', borderBottom: '1px solid var(--light-grey)', fontSize: '0.9rem' },

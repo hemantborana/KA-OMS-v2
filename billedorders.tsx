@@ -1,3 +1,5 @@
+
+
 import React, { useState, useEffect, useMemo } from 'react';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
@@ -14,7 +16,6 @@ interface Order { orderNumber: string; partyName: string; timestamp: string; bil
 const BILLED_ORDERS_REF = 'Billed_Orders_V2';
 
 // --- HELPERS ---
-const formatCurrency = (value) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(value || 0);
 const formatDate = (isoString) => isoString ? new Date(isoString).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A';
 const formatDateTime = (isoString) => isoString ? new Date(isoString).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : 'N/A';
 
@@ -36,12 +37,11 @@ const BilledDetailModal = ({ order, onClose }) => {
                         <div><strong>Order Date:</strong> {formatDateTime(order.timestamp)}</div>
                         <div><strong>Billed Date:</strong> {formatDateTime(order.billedTimestamp)}</div>
                         <div><strong>Total Qty:</strong> {order.totalQuantity}</div>
-                        <div><strong>Total Value:</strong> {formatCurrency(order.totalValue)}</div>
                     </div>
                      {order.orderNote && <div style={styles.modalNote}><strong>Note:</strong> {order.orderNote}</div>}
                     <div style={styles.tableContainer}>
                         <table style={styles.table}>
-                            <thead><tr><th style={styles.th}>Style</th><th style={styles.th}>Color</th><th style={styles.th}>Size</th><th style={styles.th}>Billed Qty</th><th style={styles.th}>MRP</th><th style={styles.th}>Total</th></tr></thead>
+                            <thead><tr><th style={styles.th}>Style</th><th style={styles.th}>Color</th><th style={styles.th}>Size</th><th style={styles.th}>Billed Qty</th></tr></thead>
                             <tbody>
                                 {order.items.map(item => (
                                     <tr key={item.id} style={styles.tr}>
@@ -49,8 +49,6 @@ const BilledDetailModal = ({ order, onClose }) => {
                                         <td style={styles.td}>{item.fullItemData.Color}</td>
                                         <td style={styles.td}>{item.fullItemData.Size}</td>
                                         <td style={styles.td}>{item.quantity}</td>
-                                        <td style={styles.td}>{formatCurrency(item.price)}</td>
-                                        <td style={styles.td}>{formatCurrency(item.quantity * item.price)}</td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -64,13 +62,15 @@ const BilledDetailModal = ({ order, onClose }) => {
 
 const PartyGroup = ({ partyName, data, onViewOrder }) => {
     const [isCollapsed, setIsCollapsed] = useState(true);
+    const totalQty = data.orders.reduce((sum, order) => sum + order.totalQuantity, 0);
+
     return (
         <div style={styles.card}>
             <button style={styles.cardHeader} onClick={() => setIsCollapsed(!isCollapsed)}>
                 <div style={styles.cardInfo}>
                     <span style={styles.cardTitle}>{partyName}</span>
                     <span style={styles.cardSubTitle}>
-                        {data.orderCount} Orders | Total: {formatCurrency(data.totalValue)}
+                        {data.orderCount} Orders | Total Qty: {totalQty}
                     </span>
                 </div>
                 <ChevronIcon collapsed={isCollapsed} />
@@ -83,7 +83,6 @@ const PartyGroup = ({ partyName, data, onViewOrder }) => {
                                 <strong>{order.orderNumber}</strong>
                                 <span style={styles.orderMeta}><CalendarIcon /> {formatDate(order.billedTimestamp || order.timestamp)}</span>
                                 <span>Qty: {order.totalQuantity}</span>
-                                <span>{formatCurrency(order.totalValue)}</span>
                             </div>
                             <button style={styles.detailsButton} onClick={() => onViewOrder(order)}>
                                 <InfoIcon /> View
@@ -101,6 +100,7 @@ export const BilledOrders = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
+    const [dateFilter, setDateFilter] = useState('all');
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
     useEffect(() => {
@@ -124,21 +124,41 @@ export const BilledOrders = () => {
     }, []);
 
     const filteredOrders = useMemo(() => {
-        if (!searchTerm) return orders;
-        const lowercasedTerm = searchTerm.toLowerCase();
-        return orders.filter(order => 
-            order.partyName.toLowerCase().includes(lowercasedTerm) ||
-            order.orderNumber.toLowerCase().includes(lowercasedTerm)
-        );
-    }, [orders, searchTerm]);
+        let filtered = orders;
+
+        if (dateFilter !== 'all') {
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            let startDate;
+
+            if (dateFilter === 'today') startDate = today;
+            else if (dateFilter === '7days') startDate = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+            else if (dateFilter === '30days') startDate = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+            
+            if (startDate) {
+                filtered = filtered.filter(order => {
+                    const orderDate = new Date(order.billedTimestamp || order.timestamp);
+                    return orderDate >= startDate;
+                });
+            }
+        }
+
+        if (searchTerm) {
+            const lowercasedTerm = searchTerm.toLowerCase();
+            filtered = filtered.filter(order => 
+                order.partyName.toLowerCase().includes(lowercasedTerm) ||
+                order.orderNumber.toLowerCase().includes(lowercasedTerm)
+            );
+        }
+        return filtered;
+    }, [orders, searchTerm, dateFilter]);
 
     const summarizedData = useMemo(() => {
         return filteredOrders.reduce((acc, order) => {
             if (!acc[order.partyName]) {
-                acc[order.partyName] = { orderCount: 0, totalValue: 0, orders: [] };
+                acc[order.partyName] = { orderCount: 0, orders: [] };
             }
             acc[order.partyName].orderCount += 1;
-            acc[order.partyName].totalValue += order.totalValue;
             acc[order.partyName].orders.push(order);
             return acc;
         }, {});
@@ -148,7 +168,7 @@ export const BilledOrders = () => {
         if (isLoading) return <div style={styles.centeredMessage}><Spinner /></div>;
         if (error) return <div style={styles.centeredMessage}>{error}</div>;
         if (orders.length === 0) return <div style={styles.centeredMessage}>No billed orders found in the archive.</div>;
-        if (filteredOrders.length === 0) return <div style={styles.centeredMessage}>No billed orders match your search.</div>;
+        if (filteredOrders.length === 0) return <div style={styles.centeredMessage}>No billed orders match your search or filter.</div>;
         
         const partyNames = Object.keys(summarizedData).sort();
         return (
@@ -160,6 +180,13 @@ export const BilledOrders = () => {
         );
     };
 
+    const dateFilters = [
+        { key: 'all', label: 'All' },
+        { key: 'today', label: 'Today' },
+        { key: '7days', label: 'Last 7 Days' },
+        { key: '30days', label: 'Last 30 Days' },
+    ];
+
     return (
         <div style={styles.container}>
             <div style={styles.headerCard}>
@@ -167,6 +194,15 @@ export const BilledOrders = () => {
                 <div style={styles.searchContainer}>
                     <SearchIcon />
                     <input type="text" style={styles.searchInput} placeholder="Search by party or order number..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                </div>
+                 <div style={styles.filterContainer}>
+                    {dateFilters.map(filter => (
+                        <button 
+                          key={filter.key} 
+                          onClick={() => setDateFilter(filter.key)} 
+                          style={dateFilter === filter.key ? styles.filterButtonActive : styles.filterButton}
+                        >{filter.label}</button>
+                    ))}
                 </div>
             </div>
             {renderContent()}
@@ -181,6 +217,9 @@ const styles: { [key: string]: React.CSSProperties } = {
     pageTitle: { fontSize: '1.25rem', fontWeight: 600, color: 'var(--dark-grey)' },
     searchContainer: { display: 'flex', alignItems: 'center', gap: '0.75rem', backgroundColor: 'var(--light-grey)', padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--skeleton-bg)' },
     searchInput: { flex: 1, border: 'none', background: 'none', outline: 'none', fontSize: '1rem', color: 'var(--dark-grey)' },
+    filterContainer: { display: 'flex', gap: '0.5rem', flexWrap: 'wrap' },
+    filterButton: { background: 'var(--light-grey)', border: '1px solid var(--skeleton-bg)', color: 'var(--text-color)', padding: '0.4rem 0.8rem', borderRadius: '16px', cursor: 'pointer', fontSize: '0.85rem' },
+    filterButtonActive: { background: 'var(--active-bg)', border: '1px solid var(--brand-color)', color: 'var(--brand-color)', padding: '0.4rem 0.8rem', borderRadius: '16px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500 },
     listContainer: { flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem', paddingBottom: '1rem' },
     centeredMessage: { flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'var(--text-color)', fontSize: '1.1rem' },
     spinner: { border: '4px solid var(--light-grey)', borderRadius: '50%', borderTop: '4px solid var(--brand-color)', width: '40px', height: '40px', animation: 'spin 1s linear infinite' },
