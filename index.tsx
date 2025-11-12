@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { createRoot } from 'react-dom/client';
 import { NewOrderEntry } from './neworderentry';
 import { StockOverview } from './stockoverview';
+import { PendingOrders } from './pendingorder';
 
 // --- TOAST NOTIFICATION SYSTEM ---
 const ToastContext = React.createContext(null);
@@ -324,6 +325,9 @@ const MainContent = ({ activeView, onNavigate, session, isMobile }) => {
     }
     if (activeView === 'Stock') {
         return <main style={mainStyle}><StockOverview /></main>;
+    }
+    if (activeView === 'Pending') {
+        return <main style={mainStyle}><PendingOrders /></main>;
     }
     
     return <main style={mainStyle}><PageContent /></main>;

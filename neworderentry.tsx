@@ -396,7 +396,8 @@ const Cart = ({ items, onQuantityChange, onClearCart, onEditGroup, isModal, onCl
             if (!acc[key]) acc[key] = { style: item.fullItemData.Style, color: item.fullItemData.Color, totalQuantity: 0 };
             acc[key].totalQuantity += item.quantity; return acc;
         }, {} as Record<string, { style: string; color: string; totalQuantity: number; }>);
-        const sortedGroups = Object.values(groups).sort((a: { style: string; color: string; }, b: { style: string; color: string; }) => a.style.localeCompare(b.style) || a.color.localeCompare(b.color));
+        // FIX: Provide the full type for the sort callback parameters to prevent type errors.
+        const sortedGroups = Object.values(groups).sort((a: { style: string; color: string; totalQuantity: number; }, b: { style: string; color: string; totalQuantity: number; }) => a.style.localeCompare(b.style) || a.color.localeCompare(b.color));
         return { ...summary, groupedItems: sortedGroups };
     }, [items]);
 
