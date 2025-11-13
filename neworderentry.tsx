@@ -1,4 +1,5 @@
 
+
 // FIX: Removed extraneous "START OF FILE" markers from the top of this file.
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 // FIX: Switched to Firebase v8 compat imports to resolve module export errors.
@@ -834,7 +835,7 @@ export const NewOrderEntry = () => {
                         {!isMobile && ( <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}> <h2 style={{...styles.cardTitle, marginBottom: '0', paddingBottom: '0', borderBottom: 'none'}}>Search Item</h2> {isSyncing && <div style={styles.syncingText}>Syncing item catalog...</div>} </div> )}
                         
                         <div style={styles.styleSelectorContainer} ref={styleSearchRef}>
-                             <input type="text" id="styleSearch" style={styles.input} placeholder="Type to search for a style..." value={styleSearchTerm} onChange={e => setStyleSearchTerm(e.target.value)} onFocus={() => setIsStyleSearchFocused(true)} disabled={isSyncing} autoComplete="off" />
+                             <input type="text" id="styleSearch" className="global-search-input" style={styles.input} placeholder="Type to search for a style..." value={styleSearchTerm} onChange={e => setStyleSearchTerm(e.target.value)} onFocus={() => setIsStyleSearchFocused(true)} disabled={isSyncing} autoComplete="off" />
                              {isStyleSearchFocused && filteredStyles.length > 0 && (
                                  <div style={styles.styleResultsContainer}>
                                      {filteredStyles.slice(0, 100).map(style => ( <button key={style} style={selectedStyle === style ? {...styles.styleResultItem, ...styles.styleResultItemActive} : styles.styleResultItem} onClick={() => { setSelectedStyle(style); setStyleSearchTerm(style); setIsStyleSearchFocused(false); }}> {style} </button> ))}

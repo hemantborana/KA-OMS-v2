@@ -317,43 +317,44 @@ const BottomNavBar = ({ activeView, onNavigate }) => {
     );
 };
 
-const MainContent = ({ activeView, onNavigate, session, isMobile }) => {
-    let mainStyle = styles.mainContent; // Default for desktop
-
-    if (isMobile) {
-        if (activeView === 'Entry') {
-            // NewOrderEntry manages its own padding for the mobile layout
-            mainStyle = { ...styles.mainContent, padding: 0 };
-        } else {
-            // Other views need padding to avoid the bottom nav bar
-            mainStyle = { ...styles.mainContent, padding: '0.5rem 0.25rem', paddingBottom: '70px' };
-        }
-    }
-
-    if (activeView === 'Dashboard') {
-        return <main style={mainStyle}><Dashboard onNavigate={onNavigate} session={session} /></main>;
-    }
-    if (activeView === 'Entry') {
-        return <main style={mainStyle}><NewOrderEntry /></main>;
-    }
-    if (activeView === 'Stock') {
-        return <main style={mainStyle}><StockOverview /></main>;
-    }
-    if (activeView === 'Pending') {
-        return <main style={mainStyle}><PendingOrders /></main>;
-    }
-    if (activeView === 'Billing') {
-        return <main style={mainStyle}><ReadyForBilling /></main>;
-    }
-    if (activeView === 'Billed') {
-        return <main style={mainStyle}><BilledOrders /></main>;
-    }
-    if (activeView === 'Deleted') {
-        return <main style={mainStyle}><DeletedOrders /></main>;
-    }
-    
-    return <main style={mainStyle}><PageContent /></main>;
+type MainContentProps = {
+    activeView: string;
+    onNavigate: (view: string) => void;
+    session: any;
+    isMobile: boolean;
 };
+
+const MainContent = React.forwardRef<HTMLElement, MainContentProps>(
+    ({ activeView, onNavigate, session, isMobile }, ref) => {
+        let mainStyle = styles.mainContent; // Default for desktop
+
+        if (isMobile) {
+            if (activeView === 'Entry') {
+                // NewOrderEntry manages its own padding for the mobile layout
+                mainStyle = { ...styles.mainContent, padding: 0 };
+            } else {
+                // Other views need padding to avoid the bottom nav bar
+                mainStyle = { ...styles.mainContent, padding: '0.5rem 0.25rem', paddingBottom: '70px' };
+            }
+        }
+
+        const renderView = () => {
+            switch (activeView) {
+                case 'Dashboard': return <Dashboard onNavigate={onNavigate} session={session} />;
+                case 'Entry': return <NewOrderEntry />;
+                case 'Stock': return <StockOverview />;
+                case 'Pending': return <PendingOrders />;
+                case 'Billing': return <ReadyForBilling />;
+                case 'Billed': return <BilledOrders />;
+                case 'Deleted': return <DeletedOrders />;
+                default: return <PageContent />;
+            }
+        };
+        
+        return <main style={mainStyle} ref={ref}>{renderView()}</main>;
+    }
+);
+
 
 // --- HOMEPAGE WRAPPER ---
 const HomePage = ({ session, onLogout, appLogoSrc }) => {
@@ -363,10 +364,16 @@ const HomePage = ({ session, onLogout, appLogoSrc }) => {
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
     const showToast = useToast();
     const sidebarRef = useRef(null);
+    const mainContentRef = useRef<HTMLElement | null>(null);
     
     const pages = {
         'Dashboard': 'Dashboard', 'Entry': 'New Order Entry', 'Pending': 'Pending Orders', 'Billing': 'Ready for Billing', 'Billed': 'Billed Orders (Archive)',
         'Stock': 'Stock Overview', 'Update': 'Stock Updation', 'Deleted': 'Deleted Orders', 'Expired': 'Expired Orders', 'Users': 'User Management', 'Approval': 'Order Approval (Admin)'
+    };
+    
+    const handleNavigate = (view) => {
+        setActiveView(view);
+        if (isMobile) setIsSidebarOpen(false);
     };
 
     useEffect(() => {
@@ -387,7 +394,40 @@ const HomePage = ({ session, onLogout, appLogoSrc }) => {
         };
         document.addEventListener('mousedown', handleClickOutside);
         
-        // FIX: Cast querySelector results to HTMLElement to access the style property, as querySelector returns a generic Element type by default.
+        const handleKeyDown = (e: KeyboardEvent) => {
+            const target = e.target as HTMLElement;
+            if (['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) {
+                return;
+            }
+            
+            switch (e.key.toLowerCase()) {
+                case 'n':
+                    e.preventDefault();
+                    handleNavigate('Entry');
+                    break;
+                case 's':
+                    e.preventDefault();
+                    const searchInput = document.querySelector('.global-search-input') as HTMLInputElement;
+                    if (searchInput) {
+                        searchInput.focus();
+                    }
+                    break;
+                case 'arrowup':
+                    e.preventDefault();
+                    if (mainContentRef.current) {
+                        mainContentRef.current.scrollBy({ top: -80, behavior: 'smooth' });
+                    }
+                    break;
+                case 'arrowdown':
+                    e.preventDefault();
+                    if (mainContentRef.current) {
+                        mainContentRef.current.scrollBy({ top: 80, behavior: 'smooth' });
+                    }
+                    break;
+            }
+        };
+        document.addEventListener('keydown', handleKeyDown);
+
         const brandingPane = document.querySelector<HTMLElement>('.branding-pane');
         const formPane = document.querySelector<HTMLElement>('.form-pane');
         const rootEl = document.getElementById('root');
@@ -404,6 +444,8 @@ const HomePage = ({ session, onLogout, appLogoSrc }) => {
             window.removeEventListener('resize', handleResize);
             window.removeEventListener('show-toast', handleShowToast as EventListener);
             document.removeEventListener('mousedown', handleClickOutside);
+            document.removeEventListener('keydown', handleKeyDown);
+
             if(brandingPane) brandingPane.style.display = 'flex';
             if(formPane) {
                 formPane.style.flex = '1';
@@ -413,11 +455,6 @@ const HomePage = ({ session, onLogout, appLogoSrc }) => {
             document.body.style.overflow = 'hidden';
         };
     }, [isMobile, showToast, isSidebarCollapsed, isSidebarOpen]);
-
-    const handleNavigate = (view) => {
-        setActiveView(view);
-        if (isMobile) setIsSidebarOpen(false);
-    };
 
     const handleToggleSidebarCollapse = () => {
         if (!isMobile) {
@@ -441,7 +478,7 @@ const HomePage = ({ session, onLogout, appLogoSrc }) => {
                     onToggleCollapse={handleToggleSidebarCollapse}
                     sidebarRef={sidebarRef}
                 />
-                <MainContent activeView={activeView} onNavigate={handleNavigate} session={session} isMobile={isMobile} />
+                <MainContent ref={mainContentRef} activeView={activeView} onNavigate={handleNavigate} session={session} isMobile={isMobile} />
             </div>
             {isMobile && activeView !== 'Entry' && <BottomNavBar activeView={activeView} onNavigate={handleNavigate} />}
         </div>

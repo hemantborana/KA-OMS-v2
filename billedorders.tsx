@@ -265,7 +265,7 @@ export const BilledOrders = () => {
                 <h2 style={styles.pageTitle}>Billed Orders (Archive)</h2>
                 <div style={styles.searchContainer}>
                     <SearchIcon />
-                    <input type="text" style={styles.searchInput} placeholder="Search by party or order number..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                    <input type="text" style={styles.searchInput} className="global-search-input" placeholder="Search by party or order number..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                 </div>
                  <div style={styles.filterContainer}>
                     {dateFilters.map(filter => (

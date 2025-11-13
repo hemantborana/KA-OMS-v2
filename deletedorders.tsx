@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useMemo } from 'react';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
@@ -122,7 +123,7 @@ export const DeletedOrders = () => {
                 <h2 style={styles.pageTitle}>Deleted Orders (Last 20 Days)</h2>
                 <div style={styles.searchContainer}>
                     <SearchIcon />
-                    <input type="text" style={styles.searchInput} placeholder="Search by party or order number..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                    <input type="text" style={styles.searchInput} className="global-search-input" placeholder="Search by party or order number..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                 </div>
             </div>
             {renderContent()}

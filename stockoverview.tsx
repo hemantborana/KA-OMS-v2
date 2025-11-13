@@ -333,6 +333,7 @@ export const StockOverview = () => {
                     <input
                         type="text"
                         style={styles.searchInput}
+                        className="global-search-input"
                         placeholder="Search by style or color..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}

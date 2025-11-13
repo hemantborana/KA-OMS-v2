@@ -121,7 +121,7 @@ const ExpandedOrderView = ({ order, srq, onSrqChange, onSendToBilling, isSending
     );
 };
 
-const PartyGroup = ({ partyName, data, onToggleExpand, expandedOrderNumber, onAction, children }: { partyName: string; data: any; onToggleExpand: (order: Order) => void; expandedOrderNumber: string | null; onAction: (action: string, order: Order) => void; children: React.ReactNode; }) => {
+const PartyGroup: React.FC<{ partyName: string; data: any; onToggleExpand: (order: Order) => void; expandedOrderNumber: string | null; onAction: (action: string, order: Order) => void; children: React.ReactNode; }> = ({ partyName, data, onToggleExpand, expandedOrderNumber, onAction, children }) => {
     const [isCollapsed, setIsCollapsed] = useState(true);
     const [menuOpenFor, setMenuOpenFor] = useState<string | null>(null);
     const menuRef = useRef(null);
@@ -187,7 +187,7 @@ const PartyGroup = ({ partyName, data, onToggleExpand, expandedOrderNumber, onAc
     );
 };
 
-const DetailedView = ({ orders, onToggleExpand, expandedOrderNumber, onAction, children }: { orders: Order[]; onToggleExpand: (order: Order) => void; expandedOrderNumber: string | null; onAction: (action: string, order: Order) => void; children: React.ReactNode; }) => (
+const DetailedView: React.FC<{ orders: Order[]; onToggleExpand: (order: Order) => void; expandedOrderNumber: string | null; onAction: (action: string, order: Order) => void; children: React.ReactNode; }> = ({ orders, onToggleExpand, expandedOrderNumber, onAction, children }) => (
     <div style={styles.detailedListContainer}>
         {orders.map(order => (
             <div key={order.orderNumber} style={expandedOrderNumber === order.orderNumber ? {...styles.detailedCard, ...styles.detailedCardActive} : styles.detailedCard}>
@@ -281,7 +281,7 @@ const HistoryModal = ({ history, onClose }) => {
 };
 
 // FIX: Define SummarizedView component to render PartyGroups, resolving "Cannot find name 'SummarizedView'" error.
-const SummarizedView = ({ data, onToggleExpand, expandedOrderNumber, onAction, children }: { data: any; onToggleExpand: (order: Order) => void; expandedOrderNumber: string | null; onAction: (action: string, order: Order) => void; children: React.ReactNode; }) => {
+const SummarizedView: React.FC<{ data: any; onToggleExpand: (order: Order) => void; expandedOrderNumber: string | null; onAction: (action: string, order: Order) => void; children: React.ReactNode; }> = ({ data, onToggleExpand, expandedOrderNumber, onAction, children }) => {
     const partyNames = Object.keys(data).sort();
     return (
         <div style={styles.listContainer}>
