@@ -1,6 +1,5 @@
 
-
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
 
@@ -12,6 +11,99 @@ const SmallSpinner = () => <div style={{...styles.spinner, width: '20px', height
 const CalendarIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>;
 const CheckSquareIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>;
 const DownloadIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>;
+
+const Swipeable: React.FC<{ onAction: () => void; children: React.ReactNode; actionText: string; }> = ({ onAction, children, actionText }) => {
+    const contentRef = useRef<HTMLDivElement>(null);
+    const startPos = useRef({ x: 0, y: 0 });
+    const isDragging = useRef(false);
+    const wasSwiped = useRef(false);
+
+    const resetOpenItems = () => {
+        document.querySelectorAll('.swipeable-content.swiped-open').forEach(node => {
+            if (node !== contentRef.current) {
+                (node as HTMLElement).style.transform = 'translateX(0px)';
+                node.classList.remove('swiped-open');
+            }
+        });
+    };
+
+    const handleTouchStart = (e: React.TouchEvent) => {
+        resetOpenItems();
+        startPos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        isDragging.current = true;
+        wasSwiped.current = false;
+        if (contentRef.current) {
+            contentRef.current.style.transition = 'none';
+        }
+    };
+
+    const handleTouchMove = (e: React.TouchEvent) => {
+        if (!isDragging.current || !contentRef.current) return;
+        
+        const currentX = e.touches[0].clientX;
+        const diffX = currentX - startPos.current.x;
+
+        if (Math.abs(diffX) > 10) {
+            wasSwiped.current = true;
+        }
+        
+        if (diffX < 0) {
+            const newTranslateX = Math.max(-80, diffX);
+            contentRef.current.style.transform = `translateX(${newTranslateX}px)`;
+        }
+    };
+
+    const handleTouchEnd = () => {
+        if (!isDragging.current) return;
+        isDragging.current = false;
+
+        if (contentRef.current) {
+            contentRef.current.style.transition = 'transform 0.3s ease';
+            const currentTransform = new WebKitCSSMatrix(window.getComputedStyle(contentRef.current).transform).m41;
+
+            if (currentTransform < -40) {
+                contentRef.current.style.transform = 'translateX(-80px)';
+                contentRef.current.classList.add('swiped-open');
+            } else {
+                contentRef.current.style.transform = 'translateX(0px)';
+                contentRef.current.classList.remove('swiped-open');
+            }
+        }
+        
+        if (!wasSwiped.current) {
+            onAction();
+        }
+    };
+    
+    const handleActionClick = () => {
+        if (contentRef.current) {
+             contentRef.current.style.transition = 'transform 0.3s ease';
+             contentRef.current.style.transform = 'translateX(0px)';
+             contentRef.current.classList.remove('swiped-open');
+        }
+        onAction();
+    }
+
+    return (
+        <div style={styles.swipeableContainer}>
+            <div style={styles.swipeableActions}>
+                <button onClick={handleActionClick} style={styles.swipeableActionButton}>
+                    {actionText}
+                </button>
+            </div>
+            <div
+                ref={contentRef}
+                className="swipeable-content"
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+                style={styles.swipeableContent}
+            >
+                {children}
+            </div>
+        </div>
+    );
+};
 
 // --- TYPE & FIREBASE ---
 interface OrderItem { id: string; quantity: number; price: number; fullItemData: Record<string, any>; }
@@ -175,16 +267,18 @@ const PartyGroup: React.FC<{ partyName: string; data: any; onToggleExpand: (orde
                 <div style={styles.cardDetails}>
                     {data.orders.map(order => (
                         <React.Fragment key={order.orderNumber}>
-                             <div style={expandedOrderNumber === order.orderNumber ? {...styles.orderItem, ...styles.orderItemActive} : styles.orderItem} onClick={() => onToggleExpand(order)}>
-                                <div style={styles.orderInfo}>
-                                    <strong>{order.orderNumber}</strong>
-                                    <span style={styles.orderMeta}><CalendarIcon /> {formatDate(order.timestamp)}</span>
-                                    <span>Qty: {order.totalQuantity}</span>
+                             <Swipeable onAction={() => onToggleExpand(order)} actionText="Process">
+                                <div style={expandedOrderNumber === order.orderNumber ? {...styles.orderItem, ...styles.orderItemActive} : styles.orderItem}>
+                                    <div style={styles.orderInfo}>
+                                        <strong>{order.orderNumber}</strong>
+                                        <span style={styles.orderMeta}><CalendarIcon /> {formatDate(order.timestamp)}</span>
+                                        <span>Qty: {order.totalQuantity}</span>
+                                    </div>
+                                    <button style={styles.detailsButton}>
+                                        {expandedOrderNumber === order.orderNumber ? 'Close' : 'Process'}
+                                    </button>
                                 </div>
-                                <button style={styles.detailsButton}>
-                                    {expandedOrderNumber === order.orderNumber ? 'Close' : 'Process'}
-                                </button>
-                            </div>
+                            </Swipeable>
                             {expandedOrderNumber === order.orderNumber && children}
                         </React.Fragment>
                     ))}
@@ -370,7 +464,7 @@ export const ReadyForBilling = () => {
                 <h2 style={styles.pageTitle}>Ready for Billing</h2>
                 <div style={styles.searchContainer}>
                     <SearchIcon />
-                    <input type="text" style={styles.searchInput} placeholder="Search by party or order number..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                    <input type="text" style={styles.searchInput} className="global-search-input" placeholder="Search by party or order number..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                 </div>
                  <div style={styles.filterContainer}>
                     {dateFilters.map(filter => (
@@ -405,7 +499,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     cardTitle: { fontSize: '1.1rem', fontWeight: 600, color: 'var(--dark-grey)' },
     cardSubTitle: { fontSize: '0.85rem', color: 'var(--text-color)', fontWeight: 500 },
     cardDetails: { padding: '0 1.5rem 1rem', borderTop: '1px solid var(--skeleton-bg)', display: 'flex', flexDirection: 'column' },
-    orderItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem 0', borderBottom: '1px solid var(--light-grey)', cursor: 'pointer' },
+    orderItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem 0', borderBottom: '1px solid var(--light-grey)' },
     orderItemActive: { backgroundColor: 'var(--active-bg)', margin: '0 -1.5rem', padding: '0.75rem 1.5rem' },
     orderInfo: { display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', color: 'var(--dark-grey)' },
     orderMeta: { display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--text-color)', fontSize: '0.85rem' },
@@ -422,5 +516,10 @@ const styles: { [key: string]: React.CSSProperties } = {
     footerActions: { display: 'flex', gap: '0.75rem', alignItems: 'center' },
     modalActionButton: { padding: '0.75rem 1.5rem', fontSize: '1rem', fontWeight: 500, color: '#fff', backgroundColor: '#27ae60', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: '150px' },
     matchAllButton: { padding: '0.7rem 1.2rem', background: 'none', border: '1px solid var(--brand-color)', color: 'var(--brand-color)', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 500 },
-    secondaryButton: { backgroundColor: 'var(--light-grey)', color: 'var(--dark-grey)', border: '1px solid var(--skeleton-bg)', padding: '0.7rem 1.2rem', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 500 }
+    secondaryButton: { backgroundColor: 'var(--light-grey)', color: 'var(--dark-grey)', border: '1px solid var(--skeleton-bg)', padding: '0.7rem 1.2rem', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 500 },
+    // Swipeable styles
+    swipeableContainer: { position: 'relative', overflow: 'hidden' },
+    swipeableActions: { position: 'absolute', top: 0, right: 0, height: '100%', display: 'flex', alignItems: 'center' },
+    swipeableActionButton: { height: '100%', width: '80px', background: 'var(--brand-color)', color: 'white', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '0.9rem', fontWeight: 600 },
+    swipeableContent: { position: 'relative', backgroundColor: 'var(--card-bg)', zIndex: 1 },
 };
