@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
@@ -188,13 +187,13 @@ const PartyGroup: React.FC<{ partyName: string; data: any; onToggleExpand: (orde
                         return (
                             <React.Fragment key={order.orderNumber}>
                                 <Swipeable onAction={() => onToggleExpand(order)} actionText="Process">
-                                    <div style={orderItemStyle}>
+                                    <div style={orderItemStyle} onClick={() => onToggleExpand(order)}>
                                         <div style={styles.orderInfo}>
                                             <strong style={isOverdue ? { color: '#e74c3c' } : {}}>{order.orderNumber}</strong>
                                             <span style={styles.orderMeta}><CalendarIcon /> {timeSince(order.timestamp)}</span>
                                             <span>Qty: {order.totalQuantity}</span>
                                         </div>
-                                        <button style={styles.detailsButton}>
+                                        <button style={styles.detailsButton} onClick={(e) => { e.stopPropagation(); onToggleExpand(order); }}>
                                             {expandedOrderNumber === order.orderNumber ? 'Close' : 'Process'}
                                         </button>
                                     </div>
@@ -219,7 +218,7 @@ const DetailedList: React.FC<{ orders: Order[]; onToggleExpand: (order: Order) =
                  return (
                     <React.Fragment key={order.orderNumber}>
                          <Swipeable onAction={() => onToggleExpand(order)} actionText="Process">
-                            <div style={orderItemStyle}>
+                            <div style={orderItemStyle} onClick={() => onToggleExpand(order)}>
                                 <div style={styles.orderInfo}>
                                     <div>
                                         <strong style={isOverdue ? { color: '#e74c3c' } : {}}>{order.orderNumber}</strong>
@@ -228,7 +227,7 @@ const DetailedList: React.FC<{ orders: Order[]; onToggleExpand: (order: Order) =
                                     <span style={styles.orderMeta}><CalendarIcon /> {timeSince(order.timestamp)}</span>
                                     <span>Qty: {order.totalQuantity}</span>
                                 </div>
-                                <button style={styles.detailsButton}>
+                                <button style={styles.detailsButton} onClick={(e) => { e.stopPropagation(); onToggleExpand(order); }}>
                                     {expandedOrderNumber === order.orderNumber ? 'Close' : 'Process'}
                                 </button>
                             </div>

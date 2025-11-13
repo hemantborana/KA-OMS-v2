@@ -268,13 +268,13 @@ const PartyGroup: React.FC<{ partyName: string; data: any; onToggleExpand: (orde
                     {data.orders.map(order => (
                         <React.Fragment key={order.orderNumber}>
                              <Swipeable onAction={() => onToggleExpand(order)} actionText="Process">
-                                <div style={expandedOrderNumber === order.orderNumber ? {...styles.orderItem, ...styles.orderItemActive} : styles.orderItem}>
+                                <div style={expandedOrderNumber === order.orderNumber ? {...styles.orderItem, ...styles.orderItemActive} : styles.orderItem} onClick={() => onToggleExpand(order)}>
                                     <div style={styles.orderInfo}>
                                         <strong>{order.orderNumber}</strong>
                                         <span style={styles.orderMeta}><CalendarIcon /> {formatDate(order.timestamp)}</span>
                                         <span>Qty: {order.totalQuantity}</span>
                                     </div>
-                                    <button style={styles.detailsButton}>
+                                    <button style={styles.detailsButton} onClick={(e) => { e.stopPropagation(); onToggleExpand(order); }}>
                                         {expandedOrderNumber === order.orderNumber ? 'Close' : 'Process'}
                                     </button>
                                 </div>
