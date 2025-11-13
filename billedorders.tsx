@@ -10,6 +10,7 @@ const ChevronIcon = ({ collapsed }) => <svg style={{ transform: collapsed ? 'rot
 const Spinner = () => <div style={styles.spinner}></div>;
 const InfoIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>;
 const CalendarIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>;
+const DownloadIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>;
 
 // --- TYPE & FIREBASE ---
 interface Order { orderNumber: string; partyName: string; timestamp: string; billedTimestamp?: string; totalQuantity: number; totalValue: number; orderNote?: string; items: any[]; }
@@ -22,6 +23,71 @@ const formatDateTime = (isoString) => isoString ? new Date(isoString).toLocaleSt
 // --- COMPONENTS ---
 const BilledDetailModal = ({ order, onClose }) => {
     if (!order) return null;
+
+    const handleDownloadPdf = async () => {
+        const { jsPDF } = (window as any).jspdf;
+        const doc = new jsPDF();
+    
+        doc.setFontSize(20);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Kambeshwar Agencies', 105, 20, { align: 'center' });
+    
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text('123 Business Road, Commerce City, 12345', 105, 27, { align: 'center' });
+        doc.text('Email: contact@kambeshwar.com | Phone: +91 98765 43210', 105, 32, { align: 'center' });
+    
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+        doc.text("Billed Order Record", 105, 45, { align: 'center' });
+    
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'normal');
+        
+        doc.text(`Party Name: ${order.partyName}`, 14, 60);
+        doc.text(`Order No: ${order.orderNumber}`, 14, 67);
+        doc.text(`Billed Date: ${formatDate(order.billedTimestamp || order.timestamp)}`, 150, 67);
+    
+        const tableColumn = ["#", "Style", "Color", "Size", "Quantity"];
+        const tableRows = [];
+    
+        order.items.forEach((item, index) => {
+            const itemData = [
+                index + 1,
+                item.fullItemData.Style,
+                item.fullItemData.Color,
+                item.fullItemData.Size,
+                item.quantity
+            ];
+            tableRows.push(itemData);
+        });
+    
+        (doc as any).autoTable({
+            head: [tableColumn],
+            body: tableRows,
+            startY: 75,
+            theme: 'grid',
+            headStyles: { fillColor: [71, 84, 104] },
+            styles: { font: 'helvetica', fontSize: 10 },
+        });
+    
+        let finalY = (doc as any).lastAutoTable.finalY || 100;
+    
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`Total Quantity: ${order.totalQuantity}`, 14, finalY + 15);
+    
+        finalY = doc.internal.pageSize.height - 30;
+        doc.setLineWidth(0.5);
+        doc.line(14, finalY, 196, finalY);
+    
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text('For Kambeshwar Agencies', 165, finalY + 8, { align: 'center' });
+    
+        doc.save(`Billed_Order_${order.orderNumber}.pdf`);
+    };
+
     return (
         <div style={styles.modalOverlay} onClick={onClose}>
             <div style={{...styles.modalContent, maxWidth: '800px'}} onClick={(e) => e.stopPropagation()}>
@@ -55,12 +121,18 @@ const BilledDetailModal = ({ order, onClose }) => {
                         </table>
                     </div>
                 </div>
+                 <div style={styles.modalFooter}>
+                    <button onClick={handleDownloadPdf} style={{...styles.button, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'}}>
+                       <DownloadIcon /> Download PDF
+                    </button>
+                </div>
             </div>
         </div>
     );
 };
 
-const PartyGroup = ({ partyName, data, onViewOrder }) => {
+// FIX: Explicitly type component props to resolve issues with 'key' prop type inference.
+const PartyGroup = ({ partyName, data, onViewOrder }: { partyName: string; data: any; onViewOrder: (order: Order) => void; }) => {
     const [isCollapsed, setIsCollapsed] = useState(true);
     const totalQty = data.orders.reduce((sum, order) => sum + order.totalQuantity, 0);
 
@@ -244,7 +316,9 @@ const styles: { [key: string]: React.CSSProperties } = {
     modalNote: { backgroundColor: '#fffbe6', border: '1px solid #ffe58f', padding: '1rem', borderRadius: '8px', fontSize: '0.9rem', marginBottom: '1rem' },
     tableContainer: { overflowX: 'auto' },
     table: { width: '100%', borderCollapse: 'collapse' },
-    th: { backgroundColor: '#f8f9fa', padding: '10px 12px', textAlign: 'left', fontWeight: 600, color: 'var(--dark-grey)', borderBottom: '2px solid var(--skeleton-bg)', whiteSpace: 'nowrap' },
+    th: { backgroundColor: '#f8f9fa', padding: '10px 12px', textAlign: 'center', fontWeight: 600, color: 'var(--dark-grey)', borderBottom: '2px solid var(--skeleton-bg)', whiteSpace: 'nowrap' },
     tr: { borderBottom: '1px solid var(--skeleton-bg)' },
     td: { padding: '10px 12px', color: 'var(--text-color)', fontSize: '0.9rem', textAlign: 'center' },
+    modalFooter: { borderTop: '1px solid var(--skeleton-bg)', padding: '1.5rem', flexShrink: 0 },
+    button: { padding: '0.75rem 1.5rem', fontSize: '1rem', fontWeight: 500, color: '#fff', backgroundColor: 'var(--brand-color)', border: 'none', borderRadius: '8px', cursor: 'pointer' },
 };

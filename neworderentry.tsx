@@ -35,6 +35,7 @@ const HistoryIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" hei
 const ClockIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>;
 const SendIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>;
 const Spinner = () => <div style={styles.spinner}></div>;
+const DownloadIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>;
 
 
 const ChevronIcon = ({ collapsed }) => (
@@ -493,7 +494,79 @@ const OrderConfirmationModal = ({ isOpen, onClose, onPlaceOrder, partyName, item
 const SuccessModal = ({ isOpen, onClose, orderData }) => {
     if (!isOpen || !orderData) return null;
     const formatCurrency = (value) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(value);
+    const formatDate = (isoString) => isoString ? new Date(isoString).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A';
+
+    const handleDownloadPdf = async () => {
+        const { jsPDF } = (window as any).jspdf;
+        const doc = new jsPDF();
     
+        // 1. Header
+        doc.setFontSize(20);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Kambeshwar Agencies', 105, 20, { align: 'center' });
+    
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text('123 Business Road, Commerce City, 12345', 105, 27, { align: 'center' });
+        doc.text('Email: contact@kambeshwar.com | Phone: +91 98765 43210', 105, 32, { align: 'center' });
+    
+        // 2. Document Title
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+        doc.text("Order Confirmation", 105, 45, { align: 'center' });
+    
+        // 3. Order Info
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'normal');
+        
+        doc.text(`Party Name: ${orderData.partyName}`, 14, 60);
+        doc.text(`Order No: ${orderData.orderNumber}`, 14, 67);
+        doc.text(`Date: ${formatDate(orderData.timestamp)}`, 150, 67);
+    
+        // 4. Table
+        const tableColumn = ["#", "Style", "Color", "Size", "Quantity"];
+        const tableRows = [];
+    
+        orderData.items.forEach((item, index) => {
+            const itemData = [
+                index + 1,
+                item.fullItemData.Style,
+                item.fullItemData.Color,
+                item.fullItemData.Size,
+                item.quantity
+            ];
+            tableRows.push(itemData);
+        });
+    
+        (doc as any).autoTable({
+            head: [tableColumn],
+            body: tableRows,
+            startY: 75,
+            theme: 'grid',
+            headStyles: { fillColor: [71, 84, 104] },
+            styles: { font: 'helvetica', fontSize: 10 },
+        });
+    
+        let finalY = (doc as any).lastAutoTable.finalY || 100;
+    
+        // 5. Totals
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`Total Quantity: ${orderData.totalQuantity}`, 14, finalY + 15);
+    
+        // 6. Footer
+        finalY = doc.internal.pageSize.height - 30;
+        doc.setLineWidth(0.5);
+        doc.line(14, finalY, 196, finalY);
+    
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Receiver\'s Signature', 40, finalY + 8, { align: 'center' });
+        doc.text('For Kambeshwar Agencies', 165, finalY + 8, { align: 'center' });
+    
+        doc.save(`Order_Confirmation_${orderData.orderNumber}.pdf`);
+    };
+
     return (
         <div style={styles.modalOverlay}>
             <div style={{...styles.modalContent, maxWidth: '450px', height: 'auto', textAlign: 'center', padding: '2rem'}} onClick={(e) => e.stopPropagation()}>
@@ -506,7 +579,12 @@ const SuccessModal = ({ isOpen, onClose, orderData }) => {
                     <div style={styles.successDetailItem}> <span>Total Quantity</span> <strong>{orderData.totalQuantity} Items</strong> </div>
                     <div style={styles.successDetailItem}> <span>Total Value</span> <strong>{formatCurrency(orderData.totalValue)}</strong> </div>
                 </div>
-                <button onClick={onClose} style={{...styles.button, width: '100%', marginTop: '2rem'}}>Create New Order</button>
+                <div style={styles.successModalButtons}>
+                    <button onClick={handleDownloadPdf} style={{ ...styles.button, ...styles.secondaryButton, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                        <DownloadIcon /> Download PDF
+                    </button>
+                    <button onClick={onClose} style={{...styles.button}}>Create New Order</button>
+                </div>
             </div>
         </div>
     );
@@ -883,7 +961,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     successDetails: { border: '1px solid var(--skeleton-bg)', borderRadius: '8px', marginTop: '1.5rem', textAlign: 'left' },
     successDetailItem: { display: 'flex', justifyContent: 'space-between', padding: '0.75rem 1rem', borderBottom: '1px solid var(--skeleton-bg)', color: 'var(--dark-grey)' },
     spinner: { border: '3px solid rgba(255,255,255,0.3)', borderRadius: '50%', borderTop: '3px solid #fff', width: '20px', height: '20px', animation: 'spin 1s linear infinite' },
-
+    successModalButtons: { display: 'flex', gap: '1rem', width: '100%', marginTop: '2rem' },
 };
 
 const styleSheet = document.createElement("style");

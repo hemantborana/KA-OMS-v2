@@ -85,7 +85,8 @@ const ExpandedOrderView = ({ order, srq, onSrqChange, onSendToBilling, isSending
     );
 };
 
-const PartyGroup = ({ partyName, data, onToggleExpand, expandedOrderNumber, children }) => {
+// FIX: Explicitly type component props to resolve issues with 'key' prop and 'children' type inference.
+const PartyGroup = ({ partyName, data, onToggleExpand, expandedOrderNumber, children }: { partyName: string; data: any; onToggleExpand: (order: Order) => void; expandedOrderNumber: string | null; children: React.ReactNode; }) => {
     const [isCollapsed, setIsCollapsed] = useState(true);
     const totalQty = data.orders.reduce((sum, order) => sum + order.totalQuantity, 0);
 
@@ -121,7 +122,8 @@ const PartyGroup = ({ partyName, data, onToggleExpand, expandedOrderNumber, chil
     );
 };
 
-const SummarizedView = ({ data, onToggleExpand, expandedOrderNumber, children }) => {
+// FIX: Explicitly type component props to resolve issues with 'key' prop and 'children' type inference.
+const SummarizedView = ({ data, onToggleExpand, expandedOrderNumber, children }: { data: any; onToggleExpand: (order: Order) => void; expandedOrderNumber: string | null; children: React.ReactNode; }) => {
     const partyNames = Object.keys(data).sort();
     return (
         <div style={styles.listContainer}>
@@ -134,7 +136,8 @@ const SummarizedView = ({ data, onToggleExpand, expandedOrderNumber, children })
     );
 };
 
-const DetailedView = ({ orders, onToggleExpand, expandedOrderNumber, children }) => (
+// FIX: Explicitly type component props to resolve issues with 'key' prop and 'children' type inference.
+const DetailedView = ({ orders, onToggleExpand, expandedOrderNumber, children }: { orders: Order[]; onToggleExpand: (order: Order) => void; expandedOrderNumber: string | null; children: React.ReactNode; }) => (
     <div style={styles.detailedListContainer}>
         {orders.map(order => (
             <div key={order.orderNumber} style={expandedOrderNumber === order.orderNumber ? {...styles.detailedCard, ...styles.detailedCardActive} : styles.detailedCard}>

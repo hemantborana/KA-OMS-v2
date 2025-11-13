@@ -11,6 +11,7 @@ const Spinner = () => <div style={styles.spinner}></div>;
 const SmallSpinner = () => <div style={{...styles.spinner, width: '20px', height: '20px', borderTop: '3px solid white', borderRight: '3px solid transparent' }}></div>;
 const CalendarIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>;
 const CheckSquareIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>;
+const DownloadIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>;
 
 // --- TYPE & FIREBASE ---
 interface OrderItem { id: string; quantity: number; price: number; fullItemData: Record<string, any>; }
@@ -33,6 +34,80 @@ const ExpandedBillingView = ({ order, billedQty, onQtyChange, onMarkBilled, isPr
             return;
         }
         onMarkBilled(order, billedQty);
+    };
+    
+    const handleDownloadPdf = async () => {
+        const { jsPDF } = (window as any).jspdf;
+        const doc = new jsPDF();
+    
+        // 1. Header
+        doc.setFontSize(20);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Kambeshwar Agencies', 105, 20, { align: 'center' });
+    
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text('123 Business Road, Commerce City, 12345', 105, 27, { align: 'center' });
+        doc.text('Email: contact@kambeshwar.com | Phone: +91 98765 43210', 105, 32, { align: 'center' });
+    
+        // 2. Document Title
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+        doc.text("Packing Slip", 105, 45, { align: 'center' });
+    
+        // 3. Order Info
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'normal');
+        
+        doc.text(`Party Name: ${order.partyName}`, 14, 60);
+        doc.text(`Order No: ${order.orderNumber}`, 14, 67);
+        doc.text(`Date: ${formatDate(order.timestamp)}`, 150, 67);
+    
+        // 4. Table
+        const tableColumn = ["#", "Style", "Color", "Size", "Quantity"];
+        const tableRows = [];
+    
+        const itemsToProcess = order.items.filter(item => (billedQty[item.id] || 0) > 0);
+
+        itemsToProcess.forEach((item, index) => {
+            const itemData = [
+                index + 1,
+                item.fullItemData.Style,
+                item.fullItemData.Color,
+                item.fullItemData.Size,
+                billedQty[item.id]
+            ];
+            tableRows.push(itemData);
+        });
+    
+        (doc as any).autoTable({
+            head: [tableColumn],
+            body: tableRows,
+            startY: 75,
+            theme: 'grid',
+            headStyles: { fillColor: [71, 84, 104] },
+            styles: { font: 'helvetica', fontSize: 10 },
+        });
+    
+        let finalY = (doc as any).lastAutoTable.finalY || 100;
+    
+        // 5. Totals
+        const totalQuantity = itemsToProcess.reduce((sum, item) => sum + (billedQty[item.id] || 0), 0);
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`Total Quantity: ${totalQuantity}`, 14, finalY + 15);
+    
+        // 6. Footer
+        finalY = doc.internal.pageSize.height - 30;
+        doc.setLineWidth(0.5);
+        doc.line(14, finalY, 196, finalY);
+    
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Receiver\'s Signature', 40, finalY + 8, { align: 'center' });
+        doc.text('For Kambeshwar Agencies', 165, finalY + 8, { align: 'center' });
+    
+        doc.save(`Packing_Slip_${order.orderNumber}.pdf`);
     };
 
     return (
@@ -67,15 +142,21 @@ const ExpandedBillingView = ({ order, billedQty, onQtyChange, onMarkBilled, isPr
                  <button onClick={onMatchAll} style={styles.matchAllButton} disabled={isProcessing}>
                     <CheckSquareIcon /> Match Ready Qty
                 </button>
-                <button onClick={handleMarkBilledClick} style={styles.modalActionButton} disabled={isProcessing}>
-                    {isProcessing ? <SmallSpinner /> : 'Mark as Billed'}
-                </button>
+                 <div style={styles.footerActions}>
+                    <button onClick={handleDownloadPdf} style={styles.secondaryButton} disabled={isProcessing}>
+                        <DownloadIcon /> Download Slip
+                    </button>
+                    <button onClick={handleMarkBilledClick} style={styles.modalActionButton} disabled={isProcessing}>
+                        {isProcessing ? <SmallSpinner /> : 'Mark as Billed'}
+                    </button>
+                </div>
             </div>
         </div>
     );
 };
 
-const PartyGroup = ({ partyName, data, onToggleExpand, expandedOrderNumber, children }) => {
+// FIX: Explicitly type component props to resolve issues with 'key' prop and 'children' type inference.
+const PartyGroup = ({ partyName, data, onToggleExpand, expandedOrderNumber, children }: { partyName: string; data: any; onToggleExpand: (order: Order) => void; expandedOrderNumber: string | null; children: React.ReactNode; }) => {
     const [isCollapsed, setIsCollapsed] = useState(true);
     const totalQty = data.orders.reduce((sum, order) => sum + order.totalQuantity, 0);
 
@@ -338,6 +419,8 @@ const styles: { [key: string]: React.CSSProperties } = {
     tdInput: { padding: '4px' },
     qtyInput: { width: '70px', padding: '8px', textAlign: 'center', border: '1px solid var(--skeleton-bg)', borderRadius: '6px', fontSize: '0.9rem' },
     modalFooter: { padding: '1.5rem 0 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' },
+    footerActions: { display: 'flex', gap: '0.75rem', alignItems: 'center' },
     modalActionButton: { padding: '0.75rem 1.5rem', fontSize: '1rem', fontWeight: 500, color: '#fff', backgroundColor: '#27ae60', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: '150px' },
     matchAllButton: { padding: '0.7rem 1.2rem', background: 'none', border: '1px solid var(--brand-color)', color: 'var(--brand-color)', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 500 },
+    secondaryButton: { backgroundColor: 'var(--light-grey)', color: 'var(--dark-grey)', border: '1px solid var(--skeleton-bg)', padding: '0.7rem 1.2rem', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 500 }
 };
