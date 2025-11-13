@@ -7,6 +7,7 @@ import { StockOverview } from './stockoverview';
 import { PendingOrders } from './pendingorder';
 import { ReadyForBilling } from './readyforbilling';
 import { BilledOrders } from './billedorders';
+import { DeletedOrders } from './deletedorders';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
 
@@ -346,6 +347,9 @@ const MainContent = ({ activeView, onNavigate, session, isMobile }) => {
     }
     if (activeView === 'Billed') {
         return <main style={mainStyle}><BilledOrders /></main>;
+    }
+    if (activeView === 'Deleted') {
+        return <main style={mainStyle}><DeletedOrders /></main>;
     }
     
     return <main style={mainStyle}><PageContent /></main>;

@@ -131,8 +131,8 @@ const BilledDetailModal = ({ order, onClose }) => {
     );
 };
 
-// FIX: Explicitly type component props to resolve issues with 'key' prop type inference.
-const PartyGroup = ({ partyName, data, onViewOrder }: { partyName: string; data: any; onViewOrder: (order: Order) => void; }) => {
+// FIX: Explicitly type component props to resolve issues with 'key' prop type inference by using React.FC.
+const PartyGroup: React.FC<{ partyName: string; data: any; onViewOrder: (order: Order) => void; }> = ({ partyName, data, onViewOrder }) => {
     const [isCollapsed, setIsCollapsed] = useState(true);
     const totalQty = data.orders.reduce((sum, order) => sum + order.totalQuantity, 0);
 

@@ -155,8 +155,8 @@ const ExpandedBillingView = ({ order, billedQty, onQtyChange, onMarkBilled, isPr
     );
 };
 
-// FIX: Explicitly type component props to resolve issues with 'key' prop and 'children' type inference.
-const PartyGroup = ({ partyName, data, onToggleExpand, expandedOrderNumber, children }: { partyName: string; data: any; onToggleExpand: (order: Order) => void; expandedOrderNumber: string | null; children: React.ReactNode; }) => {
+// FIX: Explicitly type component props to resolve issues with 'key' prop and 'children' type inference by using React.FC.
+const PartyGroup: React.FC<{ partyName: string; data: any; onToggleExpand: (order: Order) => void; expandedOrderNumber: string | null; children: React.ReactNode; }> = ({ partyName, data, onToggleExpand, expandedOrderNumber, children }) => {
     const [isCollapsed, setIsCollapsed] = useState(true);
     const totalQty = data.orders.reduce((sum, order) => sum + order.totalQuantity, 0);
 
