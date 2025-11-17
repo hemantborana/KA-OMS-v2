@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 
 // --- ICONS ---
@@ -80,6 +81,9 @@ const stockDb = {
 };
 
 // --- HELPER FUNCTIONS ---
+const showToast = (message: string, type: 'info' | 'success' | 'error' = 'info') => {
+    window.dispatchEvent(new CustomEvent('show-toast', { detail: { message, type } }));
+};
 const formatTimestamp = (ts) => {
     if (!ts) return 'N/A';
     try {
@@ -196,6 +200,7 @@ export const StockOverview = () => {
     const [allStock, setAllStock] = useState([]);
     const [lastUpdate, setLastUpdate] = useState('');
     const [isLoading, setIsLoading] = useState(true);
+    const [isSyncing, setIsSyncing] = useState(false);
     const [error, setError] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
     const [view, setView] = useState('card');
@@ -209,28 +214,34 @@ export const StockOverview = () => {
     useEffect(() => {
         const syncData = async () => {
             setIsLoading(true);
+            setIsSyncing(false);
             setError('');
-            let localDataWasLoaded = false;
+            let localDataLoaded = false;
+            let localTimestamp = '';
             
             try {
+                // Step 1: Attempt to load from IndexedDB first for an instant display
                 const [localMeta, localStock] = await Promise.all([stockDb.getMetadata(), stockDb.getAllStock()]);
-                let localTimestamp = '';
     
                 if (localMeta && Array.isArray(localStock) && localStock.length > 0) {
                     localTimestamp = (localMeta as any).timestamp;
                     processAndSetData(localStock, localTimestamp);
-                    localDataWasLoaded = true;
+                    setIsLoading(false); // Show cached data immediately
+                    localDataLoaded = true;
                 }
-    
+
+                // Step 2: Start background sync to fetch the latest data
+                setIsSyncing(true);
                 const response = await fetch(STOCK_SCRIPT_URL);
                 if (!response.ok) throw new Error(`Network error: ${response.statusText}`);
                 const result = await response.json();
     
                 if (result.success) {
+                    // Update UI and DB only if network data is newer
                     if (!localTimestamp || result.timestamp > localTimestamp) {
                         await stockDb.clearAndAddStock(result.data);
                         await stockDb.setMetadata({ timestamp: result.timestamp });
-                        processAndSetData(result.data, result.timestamp);
+                        processAndSetData(result.data, result.timestamp); // Re-render with fresh data
                     }
                 } else {
                     throw new Error(result.message || 'API returned an error.');
@@ -238,11 +249,16 @@ export const StockOverview = () => {
     
             } catch (err) {
                 console.error("Data sync error:", err);
-                if (!localDataWasLoaded) {
-                     setError('Could not load stock data. Please check your connection and try again.');
+                // If local data is already showing, a toast is less disruptive for background errors
+                if (localDataLoaded) {
+                    showToast('Could not sync latest stock data.', 'error');
+                } else {
+                    // Show a full-page error only if we failed to load any data at all
+                    setError('Could not load stock data. Please check your connection and try again.');
                 }
             } finally {
-                setIsLoading(false);
+                setIsLoading(false); // Ensure main loader is off
+                setIsSyncing(false); // Turn off background sync indicator
             }
         };
     
@@ -322,7 +338,9 @@ export const StockOverview = () => {
         <div style={styles.container}>
             <div style={styles.headerCard}>
                 <div style={styles.headerInfo}>
-                    <p style={styles.lastUpdated}>Last Updated: {formatTimestamp(lastUpdate)}</p>
+                    <p style={styles.lastUpdated}>Last Updated: {formatTimestamp(lastUpdate)}
+                        {isSyncing && <span style={styles.syncingIndicator}> (Syncing...)</span>}
+                    </p>
                     <div style={styles.viewToggle}>
                         <button onClick={() => setView('card')} style={view === 'card' ? styles.toggleButtonActive : styles.toggleButton}><CardViewIcon /></button>
                         <button onClick={() => setView('table')} style={view === 'table' ? styles.toggleButtonActive : styles.toggleButton}><TableViewIcon /></button>
@@ -350,6 +368,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     headerCard: { backgroundColor: 'var(--card-bg)', padding: '1rem 1.5rem', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', display: 'flex', flexDirection: 'column', gap: '1rem' },
     headerInfo: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
     lastUpdated: { fontSize: '0.9rem', color: 'var(--text-color)', fontWeight: 500 },
+    syncingIndicator: { color: 'var(--brand-color)', fontSize: '0.8rem', fontWeight: 500 },
     viewToggle: { display: 'flex', backgroundColor: 'var(--light-grey)', borderRadius: '8px', padding: '4px' },
     toggleButton: { background: 'none', border: 'none', padding: '6px 10px', cursor: 'pointer', color: 'var(--text-color)', borderRadius: '6px' },
     toggleButtonActive: { background: 'var(--card-bg)', border: 'none', padding: '6px 10px', cursor: 'pointer', color: 'var(--brand-color)', borderRadius: '6px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' },
