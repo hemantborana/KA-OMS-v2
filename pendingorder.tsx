@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
@@ -135,7 +136,7 @@ const timeSince = (dateString) => {
 };
 
 // --- COMPONENTS ---
-const ExpandedPendingView = ({ order, onProcess, onDelete, isProcessing, processingQty, onQtyChange, onMatchAll }) => {
+const ExpandedPendingView = ({ order, onProcess, onDelete, isProcessing, processingQty, onQtyChange, onMatchAll, isMobile }) => {
     const handleProcessClick = () => {
         const totalToProcess = Object.values(processingQty).reduce((sum: number, qty: number) => sum + qty, 0);
         if (totalToProcess === 0) {
@@ -144,23 +145,38 @@ const ExpandedPendingView = ({ order, onProcess, onDelete, isProcessing, process
         }
         onProcess(order, processingQty);
     };
+
+    const thStyle = isMobile ? { ...styles.th, padding: '10px 6px', fontSize: '0.8rem', whiteSpace: 'normal' } : styles.th;
+    const tdStyle = isMobile ? { ...styles.td, padding: '8px 6px', fontSize: '0.85rem' } : styles.td;
+    // FIX: Explicitly type style variables to prevent type widening of CSS properties.
+    const qtyInputStyle: React.CSSProperties = isMobile ? { ...styles.qtyInput, width: '100%', minWidth: '50px', boxSizing: 'border-box', height: '36px', padding: '6px' } : styles.qtyInput;
+    const tableContainerStyle: React.CSSProperties = isMobile ? { ...styles.tableContainer, overflowX: 'visible' } : styles.tableContainer;
     
     return (
         <div style={styles.expandedViewContainer}>
-            <div style={styles.tableContainer}>
-                <table style={styles.table}>
-                    <thead><tr><th style={styles.th}>Style</th><th style={styles.th}>Color</th><th style={styles.th}>Size</th><th style={styles.th}>Ordered</th><th style={styles.th}>To Process</th></tr></thead>
+            <div style={tableContainerStyle}>
+                 <table style={isMobile ? { ...styles.table, tableLayout: 'fixed' } : styles.table}>
+                    {isMobile && (
+                        <colgroup>
+                            <col style={{width: '22%'}} />
+                            <col style={{width: '22%'}} />
+                            <col style={{width: '18%'}} />
+                            <col style={{width: '18%'}} />
+                            <col style={{width: '20%'}} />
+                        </colgroup>
+                    )}
+                    <thead><tr><th style={thStyle}>Style</th><th style={thStyle}>Color</th><th style={thStyle}>Size</th><th style={thStyle}>Ordered</th><th style={thStyle}>To Process</th></tr></thead>
                     <tbody>
                         {order.items.map(item => (
                             <tr key={item.id} style={styles.tr}>
-                                <td style={styles.td}>{item.fullItemData.Style}</td>
-                                <td style={styles.td}>{item.fullItemData.Color}</td>
-                                <td style={styles.td}>{item.fullItemData.Size}</td>
-                                <td style={styles.td}>{item.quantity}</td>
-                                <td style={{...styles.td, ...styles.tdInput}}>
+                                <td style={tdStyle}>{item.fullItemData.Style}</td>
+                                <td style={tdStyle}>{item.fullItemData.Color}</td>
+                                <td style={tdStyle}>{item.fullItemData.Size}</td>
+                                <td style={tdStyle}>{item.quantity}</td>
+                                <td style={{...tdStyle, ...styles.tdInput}}>
                                     <input
                                       type="number"
-                                      style={styles.qtyInput}
+                                      style={qtyInputStyle}
                                       value={processingQty[item.id] || ''}
                                       onChange={(e) => onQtyChange(item.id, e.target.value, item.quantity)}
                                       placeholder="0"
@@ -275,6 +291,13 @@ export const PendingOrders = () => {
     const [expandedOrderNumber, setExpandedOrderNumber] = useState<string | null>(null);
     const [processingOrder, setProcessingOrder] = useState<string | null>(null);
     const [processingQty, setProcessingQty] = useState<Record<string, number>>({});
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth <= 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     useEffect(() => {
         const ordersRef = firebase.database().ref(PENDING_ORDERS_REF);
@@ -445,6 +468,7 @@ export const PendingOrders = () => {
                 processingQty={processingQty}
                 onQtyChange={handleProcessingQtyChange}
                 onMatchAll={() => handleMatchAll(expandedOrder)}
+                isMobile={isMobile}
             />
         ) : null;
         
