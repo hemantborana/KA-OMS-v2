@@ -12,6 +12,8 @@ const ORDER_COUNTER_REF = 'orderCounter/KA-OMS-v2-Counter';
 const PENDING_ORDERS_REF = 'Pending_Order_V2';
 const GSHEET_BACKUP_URL = 'https://script.google.com/macros/s/AKfycbyCvFsdhuuhDg3y3TTjYYjMvnrVkn1SDYk5n8yE9k_PoyyhHTdgbEHJ6PtPLl7V8jiXdw/exec';
 const ORDER_NUMBER_PREFIX = 'K';
+const STOCK_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyY4ys2VzcsmslZj-vYieV1l-RRTp90eDMwcdANFZ3qecf8VRPgz-dNo46jqIqencqF/exec';
+
 
 // --- Type definitions for order items and drafts ---
 interface OrderItem {
@@ -163,7 +165,7 @@ const stockDb = {
     init: function() {
         return new Promise((resolve, reject) => {
             if (this.db) return resolve(this.db);
-            const request = indexedDB.open('StockDataDB', 1);
+            const request = indexedDB.open('StockDataDB', 4);
             request.onupgradeneeded = (event) => {
                 const db = (event.target as IDBOpenDBRequest).result;
                 if (!db.objectStoreNames.contains('stockItems')) {
@@ -177,6 +179,17 @@ const stockDb = {
             request.onerror = (event) => reject((event.target as IDBRequest).error);
         });
     },
+    clearAndAddStock: async function(items) {
+        const db = await this.init();
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction(['stockItems'], 'readwrite');
+            const store = transaction.objectStore('stockItems');
+            store.clear();
+            items.forEach(item => store.add(item));
+            transaction.oncomplete = () => resolve(true);
+            transaction.onerror = (event) => reject((event.target as IDBRequest).error);
+        });
+    },
     getAllStock: async function() {
         const db = await this.init();
         return new Promise((resolve, reject) => {
@@ -187,6 +200,26 @@ const stockDb = {
             request.onerror = (event) => reject((event.target as IDBRequest).error);
         });
     },
+    getMetadata: async function() {
+        const db = await this.init();
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction(['metadata'], 'readonly');
+            const store = transaction.objectStore('metadata');
+            const request = store.get('syncInfo');
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = (event) => reject((event.target as IDBRequest).error);
+        });
+    },
+    setMetadata: async function(metadata) {
+        const db = await this.init();
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction(['metadata'], 'readwrite');
+            const store = transaction.objectStore('metadata');
+            store.put({ id: 'syncInfo', ...metadata });
+            transaction.oncomplete = () => resolve(true);
+            transaction.onerror = (event) => reject((event.target as IDBRequest).error);
+        });
+    }
 };
 
 // --- HELPER FUNCTION FOR ROBUST KEY MATCHING ---
@@ -619,7 +652,58 @@ export const NewOrderEntry = () => {
     const partyHasExistingDraft = useMemo(() => partyName && drafts[partyName], [partyName, drafts]);
 
     useEffect(() => { const partyRef = database.ref('PartyData'); const listener = partyRef.on('value', (snapshot) => { const data = snapshot.val(); if (data) { const partyList = Object.values(data).map((p: any) => p.name).filter(Boolean); setAllParties([...new Set(partyList)]); } else { setAllParties([]); } }); return () => partyRef.off('value', listener); }, []);
-    useEffect(() => { const metadataRef = database.ref('itemData/metadata'); const syncCheck = (snapshot) => { const remoteMeta = snapshot.val() as { uploadDate: string; manualSync: string; }; if (!remoteMeta) { setIsSyncing(false); loadItemsFromDb(); return; } itemDb.getMetadata().then(localMeta => { const needsSync = !localMeta || remoteMeta.uploadDate !== (localMeta as any).uploadDate || remoteMeta.manualSync === 'Y'; if (needsSync) { setIsSyncing(true); database.ref('itemData/items').once('value').then(itemSnapshot => { const itemsData = itemSnapshot.val(); if (itemsData && Array.isArray(itemsData)) { itemDb.clearAndAddItems(itemsData).then(() => { itemDb.setMetadata({ uploadDate: remoteMeta.uploadDate }).then(() => { loadItemsFromDb(); if (remoteMeta.manualSync === 'Y') metadataRef.update({ manualSync: 'N' }); }); }); } }).finally(() => setIsSyncing(false)); } else { loadItemsFromDb(); setIsSyncing(false); } }); }; metadataRef.on('value', syncCheck); const loadStockData = async () => { const stockItems = await stockDb.getAllStock() as any[]; if (stockItems && stockItems.length > 0) { const stockMap = stockItems.reduce((acc, item) => { if (item.style && item.color && item.size) { const key = `${normalizeKeyPart(item.style)}-${normalizeKeyPart(item.color)}-${normalizeKeyPart(item.size)}`; acc[key] = item.stock; } return acc; }, {}); setStockData(stockMap); } }; loadStockData(); return () => metadataRef.off('value', syncCheck); }, []);
+    useEffect(() => { const metadataRef = database.ref('itemData/metadata'); const syncCheck = (snapshot) => { const remoteMeta = snapshot.val() as { uploadDate: string; manualSync: string; }; if (!remoteMeta) { setIsSyncing(false); loadItemsFromDb(); return; } itemDb.getMetadata().then(localMeta => { const needsSync = !localMeta || remoteMeta.uploadDate !== (localMeta as any).uploadDate || remoteMeta.manualSync === 'Y'; if (needsSync) { setIsSyncing(true); database.ref('itemData/items').once('value').then(itemSnapshot => { const itemsData = itemSnapshot.val(); if (itemsData && Array.isArray(itemsData)) { itemDb.clearAndAddItems(itemsData).then(() => { itemDb.setMetadata({ uploadDate: remoteMeta.uploadDate }).then(() => { loadItemsFromDb(); if (remoteMeta.manualSync === 'Y') metadataRef.update({ manualSync: 'N' }); }); }); } }).finally(() => setIsSyncing(false)); } else { loadItemsFromDb(); setIsSyncing(false); } }); }; metadataRef.on('value', syncCheck); 
+    const loadStockData = async () => {
+        let localDataLoaded = false;
+        try {
+            const localStock = await stockDb.getAllStock() as any[];
+            if (localStock && localStock.length > 0) {
+                const stockMap = localStock.reduce((acc, item) => {
+                    if (item.style && item.color && item.size) {
+                        const key = `${normalizeKeyPart(item.style)}-${normalizeKeyPart(item.color)}-${normalizeKeyPart(item.size)}`;
+                        acc[key] = item.stock;
+                    }
+                    return acc;
+                }, {});
+                setStockData(stockMap);
+                localDataLoaded = true;
+            }
+
+            const response = await fetch(STOCK_SCRIPT_URL);
+            if (!response.ok) {
+                if (!localDataLoaded) throw new Error(`Network error: ${response.statusText}`);
+                return; 
+            }
+            const result = await response.json();
+
+            if (result.success) {
+                const localMeta = await stockDb.getMetadata();
+                const localTimestamp = localMeta ? (localMeta as any).timestamp : '';
+                
+                if (!localTimestamp || result.timestamp > localTimestamp) {
+                    await stockDb.clearAndAddStock(result.data);
+                    await stockDb.setMetadata({ timestamp: result.timestamp });
+                    
+                    const stockMap = result.data.reduce((acc, item) => {
+                        if (item.style && item.color && item.size) {
+                            const key = `${normalizeKeyPart(item.style)}-${normalizeKeyPart(item.color)}-${normalizeKeyPart(item.size)}`;
+                            acc[key] = item.stock;
+                        }
+                        return acc;
+                    }, {});
+                    setStockData(stockMap);
+                }
+            } else {
+                 if (!localDataLoaded) throw new Error(result.message || 'API returned an error.');
+            }
+        } catch (err) {
+            console.error("Failed to load or sync stock data in NewOrderEntry:", err);
+            if (!localDataLoaded) {
+                 showToast('Could not load stock data.', 'error');
+            }
+        }
+    };
+    loadStockData(); return () => metadataRef.off('value', syncCheck); }, []);
     useEffect(() => { const draftsRef = database.ref(DRAFTS_REF); const listener = draftsRef.on('value', (snapshot) => { setDrafts(snapshot.val() || {}); }); return () => draftsRef.off('value', listener); }, []);
 
     const resetOrderState = () => {

@@ -14,7 +14,7 @@ const STOCK_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyY4ys2Vzcsmsl
 
 // --- INDEXEDDB HELPER ---
 const DB_NAME = 'StockDataDB';
-const DB_VERSION = 1;
+const DB_VERSION = 4;
 const STOCK_STORE = 'stockItems';
 const METADATA_STORE = 'metadata';
 

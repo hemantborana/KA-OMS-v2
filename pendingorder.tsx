@@ -18,8 +18,8 @@ const NoteIcon = (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="
 const BoxIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>;
 const PrintIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>;
 const FilterIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>;
-const CheckSquareIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>;
-const SquareIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg>;
+const CheckSquareIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>;
+const SquareIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg>;
 
 
 // --- TYPE & FIREBASE ---
@@ -28,6 +28,8 @@ const PENDING_ORDERS_REF = 'Pending_Order_V2';
 const BILLING_ORDERS_REF = 'Ready_For_Billing_V2';
 const DELETED_ORDERS_REF = 'Deleted_Orders_V2';
 const EXPIRED_ORDERS_REF = 'Expired_Orders_V2';
+const STOCK_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyY4ys2VzcsmslZj-vYieV1l-RRTp90eDMwcdANFZ3qecf8VRPgz-dNo46jqIqencqF/exec';
+
 
 // --- HELPERS ---
 const showToast = (message: string, type: 'info' | 'success' | 'error' = 'info') => {
@@ -60,7 +62,7 @@ const stockDb = {
     init: function() {
         return new Promise((resolve, reject) => {
             if (this.db) return resolve(this.db);
-            const request = indexedDB.open('StockDataDB', 1);
+            const request = indexedDB.open('StockDataDB', 4);
             request.onupgradeneeded = (event) => {
                 const db = (event.target as IDBOpenDBRequest).result;
                 if (!db.objectStoreNames.contains('stockItems')) {
@@ -74,6 +76,17 @@ const stockDb = {
             request.onerror = (event) => reject((event.target as IDBRequest).error);
         });
     },
+    clearAndAddStock: async function(items) {
+        const db = await this.init();
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction(['stockItems'], 'readwrite');
+            const store = transaction.objectStore('stockItems');
+            store.clear();
+            items.forEach(item => store.add(item));
+            transaction.oncomplete = () => resolve(true);
+            transaction.onerror = (event) => reject((event.target as IDBRequest).error);
+        });
+    },
     getAllStock: async function() {
         const db = await this.init();
         return new Promise((resolve, reject) => {
@@ -84,6 +97,26 @@ const stockDb = {
             request.onerror = (event) => reject((event.target as IDBRequest).error);
         });
     },
+    getMetadata: async function() {
+        const db = await this.init();
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction(['metadata'], 'readonly');
+            const store = transaction.objectStore('metadata');
+            const request = store.get('syncInfo');
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = (event) => reject((event.target as IDBRequest).error);
+        });
+    },
+    setMetadata: async function(metadata) {
+        const db = await this.init();
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction(['metadata'], 'readwrite');
+            const store = transaction.objectStore('metadata');
+            store.put({ id: 'syncInfo', ...metadata });
+            transaction.oncomplete = () => resolve(true);
+            transaction.onerror = (event) => reject((event.target as IDBRequest).error);
+        });
+    }
 };
 
 const StockIndicator: React.FC<{ stockLevel: number }> = ({ stockLevel }) => {
@@ -399,19 +432,49 @@ export const PendingOrders = () => {
         });
 
         const loadStockData = async () => {
+            let localDataLoaded = false;
             try {
-                const stockItems = await stockDb.getAllStock() as any[];
-                if (stockItems && stockItems.length > 0) {
-                    const stockMap = stockItems.reduce((acc, item) => {
+                const localStock = await stockDb.getAllStock() as any[];
+                if (localStock && localStock.length > 0) {
+                    const stockMap = localStock.reduce((acc, item) => {
                         const key = `${normalizeKeyPart(item.style)}-${normalizeKeyPart(item.color)}-${normalizeKeyPart(item.size)}`;
                         acc[key] = item.stock;
                         return acc;
                     }, {});
                     setStockData(stockMap);
+                    localDataLoaded = true;
+                }
+    
+                const response = await fetch(STOCK_SCRIPT_URL);
+                if (!response.ok) {
+                     if (!localDataLoaded) setError("Could not load stock data. The app may not function correctly.");
+                    return;
+                }
+                const result = await response.json();
+    
+                if (result.success) {
+                    const localMeta = await stockDb.getMetadata();
+                    const localTimestamp = localMeta ? (localMeta as any).timestamp : '';
+                    
+                    if (!localTimestamp || result.timestamp > localTimestamp) {
+                        await stockDb.clearAndAddStock(result.data);
+                        await stockDb.setMetadata({ timestamp: result.timestamp });
+                        
+                        const stockMap = result.data.reduce((acc, item) => {
+                            const key = `${normalizeKeyPart(item.style)}-${normalizeKeyPart(item.color)}-${normalizeKeyPart(item.size)}`;
+                            acc[key] = item.stock;
+                            return acc;
+                        }, {});
+                        setStockData(stockMap);
+                    }
+                } else {
+                     if (!localDataLoaded) setError("Could not load stock data. The app may not function correctly.");
                 }
             } catch (dbError) {
                 console.error("Failed to load stock from IndexedDB:", dbError);
-                setError("Could not load stock data. The app may not function correctly.");
+                if (!localDataLoaded) {
+                    setError("Could not load stock data. The app may not function correctly.");
+                }
             }
         };
 
