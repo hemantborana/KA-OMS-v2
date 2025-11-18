@@ -595,24 +595,23 @@ const PartyGroup: React.FC<{ partyName: string; data: any; onToggleExpand: (orde
             ...styles.card,
             borderRadius: '0',
             margin: '0',
-            border: 'none', // Remove side borders
-            borderBottom: '1px solid var(--skeleton-bg)',
+            border: 'none', 
             boxShadow: 'none',
-            backgroundColor: '#fff'
+            backgroundColor: '#FAFAFA' // Soft white
         };
 
         const isFirst = index === 0;
         const isLast = index === (totalCount || 0) - 1;
         const radius = '12px';
         
-        if (isFirst && isLast) baseStyle.borderRadius = radius;
-        else if (isFirst) baseStyle.borderRadius = `${radius} ${radius} 0 0`;
-        else if (isLast) baseStyle.borderRadius = `0 0 ${radius} ${radius}`;
-        
-        if (isLast) baseStyle.borderBottom = 'none'; // Clean look for last item
+        if (isFirst) {
+            baseStyle.borderRadius = `${radius} ${radius} 0 0`;
+        }
+        if (isLast) {
+            baseStyle.borderRadius = baseStyle.borderRadius === `${radius} ${radius} 0 0` ? radius : `0 0 ${radius} ${radius}`;
+        }
 
         return baseStyle;
-
     }, [isMobile, index, totalCount]);
 
     const renderHeader = () => {
@@ -646,6 +645,10 @@ const PartyGroup: React.FC<{ partyName: string; data: any; onToggleExpand: (orde
             <button style={isMobile ? styles.mobileCardHeader : styles.cardHeader} onClick={() => setIsCollapsed(!isCollapsed)}>
                {renderHeader()}
             </button>
+             {/* Custom Divider for Mobile (not last item) */}
+             {isMobile && index !== (totalCount || 0) - 1 && (
+                <div style={{height: '1px', backgroundColor: '#e0e0e0', margin: '0 16px'}}></div>
+            )}
             {/* Smooth expansion container */}
             <div style={isCollapsed ? styles.groupContentCollapsed : styles.groupContentExpanded}>
                  <div style={styles.cardDetails}>
@@ -1253,17 +1256,29 @@ export const PendingOrders = ({ onNavigate }) => {
     ];
     
     return (
-        <div style={styles.container}>
+        <div style={isMobile ? {...styles.container, backgroundColor: '#ffffff'} : styles.container}>
             <div style={isMobile ? styles.headerCardMobile : styles.headerCard}>
-                <div style={{...styles.headerTop, ...(isMobile && {justifyContent: 'flex-end'})}}>
+                <div style={{...styles.headerTop, ...(isMobile && {justifyContent: 'flex-end', padding: 0})}}>
                      {!isMobile && <h2 style={styles.pageTitle}>Pending Orders</h2>}
                     <div style={styles.headerControls}>
-                        <button onClick={() => setIsFilterVisible(v => !v)} style={isFilterVisible ? {...styles.toggleButton, ...styles.toggleButtonActive} : styles.toggleButton}>
+                        <button onClick={() => setIsFilterVisible(v => !v)} style={isFilterVisible ? {...styles.toggleButton, ...styles.toggleButtonActive} : (isMobile ? styles.mobileFilterButton : styles.toggleButton)}>
                             <FilterIcon />
                         </button>
-                        <div style={isMobile ? {...styles.viewToggle, backgroundColor: 'transparent'} : styles.viewToggle}>
-                            <button onClick={() => setView('summarized')} style={view === 'summarized' ? (isMobile ? styles.mobileToggleButtonActive : styles.toggleButtonActive) : (isMobile ? styles.mobileToggleButtonInactive : styles.toggleButton)}><SummarizedViewIcon /></button>
-                            <button onClick={() => setView('detailed')} style={view === 'detailed' ? (isMobile ? styles.mobileToggleButtonActive : styles.toggleButtonActive) : (isMobile ? styles.mobileToggleButtonInactive : styles.toggleButton)}><DetailedViewIcon /></button>
+                        <div style={isMobile ? styles.mobileViewToggle : styles.viewToggle}>
+                            <button 
+                                onClick={() => setView('summarized')} 
+                                style={view === 'summarized' ? styles.mobileSegmentActive : styles.mobileSegmentInactive}
+                                aria-label="Summarized View"
+                            >
+                                <SummarizedViewIcon />
+                            </button>
+                            <button 
+                                onClick={() => setView('detailed')} 
+                                style={view === 'detailed' ? styles.mobileSegmentActive : styles.mobileSegmentInactive}
+                                aria-label="Detailed View"
+                            >
+                                <DetailedViewIcon />
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -1326,7 +1341,7 @@ export const PendingOrders = ({ onNavigate }) => {
 const styles: { [key: string]: React.CSSProperties } = {
     container: { display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1, position: 'relative', backgroundColor: '#ffffff' },
     headerCard: { backgroundColor: '#f8f9fa', padding: '1rem 1.5rem', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', display: 'flex', flexDirection: 'column', gap: '0.75rem', position: 'sticky', top: 0, zIndex: 10 },
-    headerCardMobile: { backgroundColor: '#ffffff', padding: '0.5rem 1rem', gap: '0', display: 'flex', flexDirection: 'column', position: 'sticky', top: 0, zIndex: 10 },
+    headerCardMobile: { backgroundColor: '#ffffff', padding: '0 1rem 0.25rem', gap: '0', display: 'flex', flexDirection: 'column', position: 'sticky', top: 0, zIndex: 10, borderBottom: 'none' },
     headerTop: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
     pageTitle: { fontSize: '1.25rem', fontWeight: 600, color: 'var(--dark-grey)' },
     headerControls: { display: 'flex', alignItems: 'center', gap: '0.75rem' },
@@ -1335,8 +1350,10 @@ const styles: { [key: string]: React.CSSProperties } = {
     toggleButtonActive: { background: 'var(--card-bg)', border: 'none', padding: '6px 10px', cursor: 'pointer', color: 'var(--brand-color)', borderRadius: '6px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' },
     
     // Mobile Toggle Styles
-    mobileToggleButtonInactive: { background: 'none', border: 'none', padding: '6px 10px', cursor: 'pointer', color: '#cbd5e0', borderRadius: '6px' },
-    mobileToggleButtonActive: { background: 'none', border: 'none', padding: '6px 10px', cursor: 'pointer', color: '#2d3748', fontWeight: 600, borderRadius: '6px' },
+    mobileFilterButton: { background: 'none', border: 'none', padding: '0.5rem', cursor: 'pointer', color: 'var(--text-color)' },
+    mobileViewToggle: { display: 'flex', backgroundColor: '#f0f3f5', borderRadius: '20px', padding: '3px', marginLeft: '0.5rem', gap: '2px' },
+    mobileSegmentInactive: { background: 'transparent', border: 'none', padding: '6px 16px', cursor: 'pointer', color: '#94a3b8', borderRadius: '18px', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+    mobileSegmentActive: { background: '#ffffff', border: 'none', padding: '6px 16px', cursor: 'pointer', color: '#1e293b', borderRadius: '18px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center' },
     
     filtersCollapsed: { maxHeight: 0, opacity: 0, overflow: 'hidden', transition: 'max-height 0.4s ease-out, opacity 0.4s ease-out, margin-top 0.4s ease-out', marginTop: 0 },
     filtersVisible: { maxHeight: '300px', opacity: 1, overflow: 'visible', transition: 'max-height 0.4s ease-in, opacity 0.4s ease-in, margin-top 0.4s ease-in', marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' },
@@ -1366,8 +1383,8 @@ const styles: { [key: string]: React.CSSProperties } = {
     cardDetails: { padding: '0 0 1rem', display: 'flex', flexDirection: 'column' },
     
     // Animation Wrappers
-    groupContentCollapsed: { maxHeight: 0, opacity: 0, overflow: 'hidden', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)' },
-    groupContentExpanded: { maxHeight: '2000px', opacity: 1, overflow: 'visible', transition: 'all 0.5s ease-in-out' },
+    groupContentCollapsed: { maxHeight: 0, opacity: 0, overflow: 'hidden', transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)' },
+    groupContentExpanded: { maxHeight: '2000px', opacity: 1, overflow: 'visible', transition: 'all 0.6s ease-in-out' },
 
     orderItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem 1.5rem', borderTop: '1px solid var(--skeleton-bg)' },
     orderItemActive: { backgroundColor: 'var(--active-bg)'},
