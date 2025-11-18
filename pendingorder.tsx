@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
 
 // --- ICONS ---
-const SearchIcon = () => <svg xmlns="http://www.w.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>;
-const ChevronIcon = ({ collapsed }) => <svg style={{ transform: collapsed ? 'rotate(0deg)' : 'rotate(180deg)', transition: 'transform 0.3s ease' }} xmlns="http://www.w.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>;
+const SearchIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>;
+const ChevronIcon = ({ collapsed }) => <svg style={{ transform: collapsed ? 'rotate(0deg)' : 'rotate(180deg)', transition: 'transform 0.3s ease' }} xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>;
 const Spinner = () => <div style={styles.spinner}></div>;
 const SmallSpinner = () => <div style={{...styles.spinner, width: '20px', height: '20px', borderTop: '3px solid white', borderRight: '3px solid transparent' }}></div>;
 const SummarizedViewIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>;
@@ -20,10 +19,12 @@ const PrintIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" heigh
 const FilterIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>;
 const CheckSquareIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>;
 const SquareIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg>;
-
+const HistoryIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>;
+const MessageSquareIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>;
 
 // --- TYPE & FIREBASE ---
-interface Order { orderNumber: string; partyName: string; timestamp: string; totalQuantity: number; totalValue: number; orderNote?: string; items: any[]; }
+interface HistoryEvent { timestamp: string; event: string; details: string; }
+interface Order { orderNumber: string; partyName: string; timestamp: string; totalQuantity: number; totalValue: number; orderNote?: string; items: any[]; history?: HistoryEvent[]; }
 const PENDING_ORDERS_REF = 'Pending_Order_V2';
 const BILLING_ORDERS_REF = 'Ready_For_Billing_V2';
 const DELETED_ORDERS_REF = 'Deleted_Orders_V2';
@@ -215,7 +216,10 @@ const Swipeable: React.FC<{ onProcess: () => void; onDelete: () => void; onEdit:
 
 
 // --- COMPONENTS ---
-const ExpandedPendingView = ({ order, onProcess, onDelete, isProcessing, processingQty, onQtyChange, stockData, isMobile, onPrint }) => {
+const ExpandedPendingView = ({ order, onProcess, onDelete, isProcessing, processingQty, onQtyChange, stockData, isMobile, onPrint, onAddNote }) => {
+    const [note, setNote] = useState('');
+    const [isHistoryCollapsed, setIsHistoryCollapsed] = useState(true);
+
     const handleProcessClick = () => {
         const totalToProcess = Object.values(processingQty).reduce((sum: number, qty: number) => sum + qty, 0);
         if (totalToProcess === 0) {
@@ -223,6 +227,12 @@ const ExpandedPendingView = ({ order, onProcess, onDelete, isProcessing, process
             return;
         }
         onProcess(order, processingQty);
+    };
+
+    const handleAddNoteClick = () => {
+        if (!note.trim()) return;
+        onAddNote(order, note);
+        setNote('');
     };
 
     const renderDesktopTable = () => (
@@ -285,6 +295,41 @@ const ExpandedPendingView = ({ order, onProcess, onDelete, isProcessing, process
         <div style={styles.expandedViewContainer}>
             {isMobile ? renderMobileCards() : renderDesktopTable()}
             {order.orderNote && <div style={styles.noteBox}><strong>Note:</strong> {order.orderNote}</div>}
+            
+            <div style={styles.historySection}>
+                <button style={styles.historyHeader} onClick={() => setIsHistoryCollapsed(!isHistoryCollapsed)}>
+                    <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
+                        <HistoryIcon />
+                        <span>Notes & History</span>
+                    </div>
+                    <ChevronIcon collapsed={isHistoryCollapsed} />
+                </button>
+                {!isHistoryCollapsed && (
+                    <div style={styles.historyContent}>
+                        <div style={styles.historyList}>
+                            {(order.history || []).map((event, index) => (
+                                <div key={index} style={styles.historyItem}>
+                                    <div style={styles.historyMeta}>
+                                        <span style={{...styles.historyEventType, backgroundColor: event.event === 'System' ? '#eef2f7' : '#fffbe6', color: event.event === 'System' ? 'var(--brand-color)' : '#d48806'}}>{event.event}</span>
+                                        <span>{new Date(event.timestamp).toLocaleString()}</span>
+                                    </div>
+                                    <p style={styles.historyDetails}>{event.details}</p>
+                                </div>
+                            ))}
+                        </div>
+                        <div style={styles.addNoteContainer}>
+                            <textarea
+                                value={note}
+                                onChange={(e) => setNote(e.target.value)}
+                                style={styles.noteTextarea}
+                                placeholder="Add a new note..."
+                            />
+                            <button onClick={handleAddNoteClick} style={styles.addNoteButton}>Add Note</button>
+                        </div>
+                    </div>
+                )}
+            </div>
+
             <div style={styles.modalFooter}>
                  <button onClick={() => onPrint([order])} style={styles.secondaryButton} disabled={isProcessing}>
                     <PrintIcon /> Print Picking List
@@ -357,57 +402,92 @@ const PartyGroup: React.FC<{ partyName: string; data: any; onToggleExpand: (orde
     );
 };
 
+const DetailedOrderCard: React.FC<{
+    order: Order;
+    isExpanded: boolean;
+    isMobile: boolean;
+    isSelected: boolean;
+    onToggleExpand: (order: Order) => void;
+    onSelectOrder: (orderNumber: string) => void;
+    onProcessOrder: (order: Order) => void;
+    onDeleteOrder: (order: Order) => void;
+    onEditOrder: (order: Order) => void;
+}> = ({
+    order,
+    isExpanded,
+    isMobile,
+    isSelected,
+    onToggleExpand,
+    onSelectOrder,
+    onProcessOrder,
+    onDeleteOrder,
+    onEditOrder
+}) => {
+    const isOverdue = new Date().getTime() - new Date(order.timestamp).getTime() > 25 * 24 * 60 * 60 * 1000;
+
+    const uniqueStyles = useMemo(() => {
+        if (!order.items) return [];
+        return [...new Set(order.items.map(item => item.fullItemData.Style))];
+    }, [order.items]);
+    const stylePreview = uniqueStyles.slice(0, 3).join(' / ');
+
+    const cardStyle = {
+        ...(isExpanded ? styles.detailedOrderCardActive : styles.detailedOrderCard),
+        ...(isMobile && { margin: '0 0 0.75rem' })
+    };
+
+    const orderContent = (
+        <div style={cardStyle} onClick={() => onToggleExpand(order)}>
+            <div style={styles.detailedCardTop}>
+                <div style={styles.detailedCardTopLeft}>
+                    <strong style={styles.orderNumber}>{order.orderNumber}</strong>
+                    <span style={styles.timeSinceText}>• {timeSince(order.timestamp)}</span>
+                </div>
+                <button style={styles.checkboxButton} onClick={(e) => { e.stopPropagation(); onSelectOrder(order.orderNumber); }}>
+                    {isSelected ? <CheckSquareIcon /> : <SquareIcon />}
+                </button>
+            </div>
+            <div style={styles.detailedCardBody}>
+                <p style={styles.partyName}>{order.partyName}</p>
+                {stylePreview && <p style={styles.stylePreview}>{stylePreview}{uniqueStyles.length > 3 ? '...' : ''}</p>}
+            </div>
+            <div style={styles.detailedCardFooter}>
+                {order.orderNote && <NoteIcon title={order.orderNote} style={styles.footerIcon} />}
+                {order.totalQuantity > 50 && <span style={{...styles.badge, marginLeft: 'auto'}}>High Volume</span>}
+                {isOverdue && <span style={{...styles.badge, backgroundColor: '#fbe2e2', color: '#c0392b', marginLeft: order.totalQuantity > 50 ? '0.5rem' : 'auto'}}>Overdue</span>}
+            </div>
+        </div>
+    );
+
+    return isMobile ? (
+        <Swipeable onProcess={() => onProcessOrder(order)} onDelete={() => onDeleteOrder(order)} onEdit={() => onEditOrder(order)}>
+            {orderContent}
+        </Swipeable>
+    ) : (
+        orderContent
+    );
+};
+
+
 const DetailedList: React.FC<{ orders: Order[]; onToggleExpand: (order: Order) => void; expandedOrderNumber: string | null; children: React.ReactNode; onProcessOrder: (order: Order) => void; onDeleteOrder: (order: Order) => void; onEditOrder: (order: Order) => void; isMobile: boolean; selectedOrders: string[]; onSelectOrder: (orderNumber: string) => void; }> = ({ orders, onToggleExpand, expandedOrderNumber, children, onProcessOrder, onDeleteOrder, onEditOrder, isMobile, selectedOrders, onSelectOrder }) => {
     return (
         <div style={isMobile ? {...styles.card, padding: 0, backgroundColor: 'transparent', border: 'none', overflow: 'visible'} : {...styles.card, padding: 0}}>
-            {orders.map(order => {
-                const isOverdue = new Date().getTime() - new Date(order.timestamp).getTime() > 25 * 24 * 60 * 60 * 1000;
-                
-                const uniqueStyles = useMemo(() => {
-                    if (!order.items) return [];
-                    return [...new Set(order.items.map(item => item.fullItemData.Style))];
-                }, [order.items]);
-                const stylePreview = uniqueStyles.slice(0, 3).join(' / ');
-                
-                const cardStyle = { 
-                    ...(expandedOrderNumber === order.orderNumber ? styles.detailedOrderCardActive : styles.detailedOrderCard),
-                    ...(isMobile && { margin: '0 0 0.75rem' })
-                };
-
-                const orderContent = (
-                    <div style={cardStyle} onClick={() => onToggleExpand(order)}>
-                        <div style={styles.detailedCardTop}>
-                            <div style={styles.detailedCardTopLeft}>
-                                <strong style={styles.orderNumber}>{order.orderNumber}</strong>
-                                <span style={styles.timeSinceText}>• {timeSince(order.timestamp)}</span>
-                            </div>
-                             <button style={styles.checkboxButton} onClick={(e) => { e.stopPropagation(); onSelectOrder(order.orderNumber); }}>
-                                {selectedOrders.includes(order.orderNumber) ? <CheckSquareIcon /> : <SquareIcon />}
-                            </button>
-                        </div>
-                        <div style={styles.detailedCardBody}>
-                            <p style={styles.partyName}>{order.partyName}</p>
-                            {stylePreview && <p style={styles.stylePreview}>{stylePreview}{uniqueStyles.length > 3 ? '...' : ''}</p>}
-                        </div>
-                        <div style={styles.detailedCardFooter}>
-                             {order.orderNote && <NoteIcon title={order.orderNote} style={styles.footerIcon} />}
-                             {order.totalQuantity > 50 && <span style={{...styles.badge, marginLeft: 'auto'}}>High Volume</span>}
-                             {isOverdue && <span style={{...styles.badge, backgroundColor: '#fbe2e2', color: '#c0392b', marginLeft: order.totalQuantity > 50 ? '0.5rem' : 'auto'}}>Overdue</span>}
-                        </div>
-                    </div>
-                );
-
-                 return (
-                    <React.Fragment key={order.orderNumber}>
-                        {isMobile ? (
-                            <Swipeable onProcess={() => onProcessOrder(order)} onDelete={() => onDeleteOrder(order)} onEdit={() => onEditOrder(order)}>
-                                {orderContent}
-                            </Swipeable>
-                        ) : ( orderContent )}
-                        {expandedOrderNumber === order.orderNumber && children}
-                    </React.Fragment>
-                );
-            })}
+            {orders.map(order => (
+                 <React.Fragment key={order.orderNumber}>
+                    <DetailedOrderCard
+                        order={order}
+                        isExpanded={expandedOrderNumber === order.orderNumber}
+                        isMobile={isMobile}
+                        isSelected={selectedOrders.includes(order.orderNumber)}
+                        onToggleExpand={onToggleExpand}
+                        onSelectOrder={onSelectOrder}
+                        onProcessOrder={onProcessOrder}
+                        onDeleteOrder={onDeleteOrder}
+                        onEditOrder={onEditOrder}
+                    />
+                    {expandedOrderNumber === order.orderNumber && children}
+                </React.Fragment>
+            ))}
         </div>
     );
 }
@@ -554,6 +634,14 @@ export const PendingOrders = () => {
             });
 
             if (itemsToProcess.length === 0) { showToast("Cannot process with zero quantity.", 'error'); return; }
+            
+            const totalProcessedQty = itemsToProcess.reduce((sum, i) => sum + i.quantity, 0);
+            const newHistoryEvent = {
+                timestamp: new Date().toISOString(),
+                event: 'System',
+                details: `Processed ${itemsToProcess.length} item types. Total Qty: ${totalProcessedQty}.`
+            };
+            const updatedHistory = [...(order.history || []), newHistoryEvent];
 
             const billingOrderRefPath = `${BILLING_ORDERS_REF}/${order.orderNumber}`;
             const pendingOrderRefPath = `${PENDING_ORDERS_REF}/${order.orderNumber}`;
@@ -568,8 +656,8 @@ export const PendingOrders = () => {
             });
             
             const finalBillingItems = Array.from(finalBillingItemsMap.values());
-            updates[billingOrderRefPath] = { ...order, items: finalBillingItems, totalQuantity: finalBillingItems.reduce((sum, i) => sum + i.quantity, 0), totalValue: finalBillingItems.reduce((sum, i) => sum + (i.quantity * i.price), 0) };
-            updates[pendingOrderRefPath] = itemsRemainingInPending.length > 0 ? { ...order, items: itemsRemainingInPending, totalQuantity: itemsRemainingInPending.reduce((sum, i) => sum + i.quantity, 0), totalValue: itemsRemainingInPending.reduce((sum, i) => sum + (i.quantity * i.price), 0) } : null;
+            updates[billingOrderRefPath] = { ...order, items: finalBillingItems, totalQuantity: finalBillingItems.reduce((sum, i) => sum + i.quantity, 0), totalValue: finalBillingItems.reduce((sum, i) => sum + (i.quantity * i.price), 0), history: updatedHistory };
+            updates[pendingOrderRefPath] = itemsRemainingInPending.length > 0 ? { ...order, items: itemsRemainingInPending, totalQuantity: itemsRemainingInPending.reduce((sum, i) => sum + i.quantity, 0), totalValue: itemsRemainingInPending.reduce((sum, i) => sum + (i.quantity * i.price), 0), history: updatedHistory } : null;
             
             await firebase.database().ref().update(updates);
             showToast(`Processed items for ${order.orderNumber}.`, 'success');
@@ -586,7 +674,14 @@ export const PendingOrders = () => {
         if (!window.confirm(`Are you sure you want to delete order ${order.orderNumber}?`)) return;
         setProcessingOrder(order.orderNumber);
         const reason = prompt("Optional: Provide a reason for deleting this order:", "");
-        const deletedOrderData = { ...order, deletionReason: reason, deletedTimestamp: new Date().toISOString() };
+        const newHistoryEvent = {
+            timestamp: new Date().toISOString(),
+            event: 'System',
+            details: `Order deleted. Reason: ${reason || 'Not specified'}`
+        };
+        const updatedHistory = [...(order.history || []), newHistoryEvent];
+        const deletedOrderData = { ...order, deletionReason: reason, deletedTimestamp: new Date().toISOString(), history: updatedHistory };
+
         try {
             const updates = { [`${DELETED_ORDERS_REF}/${order.orderNumber}`]: deletedOrderData, [`${PENDING_ORDERS_REF}/${order.orderNumber}`]: null };
             await firebase.database().ref().update(updates);
@@ -607,13 +702,32 @@ export const PendingOrders = () => {
             selectedOrders.forEach(orderNum => {
                 const order = orders.find(o => o.orderNumber === orderNum);
                 if (order) {
-                    const deletedOrderData = { ...order, deletionReason: reason, deletedTimestamp: new Date().toISOString() };
+                    const newHistoryEvent = { timestamp: new Date().toISOString(), event: 'System', details: `Order deleted. Reason: ${reason || 'Not specified'}`};
+                    const updatedHistory = [...(order.history || []), newHistoryEvent];
+                    const deletedOrderData = { ...order, deletionReason: reason, deletedTimestamp: new Date().toISOString(), history: updatedHistory };
                     const updates = { [`${DELETED_ORDERS_REF}/${order.orderNumber}`]: deletedOrderData, [`${PENDING_ORDERS_REF}/${order.orderNumber}`]: null };
                     firebase.database().ref().update(updates);
                 }
             });
             showToast(`${selectedOrders.length} orders deleted.`, 'success');
             setSelectedOrders([]);
+        }
+    };
+
+    const handleAddNote = async (order: Order, noteText: string) => {
+        if (!noteText.trim()) return;
+        const newNoteEvent = {
+            timestamp: new Date().toISOString(),
+            event: 'Note',
+            details: noteText.trim()
+        };
+        const updatedHistory = [...(order.history || []), newNoteEvent];
+        try {
+            await firebase.database().ref(`${PENDING_ORDERS_REF}/${order.orderNumber}/history`).set(updatedHistory);
+            showToast('Note added successfully!', 'success');
+        } catch (e) {
+            console.error('Failed to add note:', e);
+            showToast('Failed to add note.', 'error');
         }
     };
 
@@ -770,6 +884,7 @@ export const PendingOrders = () => {
                 stockData={stockData}
                 isMobile={isMobile}
                 onPrint={handlePrintPickingList}
+                onAddNote={handleAddNote}
             />
         ) : null;
         
@@ -875,7 +990,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     filterContainer: { display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' },
     filterButton: { background: 'var(--light-grey)', border: '1px solid var(--skeleton-bg)', color: 'var(--text-color)', padding: '0.4rem 0.8rem', borderRadius: '16px', cursor: 'pointer', fontSize: '0.85rem' },
     filterButtonActive: { background: 'var(--active-bg)', border: '1px solid var(--brand-color)', color: 'var(--brand-color)', padding: '0.4rem 0.8rem', borderRadius: '16px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500 },
-    listContainer: { flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0rem', padding: '0 0.5rem 1rem' },
+    listContainer: { flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0rem', padding: '0 0 1rem' },
     centeredMessage: { flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'var(--text-color)', fontSize: '1.1rem' },
     spinner: { border: '4px solid var(--light-grey)', borderRadius: '50%', borderTop: '4px solid var(--brand-color)', width: '40px', height: '40px', animation: 'spin 1s linear infinite' },
     card: { backgroundColor: 'var(--card-bg)', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', overflow: 'hidden' },
@@ -933,4 +1048,16 @@ const styles: { [key: string]: React.CSSProperties } = {
     stylePreview: { fontSize: '0.85rem', color: 'var(--text-color)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', },
     detailedCardFooter: { display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.5rem', },
     footerIcon: { color: 'var(--text-color)', },
+    // --- History Section ---
+    historySection: { marginTop: '1.5rem', borderTop: '1px solid var(--skeleton-bg)', paddingTop: '1rem' },
+    historyHeader: { width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem 0', fontSize: '1rem', fontWeight: 600, color: 'var(--dark-grey)' },
+    historyContent: { padding: '1rem 0 0', display: 'flex', flexDirection: 'column', gap: '1rem' },
+    historyList: { maxHeight: '300px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem', border: '1px solid var(--skeleton-bg)', borderRadius: '8px', padding: '0.75rem', backgroundColor: 'var(--card-bg)' },
+    historyItem: { display: 'flex', flexDirection: 'column', gap: '0.25rem' },
+    historyMeta: { display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.8rem', color: 'var(--text-color)' },
+    historyEventType: { fontWeight: 600, padding: '2px 8px', borderRadius: '12px', fontSize: '0.75rem' },
+    historyDetails: { fontSize: '0.9rem', color: 'var(--dark-grey)', paddingLeft: '0.25rem' },
+    addNoteContainer: { display: 'flex', flexDirection: 'column', gap: '0.5rem' },
+    noteTextarea: { width: '100%', minHeight: '60px', padding: '0.75rem', fontSize: '0.9rem', border: '1px solid var(--skeleton-bg)', borderRadius: '8px', resize: 'vertical' },
+    addNoteButton: { alignSelf: 'flex-end', padding: '0.5rem 1rem', background: 'var(--light-grey)', border: '1px solid var(--skeleton-bg)', color: 'var(--dark-grey)', borderRadius: '8px', cursor: 'pointer', fontWeight: 500 },
 };

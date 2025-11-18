@@ -731,6 +731,11 @@ export const NewOrderEntry = () => {
             const orderPayload = {
                 orderNumber, partyName, items, orderNote,
                 totalQuantity, totalValue, timestamp: new Date().toISOString(), status: 'Pending',
+                history: [{
+                    timestamp: new Date().toISOString(),
+                    event: 'System',
+                    details: 'Order Created'
+                }]
             };
             
             const gsheetPayload = {
