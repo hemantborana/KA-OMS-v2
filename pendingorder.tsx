@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
@@ -21,11 +20,12 @@ const FilterIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" heig
 const CheckSquareIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>;
 const SquareIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg>;
 const HistoryIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>;
-const MessageSquareIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>;
+const TagIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>;
+const XIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>;
 
 // --- TYPE & FIREBASE ---
 interface HistoryEvent { timestamp: string; event: string; details: string; }
-interface Order { orderNumber: string; partyName: string; timestamp: string; totalQuantity: number; totalValue: number; orderNote?: string; items: any[]; history?: HistoryEvent[]; }
+interface Order { orderNumber: string; partyName: string; timestamp: string; totalQuantity: number; totalValue: number; orderNote?: string; items: any[]; history?: HistoryEvent[]; tags?: string[]; }
 const PENDING_ORDERS_REF = 'Pending_Order_V2';
 const BILLING_ORDERS_REF = 'Ready_For_Billing_V2';
 const DELETED_ORDERS_REF = 'Deleted_Orders_V2';
@@ -57,6 +57,33 @@ const timeSince = (dateString) => {
 const normalizeKeyPart = (part: any): string => {
     if (!part) return '';
     return String(part).toUpperCase().trim().replace(/[^A-Z0-9]/g, '');
+};
+
+const getTagStyle = (tag: string) => {
+    const lower = tag.toLowerCase();
+    let colors = { bg: '#f3f4f6', text: '#374151', border: '#e5e7eb' }; // Default Grey
+    
+    if (lower.includes('hold')) colors = { bg: '#fee2e2', text: '#991b1b', border: '#fecaca' }; // Red
+    else if (lower.includes('stock') || lower.includes('wait')) colors = { bg: '#fef3c7', text: '#92400e', border: '#fde68a' }; // Amber
+    else if (lower.includes('confirm')) colors = { bg: '#e0e7ff', text: '#3730a3', border: '#c7d2fe' }; // Indigo
+    else if (lower.includes('urgent')) colors = { bg: '#fce7f3', text: '#9d174d', border: '#fbcfe8' }; // Pink
+    else if (lower.includes('partial')) colors = { bg: '#d1fae5', text: '#065f46', border: '#a7f3d0' }; // Emerald
+
+    return {
+        backgroundColor: colors.bg,
+        color: colors.text,
+        border: `1px solid ${colors.border}`,
+        padding: '2px 8px',
+        borderRadius: '12px',
+        fontSize: '0.75rem',
+        fontWeight: 600,
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '4px',
+        marginRight: '4px',
+        marginBottom: '4px',
+        whiteSpace: 'nowrap'
+    } as React.CSSProperties;
 };
 
 const stockDb = {
@@ -232,7 +259,7 @@ const Swipeable: React.FC<{ onProcess: () => void; onDelete: () => void; onEdit:
 
 
 // --- COMPONENTS ---
-const ExpandedPendingView = ({ order, onProcess, onDelete, isProcessing, processingQty, onQtyChange, stockData, isMobile, onPrint, onAddNote }) => {
+const ExpandedPendingView = ({ order, onProcess, onDelete, isProcessing, processingQty, onQtyChange, stockData, isMobile, onPrint, onAddNote, onAddTag, onRemoveTag }) => {
     const [note, setNote] = useState('');
     const [isHistoryCollapsed, setIsHistoryCollapsed] = useState(true);
 
@@ -267,6 +294,7 @@ const ExpandedPendingView = ({ order, onProcess, onDelete, isProcessing, process
                         const stockKey = `${normalizeKeyPart(item.fullItemData.Style)}-${normalizeKeyPart(item.fullItemData.Color)}-${normalizeKeyPart(item.fullItemData.Size)}`;
                         const qtyToProcess = processingQty[item.id] || 0;
                         const isPartial = qtyToProcess > 0 && qtyToProcess < item.quantity;
+                        const stockLevel = stockData[stockKey] ?? 0;
                         
                         let rowStyle = {...styles.tr};
                         if (index % 2 !== 0) rowStyle.backgroundColor = '#f8f9fa';
@@ -277,7 +305,12 @@ const ExpandedPendingView = ({ order, onProcess, onDelete, isProcessing, process
                                 <td style={{...styles.td, textAlign: 'left'}}>{item.fullItemData.Style}</td>
                                 <td style={{...styles.td, textAlign: 'left'}}>{item.fullItemData.Color}</td>
                                 <td style={{...styles.td, textAlign: 'left'}}>{item.fullItemData.Size}</td>
-                                <td style={{...styles.td, textAlign: 'center'}}><StockIndicator stockLevel={stockData[stockKey]} /></td>
+                                <td style={{...styles.td, textAlign: 'center'}}>
+                                    <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px'}}>
+                                        <StockIndicator stockLevel={stockLevel} />
+                                        <span style={{fontSize: '0.8rem', color: 'var(--text-color)'}}>{stockLevel}</span>
+                                    </div>
+                                </td>
                                 <td style={{...styles.td, textAlign: 'right'}}>{item.quantity}</td>
                                 <td style={{...styles.td, ...styles.tdInput}}>
                                     <input type="number" style={{...styles.qtyInput, textAlign: 'right'}} value={processingQty[item.id] || ''} onChange={(e) => onQtyChange(item.id, e.target.value, item.quantity)} placeholder="0" max={item.quantity} min="0" />
@@ -316,6 +349,46 @@ const ExpandedPendingView = ({ order, onProcess, onDelete, isProcessing, process
     return (
         <div style={styles.expandedViewContainer}>
             {isMobile ? renderMobileCards() : renderDesktopTable()}
+            
+            {/* Tags Section */}
+            <div style={styles.tagsSection}>
+                <div style={styles.tagsHeader}>
+                    <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', fontWeight: 600, color: 'var(--dark-grey)'}}>
+                        <TagIcon /> <span>Tags</span>
+                    </div>
+                </div>
+                <div style={styles.tagsList}>
+                    {order.tags?.map(tag => (
+                        <span key={tag} style={getTagStyle(tag)}>
+                            {tag}
+                            <button onClick={() => onRemoveTag(order, tag)} style={styles.removeTagButton}><XIcon/></button>
+                        </span>
+                    ))}
+                     <div style={styles.addTagContainer}>
+                         <select 
+                            style={styles.tagSelect} 
+                            onChange={(e) => { 
+                                if(e.target.value === 'custom') {
+                                    const custom = prompt("Enter custom tag:");
+                                    if (custom) { onAddTag(order, custom); e.target.value=''; }
+                                } else if(e.target.value) { 
+                                    onAddTag(order, e.target.value); 
+                                    e.target.value=''; 
+                                } 
+                            }}
+                         >
+                            <option value="">+ Add Tag</option>
+                            <option value="On Hold">On Hold</option>
+                            <option value="Awaiting Stock">Awaiting Stock</option>
+                            <option value="Customer Confirmation Needed">Customer Confirmation Needed</option>
+                            <option value="Urgent">Urgent</option>
+                            <option value="Partial Shipment">Partial Shipment</option>
+                            <option value="custom">Create Custom...</option>
+                         </select>
+                    </div>
+                </div>
+            </div>
+
             {order.orderNote && <div style={styles.noteBox}><strong>Note:</strong> {order.orderNote}</div>}
             
             <div style={styles.historySection}>
@@ -399,6 +472,9 @@ const PartyGroup: React.FC<{ partyName: string; data: any; onToggleExpand: (orde
                                         {order.orderNote && <NoteIcon />}
                                     </span>
                                     <span><BoxIcon /> {order.totalQuantity}</span>
+                                    {order.tags?.map(tag => (
+                                        <span key={tag} style={styles.miniTagDot} title={tag} style={{backgroundColor: getTagStyle(tag).backgroundColor}}></span>
+                                    ))}
                                     {order.totalQuantity > 50 && <span style={styles.badge}>High Volume</span>}
                                 </div>
                                 <button style={styles.detailsButton} onClick={(e) => { e.stopPropagation(); onToggleExpand(order); }}>
@@ -472,11 +548,21 @@ const DetailedOrderCard: React.FC<{
             <div style={styles.detailedCardBody}>
                 <p style={styles.partyName}>{order.partyName}</p>
                 {stylePreview && <p style={styles.stylePreview}>{stylePreview}{uniqueStyles.length > 3 ? '...' : ''}</p>}
+                {order.tags && order.tags.length > 0 && (
+                    <div style={styles.tagsContainer}>
+                        {order.tags.map(tag => <span key={tag} style={getTagStyle(tag)}>{tag}</span>)}
+                    </div>
+                )}
             </div>
             <div style={styles.detailedCardFooter}>
-                {order.orderNote && <NoteIcon title={order.orderNote} style={styles.footerIcon} />}
-                {order.totalQuantity > 50 && <span style={{...styles.badge, marginLeft: 'auto'}}>High Volume</span>}
-                {isOverdue && <span style={{...styles.badge, backgroundColor: '#fbe2e2', color: '#c0392b', marginLeft: order.totalQuantity > 50 ? '0.5rem' : 'auto'}}>Overdue</span>}
+                <div style={{display: 'flex', alignItems: 'center', gap: '0.75rem'}}>
+                    <span style={{fontSize: '0.85rem', fontWeight: 600, color: 'var(--dark-grey)'}}><BoxIcon/> {order.totalQuantity}</span>
+                    {order.orderNote && <NoteIcon title={order.orderNote} style={styles.footerIcon} />}
+                </div>
+                <div style={{display: 'flex', gap: '0.5rem', marginLeft: 'auto'}}>
+                     {order.totalQuantity > 50 && <span style={styles.badge}>High Volume</span>}
+                     {isOverdue && <span style={{...styles.badge, backgroundColor: '#fbe2e2', color: '#c0392b'}}>Overdue</span>}
+                </div>
             </div>
         </div>
     );
@@ -528,7 +614,8 @@ export const PendingOrders = ({ onNavigate }) => {
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
     const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
     const [isFilterVisible, setIsFilterVisible] = useState(false);
-    
+    const [activeTagFilter, setActiveTagFilter] = useState<string | null>(null);
+
     // State for Command Center Layout
     const [selectedParty, setSelectedParty] = useState<string | null>(null);
     const [activeOrder, setActiveOrder] = useState<Order | null>(null);
@@ -644,6 +731,35 @@ export const PendingOrders = ({ onNavigate }) => {
         const timer = setTimeout(manageExpiredOrders, 5000); // Run 5s after component mount
         return () => clearTimeout(timer);
     }, []);
+
+    // --- Tag Logic ---
+    const availableTags = useMemo(() => {
+        const tags = new Set<string>();
+        orders.forEach(o => o.tags?.forEach(t => tags.add(t)));
+        return Array.from(tags).sort();
+    }, [orders]);
+
+    const handleAddTag = async (order: Order, tag: string) => {
+        const currentTags = order.tags || [];
+        if (currentTags.includes(tag)) return;
+        const newTags = [...currentTags, tag];
+        const newEvent = { timestamp: new Date().toISOString(), event: 'Tag Added', details: `Added tag: ${tag}` };
+        const updatedHistory = [...(order.history || []), newEvent];
+        try {
+            await firebase.database().ref(`${PENDING_ORDERS_REF}/${order.orderNumber}`).update({ tags: newTags, history: updatedHistory });
+            showToast(`Tag "${tag}" added.`, 'success');
+        } catch(e) { console.error(e); showToast('Failed to add tag.', 'error'); }
+    };
+
+    const handleRemoveTag = async (order: Order, tag: string) => {
+        const newTags = (order.tags || []).filter(t => t !== tag);
+        const newEvent = { timestamp: new Date().toISOString(), event: 'Tag Removed', details: `Removed tag: ${tag}` };
+        const updatedHistory = [...(order.history || []), newEvent];
+        try {
+             await firebase.database().ref(`${PENDING_ORDERS_REF}/${order.orderNumber}`).update({ tags: newTags, history: updatedHistory });
+             showToast(`Tag "${tag}" removed.`, 'success');
+        } catch(e) { console.error(e); showToast('Failed to remove tag.', 'error'); }
+    };
 
 
     const handleProcessOrder = useCallback(async (order: Order, quantitiesToProcess: Record<string, number>) => {
@@ -864,6 +980,11 @@ export const PendingOrders = ({ onNavigate }) => {
 
     const filteredAndSortedOrders = useMemo(() => {
         let items = [...orders];
+        
+        if (activeTagFilter) {
+            items = items.filter(order => order.tags?.includes(activeTagFilter));
+        }
+
         if (searchTerm) {
             const lowercasedTerm = searchTerm.toLowerCase();
             items = items.filter(order => order.partyName.toLowerCase().includes(lowercasedTerm) || order.orderNumber.toLowerCase().includes(lowercasedTerm));
@@ -878,7 +999,7 @@ export const PendingOrders = ({ onNavigate }) => {
             return sortConfig.direction === 'ascending' ? comparison : comparison * -1;
         });
         return items;
-    }, [orders, searchTerm, sortConfig]);
+    }, [orders, searchTerm, sortConfig, activeTagFilter]);
 
     const summarizedData = useMemo(() => {
         return filteredAndSortedOrders.reduce((acc, order) => {
@@ -940,6 +1061,8 @@ export const PendingOrders = ({ onNavigate }) => {
                 isMobile={isMobile}
                 onPrint={handlePrintPickingList}
                 onAddNote={handleAddNote}
+                onAddTag={handleAddTag}
+                onRemoveTag={handleRemoveTag}
             />
         ) : null;
         
@@ -1036,6 +1159,8 @@ export const PendingOrders = ({ onNavigate }) => {
                             isMobile={false}
                             onPrint={handlePrintPickingList}
                             onAddNote={handleAddNote}
+                            onAddTag={handleAddTag}
+                            onRemoveTag={handleRemoveTag}
                         />
                     ) : (
                         <div style={styles.rightPanelPlaceholder}>
@@ -1073,6 +1198,30 @@ export const PendingOrders = ({ onNavigate }) => {
                         <SearchIcon />
                         <input type="text" style={styles.searchInput} className="global-search-input" placeholder="Search by party or order number..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                     </div>
+                    
+                    {/* Tag Filters */}
+                    {availableTags.length > 0 && (
+                         <div style={styles.tagFilterContainer}>
+                            <span style={{fontWeight: 500, color: 'var(--text-color)', fontSize: '0.9rem'}}>Filter by Tag:</span>
+                            <div style={styles.tagScrollContainer}>
+                                <button 
+                                    onClick={() => setActiveTagFilter(null)} 
+                                    style={!activeTagFilter ? {...styles.tagFilterButton, backgroundColor: 'var(--dark-grey)', color: 'white', borderColor: 'var(--dark-grey)'} : styles.tagFilterButton}
+                                >All</button>
+                                {availableTags.map(tag => (
+                                    <button 
+                                        key={tag} 
+                                        onClick={() => setActiveTagFilter(tag === activeTagFilter ? null : tag)} 
+                                        style={{
+                                            ...styles.tagFilterButton, 
+                                            ...(tag === activeTagFilter ? { backgroundColor: getTagStyle(tag).backgroundColor, borderColor: getTagStyle(tag).borderColor, fontWeight: 700 } : {})
+                                        }}
+                                    >{tag}</button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
                     <div style={styles.filterContainer}>
                         <span style={{fontWeight: 500, color: 'var(--text-color)', fontSize: '0.9rem'}}>Sort by:</span>
                         {sortOptions.map(opt => (
@@ -1111,12 +1260,15 @@ const styles: { [key: string]: React.CSSProperties } = {
     toggleButton: { background: 'none', border: 'none', padding: '6px 10px', cursor: 'pointer', color: 'var(--text-color)', borderRadius: '6px' },
     toggleButtonActive: { background: 'var(--card-bg)', border: 'none', padding: '6px 10px', cursor: 'pointer', color: 'var(--brand-color)', borderRadius: '6px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' },
     filtersCollapsed: { maxHeight: 0, opacity: 0, overflow: 'hidden', transition: 'max-height 0.4s ease-out, opacity 0.4s ease-out, margin-top 0.4s ease-out', marginTop: 0 },
-    filtersVisible: { maxHeight: '200px', opacity: 1, overflow: 'hidden', transition: 'max-height 0.4s ease-in, opacity 0.4s ease-in, margin-top 0.4s ease-in', marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '1rem' },
+    filtersVisible: { maxHeight: '300px', opacity: 1, overflow: 'visible', transition: 'max-height 0.4s ease-in, opacity 0.4s ease-in, margin-top 0.4s ease-in', marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '1rem' },
     searchContainer: { display: 'flex', alignItems: 'center', gap: '0.75rem', backgroundColor: 'var(--light-grey)', padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--skeleton-bg)' },
     searchInput: { flex: 1, border: 'none', background: 'none', outline: 'none', fontSize: '1rem', color: 'var(--dark-grey)' },
     filterContainer: { display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' },
     filterButton: { background: 'var(--light-grey)', border: '1px solid var(--skeleton-bg)', color: 'var(--text-color)', padding: '0.4rem 0.8rem', borderRadius: '16px', cursor: 'pointer', fontSize: '0.85rem' },
     filterButtonActive: { background: 'var(--active-bg)', border: '1px solid var(--brand-color)', color: 'var(--brand-color)', padding: '0.4rem 0.8rem', borderRadius: '16px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500 },
+    tagFilterContainer: { display: 'flex', flexDirection: 'column', gap: '0.5rem' },
+    tagScrollContainer: { display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.5rem', scrollbarWidth: 'none' },
+    tagFilterButton: { background: 'var(--card-bg)', border: '1px solid var(--skeleton-bg)', padding: '0.3rem 0.8rem', borderRadius: '14px', cursor: 'pointer', fontSize: '0.8rem', whiteSpace: 'nowrap' },
     listContainer: { flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0rem', padding: '0 0 1rem' },
     centeredMessage: { flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'var(--text-color)', fontSize: '1.1rem' },
     spinner: { border: '4px solid var(--light-grey)', borderRadius: '50%', borderTop: '4px solid var(--brand-color)', width: '40px', height: '40px', animation: 'spin 1s linear infinite' },
@@ -1199,4 +1351,13 @@ const styles: { [key: string]: React.CSSProperties } = {
     partyNameText: { fontWeight: 500, flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
     partyCountBadge: { backgroundColor: 'var(--light-grey)', color: 'var(--text-color)', padding: '0.2rem 0.6rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600 },
     rightPanelPlaceholder: { display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', color: 'var(--text-color)', textAlign: 'center', padding: '2rem' },
+    // --- Tag Styles ---
+    tagsSection: { marginBottom: '1rem', padding: '0.5rem', backgroundColor: '#fff', border: '1px solid var(--skeleton-bg)', borderRadius: '8px' },
+    tagsHeader: { marginBottom: '0.5rem' },
+    tagsList: { display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' },
+    tagsContainer: { display: 'flex', flexWrap: 'wrap', gap: '0.25rem', marginTop: '0.25rem' },
+    removeTagButton: { background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', padding: '0', marginLeft: '4px', display: 'flex', alignItems: 'center' },
+    addTagContainer: { display: 'flex', alignItems: 'center' },
+    tagSelect: { padding: '2px 6px', borderRadius: '12px', border: '1px solid var(--skeleton-bg)', fontSize: '0.75rem', color: 'var(--text-color)', backgroundColor: 'var(--light-grey)', outline: 'none', cursor: 'pointer' },
+    miniTagDot: { width: '8px', height: '8px', borderRadius: '50%', display: 'inline-block' },
 };
