@@ -5,7 +5,7 @@ import 'firebase/compat/database';
 
 // --- ICONS ---
 const SearchIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>;
-const ChevronIcon = ({ collapsed }) => <svg style={{ transform: collapsed ? 'rotate(0deg)' : 'rotate(180deg)', transition: 'transform 0.3s ease' }} xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>;
+const ChevronIcon = ({ collapsed, style }: { collapsed?: boolean, style?: React.CSSProperties }) => <svg style={{ transform: collapsed ? 'rotate(0deg)' : 'rotate(180deg)', transition: 'transform 0.3s ease', ...style }} xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>;
 const Spinner = () => <div style={styles.spinner}></div>;
 const SmallSpinner = () => <div style={{...styles.spinner, width: '20px', height: '20px', borderTop: '3px solid white', borderRight: '3px solid transparent' }}></div>;
 const SummarizedViewIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>;
@@ -190,6 +190,7 @@ const StockIndicator: React.FC<{ stockLevel: number }> = ({ stockLevel }) => {
 const Swipeable: React.FC<{ onProcess: () => void; onDelete: () => void; onEdit: () => void; children: React.ReactNode; }> = ({ onProcess, onDelete, onEdit, children }) => {
     const contentRef = useRef<HTMLDivElement>(null);
     const startX = useRef(0);
+    const startY = useRef(0);
     const currentX = useRef(0);
     const isDragging = useRef(false);
     const isScrolling = useRef(false);
@@ -214,6 +215,7 @@ const Swipeable: React.FC<{ onProcess: () => void; onDelete: () => void; onEdit:
     const handleTouchStart = (e: React.TouchEvent) => {
         resetOpenItems();
         startX.current = e.touches[0].clientX;
+        startY.current = e.touches[0].clientY;
         currentX.current = startX.current;
         isDragging.current = true;
         isScrolling.current = false;
@@ -225,18 +227,20 @@ const Swipeable: React.FC<{ onProcess: () => void; onDelete: () => void; onEdit:
         if (!isDragging.current || !contentRef.current) return;
 
         currentX.current = e.touches[0].clientX;
+        const currentY = e.touches[0].clientY;
         const diffX = currentX.current - startX.current;
+        const diffY = currentY - startY.current;
 
-        // Simple check to distinguish between scroll and swipe
-        if (!isScrolling.current && Math.abs(e.touches[0].clientY - startX.current) > Math.abs(diffX) && Math.abs(diffX) < 10) {
-             isDragging.current = false;
-             return;
+        // Check if vertical scroll is dominant
+        if (!isScrolling.current) {
+             if (Math.abs(diffY) > Math.abs(diffX)) {
+                 isDragging.current = false;
+                 return; // Allow vertical scroll
+             }
+             isScrolling.current = true; // Lock into horizontal swipe
         }
         
-        if (!isScrolling.current) {
-             e.preventDefault();
-        }
-        isScrolling.current = true;
+        if (e.cancelable) e.preventDefault();
         
         animationFrameId.current = requestAnimationFrame(() => {
             const newTranslateX = Math.max(-80, Math.min(160, diffX));
@@ -249,7 +253,7 @@ const Swipeable: React.FC<{ onProcess: () => void; onDelete: () => void; onEdit:
         isDragging.current = false;
         if(animationFrameId.current) cancelAnimationFrame(animationFrameId.current);
         
-        contentRef.current.style.transition = 'transform 0.3s ease';
+        contentRef.current.style.transition = 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)';
         const currentTransform = new WebKitCSSMatrix(window.getComputedStyle(contentRef.current).transform).m41;
 
         if (currentTransform > 80) { // Swiped right enough to open left actions
@@ -360,21 +364,25 @@ const ExpandedPendingView = ({ order, onProcess, onDelete, isProcessing, process
                             </div>
                         </div>
                         <div style={styles.mobileItemQty}>
-                            <div style={styles.mobileQtyLabel}>Ordered: {item.quantity}</div>
-                             <input type="number" style={{...styles.qtyInput, width: '80px'}} value={processingQty[item.id] || ''} onChange={(e) => onQtyChange(item.id, e.target.value, item.quantity)} placeholder="0" max={item.quantity} min="0" />
+                            <div style={styles.mobileQtyLabel}>Ord: {item.quantity}</div>
+                             <input type="number" style={{...styles.qtyInput, width: '60px', padding: '6px'}} value={processingQty[item.id] || ''} onChange={(e) => onQtyChange(item.id, e.target.value, item.quantity)} placeholder="0" max={item.quantity} min="0" />
                         </div>
                     </div>
                 )
             })}
         </div>
     );
+
+    const viewStyle = isMobile 
+        ? { ...styles.expandedViewContainer, borderTop: 'none', padding: '0.5rem 0.5rem 1rem', backgroundColor: '#FAFAFA' }
+        : styles.expandedViewContainer;
     
     return (
-        <div style={styles.expandedViewContainer}>
+        <div style={viewStyle}>
             {isMobile ? renderMobileCards() : renderDesktopTable()}
             
             {/* Tags Section */}
-            <div style={styles.tagsSection}>
+            <div style={isMobile ? {...styles.tagsSection, backgroundColor: 'transparent', border: 'none', padding: '0.5rem 0'} : styles.tagsSection}>
                 <div style={styles.tagsHeader}>
                     <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', fontWeight: 600, color: 'var(--dark-grey)'}}>
                         <TagIcon /> <span>Tags</span>
@@ -414,7 +422,7 @@ const ExpandedPendingView = ({ order, onProcess, onDelete, isProcessing, process
 
             {order.orderNote && <div style={styles.noteBox}><strong>Note:</strong> {order.orderNote}</div>}
             
-            <div style={styles.historySection}>
+            <div style={isMobile ? {...styles.historySection, borderTop: '1px solid #e0e0e0'} : styles.historySection}>
                 <button style={styles.historyHeader} onClick={() => setIsHistoryCollapsed(!isHistoryCollapsed)}>
                     <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
                         <HistoryIcon />
@@ -450,14 +458,14 @@ const ExpandedPendingView = ({ order, onProcess, onDelete, isProcessing, process
 
             <div style={styles.modalFooter}>
                  <button onClick={() => onPrint([order])} style={styles.secondaryButton} disabled={isProcessing}>
-                    <PrintIcon /> Print Picking List
+                    <PrintIcon /> List
                 </button>
                 <div style={styles.footerActions}>
-                    <button onClick={() => onDelete(order)} style={styles.deleteButton} disabled={isProcessing}>
+                    <button onClick={() => onDelete(order)} style={isMobile ? styles.deleteButtonMobile : styles.deleteButton} disabled={isProcessing}>
                        <TrashIcon />
                     </button>
-                    <button onClick={handleProcessClick} style={styles.modalActionButton} disabled={isProcessing}>
-                        {isProcessing ? <SmallSpinner /> : 'Process for Billing'}
+                    <button onClick={handleProcessClick} style={isMobile ? styles.modalActionButtonMobile : styles.modalActionButton} disabled={isProcessing}>
+                        {isProcessing ? <SmallSpinner /> : 'Process'}
                     </button>
                 </div>
             </div>
@@ -504,9 +512,12 @@ const DetailedOrderCard: React.FC<{
             {/* Top Row: Party Name & Checkbox */}
             <div style={styles.cardTopRow}>
                 <h3 style={styles.cardPartyName}>{order.partyName}</h3>
-                <button style={styles.checkboxButton} onClick={(e) => { e.stopPropagation(); onSelectOrder(order.orderNumber); }}>
-                    {isSelected ? <CheckSquareIcon /> : <SquareIcon />}
-                </button>
+                <div style={styles.checkboxContainer}>
+                    <button style={styles.checkboxButton} onClick={(e) => { e.stopPropagation(); onSelectOrder(order.orderNumber); }}>
+                        {isSelected ? <CheckSquareIcon /> : <SquareIcon />}
+                    </button>
+                    <ChevronIcon collapsed={!isExpanded} style={{width: '16px', height: '16px', color: 'var(--text-color)'}} />
+                </div>
             </div>
 
             {/* Second Row: Order Number & Time */}
@@ -572,7 +583,10 @@ const DetailedList: React.FC<{ orders: Order[]; onToggleExpand: (order: Order) =
                         onDeleteOrder={onDeleteOrder}
                         onEditOrder={onEditOrder}
                     />
-                    {expandedOrderNumber === order.orderNumber && children}
+                     {/* Animated Expansion Wrapper */}
+                    <div style={expandedOrderNumber === order.orderNumber ? styles.groupContentExpanded : styles.groupContentCollapsed}>
+                        {expandedOrderNumber === order.orderNumber && children}
+                    </div>
                 </React.Fragment>
             ))}
         </div>
@@ -645,12 +659,9 @@ const PartyGroup: React.FC<{ partyName: string; data: any; onToggleExpand: (orde
             <button style={isMobile ? styles.mobileCardHeader : styles.cardHeader} onClick={() => setIsCollapsed(!isCollapsed)}>
                {renderHeader()}
             </button>
-             {/* Custom Divider for Mobile (not last item) */}
-             {isMobile && index !== (totalCount || 0) - 1 && (
-                <div style={{height: '1px', backgroundColor: '#e0e0e0', margin: '0 16px'}}></div>
-            )}
+            
             {/* Smooth expansion container */}
-            <div style={isCollapsed ? styles.groupContentCollapsed : styles.groupContentExpanded}>
+            <div style={isCollapsed ? styles.groupContentCollapsed : {...styles.groupContentExpanded, backgroundColor: isMobile ? '#FAFAFA' : undefined}}>
                  <div style={styles.cardDetails}>
                     <DetailedList 
                         orders={data.orders} 
@@ -666,6 +677,11 @@ const PartyGroup: React.FC<{ partyName: string; data: any; onToggleExpand: (orde
                     />
                 </div>
             </div>
+            
+            {/* Custom Divider for Mobile: Placed AFTER the content so it separates items */}
+             {isMobile && index !== (totalCount || 0) - 1 && (
+                <div style={styles.mobileDivider}></div>
+            )}
         </div>
     );
 };
@@ -1147,32 +1163,31 @@ export const PendingOrders = ({ onNavigate }) => {
             onSelectOrder: handleSelectOrderCheckbox,
         };
 
-        if (view === 'summarized') {
-            return (
-                <div style={styles.listContainer}>
-                    {partyNamesInOrder.map((partyName, index) => (
-                        <PartyGroup 
-                            key={partyName} 
-                            partyName={partyName} 
-                            data={summarizedData[partyName]} 
-                            {...commonProps}
-                            index={index}
-                            totalCount={partyNamesInOrder.length}
-                        >
-                            {expandedView}
-                        </PartyGroup>
-                    ))}
-                </div>
-            );
-        }
-
-        return (
-            <div style={styles.listContainer}>
+        // Added key to trigger animation on view change
+        const content = view === 'summarized' ? (
+             <div key="summarized" style={styles.listContainer} className="fade-in-slide">
+                {partyNamesInOrder.map((partyName, index) => (
+                    <PartyGroup 
+                        key={partyName} 
+                        partyName={partyName} 
+                        data={summarizedData[partyName]} 
+                        {...commonProps}
+                        index={index}
+                        totalCount={partyNamesInOrder.length}
+                    >
+                        {expandedView}
+                    </PartyGroup>
+                ))}
+            </div>
+        ) : (
+            <div key="detailed" style={styles.listContainer} className="fade-in-slide">
                 <DetailedList orders={filteredAndSortedOrders} {...commonProps}>
                     {expandedView}
                 </DetailedList>
             </div>
         );
+
+        return content;
     };
     
     const renderDesktopLayout = () => {
@@ -1257,6 +1272,18 @@ export const PendingOrders = ({ onNavigate }) => {
     
     return (
         <div style={isMobile ? {...styles.container, backgroundColor: '#ffffff'} : styles.container}>
+            <style>{`
+                .fade-in-slide { animation: fadeInSlide 0.3s ease-out forwards; }
+                @keyframes fadeInSlide {
+                    from { opacity: 0; transform: translateX(10px); }
+                    to { opacity: 1; transform: translateX(0); }
+                }
+                .batch-toolbar-enter { animation: slideUpBatch 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+                @keyframes slideUpBatch {
+                    from { transform: translateY(100%); opacity: 0; }
+                    to { transform: translateY(0); opacity: 1; }
+                }
+            `}</style>
             <div style={isMobile ? styles.headerCardMobile : styles.headerCard}>
                 <div style={{...styles.headerTop, ...(isMobile && {justifyContent: 'flex-end', padding: 0})}}>
                      {!isMobile && <h2 style={styles.pageTitle}>Pending Orders</h2>}
@@ -1324,12 +1351,11 @@ export const PendingOrders = ({ onNavigate }) => {
                 </div>
             </div>
             {selectedOrders.length > 0 && (
-                <div style={styles.batchActionToolbar}>
-                     <span>{selectedOrders.length} orders selected</span>
+                <div className="batch-toolbar-enter" style={styles.batchActionToolbar}>
+                     <span style={{fontSize: '0.9rem', fontWeight: 600}}>{selectedOrders.length} selected</span>
                      <div style={styles.footerActions}>
-                        <button onClick={() => handleBatchDelete()} style={{...styles.secondaryButton, color: '#e74c3c', borderColor: '#e74c3c'}}><TrashIcon/> Delete</button>
-                        <button onClick={() => handlePrintPickingList(orders.filter(o => selectedOrders.includes(o.orderNumber)))} style={styles.secondaryButton}><PrintIcon/> Print List</button>
-                        <button onClick={handleBatchProcess} style={styles.modalActionButton}>Process Selected</button>
+                        <button onClick={() => handleBatchDelete()} style={{...styles.secondaryButton, color: '#e74c3c', borderColor: '#e74c3c', backgroundColor: 'rgba(255,255,255,0.9)', padding: '0.4rem 0.8rem', fontSize: '0.85rem'}}><TrashIcon/> Del</button>
+                        <button onClick={handleBatchProcess} style={{...styles.modalActionButton, padding: '0.4rem 1rem', minWidth: 'auto', fontSize: '0.9rem'}}>Process</button>
                      </div>
                 </div>
             )}
@@ -1340,8 +1366,8 @@ export const PendingOrders = ({ onNavigate }) => {
 
 const styles: { [key: string]: React.CSSProperties } = {
     container: { display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1, position: 'relative', backgroundColor: '#ffffff' },
-    headerCard: { backgroundColor: '#f8f9fa', padding: '1rem 1.5rem', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', display: 'flex', flexDirection: 'column', gap: '0.75rem', position: 'sticky', top: 0, zIndex: 10 },
-    headerCardMobile: { backgroundColor: '#ffffff', padding: '0 1rem 0.25rem', gap: '0', display: 'flex', flexDirection: 'column', position: 'sticky', top: 0, zIndex: 10, borderBottom: 'none' },
+    headerCard: { backgroundColor: '#f8f9fa', padding: '1rem 1.5rem', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', display: 'flex', flexDirection: 'column', gap: '0.75rem', position: 'sticky', top: 0, zIndex: 100 },
+    headerCardMobile: { backgroundColor: '#ffffff', padding: '0 1rem 0.25rem', gap: '0', display: 'flex', flexDirection: 'column', position: 'sticky', top: 0, zIndex: 100, borderBottom: 'none' },
     headerTop: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
     pageTitle: { fontSize: '1.25rem', fontWeight: 600, color: 'var(--dark-grey)' },
     headerControls: { display: 'flex', alignItems: 'center', gap: '0.75rem' },
@@ -1381,6 +1407,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     cardTitle: { fontSize: '1.1rem', fontWeight: 600, color: 'var(--dark-grey)' },
     cardSubTitle: { fontSize: '0.85rem', color: 'var(--text-color)', fontWeight: 500 },
     cardDetails: { padding: '0 0 1rem', display: 'flex', flexDirection: 'column' },
+    mobileDivider: { height: '1px', backgroundColor: '#e0e0e0', margin: '0 16px' },
     
     // Animation Wrappers
     groupContentCollapsed: { maxHeight: 0, opacity: 0, overflow: 'hidden', transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)' },
@@ -1392,6 +1419,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     orderMeta: { display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-color)', fontSize: '0.85rem' },
     detailsButton: { display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#eef2f7', border: '1px solid var(--skeleton-bg)', color: 'var(--brand-color)', padding: '0.5rem 1rem', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 },
     badge: { backgroundColor: '#eef2f7', color: 'var(--brand-color)', padding: '0.2rem 0.6rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600 },
+    checkboxContainer: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' },
     checkboxButton: { background: 'none', border: 'none', padding: '0', cursor: 'pointer', color: 'var(--text-color)' },
     expandedViewContainer: { padding: '0.5rem 1.5rem 1.5rem', borderTop: '1px solid var(--brand-color)', backgroundColor: '#ffffff' },
     tableContainer: { overflowX: 'auto', backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid var(--skeleton-bg)' },
@@ -1405,23 +1433,42 @@ const styles: { [key: string]: React.CSSProperties } = {
     modalFooter: { padding: '1.5rem 0 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' },
     footerActions: { display: 'flex', gap: '0.75rem', alignItems: 'center' },
     deleteButton: { padding: '0.75rem', background: '#fbe2e2', border: '1px solid #e74c3c', color: '#c0392b', borderRadius: '8px', cursor: 'pointer' },
+    deleteButtonMobile: { padding: '0.75rem', background: '#f0f0f0', border: '1px solid #d0d0d0', color: '#888', borderRadius: '8px', cursor: 'pointer' },
     secondaryButton: { padding: '0.7rem 1.2rem', background: 'var(--light-grey)', border: '1px solid var(--skeleton-bg)', color: 'var(--dark-grey)', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 500 },
     modalActionButton: { padding: '0.75rem 1.5rem', fontSize: '1rem', fontWeight: 500, color: '#fff', backgroundColor: 'var(--brand-color)', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: '180px' },
-    batchActionToolbar: { backgroundColor: 'var(--dark-grey)', color: 'white', padding: '0.75rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', bottom: 0, zIndex: 10, borderRadius: 'var(--border-radius) var(--border-radius) 0 0' },
+    modalActionButtonMobile: { padding: '0.75rem 1.5rem', fontSize: '1rem', fontWeight: 500, color: '#444', backgroundColor: '#e0e0e0', border: '1px solid #ccc', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: '120px' },
+    batchActionToolbar: { 
+        backgroundColor: 'rgba(30, 41, 59, 0.95)', // Dark background for contrast
+        backdropFilter: 'blur(10px)',
+        color: 'white', 
+        padding: '0.8rem 1.2rem', 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        position: 'fixed', 
+        bottom: '20px', // Floating
+        left: '50%', 
+        transform: 'translateX(-50%)',
+        width: '92%',
+        maxWidth: '600px',
+        zIndex: 1000, 
+        borderRadius: '16px', // Rounded pill
+        boxShadow: '0 10px 25px rgba(0,0,0,0.25)' // Deep shadow
+    },
     stockIndicator: { width: '10px', height: '10px', borderRadius: '50%', flexShrink: 0 },
     stockIndicatorPlaceholder: { width: '10px', height: '10px' },
     mobileItemContainer: { display: 'flex', flexDirection: 'column', gap: '0.5rem', paddingTop: '0.5rem' },
-    mobileItemCard: { backgroundColor: '#f8f9fa', borderRadius: '8px', border: '1px solid var(--skeleton-bg)', padding: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' },
+    mobileItemCard: { backgroundColor: '#f8f9fa', borderRadius: '8px', border: '1px solid var(--skeleton-bg)', padding: '0.5rem 0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' },
     mobileItemInfo: { display: 'flex', flexDirection: 'column', gap: '0.25rem' },
-    mobileItemName: { fontWeight: 500, color: 'var(--dark-grey)' },
+    mobileItemName: { fontWeight: 500, color: 'var(--dark-grey)', fontSize: '0.9rem' },
     mobileItemStock: { display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--dark-grey)' },
     mobileItemQty: { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.25rem' },
     mobileQtyLabel: { fontSize: '0.8rem', color: 'var(--text-color)' },
     // --- Swipeable styles ---
     swipeableContainer: { position: 'relative', overflow: 'hidden', width: '100%', borderRadius: '10px' },
-    swipeableLeftActions: { position: 'absolute', top: 0, left: 0, height: '100%', display: 'flex', alignItems: 'stretch' },
-    swipeableRightActions: { position: 'absolute', top: 0, right: 0, height: '100%', display: 'flex', alignItems: 'stretch' },
-    swipeAction: { width: '80px', color: 'white', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column', gap: '0.25rem', fontSize: '0.7rem', transition: 'background-color 0.2s ease' },
+    swipeableLeftActions: { position: 'absolute', top: 0, left: 0, height: '100%', display: 'flex', alignItems: 'center', paddingLeft: '10px', gap: '10px', zIndex: 0 },
+    swipeableRightActions: { position: 'absolute', top: 0, right: 0, height: '100%', display: 'flex', alignItems: 'center', paddingRight: '10px', gap: '10px', zIndex: 0 },
+    swipeAction: { width: '40px', height: '40px', borderRadius: '20px', color: 'white', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '0.8rem', boxShadow: '0 2px 5px rgba(0,0,0,0.1)', margin: 'auto' },
     swipeableContent: { position: 'relative', backgroundColor: '#f8f9fa', zIndex: 1 },
     // --- New Detailed Card Styles ---
     detailedOrderCard: { backgroundColor: '#f8f9fa', borderRadius: '10px', padding: '1rem', border: '1px solid var(--skeleton-bg)', display: 'flex', flexDirection: 'column', gap: '0.5rem', cursor: 'pointer', transition: 'border-color 0.2s, box-shadow 0.2s' },
