@@ -328,8 +328,9 @@ const MainContent = React.forwardRef<HTMLElement, MainContentProps>(
         let mainStyle = styles.mainContent; // Default for desktop
 
         if (isMobile) {
-            if (activeView === 'Entry') {
-                // NewOrderEntry manages its own padding for the mobile layout
+            if (activeView === 'Entry' || activeView === 'Pending') {
+                // NewOrderEntry and PendingOrders manage their own padding for the mobile layout
+                // This allows full-width containers where needed
                 mainStyle = { ...styles.mainContent, padding: 0 };
             } else {
                 // Other views need padding to avoid the bottom nav bar

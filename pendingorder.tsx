@@ -61,6 +61,27 @@ const normalizeKeyPart = (part: any): string => {
     return String(part).toUpperCase().trim().replace(/[^A-Z0-9]/g, '');
 };
 
+// Generates a soft pastel color based on the string
+const getPastelColor = (str: string) => {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const h = Math.abs(hash) % 360;
+    // High lightness and lower saturation for soft pastel look
+    return `hsl(${h}, 70%, 93%)`; 
+};
+
+// Generates a darker shade of the pastel color for text
+const getDarkerPastelColor = (str: string) => {
+     let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const h = Math.abs(hash) % 360;
+    return `hsl(${h}, 50%, 35%)`; 
+};
+
 const getTagStyle = (tag: string) => {
     const lower = tag.toLowerCase();
     let colors = { bg: '#f3f4f6', text: '#374151', border: '#e5e7eb' }; // Default Grey
@@ -558,21 +579,76 @@ const DetailedList: React.FC<{ orders: Order[]; onToggleExpand: (order: Order) =
     );
 }
 
-const PartyGroup: React.FC<{ partyName: string; data: any; onToggleExpand: (order: Order) => void; expandedOrderNumber: string | null; children: React.ReactNode; onProcessOrder: (order: Order) => void; onDeleteOrder: (order: Order) => void; onEditOrder: (order: Order) => void; isMobile: boolean; selectedOrders: string[]; onSelectOrder: (orderNumber: string) => void; }> = ({ partyName, data, onToggleExpand, expandedOrderNumber, children, onProcessOrder, onDeleteOrder, onEditOrder, isMobile, selectedOrders, onSelectOrder }) => {
+const PartyGroup: React.FC<{ partyName: string; data: any; onToggleExpand: (order: Order) => void; expandedOrderNumber: string | null; children: React.ReactNode; onProcessOrder: (order: Order) => void; onDeleteOrder: (order: Order) => void; onEditOrder: (order: Order) => void; isMobile: boolean; selectedOrders: string[]; onSelectOrder: (orderNumber: string) => void; index?: number; totalCount?: number; }> = ({ partyName, data, onToggleExpand, expandedOrderNumber, children, onProcessOrder, onDeleteOrder, onEditOrder, isMobile, selectedOrders, onSelectOrder, index, totalCount }) => {
     const [isCollapsed, setIsCollapsed] = useState(true);
     const totalQty = data.orders.reduce((sum, order) => sum + order.totalQuantity, 0);
+    const firstLetter = partyName.charAt(0).toUpperCase();
+
+    // Calculate pastel colors
+    const pastelBg = useMemo(() => getPastelColor(partyName), [partyName]);
+    const pastelText = useMemo(() => getDarkerPastelColor(partyName), [partyName]);
+
+    const mobileCardStyle = useMemo(() => {
+        if (!isMobile) return styles.card;
+        
+        const baseStyle: React.CSSProperties = {
+            ...styles.card,
+            borderRadius: '0',
+            margin: '0',
+            border: 'none', // Remove side borders
+            borderBottom: '1px solid var(--skeleton-bg)',
+            boxShadow: 'none',
+            backgroundColor: '#fff'
+        };
+
+        const isFirst = index === 0;
+        const isLast = index === (totalCount || 0) - 1;
+        const radius = '12px';
+        
+        if (isFirst && isLast) baseStyle.borderRadius = radius;
+        else if (isFirst) baseStyle.borderRadius = `${radius} ${radius} 0 0`;
+        else if (isLast) baseStyle.borderRadius = `0 0 ${radius} ${radius}`;
+        
+        if (isLast) baseStyle.borderBottom = 'none'; // Clean look for last item
+
+        return baseStyle;
+
+    }, [isMobile, index, totalCount]);
+
+    const renderHeader = () => {
+        if (isMobile) {
+            return (
+                <div style={styles.mobilePartyHeaderContent}>
+                    <div style={{...styles.partyAvatar, backgroundColor: pastelBg, color: pastelText}}>{firstLetter}</div>
+                    <div style={styles.mobilePartyInfo}>
+                        <div style={styles.mobilePartyName}>{partyName}</div>
+                        <div style={styles.mobilePartyMeta}>
+                            {data.orderCount} Orders • {totalQty} Qty
+                        </div>
+                    </div>
+                    <div style={styles.mobileChevron}>
+                         <ChevronIcon collapsed={isCollapsed} />
+                    </div>
+                </div>
+            );
+        }
+        return (
+            <div style={styles.cardInfo}>
+                <span style={styles.cardTitle}>{partyName}</span>
+                <span style={styles.cardSubTitle}>{data.orderCount} Orders | Total Qty: {totalQty}</span>
+                <ChevronIcon collapsed={isCollapsed} />
+            </div>
+        );
+    };
 
     return (
-        <div style={styles.card}>
-            <button style={styles.cardHeader} onClick={() => setIsCollapsed(!isCollapsed)}>
-                <div style={styles.cardInfo}>
-                    <span style={styles.cardTitle}>{partyName}</span>
-                    <span style={styles.cardSubTitle}>{data.orderCount} Orders | Total Qty: {totalQty}</span>
-                </div>
-                <ChevronIcon collapsed={isCollapsed} />
+        <div style={isMobile ? mobileCardStyle : styles.card}>
+            <button style={isMobile ? styles.mobileCardHeader : styles.cardHeader} onClick={() => setIsCollapsed(!isCollapsed)}>
+               {renderHeader()}
             </button>
-            {!isCollapsed && (
-                <div style={styles.cardDetails}>
+            {/* Smooth expansion container */}
+            <div style={isCollapsed ? styles.groupContentCollapsed : styles.groupContentExpanded}>
+                 <div style={styles.cardDetails}>
                     <DetailedList 
                         orders={data.orders} 
                         onToggleExpand={onToggleExpand}
@@ -586,7 +662,7 @@ const PartyGroup: React.FC<{ partyName: string; data: any; onToggleExpand: (orde
                         onSelectOrder={onSelectOrder}
                     />
                 </div>
-            )}
+            </div>
         </div>
     );
 };
@@ -1071,8 +1147,15 @@ export const PendingOrders = ({ onNavigate }) => {
         if (view === 'summarized') {
             return (
                 <div style={styles.listContainer}>
-                    {partyNamesInOrder.map(partyName => (
-                        <PartyGroup key={partyName} partyName={partyName} data={summarizedData[partyName]} {...commonProps}>
+                    {partyNamesInOrder.map((partyName, index) => (
+                        <PartyGroup 
+                            key={partyName} 
+                            partyName={partyName} 
+                            data={summarizedData[partyName]} 
+                            {...commonProps}
+                            index={index}
+                            totalCount={partyNamesInOrder.length}
+                        >
                             {expandedView}
                         </PartyGroup>
                     ))}
@@ -1178,9 +1261,9 @@ export const PendingOrders = ({ onNavigate }) => {
                         <button onClick={() => setIsFilterVisible(v => !v)} style={isFilterVisible ? {...styles.toggleButton, ...styles.toggleButtonActive} : styles.toggleButton}>
                             <FilterIcon />
                         </button>
-                        <div style={styles.viewToggle}>
-                            <button onClick={() => setView('summarized')} style={view === 'summarized' ? styles.toggleButtonActive : styles.toggleButton}><SummarizedViewIcon /></button>
-                            <button onClick={() => setView('detailed')} style={view === 'detailed' ? styles.toggleButtonActive : styles.toggleButton}><DetailedViewIcon /></button>
+                        <div style={isMobile ? {...styles.viewToggle, backgroundColor: 'transparent'} : styles.viewToggle}>
+                            <button onClick={() => setView('summarized')} style={view === 'summarized' ? (isMobile ? styles.mobileToggleButtonActive : styles.toggleButtonActive) : (isMobile ? styles.mobileToggleButtonInactive : styles.toggleButton)}><SummarizedViewIcon /></button>
+                            <button onClick={() => setView('detailed')} style={view === 'detailed' ? (isMobile ? styles.mobileToggleButtonActive : styles.toggleButtonActive) : (isMobile ? styles.mobileToggleButtonInactive : styles.toggleButton)}><DetailedViewIcon /></button>
                         </div>
                     </div>
                 </div>
@@ -1219,7 +1302,7 @@ export const PendingOrders = ({ onNavigate }) => {
                             <button 
                               key={opt.label} 
                               onClick={() => setSortConfig({key: opt.key, direction: opt.direction})} 
-                              style={sortConfig.key === opt.key && sortConfig.direction === opt.direction ? styles.filterButtonActive : styles.filterButton}
+                              style={sortConfig.key === opt.key && sortConfig.direction === opt.direction ? styles.filterButtonActive : (isMobile ? {...styles.filterButton, background: 'transparent', border: '1px solid var(--skeleton-bg)'} : styles.filterButton)}
                             >{opt.label}</button>
                         ))}
                     </div>
@@ -1241,17 +1324,22 @@ export const PendingOrders = ({ onNavigate }) => {
 };
 
 const styles: { [key: string]: React.CSSProperties } = {
-    container: { display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1, position: 'relative' },
-    headerCard: { backgroundColor: 'var(--card-bg)', padding: '1rem 1.5rem', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', display: 'flex', flexDirection: 'column', gap: '0.75rem', position: 'sticky', top: 0, zIndex: 10 },
-    headerCardMobile: { backgroundColor: 'var(--card-bg)', padding: '0.75rem 1rem', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', display: 'flex', flexDirection: 'column', gap: '0.75rem', position: 'sticky', top: 0, zIndex: 10 },
+    container: { display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1, position: 'relative', backgroundColor: '#ffffff' },
+    headerCard: { backgroundColor: '#f8f9fa', padding: '1rem 1.5rem', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', display: 'flex', flexDirection: 'column', gap: '0.75rem', position: 'sticky', top: 0, zIndex: 10 },
+    headerCardMobile: { backgroundColor: '#ffffff', padding: '0.5rem 1rem', gap: '0', display: 'flex', flexDirection: 'column', position: 'sticky', top: 0, zIndex: 10 },
     headerTop: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
     pageTitle: { fontSize: '1.25rem', fontWeight: 600, color: 'var(--dark-grey)' },
     headerControls: { display: 'flex', alignItems: 'center', gap: '0.75rem' },
     viewToggle: { display: 'flex', backgroundColor: 'var(--light-grey)', borderRadius: '8px', padding: '4px' },
     toggleButton: { background: 'none', border: 'none', padding: '6px 10px', cursor: 'pointer', color: 'var(--text-color)', borderRadius: '6px' },
     toggleButtonActive: { background: 'var(--card-bg)', border: 'none', padding: '6px 10px', cursor: 'pointer', color: 'var(--brand-color)', borderRadius: '6px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' },
+    
+    // Mobile Toggle Styles
+    mobileToggleButtonInactive: { background: 'none', border: 'none', padding: '6px 10px', cursor: 'pointer', color: '#cbd5e0', borderRadius: '6px' },
+    mobileToggleButtonActive: { background: 'none', border: 'none', padding: '6px 10px', cursor: 'pointer', color: '#2d3748', fontWeight: 600, borderRadius: '6px' },
+    
     filtersCollapsed: { maxHeight: 0, opacity: 0, overflow: 'hidden', transition: 'max-height 0.4s ease-out, opacity 0.4s ease-out, margin-top 0.4s ease-out', marginTop: 0 },
-    filtersVisible: { maxHeight: '300px', opacity: 1, overflow: 'visible', transition: 'max-height 0.4s ease-in, opacity 0.4s ease-in, margin-top 0.4s ease-in', marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '1rem' },
+    filtersVisible: { maxHeight: '300px', opacity: 1, overflow: 'visible', transition: 'max-height 0.4s ease-in, opacity 0.4s ease-in, margin-top 0.4s ease-in', marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' },
     searchContainer: { display: 'flex', alignItems: 'center', gap: '0.75rem', backgroundColor: 'var(--light-grey)', padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--skeleton-bg)' },
     searchInput: { flex: 1, border: 'none', background: 'none', outline: 'none', fontSize: '1rem', color: 'var(--dark-grey)' },
     filterContainer: { display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' },
@@ -1263,12 +1351,24 @@ const styles: { [key: string]: React.CSSProperties } = {
     listContainer: { flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0rem', padding: '0 0 1rem' },
     centeredMessage: { flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'var(--text-color)', fontSize: '1.1rem' },
     spinner: { border: '4px solid var(--light-grey)', borderRadius: '50%', borderTop: '4px solid var(--brand-color)', width: '40px', height: '40px', animation: 'spin 1s linear infinite' },
-    card: { backgroundColor: 'var(--card-bg)', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', overflow: 'hidden' },
+    card: { backgroundColor: '#f8f9fa', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', overflow: 'hidden' },
     cardHeader: { width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.5rem', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' },
+    mobileCardHeader: { width: '100%', display: 'flex', flexDirection: 'row', alignItems: 'center', padding: '1rem', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' },
+    mobilePartyHeaderContent: { display: 'flex', alignItems: 'center', width: '100%', gap: '1rem' },
+    partyAvatar: { width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '600', fontSize: '1.1rem', flexShrink: 0 },
+    mobilePartyInfo: { display: 'flex', flexDirection: 'column', flex: 1, gap: '2px' },
+    mobilePartyName: { fontWeight: '600', fontSize: '1rem', color: 'var(--dark-grey)' },
+    mobilePartyMeta: { fontSize: '0.8rem', color: 'var(--text-color)' },
+    mobileChevron: { color: 'var(--text-color)' },
     cardInfo: { display: 'flex', flexDirection: 'column', gap: '0.25rem', alignItems: 'flex-start' },
     cardTitle: { fontSize: '1.1rem', fontWeight: 600, color: 'var(--dark-grey)' },
     cardSubTitle: { fontSize: '0.85rem', color: 'var(--text-color)', fontWeight: 500 },
     cardDetails: { padding: '0 0 1rem', display: 'flex', flexDirection: 'column' },
+    
+    // Animation Wrappers
+    groupContentCollapsed: { maxHeight: 0, opacity: 0, overflow: 'hidden', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)' },
+    groupContentExpanded: { maxHeight: '2000px', opacity: 1, overflow: 'visible', transition: 'all 0.5s ease-in-out' },
+
     orderItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem 1.5rem', borderTop: '1px solid var(--skeleton-bg)' },
     orderItemActive: { backgroundColor: 'var(--active-bg)'},
     orderInfo: { display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', color: 'var(--dark-grey)', flex: 1, minWidth: 0 },
@@ -1276,8 +1376,8 @@ const styles: { [key: string]: React.CSSProperties } = {
     detailsButton: { display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#eef2f7', border: '1px solid var(--skeleton-bg)', color: 'var(--brand-color)', padding: '0.5rem 1rem', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 },
     badge: { backgroundColor: '#eef2f7', color: 'var(--brand-color)', padding: '0.2rem 0.6rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600 },
     checkboxButton: { background: 'none', border: 'none', padding: '0', cursor: 'pointer', color: 'var(--text-color)' },
-    expandedViewContainer: { padding: '0.5rem 1.5rem 1.5rem', borderTop: '1px solid var(--brand-color)', backgroundColor: '#fafbff' },
-    tableContainer: { overflowX: 'auto', backgroundColor: 'var(--card-bg)', borderRadius: '8px', border: '1px solid var(--skeleton-bg)' },
+    expandedViewContainer: { padding: '0.5rem 1.5rem 1.5rem', borderTop: '1px solid var(--brand-color)', backgroundColor: '#ffffff' },
+    tableContainer: { overflowX: 'auto', backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid var(--skeleton-bg)' },
     table: { width: '100%', borderCollapse: 'collapse' },
     th: { backgroundColor: '#f8f9fa', padding: '10px 12px', textAlign: 'center', fontWeight: 600, color: 'var(--dark-grey)', borderBottom: '2px solid var(--skeleton-bg)', whiteSpace: 'nowrap' },
     tr: { borderBottom: '1px solid var(--skeleton-bg)' },
@@ -1294,7 +1394,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     stockIndicator: { width: '10px', height: '10px', borderRadius: '50%', flexShrink: 0 },
     stockIndicatorPlaceholder: { width: '10px', height: '10px' },
     mobileItemContainer: { display: 'flex', flexDirection: 'column', gap: '0.5rem', paddingTop: '0.5rem' },
-    mobileItemCard: { backgroundColor: 'var(--card-bg)', borderRadius: '8px', border: '1px solid var(--skeleton-bg)', padding: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' },
+    mobileItemCard: { backgroundColor: '#f8f9fa', borderRadius: '8px', border: '1px solid var(--skeleton-bg)', padding: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' },
     mobileItemInfo: { display: 'flex', flexDirection: 'column', gap: '0.25rem' },
     mobileItemName: { fontWeight: 500, color: 'var(--dark-grey)' },
     mobileItemStock: { display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--dark-grey)' },
@@ -1305,10 +1405,10 @@ const styles: { [key: string]: React.CSSProperties } = {
     swipeableLeftActions: { position: 'absolute', top: 0, left: 0, height: '100%', display: 'flex', alignItems: 'stretch' },
     swipeableRightActions: { position: 'absolute', top: 0, right: 0, height: '100%', display: 'flex', alignItems: 'stretch' },
     swipeAction: { width: '80px', color: 'white', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column', gap: '0.25rem', fontSize: '0.7rem', transition: 'background-color 0.2s ease' },
-    swipeableContent: { position: 'relative', backgroundColor: 'var(--card-bg)', zIndex: 1 },
+    swipeableContent: { position: 'relative', backgroundColor: '#f8f9fa', zIndex: 1 },
     // --- New Detailed Card Styles ---
-    detailedOrderCard: { backgroundColor: 'var(--card-bg)', borderRadius: '10px', padding: '1rem', border: '1px solid var(--skeleton-bg)', display: 'flex', flexDirection: 'column', gap: '0.5rem', cursor: 'pointer', transition: 'border-color 0.2s, box-shadow 0.2s' },
-    detailedOrderCardActive: { backgroundColor: 'var(--card-bg)', borderRadius: '10px', padding: '1rem', border: '1px solid var(--brand-color)', display: 'flex', flexDirection: 'column', gap: '0.5rem', cursor: 'pointer', transition: 'border-color 0.2s, box-shadow 0.2s', boxShadow: '0 4px 12px rgba(71, 84, 104, 0.1)' },
+    detailedOrderCard: { backgroundColor: '#f8f9fa', borderRadius: '10px', padding: '1rem', border: '1px solid var(--skeleton-bg)', display: 'flex', flexDirection: 'column', gap: '0.5rem', cursor: 'pointer', transition: 'border-color 0.2s, box-shadow 0.2s' },
+    detailedOrderCardActive: { backgroundColor: '#ffffff', borderRadius: '10px', padding: '1rem', border: '1px solid var(--brand-color)', display: 'flex', flexDirection: 'column', gap: '0.5rem', cursor: 'pointer', transition: 'border-color 0.2s, box-shadow 0.2s', boxShadow: '0 4px 12px rgba(71, 84, 104, 0.1)' },
     
     // Refined Hierarchy Styles
     cardTopRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.25rem' },
@@ -1328,7 +1428,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     historySection: { marginTop: '1.5rem', borderTop: '1px solid var(--skeleton-bg)', paddingTop: '1rem' },
     historyHeader: { width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem 0', fontSize: '1rem', fontWeight: 600, color: 'var(--dark-grey)' },
     historyContent: { padding: '1rem 0 0', display: 'flex', flexDirection: 'column', gap: '1rem' },
-    historyList: { maxHeight: '300px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem', border: '1px solid var(--skeleton-bg)', borderRadius: '8px', padding: '0.75rem', backgroundColor: 'var(--card-bg)' },
+    historyList: { maxHeight: '300px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem', border: '1px solid var(--skeleton-bg)', borderRadius: '8px', padding: '0.75rem', backgroundColor: '#ffffff' },
     historyItem: { display: 'flex', flexDirection: 'column', gap: '0.25rem' },
     historyMeta: { display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.8rem', color: 'var(--text-color)' },
     historyEventType: { fontWeight: 600, padding: '2px 8px', borderRadius: '12px', fontSize: '0.75rem' },
@@ -1338,9 +1438,9 @@ const styles: { [key: string]: React.CSSProperties } = {
     addNoteButton: { alignSelf: 'flex-end', padding: '0.5rem 1rem', background: 'var(--light-grey)', border: '1px solid var(--skeleton-bg)', color: 'var(--dark-grey)', borderRadius: '8px', cursor: 'pointer', fontWeight: 500 },
     // --- Command Center Styles ---
     commandCenterLayout: { display: 'grid', gridTemplateColumns: '280px 1fr 1.5fr', gap: '1rem', flex: 1, minHeight: 0 },
-    leftPanel: { display: 'flex', flexDirection: 'column', backgroundColor: 'var(--card-bg)', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', minHeight: 0 },
-    middlePanel: { display: 'flex', flexDirection: 'column', backgroundColor: 'var(--card-bg)', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', minHeight: 0 },
-    rightPanel: { display: 'flex', flexDirection: 'column', backgroundColor: 'var(--card-bg)', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', minHeight: 0, overflowY: 'auto' },
+    leftPanel: { display: 'flex', flexDirection: 'column', backgroundColor: '#f8f9fa', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', minHeight: 0 },
+    middlePanel: { display: 'flex', flexDirection: 'column', backgroundColor: '#f8f9fa', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', minHeight: 0 },
+    rightPanel: { display: 'flex', flexDirection: 'column', backgroundColor: '#f8f9fa', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', minHeight: 0, overflowY: 'auto' },
     panelHeader: { padding: '1rem', borderBottom: '1px solid var(--skeleton-bg)', fontWeight: 600, color: 'var(--dark-grey)', flexShrink: 0 },
     panelContent: { padding: '0.5rem', overflowY: 'auto', flex: 1 },
     partyListItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', padding: '0.75rem 1rem', background: 'none', border: 'none', borderRadius: '8px', cursor: 'pointer', textAlign: 'left' },
