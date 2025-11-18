@@ -522,6 +522,10 @@ export const PendingOrders = ({ onNavigate }) => {
     const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
     const [isFilterVisible, setIsFilterVisible] = useState(false);
     
+    // State for Command Center Layout
+    const [selectedParty, setSelectedParty] = useState<string | null>(null);
+    const [activeOrder, setActiveOrder] = useState<Order | null>(null);
+    
     // --- Data Fetching and Management ---
     useEffect(() => {
         const handleResize = () => setIsMobile(window.innerWidth <= 768);
@@ -677,6 +681,7 @@ export const PendingOrders = ({ onNavigate }) => {
             await firebase.database().ref().update(updates);
             showToast(`Processed items for ${order.orderNumber}.`, 'success');
             setExpandedOrderNumber(null);
+            setActiveOrder(null);
         } catch(e) {
             console.error(e);
             showToast('Failed to process order.', 'error');
@@ -702,6 +707,7 @@ export const PendingOrders = ({ onNavigate }) => {
             await firebase.database().ref().update(updates);
             showToast('Order moved to Deleted archive.', 'success');
             setExpandedOrderNumber(null);
+            setActiveOrder(null);
         } catch(e) {
             console.error(e);
             showToast('Failed to delete order.', 'error');
@@ -776,7 +782,7 @@ export const PendingOrders = ({ onNavigate }) => {
         setProcessingQty(prev => ({ ...prev, [itemId]: numValue }));
     };
 
-    const handleSelectOrder = (orderNumber: string) => {
+    const handleSelectOrderCheckbox = (orderNumber: string) => {
         setSelectedOrders(prev => prev.includes(orderNumber) ? prev.filter(o => o !== orderNumber) : [...prev, orderNumber]);
     };
     
@@ -883,12 +889,38 @@ export const PendingOrders = ({ onNavigate }) => {
 
     const expandedOrder = useMemo(() => expandedOrderNumber ? orders.find(o => o.orderNumber === expandedOrderNumber) : null, [expandedOrderNumber, orders]);
 
-    const renderContent = () => {
+    // --- Command Center Logic ---
+    const parties = useMemo(() => {
+        return filteredAndSortedOrders.reduce((acc, order) => {
+            if (!acc[order.partyName]) {
+                acc[order.partyName] = 0;
+            }
+            acc[order.partyName]++;
+            return acc;
+        }, {});
+    }, [filteredAndSortedOrders]);
+
+    const ordersForMiddlePanel = useMemo(() => {
+        if (!selectedParty) return filteredAndSortedOrders;
+        return filteredAndSortedOrders.filter(o => o.partyName === selectedParty);
+    }, [filteredAndSortedOrders, selectedParty]);
+
+    const handleSelectParty = (partyName: string) => {
+        setSelectedParty(prev => (prev === partyName ? null : partyName));
+        setActiveOrder(null);
+    };
+
+    const handleSelectOrder = (order: Order) => {
+        setActiveOrder(order);
+        setProcessingQty(order.items.reduce((acc, item) => ({...acc, [item.id]: 0}), {}));
+    };
+    
+    const renderMobileLayout = () => {
         if (isLoading) return <div style={styles.centeredMessage}><Spinner /></div>;
         if (error) return <div style={styles.centeredMessage}>{error}</div>;
         if (orders.length === 0) return <div style={styles.centeredMessage}>No pending orders.</div>;
         if (filteredAndSortedOrders.length === 0) return <div style={styles.centeredMessage}>No orders match your search.</div>;
-        
+
         const expandedView = expandedOrder ? (
             <ExpandedPendingView
                 order={expandedOrder}
@@ -912,7 +944,7 @@ export const PendingOrders = ({ onNavigate }) => {
             onEditOrder: handleEditOrder,
             isMobile: isMobile,
             selectedOrders: selectedOrders,
-            onSelectOrder: handleSelectOrder,
+            onSelectOrder: handleSelectOrderCheckbox,
         };
 
         if (view === 'summarized') {
@@ -932,6 +964,78 @@ export const PendingOrders = ({ onNavigate }) => {
                 <DetailedList orders={filteredAndSortedOrders} {...commonProps}>
                     {expandedView}
                 </DetailedList>
+            </div>
+        );
+    };
+    
+    const renderDesktopLayout = () => {
+         if (isLoading) return <div style={styles.centeredMessage}><Spinner /></div>;
+        if (error) return <div style={styles.centeredMessage}>{error}</div>;
+
+        return (
+            <div style={styles.commandCenterLayout}>
+                {/* Left Panel: Party List */}
+                <div style={styles.leftPanel}>
+                    <div style={styles.panelHeader}>Parties ({Object.keys(parties).length})</div>
+                    <div style={styles.panelContent}>
+                        {Object.entries(parties).map(([partyName, count]) => (
+                            <button
+                                key={partyName}
+                                style={selectedParty === partyName ? styles.partyListItemActive : styles.partyListItem}
+                                onClick={() => handleSelectParty(partyName)}
+                            >
+                                <span style={styles.partyNameText}>{partyName}</span>
+                                <span style={styles.partyCountBadge}>{count}</span>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Middle Panel: Order List */}
+                <div style={styles.middlePanel}>
+                    <div style={styles.panelHeader}>
+                        Orders ({ordersForMiddlePanel.length})
+                    </div>
+                    <div style={styles.panelContent}>
+                        {ordersForMiddlePanel.map(order => (
+                             <div key={order.orderNumber} onClick={() => handleSelectOrder(order)}>
+                                <DetailedOrderCard
+                                    order={order}
+                                    isExpanded={activeOrder?.orderNumber === order.orderNumber}
+                                    isMobile={false}
+                                    isSelected={selectedOrders.includes(order.orderNumber)}
+                                    onToggleExpand={handleSelectOrder}
+                                    onSelectOrder={handleSelectOrderCheckbox}
+                                    onProcessOrder={handleProcessFullOrder}
+                                    onDeleteOrder={handleDeleteOrder}
+                                    onEditOrder={handleEditOrder}
+                                />
+                             </div>
+                        ))}
+                    </div>
+                </div>
+                
+                {/* Right Panel: Processing View */}
+                <div style={styles.rightPanel}>
+                    {activeOrder ? (
+                        <ExpandedPendingView
+                            order={activeOrder}
+                            onProcess={handleProcessOrder}
+                            onDelete={handleDeleteOrder}
+                            isProcessing={processingOrder === activeOrder.orderNumber}
+                            processingQty={processingQty}
+                            onQtyChange={handleProcessingQtyChange}
+                            stockData={stockData}
+                            isMobile={false}
+                            onPrint={handlePrintPickingList}
+                            onAddNote={handleAddNote}
+                        />
+                    ) : (
+                        <div style={styles.rightPanelPlaceholder}>
+                            Select an order to view details and process.
+                        </div>
+                    )}
+                </div>
             </div>
         );
     };
@@ -984,7 +1088,7 @@ export const PendingOrders = ({ onNavigate }) => {
                      </div>
                 </div>
             )}
-            {renderContent()}
+            {isMobile ? renderMobileLayout() : renderDesktopLayout()}
         </div>
     );
 };
@@ -1076,4 +1180,16 @@ const styles: { [key: string]: React.CSSProperties } = {
     addNoteContainer: { display: 'flex', flexDirection: 'column', gap: '0.5rem' },
     noteTextarea: { width: '100%', minHeight: '60px', padding: '0.75rem', fontSize: '0.9rem', border: '1px solid var(--skeleton-bg)', borderRadius: '8px', resize: 'vertical' },
     addNoteButton: { alignSelf: 'flex-end', padding: '0.5rem 1rem', background: 'var(--light-grey)', border: '1px solid var(--skeleton-bg)', color: 'var(--dark-grey)', borderRadius: '8px', cursor: 'pointer', fontWeight: 500 },
+    // --- Command Center Styles ---
+    commandCenterLayout: { display: 'grid', gridTemplateColumns: '280px 1fr 1.5fr', gap: '1rem', flex: 1, minHeight: 0 },
+    leftPanel: { display: 'flex', flexDirection: 'column', backgroundColor: 'var(--card-bg)', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', minHeight: 0 },
+    middlePanel: { display: 'flex', flexDirection: 'column', backgroundColor: 'var(--card-bg)', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', minHeight: 0 },
+    rightPanel: { display: 'flex', flexDirection: 'column', backgroundColor: 'var(--card-bg)', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', minHeight: 0, overflowY: 'auto' },
+    panelHeader: { padding: '1rem', borderBottom: '1px solid var(--skeleton-bg)', fontWeight: 600, color: 'var(--dark-grey)', flexShrink: 0 },
+    panelContent: { padding: '0.5rem', overflowY: 'auto', flex: 1 },
+    partyListItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', padding: '0.75rem 1rem', background: 'none', border: 'none', borderRadius: '8px', cursor: 'pointer', textAlign: 'left' },
+    partyListItemActive: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', padding: '0.75rem 1rem', background: 'var(--active-bg)', border: 'none', borderRadius: '8px', cursor: 'pointer', textAlign: 'left', color: 'var(--brand-color)' },
+    partyNameText: { fontWeight: 500, flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+    partyCountBadge: { backgroundColor: 'var(--light-grey)', color: 'var(--text-color)', padding: '0.2rem 0.6rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600 },
+    rightPanelPlaceholder: { display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', color: 'var(--text-color)', textAlign: 'center', padding: '2rem' },
 };
