@@ -1,5 +1,3 @@
-
-
 // FIX: Removed extraneous "START OF FILE" markers from the top of this file.
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 // FIX: Switched to Firebase v8 compat imports to resolve module export errors.
@@ -28,6 +26,18 @@ interface Draft {
     timestamp: string;
 }
 
+interface Order { 
+    orderNumber: string; 
+    partyName: string; 
+    items: OrderItem[]; 
+    orderNote?: string;
+    totalQuantity: number; 
+    totalValue: number; 
+    timestamp: string; 
+    status: string;
+    history?: any[];
+}
+
 // --- ICONS ---
 const PlusIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>;
 const CartIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>;
@@ -39,6 +49,7 @@ const ClockIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="14" heigh
 const SendIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>;
 const Spinner = () => <div style={styles.spinner}></div>;
 const DownloadIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>;
+const SaveIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>;
 
 
 const ChevronIcon = ({ collapsed }) => (
@@ -422,7 +433,7 @@ const CartDetailModal = ({ group, items, onClose, onQuantityChange }) => {
     );
 };
 
-const Cart = ({ items, onQuantityChange, onClearCart, onEditGroup, isModal, onClose, draftButton, isMobile, onSubmit }) => {
+const Cart = ({ items, onQuantityChange, onClearCart, onEditGroup, isModal, onClose, draftButton, isMobile, onSubmit, isEditMode }) => {
     const { totalQuantity, totalValue, groupedItems } = useMemo(() => {
         const summary = { totalQuantity: 0, totalValue: 0 };
         if (!items || items.length === 0) return { ...summary, groupedItems: [] };
@@ -432,12 +443,13 @@ const Cart = ({ items, onQuantityChange, onClearCart, onEditGroup, isModal, onCl
             if (!acc[key]) acc[key] = { style: item.fullItemData.Style, color: item.fullItemData.Color, totalQuantity: 0 };
             acc[key].totalQuantity += item.quantity; return acc;
         }, {} as Record<string, { style: string; color: string; totalQuantity: number; }>);
-        // FIX: Explicitly cast the result of `Object.values` to ensure correct type inference for the sort function's parameters, resolving errors with property access on `unknown` types.
         const sortedGroups = (Object.values(groups) as { style: string; color: string; totalQuantity: number; }[]).sort((a, b) => a.style.localeCompare(b.style) || a.color.localeCompare(b.color));
         return { ...summary, groupedItems: sortedGroups };
     }, [items]);
 
     const formatCurrency = (value) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(value);
+
+    const submitButtonText = isEditMode ? 'Update Order' : 'Submit Order';
 
     return (
         <div style={styles.cartContainer}>
@@ -449,7 +461,7 @@ const Cart = ({ items, onQuantityChange, onClearCart, onEditGroup, isModal, onCl
             )}
             <div style={styles.cartFooter}>
                 <div style={styles.cartSummary}> <div> <div style={styles.summaryLabel}>Total Quantity</div> <div style={styles.summaryValue}>{totalQuantity} Items</div> </div> <div> <div style={styles.summaryLabel}>Total Value</div> <div style={styles.summaryValue}>{formatCurrency(totalValue)}</div> </div> </div>
-                {isMobile && draftButton && ( <div style={styles.stickyActionButtons}> {draftButton} <button onClick={onSubmit} style={{ ...styles.button, ...styles.stickyButton, flex: 1 }} disabled={items.length === 0}>Submit Order</button> </div> )}
+                {isMobile && draftButton && ( <div style={styles.stickyActionButtons}> {draftButton} <button onClick={onSubmit} style={{ ...styles.button, ...styles.stickyButton, flex: 1 }} disabled={items.length === 0}>{submitButtonText}</button> </div> )}
             </div>
         </div>
     );
@@ -459,7 +471,6 @@ interface DraftsModalProps { isOpen: boolean; onClose: () => void; drafts: Recor
 const DraftsModal: React.FC<DraftsModalProps> = ({ isOpen, onClose, drafts, onRestore, onDelete }) => {
     const [expandedDraft, setExpandedDraft] = useState<string | null>(null);
     if (!isOpen) return null;
-    // FIX: Explicitly cast the result of `Object.entries` to correctly type the `draft` objects, preventing errors when accessing properties like `timestamp` and `items`.
     const sortedDrafts = (Object.entries(drafts) as [string, Draft][]).sort(([, a], [, b]) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
     const formatTimestamp = (isoString: string) => !isoString ? 'Unknown time' : new Date(isoString).toLocaleString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
     const totalQuantity = (items: OrderItem[]) => items.reduce((sum, item) => sum + item.quantity, 0);
@@ -491,7 +502,7 @@ const DraftsModal: React.FC<DraftsModalProps> = ({ isOpen, onClose, drafts, onRe
     );
 };
 
-const OrderConfirmationModal = ({ isOpen, onClose, onPlaceOrder, partyName, items, note, onNoteChange, isLoading }) => {
+const OrderConfirmationModal = ({ isOpen, onClose, onSubmit, partyName, items, note, onNoteChange, isLoading, isEditMode }) => {
     if (!isOpen) return null;
     const { totalQuantity, totalValue } = useMemo(() => {
         return items.reduce((acc, item) => {
@@ -503,11 +514,15 @@ const OrderConfirmationModal = ({ isOpen, onClose, onPlaceOrder, partyName, item
     const formatCurrency = (value) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(value);
     const predefinedNotes = ['Urgent Delivery', 'Call before dispatch', 'Fragile, handle with care', 'Hold until further notice'];
     const handlePredefinedNoteClick = (predefinedNote) => onNoteChange(currentNote => (currentNote ? currentNote + ', ' : '') + predefinedNote);
+    
+    const title = isEditMode ? 'Confirm Order Update' : 'Confirm & Place Order';
+    const buttonText = isEditMode ? 'Update Order' : 'Place Order';
+    const buttonIcon = isEditMode ? <SaveIcon/> : <SendIcon/>;
 
     return (
         <div style={styles.modalOverlay} onClick={onClose}>
             <div style={{...styles.modalContent, maxWidth: '600px', height: 'auto', maxHeight: '90vh'}} onClick={(e) => e.stopPropagation()}>
-                <div style={styles.cartHeader}> <h2 style={styles.cardTitleBare}>Confirm & Place Order</h2> <button style={styles.modalCloseButton} onClick={onClose}>&times;</button> </div>
+                <div style={styles.cartHeader}> <h2 style={styles.cardTitleBare}>{title}</h2> <button style={styles.modalCloseButton} onClick={onClose}>&times;</button> </div>
                 <div style={styles.confirmationBody}>
                     <div style={styles.confirmationSection}> <h3 style={styles.confirmationSectionTitle}>Party Name</h3> <p>{partyName}</p> </div>
                     <div style={styles.confirmationSection}> <h3 style={styles.confirmationSectionTitle}>Order Summary</h3> <div style={styles.cartSummary}> <div> <div style={styles.summaryLabel}>Total Quantity</div> <div style={styles.summaryValue}>{totalQuantity} Items</div> </div> <div> <div style={styles.summaryLabel}>Total Value</div> <div style={styles.summaryValue}>{formatCurrency(totalValue)}</div> </div> </div> </div>
@@ -518,17 +533,21 @@ const OrderConfirmationModal = ({ isOpen, onClose, onPlaceOrder, partyName, item
                     </div>
                 </div>
                 <div style={{...styles.cartFooter, borderTop: '1px solid var(--skeleton-bg)', marginTop: 'auto'}}>
-                    <button onClick={onPlaceOrder} style={{...styles.button, width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem'}} disabled={isLoading}> {isLoading ? <Spinner /> : <><SendIcon /> Place Order</>} </button>
+                    <button onClick={onSubmit} style={{...styles.button, width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem'}} disabled={isLoading}> {isLoading ? <Spinner /> : <>{buttonIcon} {buttonText}</>} </button>
                 </div>
             </div>
         </div>
     );
 };
 
-const SuccessModal = ({ isOpen, onClose, orderData }) => {
+const SuccessModal = ({ isOpen, onClose, orderData, isEditMode }) => {
     if (!isOpen || !orderData) return null;
     const formatCurrency = (value) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(value);
     const formatDate = (isoString) => isoString ? new Date(isoString).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A';
+    
+    const title = isEditMode ? 'Order Updated Successfully!' : 'Order Placed Successfully!';
+    const message = isEditMode ? 'Your changes have been saved.' : 'Your order has been submitted for processing.';
+    const closeButtonText = isEditMode ? 'Back to Orders' : 'Create New Order';
 
     const handleDownloadPdf = async () => {
         const { jsPDF } = (window as any).jspdf;
@@ -605,8 +624,8 @@ const SuccessModal = ({ isOpen, onClose, orderData }) => {
         <div style={styles.modalOverlay}>
             <div style={{...styles.modalContent, maxWidth: '450px', height: 'auto', textAlign: 'center', padding: '2rem'}} onClick={(e) => e.stopPropagation()}>
                 <div style={styles.successIconContainer}> <svg className="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52"><circle className="checkmark-circle" cx="26" cy="26" r="25" fill="none"/><path className="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/></svg> </div>
-                <h2 style={{...styles.cardTitleBare, fontSize: '1.5rem', color: '#2ecc71', marginTop: '1.5rem'}}>Order Placed Successfully!</h2>
-                <p style={{color: 'var(--text-color)', margin: '0.5rem 0 1.5rem'}}>Your order has been submitted for processing.</p>
+                <h2 style={{...styles.cardTitleBare, fontSize: '1.5rem', color: '#2ecc71', marginTop: '1.5rem'}}>{title}</h2>
+                <p style={{color: 'var(--text-color)', margin: '0.5rem 0 1.5rem'}}>{message}</p>
                 <div style={styles.successDetails}>
                     <div style={styles.successDetailItem}> <span>Order Number</span> <strong>{orderData.orderNumber}</strong> </div>
                     <div style={styles.successDetailItem}> <span>Party Name</span> <strong>{orderData.partyName}</strong> </div>
@@ -617,14 +636,14 @@ const SuccessModal = ({ isOpen, onClose, orderData }) => {
                     <button onClick={handleDownloadPdf} style={{ ...styles.button, ...styles.secondaryButton, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
                         <DownloadIcon /> Download PDF
                     </button>
-                    <button onClick={onClose} style={{...styles.button}}>Create New Order</button>
+                    <button onClick={onClose} style={{...styles.button}}>{closeButtonText}</button>
                 </div>
             </div>
         </div>
     );
 };
 
-export const NewOrderEntry = () => {
+export const NewOrderEntry = ({ onNavigate }) => {
     const [partyName, setPartyName] = useState('');
     const [items, setItems] = useState<OrderItem[]>([]);
     const [allParties, setAllParties] = useState<string[]>([]);
@@ -648,8 +667,24 @@ export const NewOrderEntry = () => {
     const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
     const [finalizedOrder, setFinalizedOrder] = useState(null);
     const [orderNote, setOrderNote] = useState('');
-    const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [editMode, setEditMode] = useState(false);
+    const [orderToEdit, setOrderToEdit] = useState<Order | null>(null);
+
     const partyHasExistingDraft = useMemo(() => partyName && drafts[partyName], [partyName, drafts]);
+
+    useEffect(() => {
+        const orderToEditJSON = sessionStorage.getItem('orderToEdit');
+        if (orderToEditJSON) {
+            const order: Order = JSON.parse(orderToEditJSON);
+            setOrderToEdit(order);
+            setEditMode(true);
+            setPartyName(order.partyName);
+            setItems(order.items);
+            setOrderNote(order.orderNote || '');
+            sessionStorage.removeItem('orderToEdit');
+        }
+    }, []);
 
     useEffect(() => { const partyRef = database.ref('PartyData'); const listener = partyRef.on('value', (snapshot) => { const data = snapshot.val(); if (data) { const partyList = Object.values(data).map((p: any) => p.name).filter(Boolean); setAllParties([...new Set(partyList)]); } else { setAllParties([]); } }); return () => partyRef.off('value', listener); }, []);
     useEffect(() => { const metadataRef = database.ref('itemData/metadata'); const syncCheck = (snapshot) => { const remoteMeta = snapshot.val() as { uploadDate: string; manualSync: string; }; if (!remoteMeta) { setIsSyncing(false); loadItemsFromDb(); return; } itemDb.getMetadata().then(localMeta => { const needsSync = !localMeta || remoteMeta.uploadDate !== (localMeta as any).uploadDate || remoteMeta.manualSync === 'Y'; if (needsSync) { setIsSyncing(true); database.ref('itemData/items').once('value').then(itemSnapshot => { const itemsData = itemSnapshot.val(); if (itemsData && Array.isArray(itemsData)) { itemDb.clearAndAddItems(itemsData).then(() => { itemDb.setMetadata({ uploadDate: remoteMeta.uploadDate }).then(() => { loadItemsFromDb(); if (remoteMeta.manualSync === 'Y') metadataRef.update({ manualSync: 'N' }); }); }); } }).finally(() => setIsSyncing(false)); } else { loadItemsFromDb(); setIsSyncing(false); } }); }; metadataRef.on('value', syncCheck); 
@@ -704,7 +739,7 @@ export const NewOrderEntry = () => {
         }
     };
     loadStockData(); return () => metadataRef.off('value', syncCheck); }, []);
-    useEffect(() => { const draftsRef = database.ref(DRAFTS_REF); const listener = draftsRef.on('value', (snapshot) => { setDrafts(snapshot.val() || {}); }); return () => draftsRef.off('value', listener); }, []);
+    useEffect(() => { if (!editMode) { const draftsRef = database.ref(DRAFTS_REF); const listener = draftsRef.on('value', (snapshot) => { setDrafts(snapshot.val() || {}); }); return () => draftsRef.off('value', listener); } }, [editMode]);
 
     const resetOrderState = () => {
         setPartyName('');
@@ -712,76 +747,115 @@ export const NewOrderEntry = () => {
         setOrderNote('');
         setSelectedStyle('');
         setStyleSearchTerm('');
+        setEditMode(false);
+        setOrderToEdit(null);
+    };
+    
+    const handleSubmit = () => {
+        if (!partyName || items.length === 0) {
+            showToast('Party name and items are required.', 'error');
+            return;
+        }
+        setIsConfirmationModalOpen(true);
     };
 
-    const handlePlaceOrder = async () => {
-        setIsPlacingOrder(true);
+    const handleOrderSubmission = async () => {
+        setIsSubmitting(true);
         try {
-            const counterRef = database.ref(ORDER_COUNTER_REF);
-            const result = await counterRef.transaction(currentValue => (currentValue || 0) + 1);
-            if (!result.committed) throw new Error("Failed to generate order number.");
-            
-            const orderNumber = `${ORDER_NUMBER_PREFIX}${result.snapshot.val()}`;
-            const { totalQuantity, totalValue } = items.reduce((acc, item) => {
-                acc.totalQuantity += item.quantity;
-                acc.totalValue += item.quantity * item.price;
-                return acc;
-            }, { totalQuantity: 0, totalValue: 0 });
-
-            const orderPayload = {
-                orderNumber, partyName, items, orderNote,
-                totalQuantity, totalValue, timestamp: new Date().toISOString(), status: 'Pending',
-                history: [{
-                    timestamp: new Date().toISOString(),
-                    event: 'System',
-                    details: 'Order Created'
-                }]
-            };
-            
-            const gsheetPayload = {
-                action: 'appendOrder',
-                orderData: items.map(item => ({
-                    orderNumber, partyName, timestamp: orderPayload.timestamp, orderNote,
-                    style: item.fullItemData.Style, color: item.fullItemData.Color,
-                    size: item.fullItemData.Size, barcode: item.fullItemData.Barcode,
-                    quantity: item.quantity, mrp: item.price,
-                    itemTotal: item.quantity * item.price,
-                }))
-            };
-
-            await database.ref(PENDING_ORDERS_REF).child(orderNumber).set(orderPayload);
-            
-            // Backup to Google Sheet (non-critical, fire-and-forget)
-            try {
-                // We use 'no-cors' mode because Apps Script web apps have strict CORS policies.
-                // This means we send the request but cannot read the response. The backup will
-                // proceed, but the app won't get a success/fail confirmation, preventing a false error UI.
-                fetch(GSHEET_BACKUP_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    body: JSON.stringify(gsheetPayload),
-                });
-            } catch (backupError) {
-                // This will only catch immediate network errors (e.g., user is offline),
-                // not server-side issues from the script itself.
-                console.error('Error dispatching to Google Sheet backup:', backupError);
-                showToast('Order saved, but could not send to backup sheet.', 'error');
+            if (editMode && orderToEdit) {
+                await handleUpdateOrder();
+            } else {
+                await handlePlaceNewOrder();
             }
-
-            if (partyHasExistingDraft) await database.ref(`${DRAFTS_REF}/${partyName}`).remove();
-            
-            playSuccessSound();
-            setFinalizedOrder(orderPayload);
-            setIsConfirmationModalOpen(false);
-            setIsSuccessModalOpen(true);
-            resetOrderState();
-
         } catch (error) {
-            console.error("Failed to place order:", error);
-            showToast('Error placing order. Please try again.', 'error');
+            console.error("Failed to submit order:", error);
+            showToast(`Error: ${error.message}`, 'error');
         } finally {
-            setIsPlacingOrder(false);
+            setIsSubmitting(false);
         }
+    };
+
+    const handleUpdateOrder = async () => {
+        const { totalQuantity, totalValue } = items.reduce((acc, item) => {
+            acc.totalQuantity += item.quantity;
+            acc.totalValue += item.quantity * item.price;
+            return acc;
+        }, { totalQuantity: 0, totalValue: 0 });
+
+        const newHistoryEvent = {
+            timestamp: new Date().toISOString(),
+            event: 'System',
+            details: `Order Edited. New Qty: ${totalQuantity}.`
+        };
+
+        const updatedOrderPayload = {
+            ...orderToEdit,
+            partyName, items, orderNote,
+            totalQuantity, totalValue,
+            history: [...(orderToEdit.history || []), newHistoryEvent]
+        };
+
+        await database.ref(`${PENDING_ORDERS_REF}/${orderToEdit.orderNumber}`).set(updatedOrderPayload);
+
+        playSuccessSound();
+        setFinalizedOrder(updatedOrderPayload);
+        setIsConfirmationModalOpen(false);
+        setIsSuccessModalOpen(true);
+        // Do not reset state here, SuccessModal will handle navigation
+    };
+
+    const handlePlaceNewOrder = async () => {
+        const counterRef = database.ref(ORDER_COUNTER_REF);
+        const result = await counterRef.transaction(currentValue => (currentValue || 0) + 1);
+        if (!result.committed) throw new Error("Failed to generate order number.");
+        
+        const orderNumber = `${ORDER_NUMBER_PREFIX}${result.snapshot.val()}`;
+        const { totalQuantity, totalValue } = items.reduce((acc, item) => {
+            acc.totalQuantity += item.quantity;
+            acc.totalValue += item.quantity * item.price;
+            return acc;
+        }, { totalQuantity: 0, totalValue: 0 });
+
+        const orderPayload: Order = {
+            orderNumber, partyName, items, orderNote,
+            totalQuantity, totalValue, timestamp: new Date().toISOString(), status: 'Pending',
+            history: [{
+                timestamp: new Date().toISOString(),
+                event: 'System',
+                details: 'Order Created'
+            }]
+        };
+        
+        const gsheetPayload = {
+            action: 'appendOrder',
+            orderData: items.map(item => ({
+                orderNumber, partyName, timestamp: orderPayload.timestamp, orderNote,
+                style: item.fullItemData.Style, color: item.fullItemData.Color,
+                size: item.fullItemData.Size, barcode: item.fullItemData.Barcode,
+                quantity: item.quantity, mrp: item.price,
+                itemTotal: item.quantity * item.price,
+            }))
+        };
+
+        await database.ref(PENDING_ORDERS_REF).child(orderNumber).set(orderPayload);
+        
+        try {
+            fetch(GSHEET_BACKUP_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                body: JSON.stringify(gsheetPayload),
+            });
+        } catch (backupError) {
+            console.error('Error dispatching to Google Sheet backup:', backupError);
+            showToast('Order saved, but could not send to backup sheet.', 'error');
+        }
+
+        if (partyHasExistingDraft) await database.ref(`${DRAFTS_REF}/${partyName}`).remove();
+        
+        playSuccessSound();
+        setFinalizedOrder(orderPayload);
+        setIsConfirmationModalOpen(false);
+        setIsSuccessModalOpen(true);
     };
 
     const handleSaveDraft = () => {
@@ -863,25 +937,29 @@ export const NewOrderEntry = () => {
     };
 
     const handleClearCart = () => setItems([]);
-    const handleSubmitOrder = () => { if (!partyName || items.length === 0) { showToast('Party name and items are required.', 'error'); return; } setIsConfirmationModalOpen(true); };
     const filteredStyles = useMemo(() => !styleSearchTerm ? catalog.styles : catalog.styles.filter(style => style.toLowerCase().includes(styleSearchTerm.toLowerCase())), [styleSearchTerm, catalog.styles]);
     const totalQuantity = useMemo(() => items.reduce((sum, item) => sum + item.quantity, 0), [items]);
 
     const renderDraftButton = (isMobileButton = false) => {
         const buttonStyle = isMobileButton ? { ...styles.button, ...styles.stickyButton, flex: 1 } : { ...styles.button };
+        if (editMode) return null; // Don't show draft buttons in edit mode
         if (partyName && partyHasExistingDraft) { return <button onClick={() => setIsDraftModalOpen(true)} style={{ ...buttonStyle, backgroundColor: '#c0392b', color: '#fff', border: 'none' }}>Draft Exists</button>; }
         if (!partyName) { return <button onClick={() => setIsDraftModalOpen(true)} style={{ ...buttonStyle, ...styles.secondaryButton }} disabled={Object.keys(drafts).length === 0}>Open Drafts</button>; }
         return <button onClick={handleSaveDraft} style={{ ...buttonStyle, ...styles.secondaryButton }} disabled={items.length === 0}>Save Draft</button>;
     };
+    
+    const submitButtonText = editMode ? 'Update Order' : 'Submit Order';
+    const pageTitle = editMode ? `Editing Order ${orderToEdit?.orderNumber}` : 'New Order Entry';
 
     return (
         <div style={isMobile ? { ...styles.container, padding: '0', paddingBottom: '80px' } : styles.container}>
             <DraftsModal isOpen={isDraftModalOpen} onClose={() => setIsDraftModalOpen(false)} drafts={drafts} onRestore={handleRestoreDraft} onDelete={handleDeleteDraft} />
-            <OrderConfirmationModal isOpen={isConfirmationModalOpen} onClose={() => setIsConfirmationModalOpen(false)} onPlaceOrder={handlePlaceOrder} partyName={partyName} items={items} note={orderNote} onNoteChange={setOrderNote} isLoading={isPlacingOrder} />
-            <SuccessModal isOpen={isSuccessModalOpen} onClose={() => setIsSuccessModalOpen(false)} orderData={finalizedOrder} />
+            <OrderConfirmationModal isOpen={isConfirmationModalOpen} onClose={() => setIsConfirmationModalOpen(false)} onSubmit={handleOrderSubmission} partyName={partyName} items={items} note={orderNote} onNoteChange={setOrderNote} isLoading={isSubmitting} isEditMode={editMode} />
+            <SuccessModal isOpen={isSuccessModalOpen} onClose={() => { setIsSuccessModalOpen(false); if(editMode) { onNavigate('Pending'); } else { resetOrderState(); } }} orderData={finalizedOrder} isEditMode={editMode} />
             
             <div style={isMobile ? { ...styles.header, marginBottom: '0.5rem' } : styles.header}>
-                {!isMobile && ( <div style={styles.actions}> {renderDraftButton()} <button onClick={handleSubmitOrder} style={styles.button} disabled={items.length === 0 || !partyName}>Submit Order</button> </div> )}
+                <h2 style={styles.pageTitle}>{pageTitle}</h2>
+                {!isMobile && ( <div style={styles.actions}> {renderDraftButton()} <button onClick={handleSubmit} style={styles.button} disabled={items.length === 0 || !partyName}>{submitButtonText}</button> </div> )}
             </div>
             
             <div style={isMobile ? { ...styles.mainLayout, gridTemplateColumns: '1fr' } : styles.mainLayout}>
@@ -892,7 +970,7 @@ export const NewOrderEntry = () => {
                              <div style={styles.collapsibleContent}>
                                 <div style={{...styles.inputGroup, position: 'relative'}} ref={suggestionBoxRef}>
                                     <label htmlFor="partyName" style={styles.label}>Party Name</label>
-                                    <input type="text" id="partyName" style={styles.input} value={partyName} onChange={handlePartyNameChange} onFocus={() => partyName && suggestions.length > 0 && setIsSuggestionsVisible(true)} placeholder="Enter or select a customer" autoComplete="off" />
+                                    <input type="text" id="partyName" style={styles.input} value={partyName} onChange={handlePartyNameChange} onFocus={() => partyName && suggestions.length > 0 && setIsSuggestionsVisible(true)} placeholder="Enter or select a customer" autoComplete="off" disabled={editMode} />
                                      {isSuggestionsVisible && suggestions.length > 0 && (
                                         <ul style={styles.suggestionsList}>
                                             {suggestions.map((s, i) => ( <li key={i} style={{...styles.suggestionItem, ...(s.startsWith('Add: ') ? styles.addSuggestionItem : {})}} onClick={() => handleSuggestionClick(s)} onMouseDown={(e) => e.preventDefault()}> {s.startsWith('Add: ') ? `+ Add "${s.substring(5)}"` : s} </li> ))}
@@ -910,7 +988,7 @@ export const NewOrderEntry = () => {
                                  <div style={{...styles.collapsibleContent, ...(isOrderDetailsCollapsed ? styles.collapsibleContentCollapsed : {})}}>
                                     <div style={{...styles.inputGroup, position: 'relative'}} ref={suggestionBoxRef}>
                                         <label htmlFor="partyName" style={styles.label}>Party Name</label>
-                                        <input type="text" id="partyName" style={styles.input} value={partyName} onChange={handlePartyNameChange} onFocus={() => partyName && suggestions.length > 0 && setIsSuggestionsVisible(true)} placeholder="Enter or select a customer" autoComplete="off" />
+                                        <input type="text" id="partyName" style={styles.input} value={partyName} onChange={handlePartyNameChange} onFocus={() => partyName && suggestions.length > 0 && setIsSuggestionsVisible(true)} placeholder="Enter or select a customer" autoComplete="off" disabled={editMode} />
                                          {isSuggestionsVisible && suggestions.length > 0 && (
                                             <ul style={styles.suggestionsList}>
                                                 {suggestions.map((s, i) => ( <li key={i} style={{...styles.suggestionItem, ...(s.startsWith('Add: ') ? styles.addSuggestionItem : {})}} onClick={() => handleSuggestionClick(s)} onMouseDown={(e) => e.preventDefault()}> {s.startsWith('Add: ') ? `+ Add "${s.substring(5)}"` : s} </li> ))}
@@ -936,20 +1014,20 @@ export const NewOrderEntry = () => {
                     </div>
                 </div>
 
-                {!isMobile && ( <div style={styles.sidePanel}> <Cart items={items} onQuantityChange={handleQuantityChange} onClearCart={handleClearCart} onEditGroup={(group) => setEditingCartGroup(group)} isMobile={isMobile} isModal={false} onClose={()=>{}} draftButton={null} onSubmit={()=>{}}/> </div> )}
+                {!isMobile && ( <div style={styles.sidePanel}> <Cart items={items} onQuantityChange={handleQuantityChange} onClearCart={handleClearCart} onEditGroup={(group) => setEditingCartGroup(group)} isMobile={isMobile} isModal={false} onClose={()=>{}} draftButton={null} onSubmit={()=>{}} isEditMode={editMode} /> </div> )}
             </div>
 
             {isMobile && (
                 <div style={styles.stickyActionBar}>
                     <button style={styles.stickyCartButton} onClick={() => setIsCartModalOpen(true)}> <CartIcon /> {totalQuantity > 0 && <span style={styles.cartCountBadge}>{totalQuantity}</span>} </button>
-                    <div style={styles.stickyActionButtons}> {renderDraftButton(true)} <button onClick={handleSubmitOrder} style={{ ...styles.button, ...styles.stickyButton }} disabled={items.length === 0 || !partyName}>Submit Order</button> </div>
+                    <div style={styles.stickyActionButtons}> {renderDraftButton(true)} <button onClick={handleSubmit} style={{ ...styles.button, ...styles.stickyButton }} disabled={items.length === 0 || !partyName}>{submitButtonText}</button> </div>
                 </div>
             )}
             
             {isMobile && isCartModalOpen && (
                 <div style={styles.modalOverlay} onClick={() => setIsCartModalOpen(false)}>
                     <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-                        <Cart items={items} onQuantityChange={handleQuantityChange} onClearCart={() => { handleClearCart(); setIsCartModalOpen(false); }} onEditGroup={(group) => setEditingCartGroup(group)} isMobile={isMobile} isModal={true} onClose={() => setIsCartModalOpen(false)} draftButton={renderDraftButton(true)} onSubmit={() => {handleSubmitOrder(); setIsCartModalOpen(false);}} />
+                        <Cart items={items} onQuantityChange={handleQuantityChange} onClearCart={() => { handleClearCart(); setIsCartModalOpen(false); }} onEditGroup={(group) => setEditingCartGroup(group)} isMobile={isMobile} isModal={true} onClose={() => setIsCartModalOpen(false)} draftButton={renderDraftButton(true)} onSubmit={() => {handleSubmit(); setIsCartModalOpen(false);}} isEditMode={editMode} />
                     </div>
                 </div>
             )}
@@ -961,7 +1039,8 @@ export const NewOrderEntry = () => {
 
 const styles: { [key: string]: React.CSSProperties } = {
     container: { display: 'flex', flexDirection: 'column', flex: 1 },
-    header: { display: 'flex', justifyContent: 'flex-end', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', flexShrink: 0, marginBottom: '1rem' },
+    header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', flexShrink: 0, marginBottom: '1rem' },
+    pageTitle: { fontSize: '1.25rem', fontWeight: 600, color: 'var(--dark-grey)' },
     actions: { display: 'flex', gap: '0.75rem' },
     button: { padding: '0.6rem 1.2rem', fontSize: '0.9rem', fontWeight: 500, color: '#fff', backgroundColor: 'var(--brand-color)', border: 'none', borderRadius: '8px', cursor: 'pointer', transition: 'all 0.3s ease' },
     secondaryButton: { backgroundColor: 'var(--light-grey)', color: 'var(--dark-grey)', border: '1px solid var(--skeleton-bg)' },

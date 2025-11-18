@@ -142,15 +142,23 @@ const Swipeable: React.FC<{ onProcess: () => void; onDelete: () => void; onEdit:
     const currentX = useRef(0);
     const isDragging = useRef(false);
     const isScrolling = useRef(false);
+    const animationFrameId = useRef(null);
 
     const resetOpenItems = useCallback(() => {
         document.querySelectorAll('.swipeable-content.swiped-open').forEach(node => {
             if (node !== contentRef.current) {
                 (node as HTMLElement).style.transform = 'translateX(0px)';
+                (node as HTMLElement).style.transition = 'transform 0.3s ease';
                 node.classList.remove('swiped-open');
             }
         });
     }, []);
+    
+    const setTranslateX = (x: number) => {
+        if (contentRef.current) {
+            contentRef.current.style.transform = `translateX(${x}px)`;
+        }
+    };
 
     const handleTouchStart = (e: React.TouchEvent) => {
         resetOpenItems();
@@ -159,41 +167,48 @@ const Swipeable: React.FC<{ onProcess: () => void; onDelete: () => void; onEdit:
         isDragging.current = true;
         isScrolling.current = false;
         if (contentRef.current) contentRef.current.style.transition = 'none';
+        if(animationFrameId.current) cancelAnimationFrame(animationFrameId.current);
     };
 
     const handleTouchMove = (e: React.TouchEvent) => {
         if (!isDragging.current || !contentRef.current) return;
+
         currentX.current = e.touches[0].clientX;
         const diffX = currentX.current - startX.current;
 
         // Simple check to distinguish between scroll and swipe
-        if (Math.abs(e.touches[0].clientY - startX.current) > Math.abs(diffX) && !isScrolling.current && Math.abs(diffX) < 10) {
+        if (!isScrolling.current && Math.abs(e.touches[0].clientY - startX.current) > Math.abs(diffX) && Math.abs(diffX) < 10) {
              isDragging.current = false;
              return;
         }
+        
+        if (!isScrolling.current) {
+             e.preventDefault();
+        }
         isScrolling.current = true;
-        e.preventDefault();
-
-        // Clamp the swipe distance
-        const newTranslateX = Math.max(-80, Math.min(160, diffX));
-        contentRef.current.style.transform = `translateX(${newTranslateX}px)`;
+        
+        animationFrameId.current = requestAnimationFrame(() => {
+            const newTranslateX = Math.max(-80, Math.min(160, diffX));
+            setTranslateX(newTranslateX);
+        });
     };
 
     const handleTouchEnd = () => {
         if (!isDragging.current || !contentRef.current) return;
         isDragging.current = false;
-
+        if(animationFrameId.current) cancelAnimationFrame(animationFrameId.current);
+        
         contentRef.current.style.transition = 'transform 0.3s ease';
         const currentTransform = new WebKitCSSMatrix(window.getComputedStyle(contentRef.current).transform).m41;
 
         if (currentTransform > 80) { // Swiped right enough to open left actions
-            contentRef.current.style.transform = 'translateX(160px)';
+            setTranslateX(160);
             contentRef.current.classList.add('swiped-open');
         } else if (currentTransform < -40) { // Swiped left enough to open right action
-            contentRef.current.style.transform = 'translateX(-80px)';
+            setTranslateX(-80);
             contentRef.current.classList.add('swiped-open');
         } else { // Not swiped enough, snap back
-            contentRef.current.style.transform = 'translateX(0px)';
+            setTranslateX(0);
             contentRef.current.classList.remove('swiped-open');
         }
     };
@@ -492,7 +507,7 @@ const DetailedList: React.FC<{ orders: Order[]; onToggleExpand: (order: Order) =
     );
 }
 
-export const PendingOrders = () => {
+export const PendingOrders = ({ onNavigate }) => {
     const [orders, setOrders] = useState<Order[]>([]);
     const [stockData, setStockData] = useState({});
     const [isLoading, setIsLoading] = useState(true);
@@ -732,8 +747,9 @@ export const PendingOrders = () => {
     };
 
     const handleEditOrder = useCallback((order: Order) => {
-        showToast(`Editing for ${order.orderNumber} to be implemented in New Order Entry.`, 'info');
-    }, []);
+        sessionStorage.setItem('orderToEdit', JSON.stringify(order));
+        onNavigate('Entry');
+    }, [onNavigate]);
     
     const handleProcessFullOrder = useCallback((order: Order) => {
         if (window.confirm(`Process all items for order ${order.orderNumber}?`)) {
@@ -1031,10 +1047,10 @@ const styles: { [key: string]: React.CSSProperties } = {
     mobileItemQty: { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.25rem' },
     mobileQtyLabel: { fontSize: '0.8rem', color: 'var(--text-color)' },
     // --- Swipeable styles ---
-    swipeableContainer: { position: 'relative', overflow: 'hidden', width: '100%' },
-    swipeableLeftActions: { position: 'absolute', top: 0, left: 0, height: '100%', display: 'flex', alignItems: 'center' },
-    swipeableRightActions: { position: 'absolute', top: 0, right: 0, height: '100%', display: 'flex', alignItems: 'center' },
-    swipeAction: { height: '100%', width: '80px', color: 'white', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column', gap: '0.25rem', fontSize: '0.7rem' },
+    swipeableContainer: { position: 'relative', overflow: 'hidden', width: '100%', borderRadius: '10px' },
+    swipeableLeftActions: { position: 'absolute', top: 0, left: 0, height: '100%', display: 'flex', alignItems: 'stretch' },
+    swipeableRightActions: { position: 'absolute', top: 0, right: 0, height: '100%', display: 'flex', alignItems: 'stretch' },
+    swipeAction: { width: '80px', color: 'white', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column', gap: '0.25rem', fontSize: '0.7rem', transition: 'background-color 0.2s ease' },
     swipeableContent: { position: 'relative', backgroundColor: 'var(--card-bg)', zIndex: 1 },
     // --- New Detailed Card Styles ---
     detailedOrderCard: { backgroundColor: 'var(--card-bg)', borderRadius: '10px', padding: '1rem', border: '1px solid var(--skeleton-bg)', display: 'flex', flexDirection: 'column', gap: '0.5rem', cursor: 'pointer', transition: 'border-color 0.2s, box-shadow 0.2s' },

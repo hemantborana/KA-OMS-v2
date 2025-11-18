@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
 import { NewOrderEntry } from './neworderentry';
@@ -342,9 +340,9 @@ const MainContent = React.forwardRef<HTMLElement, MainContentProps>(
         const renderView = () => {
             switch (activeView) {
                 case 'Dashboard': return <Dashboard onNavigate={onNavigate} session={session} />;
-                case 'Entry': return <NewOrderEntry />;
+                case 'Entry': return <NewOrderEntry onNavigate={onNavigate} />;
                 case 'Stock': return <StockOverview />;
-                case 'Pending': return <PendingOrders />;
+                case 'Pending': return <PendingOrders onNavigate={onNavigate} />;
                 case 'Billing': return <ReadyForBilling />;
                 case 'Billed': return <BilledOrders />;
                 case 'Deleted': return <DeletedOrders />;
