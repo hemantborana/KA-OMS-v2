@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
@@ -12,101 +11,15 @@ const SmallSpinner = () => <div style={{...styles.spinner, width: '20px', height
 const SummarizedViewIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>;
 const DetailedViewIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>;
 const CalendarIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>;
-const TrashIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>;
-const CheckSquareIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>;
-
-const Swipeable: React.FC<{ onAction: () => void; children: React.ReactNode; actionText: string; }> = ({ onAction, children, actionText }) => {
-    const contentRef = useRef<HTMLDivElement>(null);
-    const startPos = useRef({ x: 0, y: 0 });
-    const isDragging = useRef(false);
-    const wasSwiped = useRef(false);
-
-    const resetOpenItems = () => {
-        document.querySelectorAll('.swipeable-content.swiped-open').forEach(node => {
-            if (node !== contentRef.current) {
-                (node as HTMLElement).style.transform = 'translateX(0px)';
-                node.classList.remove('swiped-open');
-            }
-        });
-    };
-
-    const handleTouchStart = (e: React.TouchEvent) => {
-        resetOpenItems();
-        startPos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-        isDragging.current = true;
-        wasSwiped.current = false;
-        if (contentRef.current) {
-            contentRef.current.style.transition = 'none';
-        }
-    };
-
-    const handleTouchMove = (e: React.TouchEvent) => {
-        if (!isDragging.current || !contentRef.current) return;
-        
-        const currentX = e.touches[0].clientX;
-        const diffX = currentX - startPos.current.x;
-
-        if (Math.abs(diffX) > 10) {
-            wasSwiped.current = true;
-        }
-        
-        if (diffX < 0) {
-            const newTranslateX = Math.max(-80, diffX);
-            contentRef.current.style.transform = `translateX(${newTranslateX}px)`;
-        }
-    };
-
-    const handleTouchEnd = () => {
-        if (!isDragging.current) return;
-        isDragging.current = false;
-
-        if (contentRef.current) {
-            contentRef.current.style.transition = 'transform 0.3s ease';
-            const currentTransform = new WebKitCSSMatrix(window.getComputedStyle(contentRef.current).transform).m41;
-
-            if (currentTransform < -40) {
-                contentRef.current.style.transform = 'translateX(-80px)';
-                contentRef.current.classList.add('swiped-open');
-            } else {
-                contentRef.current.style.transform = 'translateX(0px)';
-                contentRef.current.classList.remove('swiped-open');
-            }
-        }
-        
-        if (!wasSwiped.current) {
-            onAction();
-        }
-    };
-    
-    const handleActionClick = () => {
-        if (contentRef.current) {
-             contentRef.current.style.transition = 'transform 0.3s ease';
-             contentRef.current.style.transform = 'translateX(0px)';
-             contentRef.current.classList.remove('swiped-open');
-        }
-        onAction();
-    }
-
-    return (
-        <div style={styles.swipeableContainer}>
-            <div style={styles.swipeableActions}>
-                <button onClick={handleActionClick} style={styles.swipeableActionButton}>
-                    {actionText}
-                </button>
-            </div>
-            <div
-                ref={contentRef}
-                className="swipeable-content"
-                onTouchStart={handleTouchStart}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleTouchEnd}
-                style={styles.swipeableContent}
-            >
-                {children}
-            </div>
-        </div>
-    );
-};
+const TrashIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>;
+const EditIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>;
+const ProcessIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>;
+const NoteIcon = (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M15.5 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8.5L15.5 3z"></path><polyline points="14 3 14 9 20 9"></polyline></svg>;
+const BoxIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>;
+const PrintIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>;
+const FilterIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>;
+const CheckSquareIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>;
+const SquareIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg>;
 
 
 // --- TYPE & FIREBASE ---
@@ -114,13 +27,15 @@ interface Order { orderNumber: string; partyName: string; timestamp: string; tot
 const PENDING_ORDERS_REF = 'Pending_Order_V2';
 const BILLING_ORDERS_REF = 'Ready_For_Billing_V2';
 const DELETED_ORDERS_REF = 'Deleted_Orders_V2';
+const EXPIRED_ORDERS_REF = 'Expired_Orders_V2';
 
 // --- HELPERS ---
 const showToast = (message: string, type: 'info' | 'success' | 'error' = 'info') => {
     window.dispatchEvent(new CustomEvent('show-toast', { detail: { message, type } }));
 };
-const formatDate = (isoString) => isoString ? new Date(isoString).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A';
+
 const timeSince = (dateString) => {
+    if (!dateString) return 'N/A';
     const seconds = Math.floor((new Date().getTime() - new Date(dateString).getTime()) / 1000);
     let interval = seconds / 31536000;
     if (interval > 1) return Math.floor(interval) + " years ago";
@@ -135,8 +50,139 @@ const timeSince = (dateString) => {
     return "Just now";
 };
 
+const normalizeKeyPart = (part: any): string => {
+    if (!part) return '';
+    return String(part).toUpperCase().trim().replace(/[^A-Z0-9]/g, '');
+};
+
+const stockDb = {
+    db: null,
+    init: function() {
+        return new Promise((resolve, reject) => {
+            if (this.db) return resolve(this.db);
+            const request = indexedDB.open('StockDataDB', 1);
+            request.onupgradeneeded = (event) => {
+                const db = (event.target as IDBOpenDBRequest).result;
+                if (!db.objectStoreNames.contains('stockItems')) {
+                    db.createObjectStore('stockItems', { keyPath: 'id', autoIncrement: true });
+                }
+                if (!db.objectStoreNames.contains('metadata')) {
+                    db.createObjectStore('metadata', { keyPath: 'id' });
+                }
+            };
+            request.onsuccess = (event) => { this.db = (event.target as IDBOpenDBRequest).result; resolve(this.db); };
+            request.onerror = (event) => reject((event.target as IDBRequest).error);
+        });
+    },
+    getAllStock: async function() {
+        const db = await this.init();
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction(['stockItems'], 'readonly');
+            const store = transaction.objectStore('stockItems');
+            const request = store.getAll();
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = (event) => reject((event.target as IDBRequest).error);
+        });
+    },
+};
+
+const StockIndicator: React.FC<{ stockLevel: number }> = ({ stockLevel }) => {
+    const isUnavailable = typeof stockLevel !== 'number' || stockLevel < 0;
+    let color = null;
+    let title = `Stock: ${stockLevel}`;
+    if (isUnavailable || stockLevel === 0) {
+        color = '#e74c3c';
+        if (isUnavailable) title = 'Stock: Unavailable';
+    } else if (stockLevel >= 1 && stockLevel <= 3) {
+        color = '#f1c40f';
+    } else if (stockLevel >= 4) {
+        color = '#2ecc71';
+    }
+    if (!color) return <div style={styles.stockIndicatorPlaceholder}></div>;
+    return <span style={{ ...styles.stockIndicator, backgroundColor: color }} title={title} />;
+};
+
+const Swipeable: React.FC<{ onProcess: () => void; onDelete: () => void; onEdit: () => void; children: React.ReactNode; }> = ({ onProcess, onDelete, onEdit, children }) => {
+    const contentRef = useRef<HTMLDivElement>(null);
+    const startX = useRef(0);
+    const currentX = useRef(0);
+    const isDragging = useRef(false);
+    const isScrolling = useRef(false);
+
+    const resetOpenItems = useCallback(() => {
+        document.querySelectorAll('.swipeable-content.swiped-open').forEach(node => {
+            if (node !== contentRef.current) {
+                (node as HTMLElement).style.transform = 'translateX(0px)';
+                node.classList.remove('swiped-open');
+            }
+        });
+    }, []);
+
+    const handleTouchStart = (e: React.TouchEvent) => {
+        resetOpenItems();
+        startX.current = e.touches[0].clientX;
+        currentX.current = startX.current;
+        isDragging.current = true;
+        isScrolling.current = false;
+        if (contentRef.current) contentRef.current.style.transition = 'none';
+    };
+
+    const handleTouchMove = (e: React.TouchEvent) => {
+        if (!isDragging.current || !contentRef.current) return;
+        currentX.current = e.touches[0].clientX;
+        const diffX = currentX.current - startX.current;
+
+        // Simple check to distinguish between scroll and swipe
+        if (Math.abs(e.touches[0].clientY - startX.current) > Math.abs(diffX) && !isScrolling.current && Math.abs(diffX) < 10) {
+             isDragging.current = false;
+             return;
+        }
+        isScrolling.current = true;
+        e.preventDefault();
+
+        // Clamp the swipe distance
+        const newTranslateX = Math.max(-80, Math.min(160, diffX));
+        contentRef.current.style.transform = `translateX(${newTranslateX}px)`;
+    };
+
+    const handleTouchEnd = () => {
+        if (!isDragging.current || !contentRef.current) return;
+        isDragging.current = false;
+
+        contentRef.current.style.transition = 'transform 0.3s ease';
+        const currentTransform = new WebKitCSSMatrix(window.getComputedStyle(contentRef.current).transform).m41;
+
+        if (currentTransform > 80) { // Swiped right enough to open left actions
+            contentRef.current.style.transform = 'translateX(160px)';
+            contentRef.current.classList.add('swiped-open');
+        } else if (currentTransform < -40) { // Swiped left enough to open right action
+            contentRef.current.style.transform = 'translateX(-80px)';
+            contentRef.current.classList.add('swiped-open');
+        } else { // Not swiped enough, snap back
+            contentRef.current.style.transform = 'translateX(0px)';
+            contentRef.current.classList.remove('swiped-open');
+        }
+    };
+    
+    return (
+        <div style={styles.swipeableContainer}>
+            <div style={styles.swipeableLeftActions}>
+                <button onClick={onEdit} style={{...styles.swipeAction, backgroundColor: '#3498db'}}><EditIcon /></button>
+                <button onClick={onDelete} style={{...styles.swipeAction, backgroundColor: '#e74c3c'}}><TrashIcon /></button>
+            </div>
+            <div style={styles.swipeableRightActions}>
+                <button onClick={onProcess} style={{...styles.swipeAction, backgroundColor: '#2ecc71'}}><ProcessIcon /></button>
+            </div>
+            <div ref={contentRef} className="swipeable-content" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} style={styles.swipeableContent}>
+                {children}
+            </div>
+        </div>
+    );
+};
+
+
 // --- COMPONENTS ---
-const ExpandedPendingView = ({ order, onProcess, onDelete, isProcessing, processingQty, onQtyChange, onMatchAll, isMobile }) => {
+const ExpandedPendingView = ({ order, onProcess, onDelete, isProcessing, processingQty, onQtyChange, stockData, isMobile, onPrint }) => {
     const handleProcessClick = () => {
         const totalToProcess = Object.values(processingQty).reduce((sum: number, qty: number) => sum + qty, 0);
         if (totalToProcess === 0) {
@@ -146,57 +192,73 @@ const ExpandedPendingView = ({ order, onProcess, onDelete, isProcessing, process
         onProcess(order, processingQty);
     };
 
-    const thStyle = isMobile ? { ...styles.th, padding: '10px 6px', fontSize: '0.8rem', whiteSpace: 'normal' } : styles.th;
-    const tdStyle = isMobile ? { ...styles.td, padding: '8px 6px', fontSize: '0.85rem' } : styles.td;
-    // FIX: Explicitly type style variables to prevent type widening of CSS properties.
-    const qtyInputStyle: React.CSSProperties = isMobile ? { ...styles.qtyInput, width: '100%', minWidth: '50px', boxSizing: 'border-box', height: '36px', padding: '6px' } : styles.qtyInput;
-    const tableContainerStyle: React.CSSProperties = isMobile ? { ...styles.tableContainer, overflowX: 'visible' } : styles.tableContainer;
+    const renderDesktopTable = () => (
+         <div style={styles.tableContainer}>
+            <table style={styles.table}>
+                <thead><tr>
+                    <th style={{...styles.th, textAlign: 'left'}}>Style</th>
+                    <th style={{...styles.th, textAlign: 'left'}}>Color</th>
+                    <th style={styles.th}>Size</th>
+                    <th style={styles.th}>Stock</th>
+                    <th style={styles.th}>Ordered</th>
+                    <th style={styles.th}>To Process</th>
+                </tr></thead>
+                <tbody>
+                    {order.items.map(item => {
+                        const stockKey = `${normalizeKeyPart(item.fullItemData.Style)}-${normalizeKeyPart(item.fullItemData.Color)}-${normalizeKeyPart(item.fullItemData.Size)}`;
+                        const isPartial = (processingQty[item.id] || 0) < item.quantity;
+                        return (
+                            <tr key={item.id} style={isPartial ? {...styles.tr, backgroundColor: '#fffbe6'} : styles.tr}>
+                                <td style={{...styles.td, textAlign: 'left'}}>{item.fullItemData.Style}</td>
+                                <td style={{...styles.td, textAlign: 'left'}}>{item.fullItemData.Color}</td>
+                                <td style={styles.td}>{item.fullItemData.Size}</td>
+                                <td style={styles.td}><StockIndicator stockLevel={stockData[stockKey]} /></td>
+                                <td style={styles.td}>{item.quantity}</td>
+                                <td style={{...styles.td, ...styles.tdInput}}>
+                                    <input type="number" style={styles.qtyInput} value={processingQty[item.id] || ''} onChange={(e) => onQtyChange(item.id, e.target.value, item.quantity)} placeholder="0" max={item.quantity} min="0" />
+                                </td>
+                            </tr>
+                        );
+                    })}
+                </tbody>
+            </table>
+        </div>
+    );
+
+    const renderMobileCards = () => (
+        <div style={styles.mobileItemContainer}>
+            {order.items.map(item => {
+                const stockKey = `${normalizeKeyPart(item.fullItemData.Style)}-${normalizeKeyPart(item.fullItemData.Color)}-${normalizeKeyPart(item.fullItemData.Size)}`;
+                return (
+                    <div key={item.id} style={styles.mobileItemCard}>
+                        <div style={styles.mobileItemInfo}>
+                            <div style={styles.mobileItemName}>{item.fullItemData.Style} - {item.fullItemData.Color} - <strong>{item.fullItemData.Size}</strong></div>
+                            <div style={styles.mobileItemStock}>
+                                <StockIndicator stockLevel={stockData[stockKey]} />
+                                <span style={{fontSize: '0.8rem'}}>Stock: {stockData[stockKey] ?? 'N/A'}</span>
+                            </div>
+                        </div>
+                        <div style={styles.mobileItemQty}>
+                            <div style={styles.mobileQtyLabel}>Ordered: {item.quantity}</div>
+                             <input type="number" style={{...styles.qtyInput, width: '80px'}} value={processingQty[item.id] || ''} onChange={(e) => onQtyChange(item.id, e.target.value, item.quantity)} placeholder="0" max={item.quantity} min="0" />
+                        </div>
+                    </div>
+                )
+            })}
+        </div>
+    );
     
     return (
         <div style={styles.expandedViewContainer}>
-            <div style={tableContainerStyle}>
-                 <table style={isMobile ? { ...styles.table, tableLayout: 'fixed' } : styles.table}>
-                    {isMobile && (
-                        <colgroup>
-                            <col style={{width: '22%'}} />
-                            <col style={{width: '22%'}} />
-                            <col style={{width: '18%'}} />
-                            <col style={{width: '18%'}} />
-                            <col style={{width: '20%'}} />
-                        </colgroup>
-                    )}
-                    <thead><tr><th style={thStyle}>Style</th><th style={thStyle}>Color</th><th style={thStyle}>Size</th><th style={thStyle}>Ordered</th><th style={thStyle}>To Process</th></tr></thead>
-                    <tbody>
-                        {order.items.map(item => (
-                            <tr key={item.id} style={styles.tr}>
-                                <td style={tdStyle}>{item.fullItemData.Style}</td>
-                                <td style={tdStyle}>{item.fullItemData.Color}</td>
-                                <td style={tdStyle}>{item.fullItemData.Size}</td>
-                                <td style={tdStyle}>{item.quantity}</td>
-                                <td style={{...tdStyle, ...styles.tdInput}}>
-                                    <input
-                                      type="number"
-                                      style={qtyInputStyle}
-                                      value={processingQty[item.id] || ''}
-                                      onChange={(e) => onQtyChange(item.id, e.target.value, item.quantity)}
-                                      placeholder="0"
-                                      max={item.quantity}
-                                      min="0"
-                                    />
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+            {isMobile ? renderMobileCards() : renderDesktopTable()}
             {order.orderNote && <div style={styles.noteBox}><strong>Note:</strong> {order.orderNote}</div>}
             <div style={styles.modalFooter}>
-                <button onClick={onMatchAll} style={styles.matchAllButton} disabled={isProcessing}>
-                    <CheckSquareIcon /> Match Ordered Qty
+                 <button onClick={() => onPrint([order])} style={styles.secondaryButton} disabled={isProcessing}>
+                    <PrintIcon /> Print Picking List
                 </button>
                 <div style={styles.footerActions}>
                     <button onClick={() => onDelete(order)} style={styles.deleteButton} disabled={isProcessing}>
-                        <TrashIcon /> Delete
+                       <TrashIcon />
                     </button>
                     <button onClick={handleProcessClick} style={styles.modalActionButton} disabled={isProcessing}>
                         {isProcessing ? <SmallSpinner /> : 'Process for Billing'}
@@ -207,8 +269,7 @@ const ExpandedPendingView = ({ order, onProcess, onDelete, isProcessing, process
     );
 };
 
-// FIX: Explicitly type component props to resolve issues with 'key' prop and 'children' type inference by using React.FC.
-const PartyGroup: React.FC<{ partyName: string; data: any; onToggleExpand: (order: Order) => void; expandedOrderNumber: string | null; children: React.ReactNode; }> = ({ partyName, data, onToggleExpand, expandedOrderNumber, children }) => {
+const PartyGroup: React.FC<{ partyName: string; data: any; onToggleExpand: (order: Order) => void; expandedOrderNumber: string | null; children: React.ReactNode; onProcessOrder: (order: Order) => void; onDeleteOrder: (order: Order) => void; onEditOrder: (order: Order) => void; isMobile: boolean; selectedOrders: string[]; onSelectOrder: (orderNumber: string) => void; }> = ({ partyName, data, onToggleExpand, expandedOrderNumber, children, onProcessOrder, onDeleteOrder, onEditOrder, isMobile, selectedOrders, onSelectOrder }) => {
     const [isCollapsed, setIsCollapsed] = useState(true);
     const totalQty = data.orders.reduce((sum, order) => sum + order.totalQuantity, 0);
 
@@ -224,22 +285,35 @@ const PartyGroup: React.FC<{ partyName: string; data: any; onToggleExpand: (orde
             {!isCollapsed && (
                 <div style={styles.cardDetails}>
                     {data.orders.map(order => {
-                        const isOverdue = new Date().getTime() - new Date(order.timestamp).getTime() > 48 * 60 * 60 * 1000;
-                        const orderItemStyle = expandedOrderNumber === order.orderNumber ? {...styles.orderItem, ...styles.orderItemActive} : styles.orderItem;
+                        const isOverdue = new Date().getTime() - new Date(order.timestamp).getTime() > 25 * 24 * 60 * 60 * 1000;
+                        const orderItemStyle: React.CSSProperties = { ...styles.orderItem, ...(expandedOrderNumber === order.orderNumber ? styles.orderItemActive : {}), ...(isOverdue && !expandedOrderNumber ? { borderLeft: '3px solid #e74c3c' } : {}) };
+                        const orderContent = (
+                             <div style={orderItemStyle} onClick={() => onToggleExpand(order)}>
+                                <div style={styles.orderInfo}>
+                                    <button style={styles.checkboxButton} onClick={(e) => { e.stopPropagation(); onSelectOrder(order.orderNumber); }}>
+                                        {selectedOrders.includes(order.orderNumber) ? <CheckSquareIcon /> : <SquareIcon />}
+                                    </button>
+                                    <strong>{order.orderNumber}</strong>
+                                    <span style={styles.orderMeta}>
+                                        <CalendarIcon /> {timeSince(order.timestamp)}
+                                        {order.orderNote && <NoteIcon />}
+                                    </span>
+                                    <span><BoxIcon /> {order.totalQuantity}</span>
+                                    {order.totalQuantity > 50 && <span style={styles.badge}>High Volume</span>}
+                                </div>
+                                <button style={styles.detailsButton} onClick={(e) => { e.stopPropagation(); onToggleExpand(order); }}>
+                                    {expandedOrderNumber === order.orderNumber ? 'Close' : 'Process'}
+                                </button>
+                            </div>
+                        );
+
                         return (
                             <React.Fragment key={order.orderNumber}>
-                                <Swipeable onAction={() => onToggleExpand(order)} actionText="Process">
-                                    <div style={orderItemStyle} onClick={() => onToggleExpand(order)}>
-                                        <div style={styles.orderInfo}>
-                                            <strong style={isOverdue ? { color: '#e74c3c' } : {}}>{order.orderNumber}</strong>
-                                            <span style={styles.orderMeta}><CalendarIcon /> {timeSince(order.timestamp)}</span>
-                                            <span>Qty: {order.totalQuantity}</span>
-                                        </div>
-                                        <button style={styles.detailsButton} onClick={(e) => { e.stopPropagation(); onToggleExpand(order); }}>
-                                            {expandedOrderNumber === order.orderNumber ? 'Close' : 'Process'}
-                                        </button>
-                                    </div>
-                                </Swipeable>
+                                {isMobile ? (
+                                    <Swipeable onProcess={() => onProcessOrder(order)} onDelete={() => onDeleteOrder(order)} onEdit={() => onEditOrder(order)}>
+                                        {orderContent}
+                                    </Swipeable>
+                                ) : ( orderContent )}
                                 {expandedOrderNumber === order.orderNumber && children}
                             </React.Fragment>
                         );
@@ -250,30 +324,42 @@ const PartyGroup: React.FC<{ partyName: string; data: any; onToggleExpand: (orde
     );
 };
 
-// FIX: Explicitly type component props with React.FC to resolve issues with 'children' type inference.
-const DetailedList: React.FC<{ orders: Order[]; onToggleExpand: (order: Order) => void; expandedOrderNumber: string | null; children: React.ReactNode; }> = ({ orders, onToggleExpand, expandedOrderNumber, children }) => {
+const DetailedList: React.FC<{ orders: Order[]; onToggleExpand: (order: Order) => void; expandedOrderNumber: string | null; children: React.ReactNode; onProcessOrder: (order: Order) => void; onDeleteOrder: (order: Order) => void; onEditOrder: (order: Order) => void; isMobile: boolean; selectedOrders: string[]; onSelectOrder: (orderNumber: string) => void; }> = ({ orders, onToggleExpand, expandedOrderNumber, children, onProcessOrder, onDeleteOrder, onEditOrder, isMobile, selectedOrders, onSelectOrder }) => {
     return (
         <div style={{...styles.card, padding: 0}}>
             {orders.map(order => {
-                const isOverdue = new Date().getTime() - new Date(order.timestamp).getTime() > 48 * 60 * 60 * 1000;
-                const orderItemStyle = expandedOrderNumber === order.orderNumber ? {...styles.orderItem, ...styles.orderItemActive, borderBottom: 'none' } : {...styles.orderItem, padding: '1rem 1.5rem'};
+                const isOverdue = new Date().getTime() - new Date(order.timestamp).getTime() > 25 * 24 * 60 * 60 * 1000;
+                const orderItemStyle: React.CSSProperties = { ...styles.orderItem, padding: '1rem 1.5rem', ...(expandedOrderNumber === order.orderNumber ? {...styles.orderItemActive, borderBottom: 'none' } : {}), ...(isOverdue && !expandedOrderNumber ? { borderLeft: '3px solid #e74c3c', paddingLeft: 'calc(1.5rem - 3px)' } : {})};
+                const orderContent = (
+                    <div style={orderItemStyle} onClick={() => onToggleExpand(order)}>
+                        <div style={styles.orderInfo}>
+                            <button style={styles.checkboxButton} onClick={(e) => { e.stopPropagation(); onSelectOrder(order.orderNumber); }}>
+                                {selectedOrders.includes(order.orderNumber) ? <CheckSquareIcon /> : <SquareIcon />}
+                            </button>
+                            <div>
+                                <strong>{order.orderNumber}</strong>
+                                <div style={styles.cardSubTitle}>{order.partyName}</div>
+                            </div>
+                            <span style={styles.orderMeta}>
+                                <CalendarIcon /> {timeSince(order.timestamp)}
+                                {order.orderNote && <NoteIcon title={order.orderNote}/>}
+                            </span>
+                            <span><BoxIcon /> {order.totalQuantity}</span>
+                             {order.totalQuantity > 50 && <span style={styles.badge}>High Volume</span>}
+                        </div>
+                        <button style={styles.detailsButton} onClick={(e) => { e.stopPropagation(); onToggleExpand(order); }}>
+                            {expandedOrderNumber === order.orderNumber ? 'Close' : 'Process'}
+                        </button>
+                    </div>
+                );
+
                  return (
                     <React.Fragment key={order.orderNumber}>
-                         <Swipeable onAction={() => onToggleExpand(order)} actionText="Process">
-                            <div style={orderItemStyle} onClick={() => onToggleExpand(order)}>
-                                <div style={styles.orderInfo}>
-                                    <div>
-                                        <strong style={isOverdue ? { color: '#e74c3c' } : {}}>{order.orderNumber}</strong>
-                                        <div style={styles.cardSubTitle}>{order.partyName}</div>
-                                    </div>
-                                    <span style={styles.orderMeta}><CalendarIcon /> {timeSince(order.timestamp)}</span>
-                                    <span>Qty: {order.totalQuantity}</span>
-                                </div>
-                                <button style={styles.detailsButton} onClick={(e) => { e.stopPropagation(); onToggleExpand(order); }}>
-                                    {expandedOrderNumber === order.orderNumber ? 'Close' : 'Process'}
-                                </button>
-                            </div>
-                        </Swipeable>
+                        {isMobile ? (
+                            <Swipeable onProcess={() => onProcessOrder(order)} onDelete={() => onDeleteOrder(order)} onEdit={() => onEditOrder(order)}>
+                                {orderContent}
+                            </Swipeable>
+                        ) : ( orderContent )}
                         {expandedOrderNumber === order.orderNumber && children}
                     </React.Fragment>
                 );
@@ -284,40 +370,103 @@ const DetailedList: React.FC<{ orders: Order[]; onToggleExpand: (order: Order) =
 
 export const PendingOrders = () => {
     const [orders, setOrders] = useState<Order[]>([]);
+    const [stockData, setStockData] = useState({});
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
-    const [view, setView] = useState('summarized'); // summarized or detailed
+    const [view, setView] = useState('summarized');
+    const [sortConfig, setSortConfig] = useState({ key: 'timestamp', direction: 'ascending' });
     const [expandedOrderNumber, setExpandedOrderNumber] = useState<string | null>(null);
     const [processingOrder, setProcessingOrder] = useState<string | null>(null);
     const [processingQty, setProcessingQty] = useState<Record<string, number>>({});
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
-
+    const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
+    const [isFilterVisible, setIsFilterVisible] = useState(false);
+    
+    // --- Data Fetching and Management ---
     useEffect(() => {
         const handleResize = () => setIsMobile(window.innerWidth <= 768);
         window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
-    }, []);
-
-    useEffect(() => {
         const ordersRef = firebase.database().ref(PENDING_ORDERS_REF);
         const listener = ordersRef.on('value', (snapshot) => {
             const data = snapshot.val();
-            if (data) {
-                const ordersArray = Object.values(data) as Order[];
-                ordersArray.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
-                setOrders(ordersArray);
-            } else { setOrders([]); }
+            setOrders(data ? Object.values(data) as Order[] : []);
             setIsLoading(false);
         }, (err) => {
             console.error(err);
-            setError('Failed to fetch orders. Please check your connection.');
+            setError('Failed to fetch orders.');
             setIsLoading(false);
         });
-        return () => ordersRef.off('value', listener);
+
+        const loadStockData = async () => {
+            try {
+                const stockItems = await stockDb.getAllStock() as any[];
+                if (stockItems && stockItems.length > 0) {
+                    const stockMap = stockItems.reduce((acc, item) => {
+                        const key = `${normalizeKeyPart(item.style)}-${normalizeKeyPart(item.color)}-${normalizeKeyPart(item.size)}`;
+                        acc[key] = item.stock;
+                        return acc;
+                    }, {});
+                    setStockData(stockMap);
+                }
+            } catch (dbError) {
+                console.error("Failed to load stock from IndexedDB:", dbError);
+                setError("Could not load stock data. The app may not function correctly.");
+            }
+        };
+
+        loadStockData();
+        return () => {
+            window.removeEventListener('resize', handleResize);
+            ordersRef.off('value', listener);
+        }
     }, []);
 
-    const handleProcessOrder = async (order: Order, quantitiesToProcess: Record<string, number>) => {
+    // --- Order Expiration Logic ---
+    useEffect(() => {
+        const manageExpiredOrders = async () => {
+            const pendingSnapshot = await firebase.database().ref(PENDING_ORDERS_REF).once('value');
+            const pendingOrders = pendingSnapshot.val();
+            const expiredSnapshot = await firebase.database().ref(EXPIRED_ORDERS_REF).once('value');
+            const expiredOrders = expiredSnapshot.val() || {};
+            
+            const now = new Date().getTime();
+            const fortyDaysAgo = now - (40 * 24 * 60 * 60 * 1000);
+            const seventyDaysAgo = now - (70 * 24 * 60 * 60 * 1000);
+            const updates = {};
+            let updated = false;
+
+            if (pendingOrders) {
+                for (const orderNumber in pendingOrders) {
+                    const order = pendingOrders[orderNumber];
+                    if (new Date(order.timestamp).getTime() < fortyDaysAgo) {
+                        updates[`${PENDING_ORDERS_REF}/${orderNumber}`] = null;
+                        updates[`${EXPIRED_ORDERS_REF}/${orderNumber}`] = { ...order, expiredTimestamp: new Date().toISOString(), expirationReason: 'Expired after 40 days in pending.'};
+                        updated = true;
+                    }
+                }
+            }
+            
+            for (const orderNumber in expiredOrders) {
+                const order = expiredOrders[orderNumber];
+                if (new Date(order.timestamp).getTime() < seventyDaysAgo) {
+                    updates[`${EXPIRED_ORDERS_REF}/${orderNumber}`] = null;
+                    updated = true;
+                }
+            }
+
+            if (updated) {
+                await firebase.database().ref().update(updates);
+                showToast('Automatically managed expired orders.', 'info');
+            }
+        };
+
+        const timer = setTimeout(manageExpiredOrders, 5000); // Run 5s after component mount
+        return () => clearTimeout(timer);
+    }, []);
+
+
+    const handleProcessOrder = useCallback(async (order: Order, quantitiesToProcess: Record<string, number>) => {
         setProcessingOrder(order.orderNumber);
         try {
             const updates = {};
@@ -326,51 +475,30 @@ export const PendingOrders = () => {
 
             order.items.forEach(item => {
                 const processQty = quantitiesToProcess[item.id] || 0;
-                if (processQty > 0) {
-                    itemsToProcess.push({ ...item, quantity: processQty });
-                }
-                if (item.quantity > processQty) {
-                    itemsRemainingInPending.push({ ...item, quantity: item.quantity - processQty });
-                }
+                if (processQty > 0) itemsToProcess.push({ ...item, quantity: processQty });
+                if (item.quantity > processQty) itemsRemainingInPending.push({ ...item, quantity: item.quantity - processQty });
             });
 
-            if (itemsToProcess.length === 0) {
-                showToast("Cannot process with zero quantity.", 'error');
-                setProcessingOrder(null);
-                return;
-            }
+            if (itemsToProcess.length === 0) { showToast("Cannot process with zero quantity.", 'error'); return; }
 
             const billingOrderRefPath = `${BILLING_ORDERS_REF}/${order.orderNumber}`;
             const pendingOrderRefPath = `${PENDING_ORDERS_REF}/${order.orderNumber}`;
-
             const existingBillingSnap = await firebase.database().ref(billingOrderRefPath).once('value');
             const existingBillingOrder = existingBillingSnap.val() as Order | null;
-
             const finalBillingItemsMap = new Map(existingBillingOrder?.items.map(i => [i.id, i]) || []);
+            
             itemsToProcess.forEach(newItem => {
                 const existingItem = finalBillingItemsMap.get(newItem.id);
-                if (existingItem) {
-                    existingItem.quantity += newItem.quantity;
-                } else {
-                    finalBillingItemsMap.set(newItem.id, newItem);
-                }
+                if (existingItem) { existingItem.quantity += newItem.quantity; } 
+                else { finalBillingItemsMap.set(newItem.id, newItem); }
             });
-            const finalBillingItems = Array.from(finalBillingItemsMap.values());
-            const totalBillingQuantity = finalBillingItems.reduce((sum, i) => sum + i.quantity, 0);
-            const totalBillingValue = finalBillingItems.reduce((sum, i) => sum + (i.quantity * i.price), 0);
             
-            updates[billingOrderRefPath] = { ...order, items: finalBillingItems, totalQuantity: totalBillingQuantity, totalValue: totalBillingValue };
-
-            if (itemsRemainingInPending.length > 0) {
-                const totalPendingQuantity = itemsRemainingInPending.reduce((sum, i) => sum + i.quantity, 0);
-                const totalPendingValue = itemsRemainingInPending.reduce((sum, i) => sum + (i.quantity * i.price), 0);
-                updates[pendingOrderRefPath] = { ...order, items: itemsRemainingInPending, totalQuantity: totalPendingQuantity, totalValue: totalPendingValue };
-            } else {
-                updates[pendingOrderRefPath] = null;
-            }
+            const finalBillingItems = Array.from(finalBillingItemsMap.values());
+            updates[billingOrderRefPath] = { ...order, items: finalBillingItems, totalQuantity: finalBillingItems.reduce((sum, i) => sum + i.quantity, 0), totalValue: finalBillingItems.reduce((sum, i) => sum + (i.quantity * i.price), 0) };
+            updates[pendingOrderRefPath] = itemsRemainingInPending.length > 0 ? { ...order, items: itemsRemainingInPending, totalQuantity: itemsRemainingInPending.reduce((sum, i) => sum + i.quantity, 0), totalValue: itemsRemainingInPending.reduce((sum, i) => sum + (i.quantity * i.price), 0) } : null;
             
             await firebase.database().ref().update(updates);
-            showToast('Order processed for billing!', 'success');
+            showToast(`Processed items for ${order.orderNumber}.`, 'success');
             setExpandedOrderNumber(null);
         } catch(e) {
             console.error(e);
@@ -378,19 +506,15 @@ export const PendingOrders = () => {
         } finally {
             setProcessingOrder(null);
         }
-    };
+    }, []);
 
-    const handleDeleteOrder = async (order: Order) => {
-        const reason = prompt("Please provide a reason for deleting this order:", "Customer cancellation");
-        if (reason === null) return; // User cancelled
-
+    const handleDeleteOrder = useCallback(async (order: Order) => {
+        if (!window.confirm(`Are you sure you want to delete order ${order.orderNumber}?`)) return;
         setProcessingOrder(order.orderNumber);
+        const reason = prompt("Optional: Provide a reason for deleting this order:", "");
         const deletedOrderData = { ...order, deletionReason: reason, deletedTimestamp: new Date().toISOString() };
         try {
-            const updates = {
-                [`${DELETED_ORDERS_REF}/${order.orderNumber}`]: deletedOrderData,
-                [`${PENDING_ORDERS_REF}/${order.orderNumber}`]: null
-            };
+            const updates = { [`${DELETED_ORDERS_REF}/${order.orderNumber}`]: deletedOrderData, [`${PENDING_ORDERS_REF}/${order.orderNumber}`]: null };
             await firebase.database().ref().update(updates);
             showToast('Order moved to Deleted archive.', 'success');
             setExpandedOrderNumber(null);
@@ -400,18 +524,28 @@ export const PendingOrders = () => {
         } finally {
             setProcessingOrder(null);
         }
-    };
+    }, []);
+
+    const handleEditOrder = useCallback((order: Order) => {
+        showToast(`Editing for ${order.orderNumber} to be implemented in New Order Entry.`, 'info');
+    }, []);
+    
+    const handleProcessFullOrder = useCallback((order: Order) => {
+        if (window.confirm(`Process all items for order ${order.orderNumber}?`)) {
+            const fullQuantities = order.items.reduce((acc, item) => {
+                acc[item.id] = item.quantity;
+                return acc;
+            }, {});
+            handleProcessOrder(order, fullQuantities);
+        }
+    }, [handleProcessOrder]);
 
     const handleToggleExpand = (order: Order) => {
         const orderNumber = order.orderNumber;
         if (expandedOrderNumber === orderNumber) {
             setExpandedOrderNumber(null);
         } else {
-            const initialQtys: Record<string, number> = {};
-            order.items.forEach(item => {
-                initialQtys[item.id] = item.quantity;
-            });
-            setProcessingQty(initialQtys);
+            setProcessingQty(order.items.reduce((acc, item) => ({...acc, [item.id]: item.quantity}), {}));
             setExpandedOrderNumber(orderNumber);
         }
     };
@@ -421,43 +555,118 @@ export const PendingOrders = () => {
         setProcessingQty(prev => ({ ...prev, [itemId]: numValue }));
     };
 
-    const handleMatchAll = useCallback((order) => {
-        const allQuantities = order.items.reduce((acc, item) => {
-            acc[item.id] = item.quantity;
+    const handleSelectOrder = (orderNumber: string) => {
+        setSelectedOrders(prev => prev.includes(orderNumber) ? prev.filter(o => o !== orderNumber) : [...prev, orderNumber]);
+    };
+    
+    const handleBatchProcess = () => {
+        if (selectedOrders.length === 0) { showToast('No orders selected.', 'error'); return; }
+        if (window.confirm(`Are you sure you want to process all ${selectedOrders.length} selected orders?`)) {
+            selectedOrders.forEach(orderNum => {
+                const order = orders.find(o => o.orderNumber === orderNum);
+                if (order) {
+                    const fullQuantities = order.items.reduce((acc, item) => ({...acc, [item.id]: item.quantity}), {});
+                    handleProcessOrder(order, fullQuantities);
+                }
+            });
+            setSelectedOrders([]);
+        }
+    };
+
+    const handlePrintPickingList = async (ordersToPrint: Order[]) => {
+        if (ordersToPrint.length === 0) { showToast('No orders to print.', 'error'); return; }
+        const { jsPDF } = (window as any).jspdf;
+        const doc = new jsPDF();
+        doc.setFontSize(18);
+        doc.text("Consolidated Picking List", 105, 15, { align: 'center' });
+        doc.setFontSize(10);
+        doc.text(`Generated on: ${new Date().toLocaleString()}`, 105, 22, { align: 'center' });
+
+        const allItems = ordersToPrint.flatMap(order => order.items.map(item => ({ ...item, orderNumber: order.orderNumber, partyName: order.partyName })));
+        const groupedByStyle = allItems.reduce((acc, item) => {
+            const style = item.fullItemData.Style;
+            if (!acc[style]) acc[style] = [];
+            acc[style].push(item);
             return acc;
         }, {});
-        setProcessingQty(allQuantities);
-        showToast('All quantities matched!', 'info');
-    }, []);
 
-    const filteredOrders = useMemo(() => {
-        if (!searchTerm) return orders;
-        const lowercasedTerm = searchTerm.toLowerCase();
-        return orders.filter(order => 
-            order.partyName.toLowerCase().includes(lowercasedTerm) ||
-            order.orderNumber.toLowerCase().includes(lowercasedTerm)
-        );
-    }, [orders, searchTerm]);
+        const tableRows = [];
+        for (const style of Object.keys(groupedByStyle).sort()) {
+            const itemsInStyle = groupedByStyle[style];
+            const groupedByColor = itemsInStyle.reduce((acc, item) => {
+                const color = item.fullItemData.Color;
+                if (!acc[color]) acc[color] = [];
+                acc[color].push(item);
+                return acc;
+            }, {});
+
+            for (const color of Object.keys(groupedByColor).sort()) {
+                const itemsInColor = groupedByColor[color];
+                 itemsInColor.sort((a,b) => a.fullItemData.Size.localeCompare(b.fullItemData.Size, undefined, {numeric: true}))
+                 .forEach(item => {
+                    const stockKey = `${normalizeKeyPart(item.fullItemData.Style)}-${normalizeKeyPart(item.fullItemData.Color)}-${normalizeKeyPart(item.fullItemData.Size)}`;
+                    tableRows.push([
+                        item.fullItemData.Style,
+                        item.fullItemData.Color,
+                        item.fullItemData.Size,
+                        item.quantity,
+                        stockData[stockKey] ?? 'N/A',
+                        `${item.partyName} (${item.orderNumber})`
+                    ]);
+                 });
+            }
+        }
+        
+        (doc as any).autoTable({
+            head: [['Style', 'Color', 'Size', 'Qty to Pick', 'Stock', 'Customer (Order)']],
+            body: tableRows,
+            startY: 30,
+            theme: 'grid',
+            headStyles: { fillColor: [71, 84, 104] },
+        });
+
+        doc.save(`Picking_List_${Date.now()}.pdf`);
+    };
+
+    const filteredAndSortedOrders = useMemo(() => {
+        let items = [...orders];
+        if (searchTerm) {
+            const lowercasedTerm = searchTerm.toLowerCase();
+            items = items.filter(order => order.partyName.toLowerCase().includes(lowercasedTerm) || order.orderNumber.toLowerCase().includes(lowercasedTerm));
+        }
+
+        items.sort((a, b) => {
+            const valA = a[sortConfig.key] || '';
+            const valB = b[sortConfig.key] || '';
+            let comparison = 0;
+            if (valA > valB) comparison = 1;
+            else if (valA < valB) comparison = -1;
+            return sortConfig.direction === 'ascending' ? comparison : comparison * -1;
+        });
+        return items;
+    }, [orders, searchTerm, sortConfig]);
 
     const summarizedData = useMemo(() => {
-        return filteredOrders.reduce((acc, order) => {
+        return filteredAndSortedOrders.reduce((acc, order) => {
             if (!acc[order.partyName]) { acc[order.partyName] = { orderCount: 0, orders: [] }; }
             acc[order.partyName].orderCount += 1;
             acc[order.partyName].orders.push(order);
             return acc;
         }, {});
-    }, [filteredOrders]);
+    }, [filteredAndSortedOrders]);
 
-    const expandedOrder = useMemo(() => {
-        if (!expandedOrderNumber) return null;
-        return orders.find(o => o.orderNumber === expandedOrderNumber);
-    }, [expandedOrderNumber, orders]);
+    const partyNamesInOrder = useMemo(() => {
+        if (view !== 'summarized') return [];
+        return [...new Set(filteredAndSortedOrders.map(o => o.partyName))];
+    }, [filteredAndSortedOrders, view]);
+
+    const expandedOrder = useMemo(() => expandedOrderNumber ? orders.find(o => o.orderNumber === expandedOrderNumber) : null, [expandedOrderNumber, orders]);
 
     const renderContent = () => {
         if (isLoading) return <div style={styles.centeredMessage}><Spinner /></div>;
         if (error) return <div style={styles.centeredMessage}>{error}</div>;
         if (orders.length === 0) return <div style={styles.centeredMessage}>No pending orders.</div>;
-        if (filteredOrders.length === 0) return <div style={styles.centeredMessage}>No orders match your search.</div>;
+        if (filteredAndSortedOrders.length === 0) return <div style={styles.centeredMessage}>No orders match your search.</div>;
         
         const expandedView = expandedOrder ? (
             <ExpandedPendingView
@@ -467,17 +676,28 @@ export const PendingOrders = () => {
                 isProcessing={processingOrder === expandedOrder.orderNumber}
                 processingQty={processingQty}
                 onQtyChange={handleProcessingQtyChange}
-                onMatchAll={() => handleMatchAll(expandedOrder)}
+                stockData={stockData}
                 isMobile={isMobile}
+                onPrint={handlePrintPickingList}
             />
         ) : null;
         
+        const commonProps = {
+            onToggleExpand: handleToggleExpand,
+            expandedOrderNumber: expandedOrderNumber,
+            onProcessOrder: handleProcessFullOrder,
+            onDeleteOrder: handleDeleteOrder,
+            onEditOrder: handleEditOrder,
+            isMobile: isMobile,
+            selectedOrders: selectedOrders,
+            onSelectOrder: handleSelectOrder,
+        };
+
         if (view === 'summarized') {
-            const partyNames = Object.keys(summarizedData).sort();
             return (
                 <div style={styles.listContainer}>
-                    {partyNames.map(partyName => (
-                        <PartyGroup key={partyName} partyName={partyName} data={summarizedData[partyName]} onToggleExpand={handleToggleExpand} expandedOrderNumber={expandedOrderNumber}>
+                    {partyNamesInOrder.map(partyName => (
+                        <PartyGroup key={partyName} partyName={partyName} data={summarizedData[partyName]} {...commonProps}>
                             {expandedView}
                         </PartyGroup>
                     ))}
@@ -487,44 +707,82 @@ export const PendingOrders = () => {
 
         return (
             <div style={styles.listContainer}>
-                <DetailedList orders={filteredOrders} onToggleExpand={handleToggleExpand} expandedOrderNumber={expandedOrderNumber}>
+                <DetailedList orders={filteredAndSortedOrders} {...commonProps}>
                     {expandedView}
                 </DetailedList>
             </div>
         );
     };
 
+    const sortOptions = [
+        { key: 'timestamp', direction: 'ascending', label: 'Oldest' },
+        { key: 'timestamp', direction: 'descending', label: 'Newest' },
+        { key: 'partyName', direction: 'ascending', label: 'Party Name' },
+    ];
+    
     return (
         <div style={styles.container}>
             <div style={styles.headerCard}>
                 <div style={styles.headerTop}>
                     <h2 style={styles.pageTitle}>Pending Orders</h2>
-                    <div style={styles.viewToggle}>
-                        <button onClick={() => setView('summarized')} style={view === 'summarized' ? styles.toggleButtonActive : styles.toggleButton}><SummarizedViewIcon /></button>
-                        <button onClick={() => setView('detailed')} style={view === 'detailed' ? styles.toggleButtonActive : styles.toggleButton}><DetailedViewIcon /></button>
+                    <div style={styles.headerControls}>
+                        <button onClick={() => setIsFilterVisible(v => !v)} style={isFilterVisible ? {...styles.toggleButton, ...styles.toggleButtonActive} : styles.toggleButton}>
+                            <FilterIcon />
+                        </button>
+                        <div style={styles.viewToggle}>
+                            <button onClick={() => setView('summarized')} style={view === 'summarized' ? styles.toggleButtonActive : styles.toggleButton}><SummarizedViewIcon /></button>
+                            <button onClick={() => setView('detailed')} style={view === 'detailed' ? styles.toggleButtonActive : styles.toggleButton}><DetailedViewIcon /></button>
+                        </div>
                     </div>
                 </div>
-                <div style={styles.searchContainer}>
-                    <SearchIcon />
-                    <input type="text" style={styles.searchInput} className="global-search-input" placeholder="Search by party or order number..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                <div style={isFilterVisible ? styles.filtersVisible : styles.filtersCollapsed}>
+                    <div style={styles.searchContainer}>
+                        <SearchIcon />
+                        <input type="text" style={styles.searchInput} className="global-search-input" placeholder="Search by party or order number..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                    </div>
+                    <div style={styles.filterContainer}>
+                        <span style={{fontWeight: 500, color: 'var(--text-color)', fontSize: '0.9rem'}}>Sort by:</span>
+                        {sortOptions.map(opt => (
+                            <button 
+                              key={opt.label} 
+                              onClick={() => setSortConfig({key: opt.key, direction: opt.direction})} 
+                              style={sortConfig.key === opt.key && sortConfig.direction === opt.direction ? styles.filterButtonActive : styles.filterButton}
+                            >{opt.label}</button>
+                        ))}
+                    </div>
                 </div>
             </div>
+            {selectedOrders.length > 0 && (
+                <div style={styles.batchActionToolbar}>
+                     <span>{selectedOrders.length} orders selected</span>
+                     <div style={styles.footerActions}>
+                        <button onClick={() => handlePrintPickingList(orders.filter(o => selectedOrders.includes(o.orderNumber)))} style={styles.secondaryButton}><PrintIcon/> Print List</button>
+                        <button onClick={handleBatchProcess} style={styles.modalActionButton}>Process Selected</button>
+                     </div>
+                </div>
+            )}
             {renderContent()}
         </div>
     );
 };
 
 const styles: { [key: string]: React.CSSProperties } = {
-    container: { display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1 },
-    headerCard: { backgroundColor: 'var(--card-bg)', padding: '1rem 1.5rem', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', display: 'flex', flexDirection: 'column', gap: '1rem' },
+    container: { display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1, position: 'relative' },
+    headerCard: { backgroundColor: 'var(--card-bg)', padding: '1rem 1.5rem', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', display: 'flex', flexDirection: 'column', gap: '0.75rem', position: 'sticky', top: 0, zIndex: 10 },
     headerTop: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
     pageTitle: { fontSize: '1.25rem', fontWeight: 600, color: 'var(--dark-grey)' },
+    headerControls: { display: 'flex', alignItems: 'center', gap: '0.75rem' },
     viewToggle: { display: 'flex', backgroundColor: 'var(--light-grey)', borderRadius: '8px', padding: '4px' },
     toggleButton: { background: 'none', border: 'none', padding: '6px 10px', cursor: 'pointer', color: 'var(--text-color)', borderRadius: '6px' },
     toggleButtonActive: { background: 'var(--card-bg)', border: 'none', padding: '6px 10px', cursor: 'pointer', color: 'var(--brand-color)', borderRadius: '6px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' },
+    filtersCollapsed: { maxHeight: 0, opacity: 0, overflow: 'hidden', transition: 'max-height 0.4s ease-out, opacity 0.4s ease-out, margin-top 0.4s ease-out', marginTop: 0 },
+    filtersVisible: { maxHeight: '200px', opacity: 1, overflow: 'hidden', transition: 'max-height 0.4s ease-in, opacity 0.4s ease-in, margin-top 0.4s ease-in', marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '1rem' },
     searchContainer: { display: 'flex', alignItems: 'center', gap: '0.75rem', backgroundColor: 'var(--light-grey)', padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--skeleton-bg)' },
     searchInput: { flex: 1, border: 'none', background: 'none', outline: 'none', fontSize: '1rem', color: 'var(--dark-grey)' },
-    listContainer: { flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem', paddingBottom: '1rem' },
+    filterContainer: { display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' },
+    filterButton: { background: 'var(--light-grey)', border: '1px solid var(--skeleton-bg)', color: 'var(--text-color)', padding: '0.4rem 0.8rem', borderRadius: '16px', cursor: 'pointer', fontSize: '0.85rem' },
+    filterButtonActive: { background: 'var(--active-bg)', border: '1px solid var(--brand-color)', color: 'var(--brand-color)', padding: '0.4rem 0.8rem', borderRadius: '16px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500 },
+    listContainer: { flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem', padding: '0 0.5rem 1rem' },
     centeredMessage: { flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'var(--text-color)', fontSize: '1.1rem' },
     spinner: { border: '4px solid var(--light-grey)', borderRadius: '50%', borderTop: '4px solid var(--brand-color)', width: '40px', height: '40px', animation: 'spin 1s linear infinite' },
     card: { backgroundColor: 'var(--card-bg)', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', overflow: 'hidden' },
@@ -532,13 +790,15 @@ const styles: { [key: string]: React.CSSProperties } = {
     cardInfo: { display: 'flex', flexDirection: 'column', gap: '0.25rem', alignItems: 'flex-start' },
     cardTitle: { fontSize: '1.1rem', fontWeight: 600, color: 'var(--dark-grey)' },
     cardSubTitle: { fontSize: '0.85rem', color: 'var(--text-color)', fontWeight: 500 },
-    cardDetails: { padding: '0 1.5rem 1rem', borderTop: '1px solid var(--skeleton-bg)', display: 'flex', flexDirection: 'column' },
-    orderItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem 0', borderBottom: '1px solid var(--light-grey)' },
-    orderItemActive: { backgroundColor: 'var(--active-bg)', margin: '0 -1.5rem', padding: '0.75rem 1.5rem' },
-    orderInfo: { display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', color: 'var(--dark-grey)' },
-    orderMeta: { display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--text-color)', fontSize: '0.85rem' },
+    cardDetails: { padding: '0 0 1rem', display: 'flex', flexDirection: 'column' },
+    orderItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem 1.5rem', borderTop: '1px solid var(--skeleton-bg)' },
+    orderItemActive: { backgroundColor: 'var(--active-bg)'},
+    orderInfo: { display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', color: 'var(--dark-grey)', flex: 1, minWidth: 0 },
+    orderMeta: { display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-color)', fontSize: '0.85rem' },
     detailsButton: { display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#eef2f7', border: '1px solid var(--skeleton-bg)', color: 'var(--brand-color)', padding: '0.5rem 1rem', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 },
-    expandedViewContainer: { padding: '0.5rem 1.5rem 1.5rem', borderTop: '1px solid var(--brand-color)', margin: '0 -1.5rem -1rem', backgroundColor: '#fafbff' },
+    badge: { backgroundColor: '#eef2f7', color: 'var(--brand-color)', padding: '0.2rem 0.6rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600 },
+    checkboxButton: { background: 'none', border: 'none', padding: '0', marginRight: '0.5rem', cursor: 'pointer', color: 'var(--text-color)' },
+    expandedViewContainer: { padding: '0.5rem 1.5rem 1.5rem', borderTop: '1px solid var(--brand-color)', backgroundColor: '#fafbff' },
     tableContainer: { overflowX: 'auto', backgroundColor: 'var(--card-bg)', borderRadius: '8px', border: '1px solid var(--skeleton-bg)' },
     table: { width: '100%', borderCollapse: 'collapse' },
     th: { backgroundColor: '#f8f9fa', padding: '10px 12px', textAlign: 'center', fontWeight: 600, color: 'var(--dark-grey)', borderBottom: '2px solid var(--skeleton-bg)', whiteSpace: 'nowrap' },
@@ -549,12 +809,23 @@ const styles: { [key: string]: React.CSSProperties } = {
     noteBox: { backgroundColor: '#fffbe6', border: '1px solid #ffe58f', padding: '0.75rem 1rem', borderRadius: '8px', fontSize: '0.9rem', marginTop: '1rem' },
     modalFooter: { padding: '1.5rem 0 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' },
     footerActions: { display: 'flex', gap: '0.75rem', alignItems: 'center' },
-    matchAllButton: { padding: '0.7rem 1.2rem', background: 'none', border: '1px solid var(--brand-color)', color: 'var(--brand-color)', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 500 },
-    deleteButton: { padding: '0.75rem 1.5rem', background: 'none', border: '1px solid #e74c3c', color: '#e74c3c', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 500 },
+    deleteButton: { padding: '0.75rem', background: '#fbe2e2', border: '1px solid #e74c3c', color: '#c0392b', borderRadius: '8px', cursor: 'pointer' },
+    secondaryButton: { padding: '0.7rem 1.2rem', background: 'var(--light-grey)', border: '1px solid var(--skeleton-bg)', color: 'var(--dark-grey)', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 500 },
     modalActionButton: { padding: '0.75rem 1.5rem', fontSize: '1rem', fontWeight: 500, color: '#fff', backgroundColor: 'var(--brand-color)', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: '180px' },
-    // Swipeable styles
-    swipeableContainer: { position: 'relative', overflow: 'hidden' },
-    swipeableActions: { position: 'absolute', top: 0, right: 0, height: '100%', display: 'flex', alignItems: 'center' },
-    swipeableActionButton: { height: '100%', width: '80px', background: 'var(--brand-color)', color: 'white', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '0.9rem', fontWeight: 600 },
+    batchActionToolbar: { backgroundColor: 'var(--dark-grey)', color: 'white', padding: '0.75rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', bottom: 0, zIndex: 10, borderRadius: 'var(--border-radius) var(--border-radius) 0 0' },
+    stockIndicator: { width: '10px', height: '10px', borderRadius: '50%', flexShrink: 0 },
+    stockIndicatorPlaceholder: { width: '10px', height: '10px' },
+    mobileItemContainer: { display: 'flex', flexDirection: 'column', gap: '0.5rem', paddingTop: '0.5rem' },
+    mobileItemCard: { backgroundColor: 'var(--card-bg)', borderRadius: '8px', border: '1px solid var(--skeleton-bg)', padding: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' },
+    mobileItemInfo: { display: 'flex', flexDirection: 'column', gap: '0.25rem' },
+    mobileItemName: { fontWeight: 500 },
+    mobileItemStock: { display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-color)' },
+    mobileItemQty: { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.25rem' },
+    mobileQtyLabel: { fontSize: '0.8rem', color: 'var(--text-color)' },
+    // --- Swipeable styles ---
+    swipeableContainer: { position: 'relative', overflow: 'hidden', width: '100%' },
+    swipeableLeftActions: { position: 'absolute', top: 0, left: 0, height: '100%', display: 'flex', alignItems: 'center' },
+    swipeableRightActions: { position: 'absolute', top: 0, right: 0, height: '100%', display: 'flex', alignItems: 'center' },
+    swipeAction: { height: '100%', width: '80px', color: 'white', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column', gap: '0.25rem', fontSize: '0.7rem' },
     swipeableContent: { position: 'relative', backgroundColor: 'var(--card-bg)', zIndex: 1 },
 };
