@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
@@ -256,24 +257,30 @@ const ExpandedPendingView = ({ order, onProcess, onDelete, isProcessing, process
                 <thead><tr>
                     <th style={{...styles.th, textAlign: 'left'}}>Style</th>
                     <th style={{...styles.th, textAlign: 'left'}}>Color</th>
-                    <th style={styles.th}>Size</th>
-                    <th style={styles.th}>Stock</th>
-                    <th style={styles.th}>Ordered</th>
-                    <th style={styles.th}>To Process</th>
+                    <th style={{...styles.th, textAlign: 'left'}}>Size</th>
+                    <th style={{...styles.th, textAlign: 'center'}}>Stock</th>
+                    <th style={{...styles.th, textAlign: 'right'}}>Ordered</th>
+                    <th style={{...styles.th, textAlign: 'right'}}>To Process</th>
                 </tr></thead>
                 <tbody>
-                    {order.items.map(item => {
+                    {order.items.map((item, index) => {
                         const stockKey = `${normalizeKeyPart(item.fullItemData.Style)}-${normalizeKeyPart(item.fullItemData.Color)}-${normalizeKeyPart(item.fullItemData.Size)}`;
-                        const isPartial = (processingQty[item.id] || 0) < item.quantity;
+                        const qtyToProcess = processingQty[item.id] || 0;
+                        const isPartial = qtyToProcess > 0 && qtyToProcess < item.quantity;
+                        
+                        let rowStyle = {...styles.tr};
+                        if (index % 2 !== 0) rowStyle.backgroundColor = '#f8f9fa';
+                        if (isPartial) rowStyle.backgroundColor = '#fffbe6';
+
                         return (
-                            <tr key={item.id} style={isPartial ? {...styles.tr, backgroundColor: '#fffbe6'} : styles.tr}>
+                            <tr key={item.id} style={rowStyle}>
                                 <td style={{...styles.td, textAlign: 'left'}}>{item.fullItemData.Style}</td>
                                 <td style={{...styles.td, textAlign: 'left'}}>{item.fullItemData.Color}</td>
-                                <td style={styles.td}>{item.fullItemData.Size}</td>
-                                <td style={styles.td}><StockIndicator stockLevel={stockData[stockKey]} /></td>
-                                <td style={styles.td}>{item.quantity}</td>
+                                <td style={{...styles.td, textAlign: 'left'}}>{item.fullItemData.Size}</td>
+                                <td style={{...styles.td, textAlign: 'center'}}><StockIndicator stockLevel={stockData[stockKey]} /></td>
+                                <td style={{...styles.td, textAlign: 'right'}}>{item.quantity}</td>
                                 <td style={{...styles.td, ...styles.tdInput}}>
-                                    <input type="number" style={styles.qtyInput} value={processingQty[item.id] || ''} onChange={(e) => onQtyChange(item.id, e.target.value, item.quantity)} placeholder="0" max={item.quantity} min="0" />
+                                    <input type="number" style={{...styles.qtyInput, textAlign: 'right'}} value={processingQty[item.id] || ''} onChange={(e) => onQtyChange(item.id, e.target.value, item.quantity)} placeholder="0" max={item.quantity} min="0" />
                                 </td>
                             </tr>
                         );
