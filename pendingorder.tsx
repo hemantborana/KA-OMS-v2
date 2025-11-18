@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
@@ -14,7 +15,7 @@ const TrashIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" heigh
 const EditIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>;
 const ProcessIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>;
 const NoteIcon = (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M15.5 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8.5L15.5 3z"></path><polyline points="14 3 14 9 20 9"></polyline></svg>;
-const BoxIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>;
+const BoxIcon = (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>;
 const PrintIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>;
 const FilterIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>;
 const CheckSquareIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>;
@@ -22,6 +23,7 @@ const SquareIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" heig
 const HistoryIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>;
 const TagIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>;
 const XIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>;
+const AlertCircleIcon = (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>;
 
 // --- TYPE & FIREBASE ---
 interface HistoryEvent { timestamp: string; event: string; details: string; }
@@ -42,16 +44,16 @@ const timeSince = (dateString) => {
     if (!dateString) return 'N/A';
     const seconds = Math.floor((new Date().getTime() - new Date(dateString).getTime()) / 1000);
     let interval = seconds / 31536000;
-    if (interval > 1) return Math.floor(interval) + " years ago";
+    if (interval > 1) return Math.floor(interval) + "y";
     interval = seconds / 2592000;
-    if (interval > 1) return Math.floor(interval) + " months ago";
+    if (interval > 1) return Math.floor(interval) + "m";
     interval = seconds / 86400;
-    if (interval > 1) return Math.floor(interval) + " days ago";
+    if (interval > 1) return Math.floor(interval) + "d";
     interval = seconds / 3600;
-    if (interval > 1) return Math.floor(interval) + " hours ago";
+    if (interval > 1) return Math.floor(interval) + "h";
     interval = seconds / 60;
-    if (interval > 1) return Math.floor(interval) + " minutes ago";
-    return "Just now";
+    if (interval > 1) return Math.floor(interval) + "m";
+    return "now";
 };
 
 const normalizeKeyPart = (part: any): string => {
@@ -442,64 +444,6 @@ const ExpandedPendingView = ({ order, onProcess, onDelete, isProcessing, process
     );
 };
 
-const PartyGroup: React.FC<{ partyName: string; data: any; onToggleExpand: (order: Order) => void; expandedOrderNumber: string | null; children: React.ReactNode; onProcessOrder: (order: Order) => void; onDeleteOrder: (order: Order) => void; onEditOrder: (order: Order) => void; isMobile: boolean; selectedOrders: string[]; onSelectOrder: (orderNumber: string) => void; }> = ({ partyName, data, onToggleExpand, expandedOrderNumber, children, onProcessOrder, onDeleteOrder, onEditOrder, isMobile, selectedOrders, onSelectOrder }) => {
-    const [isCollapsed, setIsCollapsed] = useState(true);
-    const totalQty = data.orders.reduce((sum, order) => sum + order.totalQuantity, 0);
-
-    return (
-        <div style={styles.card}>
-            <button style={styles.cardHeader} onClick={() => setIsCollapsed(!isCollapsed)}>
-                <div style={styles.cardInfo}>
-                    <span style={styles.cardTitle}>{partyName}</span>
-                    <span style={styles.cardSubTitle}>{data.orderCount} Orders | Total Qty: {totalQty}</span>
-                </div>
-                <ChevronIcon collapsed={isCollapsed} />
-            </button>
-            {!isCollapsed && (
-                <div style={styles.cardDetails}>
-                    {data.orders.map(order => {
-                        const isOverdue = new Date().getTime() - new Date(order.timestamp).getTime() > 25 * 24 * 60 * 60 * 1000;
-                        const orderItemStyle: React.CSSProperties = { ...styles.orderItem, ...(expandedOrderNumber === order.orderNumber ? styles.orderItemActive : {}), ...(isOverdue && !expandedOrderNumber ? { borderLeft: '3px solid #e74c3c' } : {}) };
-                        const orderContent = (
-                             <div style={orderItemStyle} onClick={() => onToggleExpand(order)}>
-                                <div style={styles.orderInfo}>
-                                    <button style={styles.checkboxButton} onClick={(e) => { e.stopPropagation(); onSelectOrder(order.orderNumber); }}>
-                                        {selectedOrders.includes(order.orderNumber) ? <CheckSquareIcon /> : <SquareIcon />}
-                                    </button>
-                                    <strong>{order.orderNumber}</strong>
-                                    <span style={styles.orderMeta}>
-                                        <CalendarIcon /> {timeSince(order.timestamp)}
-                                        {order.orderNote && <NoteIcon />}
-                                    </span>
-                                    <span><BoxIcon /> {order.totalQuantity}</span>
-                                    {order.tags?.map(tag => (
-                                        <span key={tag} style={styles.miniTagDot} title={tag} style={{backgroundColor: getTagStyle(tag).backgroundColor}}></span>
-                                    ))}
-                                    {order.totalQuantity > 50 && <span style={styles.badge}>High Volume</span>}
-                                </div>
-                                <button style={styles.detailsButton} onClick={(e) => { e.stopPropagation(); onToggleExpand(order); }}>
-                                    {expandedOrderNumber === order.orderNumber ? 'Close' : 'Process'}
-                                </button>
-                            </div>
-                        );
-
-                        return (
-                            <React.Fragment key={order.orderNumber}>
-                                {isMobile ? (
-                                    <Swipeable onProcess={() => onProcessOrder(order)} onDelete={() => onDeleteOrder(order)} onEdit={() => onEditOrder(order)}>
-                                        {orderContent}
-                                    </Swipeable>
-                                ) : ( orderContent )}
-                                {expandedOrderNumber === order.orderNumber && children}
-                            </React.Fragment>
-                        );
-                    })}
-                </div>
-            )}
-        </div>
-    );
-};
-
 const DetailedOrderCard: React.FC<{
     order: Order;
     isExpanded: boolean;
@@ -536,32 +480,47 @@ const DetailedOrderCard: React.FC<{
 
     const orderContent = (
         <div style={cardStyle} onClick={() => onToggleExpand(order)}>
-            <div style={styles.detailedCardTop}>
-                <div style={styles.detailedCardTopLeft}>
-                    <strong style={styles.orderNumber}>{order.orderNumber}</strong>
-                    <span style={styles.timeSinceText}>• {timeSince(order.timestamp)}</span>
-                </div>
+            {/* Top Row: Party Name & Checkbox */}
+            <div style={styles.cardTopRow}>
+                <h3 style={styles.cardPartyName}>{order.partyName}</h3>
                 <button style={styles.checkboxButton} onClick={(e) => { e.stopPropagation(); onSelectOrder(order.orderNumber); }}>
                     {isSelected ? <CheckSquareIcon /> : <SquareIcon />}
                 </button>
             </div>
-            <div style={styles.detailedCardBody}>
-                <p style={styles.partyName}>{order.partyName}</p>
-                {stylePreview && <p style={styles.stylePreview}>{stylePreview}{uniqueStyles.length > 3 ? '...' : ''}</p>}
-                {order.tags && order.tags.length > 0 && (
-                    <div style={styles.tagsContainer}>
-                        {order.tags.map(tag => <span key={tag} style={getTagStyle(tag)}>{tag}</span>)}
-                    </div>
-                )}
+
+            {/* Second Row: Order Number & Time */}
+            <div style={styles.cardMetaRow}>
+                 <span style={styles.cardOrderNumber}>#{order.orderNumber}</span>
+                 <span style={styles.cardSeparator}>•</span>
+                 <span style={styles.cardTime}>{timeSince(order.timestamp)} ago</span>
             </div>
-            <div style={styles.detailedCardFooter}>
-                <div style={{display: 'flex', alignItems: 'center', gap: '0.75rem'}}>
-                    <span style={{fontSize: '0.85rem', fontWeight: 600, color: 'var(--dark-grey)'}}><BoxIcon/> {order.totalQuantity}</span>
-                    {order.orderNote && <NoteIcon title={order.orderNote} style={styles.footerIcon} />}
+            
+            {/* Third Row: Preview */}
+            {stylePreview && <p style={styles.stylePreview}>{stylePreview}{uniqueStyles.length > 3 ? '...' : ''}</p>}
+
+            {/* Tags */}
+             {order.tags && order.tags.length > 0 && (
+                <div style={styles.tagsContainer}>
+                    {order.tags.map(tag => <span key={tag} style={getTagStyle(tag)}>{tag}</span>)}
                 </div>
-                <div style={{display: 'flex', gap: '0.5rem', marginLeft: 'auto'}}>
-                     {order.totalQuantity > 50 && <span style={styles.badge}>High Volume</span>}
-                     {isOverdue && <span style={{...styles.badge, backgroundColor: '#fbe2e2', color: '#c0392b'}}>Overdue</span>}
+            )}
+
+            {/* Footer: Icons/Metrics */}
+            <div style={styles.cardFooterRow}>
+                <div style={styles.metricGroup}>
+                    <div style={styles.iconMetric} title="Total Quantity">
+                        <BoxIcon /> <span>{order.totalQuantity}</span>
+                    </div>
+                    <div style={styles.iconMetric} title="Total Value">
+                         <span style={{fontSize: '1.1em', fontWeight: 'bold', lineHeight: 1}}>₹</span> <span>{order.totalValue?.toLocaleString('en-IN')}</span>
+                    </div>
+                </div>
+                
+                {/* Status Icons Grouped at the end */}
+                <div style={styles.statusIconGroup}>
+                    {order.orderNote && <NoteIcon style={{color: '#f39c12', fill: 'rgba(243, 156, 18, 0.2)'}} title="Has Note" />}
+                    {order.totalQuantity > 50 && <BoxIcon style={{color: '#3498db', fill: 'rgba(52, 152, 219, 0.2)'}} title="High Volume" />}
+                    {isOverdue && <AlertCircleIcon style={{color: '#e74c3c', fill: 'rgba(231, 76, 60, 0.2)'}} title="Overdue" />}
                 </div>
             </div>
         </div>
@@ -575,7 +534,6 @@ const DetailedOrderCard: React.FC<{
         orderContent
     );
 };
-
 
 const DetailedList: React.FC<{ orders: Order[]; onToggleExpand: (order: Order) => void; expandedOrderNumber: string | null; children: React.ReactNode; onProcessOrder: (order: Order) => void; onDeleteOrder: (order: Order) => void; onEditOrder: (order: Order) => void; isMobile: boolean; selectedOrders: string[]; onSelectOrder: (orderNumber: string) => void; }> = ({ orders, onToggleExpand, expandedOrderNumber, children, onProcessOrder, onDeleteOrder, onEditOrder, isMobile, selectedOrders, onSelectOrder }) => {
     return (
@@ -599,6 +557,39 @@ const DetailedList: React.FC<{ orders: Order[]; onToggleExpand: (order: Order) =
         </div>
     );
 }
+
+const PartyGroup: React.FC<{ partyName: string; data: any; onToggleExpand: (order: Order) => void; expandedOrderNumber: string | null; children: React.ReactNode; onProcessOrder: (order: Order) => void; onDeleteOrder: (order: Order) => void; onEditOrder: (order: Order) => void; isMobile: boolean; selectedOrders: string[]; onSelectOrder: (orderNumber: string) => void; }> = ({ partyName, data, onToggleExpand, expandedOrderNumber, children, onProcessOrder, onDeleteOrder, onEditOrder, isMobile, selectedOrders, onSelectOrder }) => {
+    const [isCollapsed, setIsCollapsed] = useState(true);
+    const totalQty = data.orders.reduce((sum, order) => sum + order.totalQuantity, 0);
+
+    return (
+        <div style={styles.card}>
+            <button style={styles.cardHeader} onClick={() => setIsCollapsed(!isCollapsed)}>
+                <div style={styles.cardInfo}>
+                    <span style={styles.cardTitle}>{partyName}</span>
+                    <span style={styles.cardSubTitle}>{data.orderCount} Orders | Total Qty: {totalQty}</span>
+                </div>
+                <ChevronIcon collapsed={isCollapsed} />
+            </button>
+            {!isCollapsed && (
+                <div style={styles.cardDetails}>
+                    <DetailedList 
+                        orders={data.orders} 
+                        onToggleExpand={onToggleExpand}
+                        expandedOrderNumber={expandedOrderNumber}
+                        children={children}
+                        onProcessOrder={onProcessOrder}
+                        onDeleteOrder={onDeleteOrder}
+                        onEditOrder={onEditOrder}
+                        isMobile={isMobile}
+                        selectedOrders={selectedOrders}
+                        onSelectOrder={onSelectOrder}
+                    />
+                </div>
+            )}
+        </div>
+    );
+};
 
 export const PendingOrders = ({ onNavigate }) => {
     const [orders, setOrders] = useState<Order[]>([]);
@@ -1318,15 +1309,21 @@ const styles: { [key: string]: React.CSSProperties } = {
     // --- New Detailed Card Styles ---
     detailedOrderCard: { backgroundColor: 'var(--card-bg)', borderRadius: '10px', padding: '1rem', border: '1px solid var(--skeleton-bg)', display: 'flex', flexDirection: 'column', gap: '0.5rem', cursor: 'pointer', transition: 'border-color 0.2s, box-shadow 0.2s' },
     detailedOrderCardActive: { backgroundColor: 'var(--card-bg)', borderRadius: '10px', padding: '1rem', border: '1px solid var(--brand-color)', display: 'flex', flexDirection: 'column', gap: '0.5rem', cursor: 'pointer', transition: 'border-color 0.2s, box-shadow 0.2s', boxShadow: '0 4px 12px rgba(71, 84, 104, 0.1)' },
-    detailedCardTop: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', },
-    detailedCardTopLeft: { display: 'flex', alignItems: 'baseline', gap: '0.5rem', },
-    orderNumber: { fontSize: '1rem', fontWeight: 600, color: 'var(--dark-grey)', },
-    timeSinceText: { fontSize: '0.8rem', color: 'var(--text-color)', },
-    detailedCardBody: { textAlign: 'left', },
-    partyName: { fontSize: '1.05rem', fontWeight: 500, color: 'var(--dark-grey)', margin: '0 0 0.35rem 0', },
+    
+    // Refined Hierarchy Styles
+    cardTopRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.25rem' },
+    cardPartyName: { fontSize: '1.1rem', fontWeight: 700, color: 'var(--dark-grey)', margin: 0, lineHeight: 1.2 },
+    cardMetaRow: { display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: 'var(--text-color)', marginBottom: '0.5rem' },
+    cardOrderNumber: { fontFamily: 'monospace', fontWeight: 600, color: 'var(--brand-color)', backgroundColor: '#edf2f7', padding: '1px 4px', borderRadius: '4px' },
+    cardSeparator: { color: '#cbd5e0' },
+    cardTime: {},
+    cardFooterRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid var(--skeleton-bg)' },
+    metricGroup: { display: 'flex', gap: '1rem' },
+    iconMetric: { display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.9rem', fontWeight: 600, color: 'var(--dark-grey)' },
+    statusIconGroup: { display: 'flex', gap: '0.75rem' },
+
     stylePreview: { fontSize: '0.85rem', color: 'var(--text-color)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', },
-    detailedCardFooter: { display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.5rem', },
-    footerIcon: { color: 'var(--text-color)', },
+    
     // --- History Section ---
     historySection: { marginTop: '1.5rem', borderTop: '1px solid var(--skeleton-bg)', paddingTop: '1rem' },
     historyHeader: { width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem 0', fontSize: '1rem', fontWeight: 600, color: 'var(--dark-grey)' },
