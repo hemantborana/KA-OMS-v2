@@ -12,6 +12,7 @@ const SummarizedViewIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="
 const DetailedViewIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>;
 const CalendarIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>;
 const TrashIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>;
+const CheckSquareIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>;
 
 const Swipeable: React.FC<{ onAction: () => void; children: React.ReactNode; actionText: string; }> = ({ onAction, children, actionText }) => {
     const contentRef = useRef<HTMLDivElement>(null);
@@ -134,12 +135,21 @@ const timeSince = (dateString) => {
 };
 
 // --- COMPONENTS ---
-const ExpandedPendingView = ({ order, onProcess, onDelete, isProcessing }) => {
+const ExpandedPendingView = ({ order, onProcess, onDelete, isProcessing, processingQty, onQtyChange, onMatchAll }) => {
+    const handleProcessClick = () => {
+        const totalToProcess = Object.values(processingQty).reduce((sum: number, qty: number) => sum + qty, 0);
+        if (totalToProcess === 0) {
+            showToast("Cannot process with zero quantity.", 'error');
+            return;
+        }
+        onProcess(order, processingQty);
+    };
+    
     return (
         <div style={styles.expandedViewContainer}>
             <div style={styles.tableContainer}>
                 <table style={styles.table}>
-                    <thead><tr><th style={styles.th}>Style</th><th style={styles.th}>Color</th><th style={styles.th}>Size</th><th style={styles.th}>Qty</th></tr></thead>
+                    <thead><tr><th style={styles.th}>Style</th><th style={styles.th}>Color</th><th style={styles.th}>Size</th><th style={styles.th}>Ordered</th><th style={styles.th}>To Process</th></tr></thead>
                     <tbody>
                         {order.items.map(item => (
                             <tr key={item.id} style={styles.tr}>
@@ -147,6 +157,17 @@ const ExpandedPendingView = ({ order, onProcess, onDelete, isProcessing }) => {
                                 <td style={styles.td}>{item.fullItemData.Color}</td>
                                 <td style={styles.td}>{item.fullItemData.Size}</td>
                                 <td style={styles.td}>{item.quantity}</td>
+                                <td style={{...styles.td, ...styles.tdInput}}>
+                                    <input
+                                      type="number"
+                                      style={styles.qtyInput}
+                                      value={processingQty[item.id] || ''}
+                                      onChange={(e) => onQtyChange(item.id, e.target.value, item.quantity)}
+                                      placeholder="0"
+                                      max={item.quantity}
+                                      min="0"
+                                    />
+                                </td>
                             </tr>
                         ))}
                     </tbody>
@@ -154,12 +175,17 @@ const ExpandedPendingView = ({ order, onProcess, onDelete, isProcessing }) => {
             </div>
             {order.orderNote && <div style={styles.noteBox}><strong>Note:</strong> {order.orderNote}</div>}
             <div style={styles.modalFooter}>
-                <button onClick={() => onDelete(order)} style={styles.deleteButton} disabled={isProcessing}>
-                    <TrashIcon /> Delete
+                <button onClick={onMatchAll} style={styles.matchAllButton} disabled={isProcessing}>
+                    <CheckSquareIcon /> Match Ordered Qty
                 </button>
-                <button onClick={() => onProcess(order)} style={styles.modalActionButton} disabled={isProcessing}>
-                    {isProcessing ? <SmallSpinner /> : 'Process for Billing'}
-                </button>
+                <div style={styles.footerActions}>
+                    <button onClick={() => onDelete(order)} style={styles.deleteButton} disabled={isProcessing}>
+                        <TrashIcon /> Delete
+                    </button>
+                    <button onClick={handleProcessClick} style={styles.modalActionButton} disabled={isProcessing}>
+                        {isProcessing ? <SmallSpinner /> : 'Process for Billing'}
+                    </button>
+                </div>
             </div>
         </div>
     );
@@ -248,6 +274,7 @@ export const PendingOrders = () => {
     const [view, setView] = useState('summarized'); // summarized or detailed
     const [expandedOrderNumber, setExpandedOrderNumber] = useState<string | null>(null);
     const [processingOrder, setProcessingOrder] = useState<string | null>(null);
+    const [processingQty, setProcessingQty] = useState<Record<string, number>>({});
 
     useEffect(() => {
         const ordersRef = firebase.database().ref(PENDING_ORDERS_REF);
@@ -267,15 +294,60 @@ export const PendingOrders = () => {
         return () => ordersRef.off('value', listener);
     }, []);
 
-    const handleProcessOrder = async (order: Order) => {
+    const handleProcessOrder = async (order: Order, quantitiesToProcess: Record<string, number>) => {
         setProcessingOrder(order.orderNumber);
         try {
-            const updates = {
-                [`${BILLING_ORDERS_REF}/${order.orderNumber}`]: order,
-                [`${PENDING_ORDERS_REF}/${order.orderNumber}`]: null
-            };
+            const updates = {};
+            const itemsToProcess = [];
+            const itemsRemainingInPending = [];
+
+            order.items.forEach(item => {
+                const processQty = quantitiesToProcess[item.id] || 0;
+                if (processQty > 0) {
+                    itemsToProcess.push({ ...item, quantity: processQty });
+                }
+                if (item.quantity > processQty) {
+                    itemsRemainingInPending.push({ ...item, quantity: item.quantity - processQty });
+                }
+            });
+
+            if (itemsToProcess.length === 0) {
+                showToast("Cannot process with zero quantity.", 'error');
+                setProcessingOrder(null);
+                return;
+            }
+
+            const billingOrderRefPath = `${BILLING_ORDERS_REF}/${order.orderNumber}`;
+            const pendingOrderRefPath = `${PENDING_ORDERS_REF}/${order.orderNumber}`;
+
+            const existingBillingSnap = await firebase.database().ref(billingOrderRefPath).once('value');
+            const existingBillingOrder = existingBillingSnap.val() as Order | null;
+
+            const finalBillingItemsMap = new Map(existingBillingOrder?.items.map(i => [i.id, i]) || []);
+            itemsToProcess.forEach(newItem => {
+                const existingItem = finalBillingItemsMap.get(newItem.id);
+                if (existingItem) {
+                    existingItem.quantity += newItem.quantity;
+                } else {
+                    finalBillingItemsMap.set(newItem.id, newItem);
+                }
+            });
+            const finalBillingItems = Array.from(finalBillingItemsMap.values());
+            const totalBillingQuantity = finalBillingItems.reduce((sum, i) => sum + i.quantity, 0);
+            const totalBillingValue = finalBillingItems.reduce((sum, i) => sum + (i.quantity * i.price), 0);
+            
+            updates[billingOrderRefPath] = { ...order, items: finalBillingItems, totalQuantity: totalBillingQuantity, totalValue: totalBillingValue };
+
+            if (itemsRemainingInPending.length > 0) {
+                const totalPendingQuantity = itemsRemainingInPending.reduce((sum, i) => sum + i.quantity, 0);
+                const totalPendingValue = itemsRemainingInPending.reduce((sum, i) => sum + (i.quantity * i.price), 0);
+                updates[pendingOrderRefPath] = { ...order, items: itemsRemainingInPending, totalQuantity: totalPendingQuantity, totalValue: totalPendingValue };
+            } else {
+                updates[pendingOrderRefPath] = null;
+            }
+            
             await firebase.database().ref().update(updates);
-            showToast('Order moved to Ready for Billing!', 'success');
+            showToast('Order processed for billing!', 'success');
             setExpandedOrderNumber(null);
         } catch(e) {
             console.error(e);
@@ -308,8 +380,32 @@ export const PendingOrders = () => {
     };
 
     const handleToggleExpand = (order: Order) => {
-        setExpandedOrderNumber(prev => prev === order.orderNumber ? null : order.orderNumber);
+        const orderNumber = order.orderNumber;
+        if (expandedOrderNumber === orderNumber) {
+            setExpandedOrderNumber(null);
+        } else {
+            const initialQtys: Record<string, number> = {};
+            order.items.forEach(item => {
+                initialQtys[item.id] = item.quantity;
+            });
+            setProcessingQty(initialQtys);
+            setExpandedOrderNumber(orderNumber);
+        }
     };
+    
+    const handleProcessingQtyChange = (itemId, value, maxQty) => {
+        const numValue = Math.max(0, Math.min(maxQty, Number(value) || 0));
+        setProcessingQty(prev => ({ ...prev, [itemId]: numValue }));
+    };
+
+    const handleMatchAll = useCallback((order) => {
+        const allQuantities = order.items.reduce((acc, item) => {
+            acc[item.id] = item.quantity;
+            return acc;
+        }, {});
+        setProcessingQty(allQuantities);
+        showToast('All quantities matched!', 'info');
+    }, []);
 
     const filteredOrders = useMemo(() => {
         if (!searchTerm) return orders;
@@ -346,6 +442,9 @@ export const PendingOrders = () => {
                 onProcess={handleProcessOrder}
                 onDelete={handleDeleteOrder}
                 isProcessing={processingOrder === expandedOrder.orderNumber}
+                processingQty={processingQty}
+                onQtyChange={handleProcessingQtyChange}
+                onMatchAll={() => handleMatchAll(expandedOrder)}
             />
         ) : null;
         
@@ -418,11 +517,15 @@ const styles: { [key: string]: React.CSSProperties } = {
     expandedViewContainer: { padding: '0.5rem 1.5rem 1.5rem', borderTop: '1px solid var(--brand-color)', margin: '0 -1.5rem -1rem', backgroundColor: '#fafbff' },
     tableContainer: { overflowX: 'auto', backgroundColor: 'var(--card-bg)', borderRadius: '8px', border: '1px solid var(--skeleton-bg)' },
     table: { width: '100%', borderCollapse: 'collapse' },
-    th: { backgroundColor: '#f8f9fa', padding: '10px 12px', textAlign: 'center', fontWeight: 600, color: 'var(--dark-grey)', borderBottom: '2px solid var(--skeleton-bg)' },
+    th: { backgroundColor: '#f8f9fa', padding: '10px 12px', textAlign: 'center', fontWeight: 600, color: 'var(--dark-grey)', borderBottom: '2px solid var(--skeleton-bg)', whiteSpace: 'nowrap' },
     tr: { borderBottom: '1px solid var(--skeleton-bg)' },
     td: { padding: '10px 12px', color: 'var(--text-color)', fontSize: '0.9rem', textAlign: 'center' },
+    qtyInput: { width: '70px', padding: '8px', textAlign: 'center', border: '1px solid var(--skeleton-bg)', borderRadius: '6px', fontSize: '0.9rem' },
+    tdInput: { padding: '4px' },
     noteBox: { backgroundColor: '#fffbe6', border: '1px solid #ffe58f', padding: '0.75rem 1rem', borderRadius: '8px', fontSize: '0.9rem', marginTop: '1rem' },
-    modalFooter: { padding: '1.5rem 0 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+    modalFooter: { padding: '1.5rem 0 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' },
+    footerActions: { display: 'flex', gap: '0.75rem', alignItems: 'center' },
+    matchAllButton: { padding: '0.7rem 1.2rem', background: 'none', border: '1px solid var(--brand-color)', color: 'var(--brand-color)', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 500 },
     deleteButton: { padding: '0.75rem 1.5rem', background: 'none', border: '1px solid #e74c3c', color: '#e74c3c', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 500 },
     modalActionButton: { padding: '0.75rem 1.5rem', fontSize: '1rem', fontWeight: 500, color: '#fff', backgroundColor: 'var(--brand-color)', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: '180px' },
     // Swipeable styles
