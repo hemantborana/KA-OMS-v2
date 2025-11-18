@@ -4,8 +4,8 @@ import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
 
 // --- ICONS ---
-const SearchIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>;
-const ChevronIcon = ({ collapsed }) => <svg style={{ transform: collapsed ? 'rotate(0deg)' : 'rotate(180deg)', transition: 'transform 0.3s ease' }} xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>;
+const SearchIcon = () => <svg xmlns="http://www.w.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>;
+const ChevronIcon = ({ collapsed }) => <svg style={{ transform: collapsed ? 'rotate(0deg)' : 'rotate(180deg)', transition: 'transform 0.3s ease' }} xmlns="http://www.w.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>;
 const Spinner = () => <div style={styles.spinner}></div>;
 const SmallSpinner = () => <div style={{...styles.spinner, width: '20px', height: '20px', borderTop: '3px solid white', borderRight: '3px solid transparent' }}></div>;
 const SummarizedViewIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>;
@@ -268,7 +268,7 @@ const ExpandedPendingView = ({ order, onProcess, onDelete, isProcessing, process
                             <div style={styles.mobileItemName}>{item.fullItemData.Style} - {item.fullItemData.Color} - <strong>{item.fullItemData.Size}</strong></div>
                             <div style={styles.mobileItemStock}>
                                 <StockIndicator stockLevel={stockData[stockKey]} />
-                                <span style={{fontSize: '0.8rem'}}>Stock: {stockData[stockKey] ?? 0}</span>
+                                <span style={{fontSize: '0.8rem', color: 'var(--dark-grey)'}}>Stock: {stockData[stockKey] ?? 0}</span>
                             </div>
                         </div>
                         <div style={styles.mobileItemQty}>
@@ -359,30 +359,41 @@ const PartyGroup: React.FC<{ partyName: string; data: any; onToggleExpand: (orde
 
 const DetailedList: React.FC<{ orders: Order[]; onToggleExpand: (order: Order) => void; expandedOrderNumber: string | null; children: React.ReactNode; onProcessOrder: (order: Order) => void; onDeleteOrder: (order: Order) => void; onEditOrder: (order: Order) => void; isMobile: boolean; selectedOrders: string[]; onSelectOrder: (orderNumber: string) => void; }> = ({ orders, onToggleExpand, expandedOrderNumber, children, onProcessOrder, onDeleteOrder, onEditOrder, isMobile, selectedOrders, onSelectOrder }) => {
     return (
-        <div style={{...styles.card, padding: 0}}>
+        <div style={isMobile ? {...styles.card, padding: 0, backgroundColor: 'transparent', border: 'none', overflow: 'visible'} : {...styles.card, padding: 0}}>
             {orders.map(order => {
                 const isOverdue = new Date().getTime() - new Date(order.timestamp).getTime() > 25 * 24 * 60 * 60 * 1000;
-                const orderItemStyle: React.CSSProperties = { ...styles.orderItem, padding: '1rem 1.5rem', ...(expandedOrderNumber === order.orderNumber ? {...styles.orderItemActive, borderBottom: 'none' } : {}), ...(isOverdue && !expandedOrderNumber ? { borderLeft: '3px solid #e74c3c', paddingLeft: 'calc(1.5rem - 3px)' } : {})};
+                
+                const uniqueStyles = useMemo(() => {
+                    if (!order.items) return [];
+                    return [...new Set(order.items.map(item => item.fullItemData.Style))];
+                }, [order.items]);
+                const stylePreview = uniqueStyles.slice(0, 3).join(' / ');
+                
+                const cardStyle = { 
+                    ...(expandedOrderNumber === order.orderNumber ? styles.detailedOrderCardActive : styles.detailedOrderCard),
+                    ...(isMobile && { margin: '0 0 0.75rem' })
+                };
+
                 const orderContent = (
-                    <div style={orderItemStyle} onClick={() => onToggleExpand(order)}>
-                        <div style={styles.orderInfo}>
-                            <button style={styles.checkboxButton} onClick={(e) => { e.stopPropagation(); onSelectOrder(order.orderNumber); }}>
+                    <div style={cardStyle} onClick={() => onToggleExpand(order)}>
+                        <div style={styles.detailedCardTop}>
+                            <div style={styles.detailedCardTopLeft}>
+                                <strong style={styles.orderNumber}>{order.orderNumber}</strong>
+                                <span style={styles.timeSinceText}>• {timeSince(order.timestamp)}</span>
+                            </div>
+                             <button style={styles.checkboxButton} onClick={(e) => { e.stopPropagation(); onSelectOrder(order.orderNumber); }}>
                                 {selectedOrders.includes(order.orderNumber) ? <CheckSquareIcon /> : <SquareIcon />}
                             </button>
-                            <div>
-                                <strong>{order.orderNumber}</strong>
-                                <div style={styles.cardSubTitle}>{order.partyName}</div>
-                            </div>
-                            <span style={styles.orderMeta}>
-                                <CalendarIcon /> {timeSince(order.timestamp)}
-                                {order.orderNote && <NoteIcon title={order.orderNote}/>}
-                            </span>
-                            <span><BoxIcon /> {order.totalQuantity}</span>
-                             {order.totalQuantity > 50 && <span style={styles.badge}>High Volume</span>}
                         </div>
-                        <button style={styles.detailsButton} onClick={(e) => { e.stopPropagation(); onToggleExpand(order); }}>
-                            {expandedOrderNumber === order.orderNumber ? 'Close' : 'Process'}
-                        </button>
+                        <div style={styles.detailedCardBody}>
+                            <p style={styles.partyName}>{order.partyName}</p>
+                            {stylePreview && <p style={styles.stylePreview}>{stylePreview}{uniqueStyles.length > 3 ? '...' : ''}</p>}
+                        </div>
+                        <div style={styles.detailedCardFooter}>
+                             {order.orderNote && <NoteIcon title={order.orderNote} style={styles.footerIcon} />}
+                             {order.totalQuantity > 50 && <span style={{...styles.badge, marginLeft: 'auto'}}>High Volume</span>}
+                             {isOverdue && <span style={{...styles.badge, backgroundColor: '#fbe2e2', color: '#c0392b', marginLeft: order.totalQuantity > 50 ? '0.5rem' : 'auto'}}>Overdue</span>}
+                        </div>
                     </div>
                 );
 
@@ -588,6 +599,23 @@ export const PendingOrders = () => {
             setProcessingOrder(null);
         }
     }, []);
+    
+    const handleBatchDelete = () => {
+        if (selectedOrders.length === 0) { showToast('No orders selected.', 'error'); return; }
+        if (window.confirm(`Are you sure you want to delete all ${selectedOrders.length} selected orders?`)) {
+            const reason = prompt("Optional: Provide a reason for deleting these orders:", "Batch deletion.");
+            selectedOrders.forEach(orderNum => {
+                const order = orders.find(o => o.orderNumber === orderNum);
+                if (order) {
+                    const deletedOrderData = { ...order, deletionReason: reason, deletedTimestamp: new Date().toISOString() };
+                    const updates = { [`${DELETED_ORDERS_REF}/${order.orderNumber}`]: deletedOrderData, [`${PENDING_ORDERS_REF}/${order.orderNumber}`]: null };
+                    firebase.database().ref().update(updates);
+                }
+            });
+            showToast(`${selectedOrders.length} orders deleted.`, 'success');
+            setSelectedOrders([]);
+        }
+    };
 
     const handleEditOrder = useCallback((order: Order) => {
         showToast(`Editing for ${order.orderNumber} to be implemented in New Order Entry.`, 'info');
@@ -608,7 +636,7 @@ export const PendingOrders = () => {
         if (expandedOrderNumber === orderNumber) {
             setExpandedOrderNumber(null);
         } else {
-            setProcessingQty(order.items.reduce((acc, item) => ({...acc, [item.id]: item.quantity}), {}));
+            setProcessingQty(order.items.reduce((acc, item) => ({...acc, [item.id]: 0}), {}));
             setExpandedOrderNumber(orderNumber);
         }
     };
@@ -673,7 +701,7 @@ export const PendingOrders = () => {
                         item.fullItemData.Color,
                         item.fullItemData.Size,
                         item.quantity,
-                        stockData[stockKey] ?? 'N/A',
+                        stockData[stockKey] ?? 0,
                         `${item.partyName} (${item.orderNumber})`
                     ]);
                  });
@@ -785,9 +813,9 @@ export const PendingOrders = () => {
     
     return (
         <div style={styles.container}>
-            <div style={styles.headerCard}>
-                <div style={styles.headerTop}>
-                    <h2 style={styles.pageTitle}>Pending Orders</h2>
+            <div style={isMobile ? styles.headerCardMobile : styles.headerCard}>
+                <div style={{...styles.headerTop, ...(isMobile && {justifyContent: 'flex-end'})}}>
+                     {!isMobile && <h2 style={styles.pageTitle}>Pending Orders</h2>}
                     <div style={styles.headerControls}>
                         <button onClick={() => setIsFilterVisible(v => !v)} style={isFilterVisible ? {...styles.toggleButton, ...styles.toggleButtonActive} : styles.toggleButton}>
                             <FilterIcon />
@@ -819,6 +847,7 @@ export const PendingOrders = () => {
                 <div style={styles.batchActionToolbar}>
                      <span>{selectedOrders.length} orders selected</span>
                      <div style={styles.footerActions}>
+                        <button onClick={() => handleBatchDelete()} style={{...styles.secondaryButton, color: '#e74c3c', borderColor: '#e74c3c'}}><TrashIcon/> Delete</button>
                         <button onClick={() => handlePrintPickingList(orders.filter(o => selectedOrders.includes(o.orderNumber)))} style={styles.secondaryButton}><PrintIcon/> Print List</button>
                         <button onClick={handleBatchProcess} style={styles.modalActionButton}>Process Selected</button>
                      </div>
@@ -832,6 +861,7 @@ export const PendingOrders = () => {
 const styles: { [key: string]: React.CSSProperties } = {
     container: { display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1, position: 'relative' },
     headerCard: { backgroundColor: 'var(--card-bg)', padding: '1rem 1.5rem', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', display: 'flex', flexDirection: 'column', gap: '0.75rem', position: 'sticky', top: 0, zIndex: 10 },
+    headerCardMobile: { backgroundColor: 'var(--card-bg)', padding: '0.75rem 1rem', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', display: 'flex', flexDirection: 'column', gap: '0.75rem', position: 'sticky', top: 0, zIndex: 10 },
     headerTop: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
     pageTitle: { fontSize: '1.25rem', fontWeight: 600, color: 'var(--dark-grey)' },
     headerControls: { display: 'flex', alignItems: 'center', gap: '0.75rem' },
@@ -845,7 +875,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     filterContainer: { display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' },
     filterButton: { background: 'var(--light-grey)', border: '1px solid var(--skeleton-bg)', color: 'var(--text-color)', padding: '0.4rem 0.8rem', borderRadius: '16px', cursor: 'pointer', fontSize: '0.85rem' },
     filterButtonActive: { background: 'var(--active-bg)', border: '1px solid var(--brand-color)', color: 'var(--brand-color)', padding: '0.4rem 0.8rem', borderRadius: '16px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500 },
-    listContainer: { flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem', padding: '0 0.5rem 1rem' },
+    listContainer: { flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0rem', padding: '0 0.5rem 1rem' },
     centeredMessage: { flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'var(--text-color)', fontSize: '1.1rem' },
     spinner: { border: '4px solid var(--light-grey)', borderRadius: '50%', borderTop: '4px solid var(--brand-color)', width: '40px', height: '40px', animation: 'spin 1s linear infinite' },
     card: { backgroundColor: 'var(--card-bg)', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', overflow: 'hidden' },
@@ -860,7 +890,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     orderMeta: { display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-color)', fontSize: '0.85rem' },
     detailsButton: { display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#eef2f7', border: '1px solid var(--skeleton-bg)', color: 'var(--brand-color)', padding: '0.5rem 1rem', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 },
     badge: { backgroundColor: '#eef2f7', color: 'var(--brand-color)', padding: '0.2rem 0.6rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600 },
-    checkboxButton: { background: 'none', border: 'none', padding: '0', marginRight: '0.5rem', cursor: 'pointer', color: 'var(--text-color)' },
+    checkboxButton: { background: 'none', border: 'none', padding: '0', cursor: 'pointer', color: 'var(--text-color)' },
     expandedViewContainer: { padding: '0.5rem 1.5rem 1.5rem', borderTop: '1px solid var(--brand-color)', backgroundColor: '#fafbff' },
     tableContainer: { overflowX: 'auto', backgroundColor: 'var(--card-bg)', borderRadius: '8px', border: '1px solid var(--skeleton-bg)' },
     table: { width: '100%', borderCollapse: 'collapse' },
@@ -891,4 +921,16 @@ const styles: { [key: string]: React.CSSProperties } = {
     swipeableRightActions: { position: 'absolute', top: 0, right: 0, height: '100%', display: 'flex', alignItems: 'center' },
     swipeAction: { height: '100%', width: '80px', color: 'white', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column', gap: '0.25rem', fontSize: '0.7rem' },
     swipeableContent: { position: 'relative', backgroundColor: 'var(--card-bg)', zIndex: 1 },
+    // --- New Detailed Card Styles ---
+    detailedOrderCard: { backgroundColor: 'var(--card-bg)', borderRadius: '10px', padding: '1rem', border: '1px solid var(--skeleton-bg)', display: 'flex', flexDirection: 'column', gap: '0.5rem', cursor: 'pointer', transition: 'border-color 0.2s, box-shadow 0.2s' },
+    detailedOrderCardActive: { backgroundColor: 'var(--card-bg)', borderRadius: '10px', padding: '1rem', border: '1px solid var(--brand-color)', display: 'flex', flexDirection: 'column', gap: '0.5rem', cursor: 'pointer', transition: 'border-color 0.2s, box-shadow 0.2s', boxShadow: '0 4px 12px rgba(71, 84, 104, 0.1)' },
+    detailedCardTop: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', },
+    detailedCardTopLeft: { display: 'flex', alignItems: 'baseline', gap: '0.5rem', },
+    orderNumber: { fontSize: '1rem', fontWeight: 600, color: 'var(--dark-grey)', },
+    timeSinceText: { fontSize: '0.8rem', color: 'var(--text-color)', },
+    detailedCardBody: { textAlign: 'left', },
+    partyName: { fontSize: '1.05rem', fontWeight: 500, color: 'var(--dark-grey)', margin: '0 0 0.35rem 0', },
+    stylePreview: { fontSize: '0.85rem', color: 'var(--text-color)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', },
+    detailedCardFooter: { display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.5rem', },
+    footerIcon: { color: 'var(--text-color)', },
 };
