@@ -268,7 +268,7 @@ const ExpandedPendingView = ({ order, onProcess, onDelete, isProcessing, process
                             <div style={styles.mobileItemName}>{item.fullItemData.Style} - {item.fullItemData.Color} - <strong>{item.fullItemData.Size}</strong></div>
                             <div style={styles.mobileItemStock}>
                                 <StockIndicator stockLevel={stockData[stockKey]} />
-                                <span style={{fontSize: '0.8rem'}}>Stock: {stockData[stockKey] ?? 'N/A'}</span>
+                                <span style={{fontSize: '0.8rem'}}>Stock: {stockData[stockKey] ?? 0}</span>
                             </div>
                         </div>
                         <div style={styles.mobileItemQty}>
@@ -881,8 +881,8 @@ const styles: { [key: string]: React.CSSProperties } = {
     mobileItemContainer: { display: 'flex', flexDirection: 'column', gap: '0.5rem', paddingTop: '0.5rem' },
     mobileItemCard: { backgroundColor: 'var(--card-bg)', borderRadius: '8px', border: '1px solid var(--skeleton-bg)', padding: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' },
     mobileItemInfo: { display: 'flex', flexDirection: 'column', gap: '0.25rem' },
-    mobileItemName: { fontWeight: 500 },
-    mobileItemStock: { display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-color)' },
+    mobileItemName: { fontWeight: 500, color: 'var(--dark-grey)' },
+    mobileItemStock: { display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--dark-grey)' },
     mobileItemQty: { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.25rem' },
     mobileQtyLabel: { fontSize: '0.8rem', color: 'var(--text-color)' },
     // --- Swipeable styles ---
