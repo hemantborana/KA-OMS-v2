@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
@@ -1530,9 +1531,9 @@ export const PendingOrders = ({ onNavigate }) => {
 };
 
 const styles: { [key: string]: React.CSSProperties } = {
-    container: { display: 'flex', flexDirection: 'column', gap: '0', flex: 1, position: 'relative', backgroundColor: '#f8f9fb' },
+    container: { display: 'flex', flexDirection: 'column', gap: '0', flex: 1, position: 'relative', backgroundColor: 'var(--light-grey)' },
     headerCard: { 
-        background: 'linear-gradient(to bottom, #f8f9fb 80%, rgba(248, 249, 251, 0))', 
+        background: 'linear-gradient(to bottom, var(--light-grey) 80%, transparent)', 
         padding: '1rem 1.5rem 2rem', 
         display: 'flex', 
         flexDirection: 'column', 
@@ -1544,7 +1545,7 @@ const styles: { [key: string]: React.CSSProperties } = {
         borderRadius: 0 
     },
     headerCardMobile: { 
-        background: 'linear-gradient(to bottom, #f8f9fb 80%, rgba(248, 249, 251, 0))', 
+        background: 'linear-gradient(to bottom, var(--light-grey) 80%, transparent)', 
         padding: '0 1rem 1.5rem', 
         gap: '0', 
         display: 'flex', 

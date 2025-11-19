@@ -326,17 +326,21 @@ type MainContentProps = {
 
 const MainContent = React.forwardRef<HTMLElement, MainContentProps>(
     ({ activeView, onNavigate, session, isMobile }, ref) => {
-        let mainStyle = styles.mainContent; // Default for desktop
+        let mainStyle = styles.mainContent;
 
         if (isMobile) {
+            let mobilePadding;
             if (activeView === 'Entry' || activeView === 'Pending') {
-                // NewOrderEntry and PendingOrders manage their own padding for the mobile layout
-                // This allows full-width containers where needed
-                mainStyle = { ...styles.mainContent, padding: 0 };
+                mobilePadding = { padding: 0 };
             } else {
-                // Other views need padding to avoid the bottom nav bar
-                mainStyle = { ...styles.mainContent, padding: '0.5rem 0.25rem', paddingBottom: '70px' };
+                mobilePadding = { padding: '0.5rem 0.25rem', paddingBottom: '70px' };
             }
+            mainStyle = {
+                ...styles.mainContent,
+                ...mobilePadding,
+                maskImage: 'linear-gradient(to bottom, transparent, black 5%, black 90%, transparent 100%)',
+                WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 5%, black 90%, transparent 100%)',
+            };
         }
 
         const renderView = () => {
@@ -635,7 +639,7 @@ const KAOMSLogin = () => {
 const styles: { [key: string]: React.CSSProperties } = {
     // --- App Layout ---
     appContainer: { display: 'flex', flexDirection: 'column', height: '100vh', backgroundColor: 'var(--light-grey)' },
-    appHeader: { display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center', padding: '0 1.5rem', height: '64px', backgroundColor: 'var(--card-bg)', borderBottom: '1px solid var(--skeleton-bg)', flexShrink: 0, zIndex: 10 },
+    appHeader: { display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center', padding: '0.75rem 1.5rem 1rem', background: 'linear-gradient(to bottom, var(--card-bg) 60%, transparent)', borderBottom: 'none', flexShrink: 0, zIndex: 10 },
     headerLeft: { gridColumn: '1', display: 'flex', alignItems: 'center', gap: '1rem', justifySelf: 'start' },
     headerCenter: { gridColumn: '2', textAlign: 'center', minWidth: 0 },
     headerRight: { gridColumn: '3', justifySelf: 'end' },
@@ -663,7 +667,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     navItemActive: { backgroundColor: 'var(--active-bg)', color: 'var(--brand-color)' },
     navLabel: { fontSize: '0.9rem', transition: 'opacity 0.2s ease-out' },
     mainContent: { flex: 1, overflowY: 'auto', padding: '1.5rem 1rem', display: 'flex', flexDirection: 'column' },
-    bottomNav: { display: 'flex', justifyContent: 'space-around', backgroundColor: 'var(--card-bg)', borderTop: '1px solid var(--skeleton-bg)', position: 'fixed', bottom: 0, left: 0, right: 0, height: '60px', zIndex: 100 },
+    bottomNav: { display: 'flex', justifyContent: 'space-around', background: 'linear-gradient(to top, var(--card-bg) 70%, transparent)', borderTop: 'none', position: 'fixed', bottom: 0, left: 0, right: 0, height: '70px', zIndex: 100 },
     bottomNavItem: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, textDecoration: 'none', color: 'var(--text-color)', gap: '2px' },
     bottomNavItemActive: { color: 'var(--brand-color)' },
     bottomNavLabel: { fontSize: '0.7rem' },
