@@ -67,7 +67,8 @@ const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
 // --- ICON COMPONENTS ---
 const EyeIcon = ({ closed }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"> {closed ? (<><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"></path><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"></path><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"></path><line x1="2" y1="2" x2="22" y2="22"></line></>) : (<><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></>)} </svg>);
-const MenuIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>;
+const MenuIcon = () => <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" width="24" height="24"><path d="M4 18H10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/><path d="M4 12H16" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/><path d="M4 6H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>;
+const CloseSidebarIcon = () => <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" width="24" height="24"><path fillRule="evenodd" clipRule="evenodd" d="M4 5C3.44772 5 3 5.44772 3 6C3 6.55228 3.44772 7 4 7H20C20.5523 7 21 6.55228 21 6C21 5.44772 20.5523 5 20 5H4ZM7 12C7 11.4477 7.44772 11 8 11H20C20.5523 11 21 11.4477 21 12C21 12.5523 20.5523 13 20 13H8C7.44772 13 7 12.5523 7 12ZM13 18C13 17.4477 13.4477 17 14 17H20C20.5523 17 21 17.4477 21 18C21 18.5523 20.5523 19 20 19H14C13.4477 19 13 18.5523 13 18Z" fill="currentColor"/></svg>;
 const LogoutIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>;
 const UserIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>;
 const NavIcon = ({ name }) => { const icons = { Dashboard: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>, Entry: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"></path><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>, Pending: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>, Billing: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>, Billed: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>, Stock: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 9v11a2 2 0 0 1-2 2H6a2 2 0 0 1-4-2V9"></path><path d="M20 13H4"></path><path d="M10 3L4 9"></path><path d="M14 3l6 6"></path></svg>, Update: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>, Deleted: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>, Expired: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0z" /><path d="M2 2l20 20" /></svg>, Users: <svg xmlns="hcom/w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>, Approval: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg> }; return icons[name] || null; };
@@ -259,13 +260,20 @@ const Sidebar = ({ activeView, onNavigate, isMobile, isOpen, onClose, session, o
             {isMobile && isOpen && <div style={styles.overlay} onClick={onClose}></div>}
             <nav style={sidebarStyle} ref={sidebarRef}>
                 <div style={styles.sidebarHeader}>
-                     <div style={styles.sidebarUser}>
-                         <UserIcon />
-                         {!isActuallyCollapsed && (
-                            <div style={styles.sidebarUserInfo}>
-                               <div style={styles.sidebarUserName}>{session.userName}</div>
-                               <div style={styles.sidebarUserRole}>{session.role}</div>
-                            </div>
+                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                             <UserIcon />
+                             {!isActuallyCollapsed && (
+                                <div style={styles.sidebarUserInfo}>
+                                   <div style={styles.sidebarUserName}>{session.userName}</div>
+                                   <div style={styles.sidebarUserRole}>{session.role}</div>
+                                </div>
+                             )}
+                         </div>
+                         {isMobile && (
+                            <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--dark-grey)', padding: '4px' }}>
+                                <CloseSidebarIcon />
+                            </button>
                          )}
                      </div>
                      <button onClick={onLogout} style={isActuallyCollapsed ? { ...styles.sidebarLogoutButton, ...styles.sidebarLogoutButtonCollapsed } : styles.sidebarLogoutButton}>
@@ -309,8 +317,8 @@ const BottomNavBar = ({ activeView, onNavigate }) => {
     return (
         <nav style={styles.bottomNav}>
             {navItems.map(item => (
-                <a key={item.id} href="#" onClick={(e) => { e.preventDefault(); onNavigate(item.id); }} style={activeView === item.id ? { ...styles.bottomNavItem, ...styles.bottomNavItemActive } : styles.bottomNavItem}>
-                    <NavIcon name={item.id} /><span style={styles.bottomNavLabel}>{item.label}</span>
+                <a key={item.id} title={item.label} href="#" onClick={(e) => { e.preventDefault(); onNavigate(item.id); }} style={activeView === item.id ? { ...styles.bottomNavItem, ...styles.bottomNavItemActive } : styles.bottomNavItem}>
+                    <NavIcon name={item.id} />
                 </a>
             ))}
         </nav>
@@ -381,6 +389,58 @@ const HomePage = ({ session, onLogout, appLogoSrc }) => {
         setActiveView(view);
         if (isMobile) setIsSidebarOpen(false);
     };
+
+    // SWIPE LOGIC START
+    const touchStartX = useRef(0);
+    const touchEndX = useRef(0);
+    const touchStartY = useRef(0);
+
+    const handleTouchStart = (e) => {
+        const target = e.target as HTMLElement;
+        // If user is interacting with a swipeable item (pending/billing items), disable sidebar swipe
+        // This prevents collision between item actions and sidebar navigation
+        if (target.closest('.swipeable-content')) {
+            touchStartX.current = -1; 
+            return;
+        }
+        
+        touchStartX.current = e.changedTouches[0].screenX;
+        touchStartY.current = e.changedTouches[0].screenY;
+    };
+
+    const handleTouchEnd = (e) => {
+        if (touchStartX.current === -1) return;
+        
+        touchEndX.current = e.changedTouches[0].screenX;
+        const touchEndY = e.changedTouches[0].screenY;
+        handleSwipe(touchEndY);
+    };
+
+    const handleSwipe = (touchEndY) => {
+        const distanceX = touchStartX.current - touchEndX.current;
+        const distanceY = touchStartY.current - touchEndY;
+        const minSwipeDistance = 50;
+
+        // Detect if the gesture is vertical (scrolling) rather than horizontal
+        if (Math.abs(distanceY) > Math.abs(distanceX)) return;
+
+        // Swipe Right (Left to Right) -> Open
+        // Distance is negative (Start < End)
+        if (distanceX < -minSwipeDistance) {
+            if (isMobile && !isSidebarOpen) {
+                setIsSidebarOpen(true);
+            }
+        }
+
+        // Swipe Left (Right to Left) -> Close
+        // Distance is positive (Start > End)
+        if (distanceX > minSwipeDistance) {
+            if (isMobile && isSidebarOpen) {
+                setIsSidebarOpen(false);
+            }
+        }
+    };
+    // SWIPE LOGIC END
 
     useEffect(() => {
         const handleResize = () => setIsMobile(window.innerWidth <= 768);
@@ -469,7 +529,7 @@ const HomePage = ({ session, onLogout, appLogoSrc }) => {
     };
 
     return (
-        <div style={styles.appContainer}>
+        <div style={styles.appContainer} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
             <Header onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} appLogoSrc={appLogoSrc} isMobile={isMobile} title={pages[activeView] || 'Dashboard'} />
             <div style={styles.appBody}>
                 <Sidebar 
@@ -639,7 +699,7 @@ const KAOMSLogin = () => {
 const styles: { [key: string]: React.CSSProperties } = {
     // --- App Layout ---
     appContainer: { display: 'flex', flexDirection: 'column', height: '100vh', backgroundColor: 'var(--light-grey)' },
-    appHeader: { display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center', padding: '0.75rem 1.5rem 1rem', background: 'linear-gradient(to bottom, var(--card-bg) 60%, transparent)', borderBottom: 'none', flexShrink: 0, zIndex: 10 },
+    appHeader: { display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', padding: '0.75rem 1.5rem 1rem', background: 'linear-gradient(to bottom, var(--card-bg) 60%, transparent)', borderBottom: 'none', flexShrink: 0, zIndex: 10 },
     headerLeft: { gridColumn: '1', display: 'flex', alignItems: 'center', gap: '1rem', justifySelf: 'start' },
     headerCenter: { gridColumn: '2', textAlign: 'center', minWidth: 0 },
     headerRight: { gridColumn: '3', justifySelf: 'end' },
@@ -668,9 +728,8 @@ const styles: { [key: string]: React.CSSProperties } = {
     navLabel: { fontSize: '0.9rem', transition: 'opacity 0.2s ease-out' },
     mainContent: { flex: 1, overflowY: 'auto', padding: '1.5rem 1rem', display: 'flex', flexDirection: 'column' },
     bottomNav: { display: 'flex', justifyContent: 'space-around', background: 'linear-gradient(to top, var(--card-bg) 70%, transparent)', borderTop: 'none', position: 'fixed', bottom: 0, left: 0, right: 0, height: '70px', zIndex: 100 },
-    bottomNavItem: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, textDecoration: 'none', color: 'var(--text-color)', gap: '2px' },
+    bottomNavItem: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, textDecoration: 'none', color: 'var(--text-color)' },
     bottomNavItemActive: { color: 'var(--brand-color)' },
-    bottomNavLabel: { fontSize: '0.7rem' },
     pageContainer: { backgroundColor: 'var(--card-bg)', padding: '2rem', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)' },
     // --- Dashboard Styles ---
     dashboardContainer: { display: 'flex', flexDirection: 'column', gap: '1.5rem' },

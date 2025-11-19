@@ -1,6 +1,7 @@
 
 
 
+
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
@@ -1556,7 +1557,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     },
     headerTop: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
     pageTitle: { fontSize: '1.25rem', fontWeight: 600, color: 'var(--dark-grey)' },
-    headerControls: { display: 'flex', alignItems: 'center', gap: '0.75rem' },
+    headerControls: { display: 'flex', alignItems: 'center', gap: '0.75rem', position: 'relative', zIndex: 101 },
     viewToggle: { display: 'flex', backgroundColor: 'var(--light-grey)', borderRadius: '8px', padding: '4px' },
     toggleButton: { background: 'none', border: 'none', padding: '6px 10px', cursor: 'pointer', color: 'var(--text-color)', borderRadius: '6px' },
     toggleButtonActive: { background: 'var(--card-bg)', border: 'none', padding: '6px 10px', cursor: 'pointer', color: 'var(--brand-color)', borderRadius: '6px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' },
@@ -1571,10 +1572,10 @@ const styles: { [key: string]: React.CSSProperties } = {
     filtersVisible: { maxHeight: '300px', opacity: 1, overflow: 'visible', transition: 'max-height 0.4s ease-in, opacity 0.4s ease-in, margin-top 0.4s ease-in', marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' },
     searchContainer: { display: 'flex', alignItems: 'center', gap: '0.75rem', backgroundColor: 'var(--light-grey)', padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--skeleton-bg)' },
     searchInput: { flex: 1, border: 'none', background: 'none', outline: 'none', fontSize: '1rem', color: 'var(--dark-grey)' },
-    filterContainer: { display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' },
+    filterContainer: { display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center', position: 'relative', zIndex: 101 },
     filterButton: { background: 'var(--light-grey)', border: '1px solid var(--skeleton-bg)', color: 'var(--text-color)', padding: '0.4rem 0.8rem', borderRadius: '16px', cursor: 'pointer', fontSize: '0.85rem' },
     filterButtonActive: { background: 'var(--active-bg)', border: '1px solid var(--brand-color)', color: 'var(--brand-color)', padding: '0.4rem 0.8rem', borderRadius: '16px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500 },
-    tagFilterContainer: { display: 'flex', flexDirection: 'column', gap: '0.5rem' },
+    tagFilterContainer: { display: 'flex', flexDirection: 'column', gap: '0.5rem', position: 'relative', zIndex: 101 },
     tagScrollContainer: { display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.5rem', scrollbarWidth: 'none' },
     tagFilterButton: { background: 'var(--card-bg)', border: '1px solid var(--skeleton-bg)', padding: '0.3rem 0.8rem', borderRadius: '14px', cursor: 'pointer', fontSize: '0.8rem', whiteSpace: 'nowrap' },
     listContainer: { flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem', padding: '1rem 1rem 90px' },
