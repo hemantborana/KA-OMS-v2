@@ -315,7 +315,7 @@ const Swipeable: React.FC<{
                 onTouchStart={handleTouchStart} 
                 onTouchMove={handleTouchMove} 
                 onTouchEnd={handleTouchEnd} 
-                onTouchCancel={handleTouchEnd}
+                onTouchCancel={handleTouchEnd} 
                 style={{
                     ...styles.swipeableContent, 
                     touchAction: 'pan-y', 
@@ -1531,8 +1531,28 @@ export const PendingOrders = ({ onNavigate }) => {
 
 const styles: { [key: string]: React.CSSProperties } = {
     container: { display: 'flex', flexDirection: 'column', gap: '0', flex: 1, position: 'relative', backgroundColor: '#f8f9fb' },
-    headerCard: { backgroundColor: '#f8f9fb', padding: '1rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', position: 'sticky', top: 0, zIndex: 100, border: 'none', borderRadius: 0 },
-    headerCardMobile: { backgroundColor: '#f8f9fb', padding: '0 1rem 0.25rem', gap: '0', display: 'flex', flexDirection: 'column', position: 'sticky', top: 0, zIndex: 100 },
+    headerCard: { 
+        background: 'linear-gradient(to bottom, #f8f9fb 80%, rgba(248, 249, 251, 0))', 
+        padding: '1rem 1.5rem 2rem', 
+        display: 'flex', 
+        flexDirection: 'column', 
+        gap: '0.75rem', 
+        position: 'sticky', 
+        top: 0, 
+        zIndex: 100, 
+        border: 'none', 
+        borderRadius: 0 
+    },
+    headerCardMobile: { 
+        background: 'linear-gradient(to bottom, #f8f9fb 80%, rgba(248, 249, 251, 0))', 
+        padding: '0 1rem 1.5rem', 
+        gap: '0', 
+        display: 'flex', 
+        flexDirection: 'column', 
+        position: 'sticky', 
+        top: 0, 
+        zIndex: 100 
+    },
     headerTop: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
     pageTitle: { fontSize: '1.25rem', fontWeight: 600, color: 'var(--dark-grey)' },
     headerControls: { display: 'flex', alignItems: 'center', gap: '0.75rem' },
