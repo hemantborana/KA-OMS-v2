@@ -1,8 +1,4 @@
 
-
-
-
-
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
@@ -473,7 +469,7 @@ const ExpandedPendingView = ({ order, onProcess, onDelete, isProcessing, process
     );
 
     const viewStyle = isMobile 
-        ? { ...styles.expandedViewContainer, borderTop: 'none', padding: '0.5rem 0.5rem 1rem', backgroundColor: '#FAFAFA' }
+        ? { ...styles.expandedViewContainer, borderTop: 'none', padding: '0.5rem 0.5rem 1rem' }
         : styles.expandedViewContainer;
     
     return (
@@ -706,50 +702,17 @@ const DetailedList: React.FC<{ orders: Order[]; onToggleExpand: (order: Order) =
     );
 }
 
-const PartyGroup: React.FC<{ partyName: string; data: any; onToggleExpand: (order: Order) => void; expandedOrderNumber: string | null; children: React.ReactNode; onProcessOrder: (order: Order) => void; onDeleteOrder: (order: Order) => void; onEditOrder: (order: Order) => void; isMobile: boolean; selectedOrders: string[]; onSelectOrder: (orderNumber: string) => void; isSelectionMode: boolean; index?: number; totalCount?: number; isCollapsed: boolean; onToggleCollapse: () => void; }> = ({ partyName, data, onToggleExpand, expandedOrderNumber, children, onProcessOrder, onDeleteOrder, onEditOrder, isMobile, selectedOrders, onSelectOrder, isSelectionMode, index, totalCount, isCollapsed, onToggleCollapse }) => {
+const PartyGroup: React.FC<{ partyName: string; data: any; onToggleExpand: (order: Order) => void; expandedOrderNumber: string | null; children: React.ReactNode; onProcessOrder: (order: Order) => void; onDeleteOrder: (order: Order) => void; onEditOrder: (order: Order) => void; isMobile: boolean; selectedOrders: string[]; onSelectOrder: (orderNumber: string) => void; isSelectionMode: boolean; isCollapsed: boolean; onToggleCollapse: () => void; }> = ({ partyName, data, onToggleExpand, expandedOrderNumber, children, onProcessOrder, onDeleteOrder, onEditOrder, isMobile, selectedOrders, onSelectOrder, isSelectionMode, isCollapsed, onToggleCollapse }) => {
     const totalQty = data.orders.reduce((sum, order) => sum + order.totalQuantity, 0);
     const firstLetter = partyName.charAt(0).toUpperCase();
 
     const pastelBg = useMemo(() => getPastelColor(partyName), [partyName]);
 
-    const mobileCardStyle = useMemo(() => {
-        if (!isMobile) return styles.card;
-        
-        const baseStyle: React.CSSProperties = {
-            ...styles.card,
-            borderRadius: '0',
-            margin: '0',
-            border: 'none', 
-            boxShadow: 'none',
-            backgroundColor: !isCollapsed ? '#FAFAFA' : 'var(--card-bg)',
-            transition: 'background-color 0.3s ease',
-        };
-
-        const isFirst = index === 0;
-        const isLast = index === (totalCount || 0) - 1;
-        const radius = '12px';
-        
-        if (isFirst) {
-            baseStyle.borderRadius = `${radius} ${radius} 0 0`;
-        }
-        if (isLast) {
-            baseStyle.borderRadius = baseStyle.borderRadius === `${radius} ${radius} 0 0` ? radius : `0 0 ${radius} ${radius}`;
-        }
-        
-        if(isLast && !isCollapsed) {
-            baseStyle.borderBottomLeftRadius = '0';
-            baseStyle.borderBottomRightRadius = '0';
-        }
-
-        return baseStyle;
-    }, [isMobile, index, totalCount, isCollapsed]);
-
-    // Remove bottom radius when expanded to connect with content
-    const headerStyle = isMobile ? {
-        ...styles.mobileCardHeader,
-        ...( !isCollapsed ? { borderBottomLeftRadius: 0, borderBottomRightRadius: 0 } : {} )
-    } : styles.cardHeader;
-
+    const headerButtonStyle: React.CSSProperties = {
+        ...styles.cardHeader,
+        borderBottom: isCollapsed ? 'none' : '1px solid var(--skeleton-bg)',
+    };
+    
     const renderHeader = () => {
         if (isMobile) {
             return (
@@ -777,15 +740,15 @@ const PartyGroup: React.FC<{ partyName: string; data: any; onToggleExpand: (orde
     };
 
     return (
-        <div style={isMobile ? mobileCardStyle : styles.card}>
-            <button style={headerStyle} onClick={onToggleCollapse}>
+        <div style={styles.card}>
+            <button style={isMobile ? styles.mobileCardHeader : headerButtonStyle} onClick={onToggleCollapse}>
                {renderHeader()}
             </button>
             
             {/* Smooth expansion container */}
             <div style={isCollapsed ? styles.collapsibleContainer : {...styles.collapsibleContainer, ...styles.collapsibleContainerExpanded}}>
                 <div style={styles.collapsibleContentWrapper}>
-                     <div style={{...styles.cardDetails, backgroundColor: isMobile && !isCollapsed ? '#FAFAFA' : undefined}}>
+                     <div style={{...styles.cardDetails}}>
                         <DetailedList 
                             orders={data.orders} 
                             onToggleExpand={onToggleExpand}
@@ -802,11 +765,6 @@ const PartyGroup: React.FC<{ partyName: string; data: any; onToggleExpand: (orde
                     </div>
                 </div>
             </div>
-            
-            {/* Custom Divider for Mobile: Placed AFTER the content so it separates items */}
-             {isMobile && index !== (totalCount || 0) - 1 && (
-                <div style={styles.mobileDivider}></div>
-            )}
         </div>
     );
 };
@@ -1343,14 +1301,12 @@ export const PendingOrders = ({ onNavigate }) => {
 
         const content = view === 'summarized' ? (
              <div key="summarized" style={styles.listContainer} className="fade-in-slide">
-                {partyNamesInOrder.map((partyName, index) => (
+                {partyNamesInOrder.map((partyName) => (
                     <PartyGroup 
                         key={partyName} 
                         partyName={partyName} 
                         data={summarizedData[partyName]} 
                         {...commonProps}
-                        index={index}
-                        totalCount={partyNamesInOrder.length}
                         isCollapsed={collapsedSummarized[partyName] ?? true}
                         onToggleCollapse={() => handleTogglePartyCollapse(partyName)}
                     >
@@ -1451,7 +1407,7 @@ export const PendingOrders = ({ onNavigate }) => {
     ];
     
     return (
-        <div style={isMobile ? {...styles.container, backgroundColor: '#ffffff'} : styles.container}>
+        <div style={styles.container}>
             <style>{`
                 .fade-in-slide { animation: fadeInSlide 0.3s ease-out forwards; }
                 @keyframes fadeInSlide {
@@ -1573,9 +1529,9 @@ export const PendingOrders = ({ onNavigate }) => {
 };
 
 const styles: { [key: string]: React.CSSProperties } = {
-    container: { display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1, position: 'relative', backgroundColor: '#ffffff', zoom: window.innerWidth <= 768 ? '85%' : '100%' },
-    headerCard: { backgroundColor: '#f8f9fa', padding: '1rem 1.5rem', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', display: 'flex', flexDirection: 'column', gap: '0.75rem', position: 'sticky', top: 0, zIndex: 100 },
-    headerCardMobile: { backgroundColor: '#ffffff', padding: '0 1rem 0.25rem', gap: '0', display: 'flex', flexDirection: 'column', position: 'sticky', top: 0, zIndex: 100, borderBottom: 'none' },
+    container: { display: 'flex', flexDirection: 'column', gap: '0', flex: 1, position: 'relative', backgroundColor: '#f8f9fb' },
+    headerCard: { backgroundColor: '#f8f9fb', padding: '1rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', position: 'sticky', top: 0, zIndex: 100, border: 'none', borderRadius: 0 },
+    headerCardMobile: { backgroundColor: '#f8f9fb', padding: '0 1rem 0.25rem', gap: '0', display: 'flex', flexDirection: 'column', position: 'sticky', top: 0, zIndex: 100, borderBottom: '1px solid var(--skeleton-bg)' },
     headerTop: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
     pageTitle: { fontSize: '1.25rem', fontWeight: 600, color: 'var(--dark-grey)' },
     headerControls: { display: 'flex', alignItems: 'center', gap: '0.75rem' },
@@ -1599,11 +1555,11 @@ const styles: { [key: string]: React.CSSProperties } = {
     tagFilterContainer: { display: 'flex', flexDirection: 'column', gap: '0.5rem' },
     tagScrollContainer: { display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.5rem', scrollbarWidth: 'none' },
     tagFilterButton: { background: 'var(--card-bg)', border: '1px solid var(--skeleton-bg)', padding: '0.3rem 0.8rem', borderRadius: '14px', cursor: 'pointer', fontSize: '0.8rem', whiteSpace: 'nowrap' },
-    listContainer: { flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0rem', padding: '0 0 90px' },
+    listContainer: { flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem', padding: '1rem 1rem 90px' },
     centeredMessage: { flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'var(--text-color)', fontSize: '1.1rem' },
     spinner: { border: '4px solid var(--light-grey)', borderRadius: '50%', borderTop: '4px solid var(--brand-color)', width: '40px', height: '40px', animation: 'spin 1s linear infinite' },
-    card: { backgroundColor: '#f8f9fa', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', overflow: 'hidden' },
-    cardHeader: { width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.5rem', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' },
+    card: { backgroundColor: '#FFF', borderRadius: 'var(--border-radius)', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)', border: 'none', overflow: 'hidden' },
+    cardHeader: { width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.5rem', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', borderBottom: '1px solid var(--skeleton-bg)' },
     mobileCardHeader: { width: '100%', display: 'flex', flexDirection: 'row', alignItems: 'center', padding: '1rem', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', transition: 'border-radius 0.3s ease' },
     mobilePartyHeaderContent: { display: 'flex', alignItems: 'center', width: '100%', gap: '1rem' },
     partyAvatar: { width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '600', fontSize: '1.1rem', flexShrink: 0 },
@@ -1615,13 +1571,14 @@ const styles: { [key: string]: React.CSSProperties } = {
     cardTitle: { fontSize: '1.1rem', fontWeight: 600, color: '#000' },
     cardSubTitle: { fontSize: '0.85rem', color: 'var(--text-color)', fontWeight: 500 },
     cardDetails: { padding: '0 0 1rem', display: 'flex', flexDirection: 'column' },
-    mobileDivider: { height: '1px', backgroundColor: '#e0e0e0', margin: '0 16px' },
+    mobileDivider: { display: 'none' },
     
     // Animation Wrappers - using grid for smoother animations
     collapsibleContainer: {
         display: 'grid',
         gridTemplateRows: '0fr',
         transition: 'grid-template-rows 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
+        backgroundColor: '#FFF'
     },
     collapsibleContainerExpanded: {
         gridTemplateRows: '1fr',
@@ -1642,7 +1599,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     badge: { backgroundColor: '#eef2f7', color: 'var(--brand-color)', padding: '0.2rem 0.6rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600 },
     checkboxContainer: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' },
     checkboxButton: { background: 'none', border: 'none', padding: '0', cursor: 'pointer', color: 'var(--text-color)' },
-    expandedViewContainer: { padding: '0 1.5rem 1.5rem', border: '1px solid var(--skeleton-bg)', borderTop: 'none', backgroundColor: '#f8f9fa', borderRadius: '0 0 10px 10px' },
+    expandedViewContainer: { padding: '0 1.5rem 1.5rem', backgroundColor: '#FFF', borderRadius: '0 0 10px 10px' },
     tableContainer: { overflowX: 'auto' },
     table: { width: '100%', borderCollapse: 'collapse' },
     th: { backgroundColor: '#f8f9fa', padding: '10px 12px', textAlign: 'center', fontWeight: 600, color: 'var(--dark-grey)', borderBottom: '2px solid var(--skeleton-bg)', whiteSpace: 'nowrap' },
@@ -1650,7 +1607,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     td: { padding: '10px 12px', color: 'var(--text-color)', fontSize: '0.9rem', textAlign: 'center' },
     qtyInput: { width: '70px', padding: '8px', textAlign: 'center', border: '1px solid var(--skeleton-bg)', borderRadius: '6px', fontSize: '0.9rem', backgroundColor: '#ffffff', color: 'var(--dark-grey)' },
     tdInput: { padding: '4px' },
-    noteBox: { backgroundColor: '#ffffff', border: '1px solid #ffe58f', padding: '0.75rem 1rem', borderRadius: '8px', fontSize: '0.9rem', marginTop: '1rem' },
+    noteBox: { backgroundColor: '#FFF', border: '1px solid #ffe58f', padding: '0.75rem 1rem', borderRadius: '8px', fontSize: '0.9rem', marginTop: '1rem' },
     modalFooter: { padding: '1rem 0 0', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', borderTop: 'none' },
     footerActions: { display: 'flex', gap: '0.75rem', alignItems: 'center', justifyContent: 'flex-end', flex: 1 },
     footerButton: { padding: '0.75rem 1.2rem', fontSize: '0.9rem', fontWeight: 600, color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', transition: 'all 0.2s ease', },
@@ -1700,7 +1657,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     stockIndicator: { width: '10px', height: '10px', borderRadius: '50%', flexShrink: 0 },
     stockIndicatorPlaceholder: { width: '10px', height: '10px' },
     mobileItemContainer: { display: 'flex', flexDirection: 'column', gap: '0.5rem', paddingTop: '0.5rem' },
-    mobileItemCard: { backgroundColor: 'var(--card-bg)', borderRadius: '8px', padding: '0.5rem 0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', border: 'none' },
+    mobileItemCard: { backgroundColor: '#FFF', borderRadius: '8px', padding: '0.5rem 0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', border: '1px solid #eef2f7' },
     mobileItemInfo: { display: 'flex', flexDirection: 'column', gap: '0.25rem' },
     mobileItemName: { fontWeight: 500, color: 'var(--dark-grey)', fontSize: '0.9rem' },
     mobileItemStock: { display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--dark-grey)' },
@@ -1711,19 +1668,21 @@ const styles: { [key: string]: React.CSSProperties } = {
     swipeableLeftActions: { position: 'absolute', top: 0, left: 0, height: '100%', display: 'flex', alignItems: 'center', paddingLeft: '10px', gap: '10px', zIndex: 0 },
     swipeableRightActions: { position: 'absolute', top: 0, right: 0, height: '100%', display: 'flex', alignItems: 'center', paddingRight: '10px', gap: '10px', zIndex: 0 },
     swipeAction: { width: '40px', height: '40px', borderRadius: '20px', color: 'white', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '0.8rem', boxShadow: '0 2px 5px rgba(0,0,0,0.1)', margin: 'auto' },
-    swipeableContent: { position: 'relative', backgroundColor: '#f8f9fa', zIndex: 1 },
+    swipeableContent: { position: 'relative', backgroundColor: '#FFF', zIndex: 1, borderRadius: '10px' },
     
     // --- New Detailed Card Styles ---
-    detailedOrderCard: { backgroundColor: '#f8f9fa', borderRadius: '10px', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', cursor: 'pointer', transition: 'border-color 0.2s, box-shadow 0.2s, background-color 0.2s' },
+    detailedOrderCard: { backgroundColor: '#FFF', borderRadius: '10px', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', cursor: 'pointer', transition: 'border-color 0.2s, box-shadow 0.2s, background-color 0.2s', border: '1px solid #eef2f7', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' },
     detailedOrderCardActive: { 
-        backgroundColor: '#f8f9fa', 
+        backgroundColor: '#FFF', 
         borderRadius: '10px 10px 0 0', 
         padding: '1rem', 
         display: 'flex', 
         flexDirection: 'column', 
         gap: '0.5rem', 
         cursor: 'pointer', 
-        transition: 'all 0.2s'
+        transition: 'all 0.2s',
+        border: '1px solid #eef2f7',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
     },
     
     // Refined Hierarchy Styles
@@ -1756,9 +1715,9 @@ const styles: { [key: string]: React.CSSProperties } = {
     addNoteButton: { alignSelf: 'flex-end', padding: '0.5rem 1rem', border: 'none', color: 'white', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' },
     // --- Command Center Styles ---
     commandCenterLayout: { display: 'grid', gridTemplateColumns: '280px 1fr 1.5fr', gap: '1rem', flex: 1, minHeight: 0 },
-    leftPanel: { display: 'flex', flexDirection: 'column', backgroundColor: '#f8f9fa', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', minHeight: 0 },
-    middlePanel: { display: 'flex', flexDirection: 'column', backgroundColor: '#f8f9fa', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', minHeight: 0 },
-    rightPanel: { display: 'flex', flexDirection: 'column', backgroundColor: '#f8f9fa', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', minHeight: 0, overflowY: 'auto' },
+    leftPanel: { display: 'flex', flexDirection: 'column', backgroundColor: '#FFF', borderRadius: 'var(--border-radius)', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)', border: 'none', minHeight: 0 },
+    middlePanel: { display: 'flex', flexDirection: 'column', backgroundColor: '#FFF', borderRadius: 'var(--border-radius)', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)', border: 'none', minHeight: 0 },
+    rightPanel: { display: 'flex', flexDirection: 'column', backgroundColor: '#FFF', borderRadius: 'var(--border-radius)', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)', border: 'none', minHeight: 0, overflowY: 'auto' },
     panelHeader: { padding: '1rem', borderBottom: '1px solid var(--skeleton-bg)', fontWeight: 600, color: 'var(--dark-grey)', flexShrink: 0 },
     panelContent: { padding: '0.5rem', overflowY: 'auto', flex: 1 },
     partyListItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', padding: '0.75rem 1rem', background: 'none', border: 'none', borderRadius: '8px', cursor: 'pointer', textAlign: 'left' },
