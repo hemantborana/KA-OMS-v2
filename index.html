@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -20,6 +21,19 @@
             --border-radius: 12px;
             --box-shadow: 0 10px 30px rgba(0, 0, 0, 0.07);
             --skeleton-bg: #e2e8f0;    /* A light grey for skeleton loaders */
+            --border-color: #e2e8f0;
+        }
+
+        body.dark-mode {
+            --brand-color: #3186ff;    /* Blue accent for dark mode */
+            --dark-grey: #FFFFFF;      /* Primary Text */
+            --light-grey: #191919;     /* Primary Background */
+            --text-color: #a0aec0;     /* Secondary Text */
+            --card-bg: #1f1f1f;        /* Secondary/Card Background */
+            --active-bg: #323232;      /* Accent/Hover */
+            --box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            --skeleton-bg: #323232;
+            --border-color: #323232;
         }
 
         * {
@@ -33,6 +47,7 @@
             height: 100%;
             font-family: 'Inter', sans-serif;
             background-color: var(--light-grey);
+            color: var(--dark-grey);
             overflow: hidden; /* Prevent scrollbars from layout shift */
         }
 
@@ -51,7 +66,7 @@
             animation: shimmer 2s infinite linear;
             background: linear-gradient(to right, 
                 var(--skeleton-bg) 40%, 
-                #f0f3f4 50%, 
+                var(--light-grey) 50%, 
                 var(--skeleton-bg) 60%);
             background-size: 2000px 100%;
         }
@@ -148,6 +163,14 @@
             background-color: rgba(0, 0, 0, 0.4);
         }
     </style>
+    <script>
+        (function() {
+            var savedTheme = localStorage.getItem('theme') || 'light';
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark-mode');
+            }
+        })();
+    </script>
 </head>
 <body>
     <div class="container">
