@@ -1,7 +1,5 @@
 
 
-
-
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
@@ -193,22 +191,15 @@ const Swipeable: React.FC<{
     onProcess: () => void; 
     onDelete: () => void; 
     onEdit: () => void; 
-    onLongPress?: () => void;
     onTap?: () => void;
     disabled?: boolean;
     children: React.ReactNode; 
-}> = ({ onProcess, onDelete, onEdit, onLongPress, onTap, disabled, children }) => {
+}> = ({ onProcess, onDelete, onEdit, onTap, disabled, children }) => {
     const contentRef = useRef<HTMLDivElement>(null);
     const startX = useRef(0);
-    const startY = useRef(0);
     const currentX = useRef(0);
     const isDragging = useRef(false);
-    const isScrolling = useRef(false);
     const animationFrameId = useRef(null);
-    const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const longPressTriggered = useRef(false);
-    
-    // State machine for robust swiping: 'closed' (0), 'left' (160, open actions left), 'right' (-80, open actions right)
     const openState = useRef<'closed' | 'left' | 'right'>('closed');
     const currentTranslate = useRef(0);
 
@@ -218,8 +209,6 @@ const Swipeable: React.FC<{
                 (node as HTMLElement).style.transform = 'translateX(0px)';
                 (node as HTMLElement).style.transition = 'transform 0.3s ease';
                 node.classList.remove('swiped-open');
-                // We can't easily update the state of other React components from here without context,
-                // but resetting the visual transform is the most important part.
             }
         });
     }, []);
@@ -244,133 +233,67 @@ const Swipeable: React.FC<{
     const handleTouchStart = (e: React.TouchEvent) => {
         resetOpenItems();
         startX.current = e.touches[0].clientX;
-        startY.current = e.touches[0].clientY;
         currentX.current = startX.current;
         isDragging.current = true;
-        isScrolling.current = false;
-        longPressTriggered.current = false;
         
         if (contentRef.current) contentRef.current.style.transition = 'none';
         if(animationFrameId.current) cancelAnimationFrame(animationFrameId.current);
 
-        // Set initial translation based on current state
         if (openState.current === 'left') currentTranslate.current = 160;
         else if (openState.current === 'right') currentTranslate.current = -80;
         else currentTranslate.current = 0;
-
-        // Start Long Press Timer
-        if (onLongPress) {
-            longPressTimer.current = setTimeout(() => {
-                longPressTriggered.current = true;
-                if (navigator.vibrate) navigator.vibrate(50);
-                isDragging.current = false; 
-                onLongPress();
-            }, 600);
-        }
     };
 
     const handleTouchMove = (e: React.TouchEvent) => {
-        if (!isDragging.current || !contentRef.current) return;
-
-        currentX.current = e.touches[0].clientX;
-        const currentY = e.touches[0].clientY;
-        const diffX = currentX.current - startX.current;
-        const diffY = currentY - startY.current;
-
-        if (Math.abs(diffX) > 10 || Math.abs(diffY) > 10) {
-            if (longPressTimer.current) clearTimeout(longPressTimer.current);
-        }
-
-        if (!isScrolling.current) {
-             if (Math.abs(diffY) > Math.abs(diffX)) {
-                 isDragging.current = false;
-                 if (longPressTimer.current) clearTimeout(longPressTimer.current);
-                 return; 
-             }
-             isScrolling.current = true; 
-             if (longPressTimer.current) clearTimeout(longPressTimer.current); 
-        }
+        if (!isDragging.current || !contentRef.current || disabled) return;
         
-        if (disabled) return;
-        if (e.cancelable) e.preventDefault();
+        currentX.current = e.touches[0].clientX;
+        const diffX = currentX.current - startX.current;
+        
+        if (Math.abs(diffX) > 10) {
+            if (e.cancelable) e.preventDefault();
+        }
         
         animationFrameId.current = requestAnimationFrame(() => {
             let newTranslate = 0;
-            
-            // Logic to constrain movement based on state ("One Swipe" rule)
             if (openState.current === 'closed') {
-                // Can move left or right, but clamped to max extents
-                newTranslate = diffX;
-                newTranslate = Math.max(-80, Math.min(160, newTranslate));
+                newTranslate = Math.max(-80, Math.min(160, diffX));
             } else if (openState.current === 'left') {
-                // Already at 160. Can only close (move left/negative delta).
-                // Clamp at 0 to prevent going straight to 'right' state.
-                newTranslate = 160 + diffX;
-                newTranslate = Math.max(0, newTranslate); // Stop at closed
-                newTranslate = Math.min(170, newTranslate); // Elasticity
+                newTranslate = Math.max(0, Math.min(170, 160 + diffX));
             } else if (openState.current === 'right') {
-                // Already at -80. Can only close (move right/positive delta).
-                // Clamp at 0 to prevent going straight to 'left' state.
-                newTranslate = -80 + diffX;
-                newTranslate = Math.min(0, newTranslate); // Stop at closed
-                newTranslate = Math.max(-90, newTranslate); // Elasticity
+                newTranslate = Math.max(-90, Math.min(0, -80 + diffX));
             }
-
             currentTranslate.current = newTranslate;
             setTranslateX(newTranslate);
         });
     };
 
     const handleTouchEnd = () => {
-        if (longPressTimer.current) clearTimeout(longPressTimer.current);
-        if (!isDragging.current && !longPressTriggered.current && !contentRef.current) return;
-        
         isDragging.current = false;
         if(animationFrameId.current) cancelAnimationFrame(animationFrameId.current);
         
-        if (longPressTriggered.current) return;
-
-        if (!isScrolling.current && Math.abs(currentX.current - startX.current) < 10) {
-            if (onTap) onTap();
+        if (Math.abs(currentX.current - startX.current) < 10 && onTap) {
+            onTap();
             return;
         }
-        
+
         if (disabled || !contentRef.current) {
              animateTo(0, 'closed');
              return;
         }
 
         const x = currentTranslate.current;
-        
-        // Determine next state based on current position and previous state
         if (openState.current === 'closed') {
-            if (x > 60) { // Threshold to open left actions
-                animateTo(160, 'left');
-            } else if (x < -40) { // Threshold to open right actions
-                animateTo(-80, 'right');
-            } else {
-                animateTo(0, 'closed');
-            }
+            if (x > 60) animateTo(160, 'left');
+            else if (x < -40) animateTo(-80, 'right');
+            else animateTo(0, 'closed');
         } else if (openState.current === 'left') {
-            if (x < 120) { // Dragged significantly enough to close
-                animateTo(0, 'closed');
-            } else { // Snap back to open
-                animateTo(160, 'left');
-            }
+            if (x < 120) animateTo(0, 'closed');
+            else animateTo(160, 'left');
         } else if (openState.current === 'right') {
-            if (x > -40) { // Dragged significantly enough to close
-                animateTo(0, 'closed');
-            } else { // Snap back to open
-                animateTo(-80, 'right');
-            }
+            if (x > -40) animateTo(0, 'closed');
+            else animateTo(-80, 'right');
         }
-    };
-    
-    const handleTouchCancel = () => {
-        if (longPressTimer.current) clearTimeout(longPressTimer.current);
-        isDragging.current = false;
-        isScrolling.current = false;
-        animateTo(0, 'closed');
     };
 
     return (
@@ -392,7 +315,7 @@ const Swipeable: React.FC<{
                 onTouchStart={handleTouchStart} 
                 onTouchMove={handleTouchMove} 
                 onTouchEnd={handleTouchEnd} 
-                onTouchCancel={handleTouchCancel}
+                onTouchCancel={handleTouchEnd}
                 style={{
                     ...styles.swipeableContent, 
                     touchAction: 'pan-y', 
@@ -403,6 +326,53 @@ const Swipeable: React.FC<{
             >
                 {children}
             </div>
+        </div>
+    );
+};
+
+const CustomTagDropdown: React.FC<{ onAddTag: (order: Order, tag: string) => void; order: Order; }> = ({ onAddTag, order }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const dropdownRef = useRef(null);
+    const options = [
+        "On Hold", "Awaiting Stock", "Customer Confirmation Needed",
+        "Urgent", "Partial Shipment", "custom"
+    ];
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, [dropdownRef]);
+
+    const handleSelect = (option: string) => {
+        if (option === 'custom') {
+            const custom = prompt("Enter custom tag:");
+            if (custom) onAddTag(order, custom);
+        } else if (option) {
+            onAddTag(order, option);
+        }
+        setIsOpen(false);
+    };
+
+    return (
+        <div style={styles.customDropdownContainer} ref={dropdownRef}>
+            <button style={styles.customDropdownButton} onClick={() => setIsOpen(!isOpen)}>
+                + Add Tag
+                <ChevronIcon collapsed={!isOpen} style={{width: 12, height: 12, marginLeft: 4}} />
+            </button>
+            {isOpen && (
+                <div style={styles.customDropdownMenu}>
+                    {options.map(option => (
+                        <button key={option} className="custom-dropdown-item" style={styles.customDropdownItem} onClick={() => handleSelect(option)}>
+                            {option === 'custom' ? 'Create Custom...' : option}
+                        </button>
+                    ))}
+                </div>
+            )}
         </div>
     );
 };
@@ -521,28 +491,7 @@ const ExpandedPendingView = ({ order, onProcess, onDelete, isProcessing, process
                             <button onClick={() => onRemoveTag(order, tag)} style={styles.removeTagButton}><XIcon/></button>
                         </span>
                     ))}
-                     <div style={styles.addTagContainer}>
-                         <select 
-                            style={styles.tagSelect} 
-                            onChange={(e) => { 
-                                if(e.target.value === 'custom') {
-                                    const custom = prompt("Enter custom tag:");
-                                    if (custom) { onAddTag(order, custom); e.target.value=''; }
-                                } else if(e.target.value) { 
-                                    onAddTag(order, e.target.value); 
-                                    e.target.value=''; 
-                                } 
-                            }}
-                         >
-                            <option value="">+ Add Tag</option>
-                            <option value="On Hold">On Hold</option>
-                            <option value="Awaiting Stock">Awaiting Stock</option>
-                            <option value="Customer Confirmation Needed">Customer Confirmation Needed</option>
-                            <option value="Urgent">Urgent</option>
-                            <option value="Partial Shipment">Partial Shipment</option>
-                            <option value="custom">Create Custom...</option>
-                         </select>
-                    </div>
+                     <CustomTagDropdown onAddTag={onAddTag} order={order} />
                 </div>
             </div>
 
@@ -556,32 +505,34 @@ const ExpandedPendingView = ({ order, onProcess, onDelete, isProcessing, process
                     </div>
                     <ChevronIcon collapsed={isHistoryCollapsed} />
                 </button>
-                {!isHistoryCollapsed && (
-                    <div style={styles.historyContent}>
-                        <div style={styles.historyList}>
-                            {(order.history || []).map((event, index) => (
-                                <div key={index} style={styles.historyItem}>
-                                    <div style={styles.historyMeta}>
-                                        <span style={{...styles.historyEventType, backgroundColor: event.event === 'System' ? '#eef2f7' : '#fffbe6', color: event.event === 'System' ? 'var(--brand-color)' : '#d48806'}}>{event.event}</span>
-                                        <span>{new Date(event.timestamp).toLocaleString()}</span>
+                <div style={isHistoryCollapsed ? styles.collapsibleContainer : {...styles.collapsibleContainer, ...styles.collapsibleContainerExpanded}}>
+                    <div style={styles.collapsibleContentWrapper}>
+                        <div style={styles.historyContentWrapper}>
+                            <div style={styles.historyList}>
+                                {(order.history || []).map((event, index) => (
+                                    <div key={index} style={styles.historyItem}>
+                                        <div style={styles.historyMeta}>
+                                            <span style={{...styles.historyEventType, backgroundColor: event.event === 'System' ? '#eef2f7' : '#fffbe6', color: event.event === 'System' ? 'var(--brand-color)' : '#d48806'}}>{event.event}</span>
+                                            <span>{new Date(event.timestamp).toLocaleString()}</span>
+                                        </div>
+                                        <p style={styles.historyDetails}>{event.details}</p>
                                     </div>
-                                    <p style={styles.historyDetails}>{event.details}</p>
-                                </div>
-                            ))}
-                        </div>
-                        <div style={styles.addNoteContainer}>
-                            <textarea
-                                value={note}
-                                onChange={(e) => setNote(e.target.value)}
-                                style={styles.noteTextarea}
-                                placeholder="Add a new note..."
-                            />
-                            <button onClick={handleAddNoteClick} style={{...styles.addNoteButton, backgroundColor: '#3498db', boxShadow: '0 2px 8px rgba(52, 152, 219, 0.3)'}}>
-                                <NoteIcon style={{width: 16, height: 16}}/> Add Note
-                            </button>
+                                ))}
+                            </div>
+                            <div style={styles.addNoteContainer}>
+                                <textarea
+                                    value={note}
+                                    onChange={(e) => setNote(e.target.value)}
+                                    style={styles.noteTextarea}
+                                    placeholder="Add a new note..."
+                                />
+                                <button onClick={handleAddNoteClick} style={{...styles.addNoteButton, backgroundColor: '#3498db', boxShadow: '0 2px 8px rgba(52, 152, 219, 0.3)'}}>
+                                    <NoteIcon style={{width: 16, height: 16}}/> Add Note
+                                </button>
+                            </div>
                         </div>
                     </div>
-                )}
+                </div>
             </div>
 
             <div style={styles.modalFooter}>
@@ -653,11 +604,7 @@ const DetailedOrderCard: React.FC<{
 
     const handleCardClick = (e) => {
         if (e) e.stopPropagation();
-        if (isSelectionMode) {
-            onSelectOrder(order.orderNumber);
-        } else {
-            onToggleExpand(order);
-        }
+        onToggleExpand(order);
     };
 
     const orderContent = (
@@ -666,11 +613,9 @@ const DetailedOrderCard: React.FC<{
             <div style={styles.cardTopRow}>
                 <h3 style={styles.cardPartyName}>{order.partyName}</h3>
                 <div style={styles.checkboxContainer}>
-                    {!isMobile && (
-                        <button style={styles.checkboxButton} onClick={(e) => { e.stopPropagation(); onSelectOrder(order.orderNumber); }}>
-                            {isSelected ? <CheckSquareIcon /> : <SquareIcon />}
-                        </button>
-                    )}
+                    <button style={styles.checkboxButton} onClick={(e) => { e.stopPropagation(); onSelectOrder(order.orderNumber); }}>
+                        {isSelected ? <CheckSquareIcon /> : <SquareIcon />}
+                    </button>
                     <ChevronIcon collapsed={!isExpanded} style={{width: '16px', height: '16px', color: 'var(--text-color)'}} />
                 </div>
             </div>
@@ -719,9 +664,8 @@ const DetailedOrderCard: React.FC<{
             onProcess={() => onProcessOrder(order)} 
             onDelete={() => onDeleteOrder(order)} 
             onEdit={() => onEditOrder(order)}
-            onLongPress={() => onSelectOrder(order.orderNumber)}
             onTap={handleCardClick}
-            disabled={isSelectionMode} // Disable Swipe actions when in selection mode
+            disabled={isSelectionMode}
         >
             {orderContent}
         </Swipeable>
@@ -748,8 +692,10 @@ const DetailedList: React.FC<{ orders: Order[]; onToggleExpand: (order: Order) =
                         onEditOrder={onEditOrder}
                     />
                      {/* Animated Expansion Wrapper */}
-                    <div style={expandedOrderNumber === order.orderNumber ? styles.groupContentExpanded : styles.groupContentCollapsed}>
-                        {expandedOrderNumber === order.orderNumber && children}
+                    <div style={expandedOrderNumber === order.orderNumber ? {...styles.collapsibleContainer, ...styles.collapsibleContainerExpanded} : styles.collapsibleContainer}>
+                        <div style={styles.collapsibleContentWrapper}>
+                            {expandedOrderNumber === order.orderNumber && children}
+                        </div>
                     </div>
                 </React.Fragment>
             ))}
@@ -757,12 +703,11 @@ const DetailedList: React.FC<{ orders: Order[]; onToggleExpand: (order: Order) =
     );
 }
 
-const PartyGroup: React.FC<{ partyName: string; data: any; onToggleExpand: (order: Order) => void; expandedOrderNumber: string | null; children: React.ReactNode; onProcessOrder: (order: Order) => void; onDeleteOrder: (order: Order) => void; onEditOrder: (order: Order) => void; isMobile: boolean; selectedOrders: string[]; onSelectOrder: (orderNumber: string) => void; isSelectionMode: boolean; index?: number; totalCount?: number; isCollapsed: boolean; setIsCollapsed: (v: boolean) => void; }> = ({ partyName, data, onToggleExpand, expandedOrderNumber, children, onProcessOrder, onDeleteOrder, onEditOrder, isMobile, selectedOrders, onSelectOrder, isSelectionMode, index, totalCount, isCollapsed, setIsCollapsed }) => {
+const PartyGroup: React.FC<{ partyName: string; data: any; onToggleExpand: (order: Order) => void; expandedOrderNumber: string | null; children: React.ReactNode; onProcessOrder: (order: Order) => void; onDeleteOrder: (order: Order) => void; onEditOrder: (order: Order) => void; isMobile: boolean; selectedOrders: string[]; onSelectOrder: (orderNumber: string) => void; isSelectionMode: boolean; index?: number; totalCount?: number; isCollapsed: boolean; onToggleCollapse: () => void; }> = ({ partyName, data, onToggleExpand, expandedOrderNumber, children, onProcessOrder, onDeleteOrder, onEditOrder, isMobile, selectedOrders, onSelectOrder, isSelectionMode, index, totalCount, isCollapsed, onToggleCollapse }) => {
     const totalQty = data.orders.reduce((sum, order) => sum + order.totalQuantity, 0);
     const firstLetter = partyName.charAt(0).toUpperCase();
 
     const pastelBg = useMemo(() => getPastelColor(partyName), [partyName]);
-    const pastelText = useMemo(() => getDarkerPastelColor(partyName), [partyName]);
 
     const mobileCardStyle = useMemo(() => {
         if (!isMobile) return styles.card;
@@ -806,9 +751,9 @@ const PartyGroup: React.FC<{ partyName: string; data: any; onToggleExpand: (orde
         if (isMobile) {
             return (
                 <div style={styles.mobilePartyHeaderContent}>
-                    <div style={{...styles.partyAvatar, backgroundColor: pastelBg, color: pastelText}}>{firstLetter}</div>
+                    <div style={{...styles.partyAvatar, backgroundColor: pastelBg, color: '#000'}}>{firstLetter}</div>
                     <div style={styles.mobilePartyInfo}>
-                        <div style={{...styles.mobilePartyName, color: pastelText}}>{partyName}</div>
+                        <div style={styles.mobilePartyName}>{partyName}</div>
                         <div style={styles.mobilePartyMeta}>
                             {data.orderCount} Orders • {totalQty} Qty
                         </div>
@@ -830,26 +775,28 @@ const PartyGroup: React.FC<{ partyName: string; data: any; onToggleExpand: (orde
 
     return (
         <div style={isMobile ? mobileCardStyle : styles.card}>
-            <button style={headerStyle} onClick={() => setIsCollapsed(!isCollapsed)}>
+            <button style={headerStyle} onClick={onToggleCollapse}>
                {renderHeader()}
             </button>
             
             {/* Smooth expansion container */}
-            <div style={isCollapsed ? styles.groupContentCollapsed : {...styles.groupContentExpanded, backgroundColor: isMobile ? '#FAFAFA' : undefined}}>
-                 <div style={styles.cardDetails}>
-                    <DetailedList 
-                        orders={data.orders} 
-                        onToggleExpand={onToggleExpand}
-                        expandedOrderNumber={expandedOrderNumber}
-                        children={children}
-                        onProcessOrder={onProcessOrder}
-                        onDeleteOrder={onDeleteOrder}
-                        onEditOrder={onEditOrder}
-                        isMobile={isMobile}
-                        selectedOrders={selectedOrders}
-                        onSelectOrder={onSelectOrder}
-                        isSelectionMode={isSelectionMode}
-                    />
+            <div style={isCollapsed ? styles.collapsibleContainer : {...styles.collapsibleContainer, ...styles.collapsibleContainerExpanded}}>
+                <div style={styles.collapsibleContentWrapper}>
+                     <div style={{...styles.cardDetails, backgroundColor: isMobile && !isCollapsed ? '#FAFAFA' : undefined}}>
+                        <DetailedList 
+                            orders={data.orders} 
+                            onToggleExpand={onToggleExpand}
+                            expandedOrderNumber={expandedOrderNumber}
+                            children={children}
+                            onProcessOrder={onProcessOrder}
+                            onDeleteOrder={onDeleteOrder}
+                            onEditOrder={onEditOrder}
+                            isMobile={isMobile}
+                            selectedOrders={selectedOrders}
+                            onSelectOrder={onSelectOrder}
+                            isSelectionMode={isSelectionMode}
+                        />
+                    </div>
                 </div>
             </div>
             
@@ -877,8 +824,8 @@ export const PendingOrders = ({ onNavigate }) => {
     const [isFilterVisible, setIsFilterVisible] = useState(false);
     const [activeTagFilter, setActiveTagFilter] = useState<string | null>(null);
     
-    // Store collapsed state for party groups
-    const [collapsedParties, setCollapsedParties] = useState<Record<string, boolean>>({});
+    const [collapsedSummarized, setCollapsedSummarized] = useState<Record<string, boolean>>({});
+    const [expandedDetailed, setExpandedDetailed] = useState<string | null>(null);
 
     // State for Command Center Layout
     const [selectedParty, setSelectedParty] = useState<string | null>(null);
@@ -955,6 +902,11 @@ export const PendingOrders = ({ onNavigate }) => {
         }
     }, []);
 
+    useEffect(() => {
+        setExpandedDetailed(null);
+        setCollapsedSummarized({});
+    }, [view]);
+
     // --- Tag Logic ---
     const availableTags = useMemo(() => {
         const tags = new Set<string>();
@@ -1026,7 +978,7 @@ export const PendingOrders = ({ onNavigate }) => {
             
             await firebase.database().ref().update(updates);
             showToast(`Processed items for ${order.orderNumber}.`, 'success');
-            setExpandedOrderNumber(null);
+            setExpandedDetailed(null);
             setActiveOrder(null);
         } catch(e) {
             console.error(e);
@@ -1052,7 +1004,7 @@ export const PendingOrders = ({ onNavigate }) => {
             const updates = { [`${DELETED_ORDERS_REF}/${order.orderNumber}`]: deletedOrderData, [`${PENDING_ORDERS_REF}/${order.orderNumber}`]: null };
             await firebase.database().ref().update(updates);
             showToast('Order moved to Deleted archive.', 'success');
-            setExpandedOrderNumber(null);
+            setExpandedDetailed(null);
             setActiveOrder(null);
         } catch(e) {
             console.error(e);
@@ -1117,11 +1069,14 @@ export const PendingOrders = ({ onNavigate }) => {
 
     const handleToggleExpand = (order: Order) => {
         const orderNumber = order.orderNumber;
-        if (expandedOrderNumber === orderNumber) {
-            setExpandedOrderNumber(null);
+        const currentExpanded = view === 'summarized' ? expandedDetailed : expandedDetailed;
+        const setExpanded = view === 'summarized' ? setExpandedDetailed : setExpandedDetailed;
+
+        if (currentExpanded === orderNumber) {
+            setExpanded(null);
         } else {
             setProcessingQty(order.items.reduce((acc, item) => ({...acc, [item.id]: 0}), {}));
-            setExpandedOrderNumber(orderNumber);
+            setExpanded(orderNumber);
         }
     };
     
@@ -1141,16 +1096,9 @@ export const PendingOrders = ({ onNavigate }) => {
             selectedOrders.forEach(orderNum => {
                 const order = orders.find(o => o.orderNumber === orderNum);
                 if (order) {
-                    // Simplification: Batch process assumes all items are ready.
-                    // A real implementation might need more complex logic or match matched item amounts.
-                    // Here we just move the whole order content.
                     const newHistoryEvent = { timestamp: new Date().toISOString(), event: 'System', details: `Batch Processed.`};
                     const updatedHistory = [...(order.history || []), newHistoryEvent];
                     
-                    // This needs real async handling if checking stock, but for now matching existing logic:
-                    // Warning: This loop structure with async inside is tricky.
-                    // Ideally we build one big update object.
-                    // For safety in this snippet, we will iterate and update.
                     const billingOrderRefPath = `${BILLING_ORDERS_REF}/${order.orderNumber}`;
                     const pendingOrderRefPath = `${PENDING_ORDERS_REF}/${order.orderNumber}`;
                     
@@ -1158,9 +1106,6 @@ export const PendingOrders = ({ onNavigate }) => {
                     updates[pendingOrderRefPath] = null; 
                 }
             });
-            // Warning: This overwrites existing billing orders if not careful.
-            // Re-using handleProcessOrder per item is safer but slower.
-            // Given constraint, let's use loop:
              selectedOrders.forEach(orderNum => {
                 const order = orders.find(o => o.orderNumber === orderNum);
                 if(order) {
@@ -1311,7 +1256,20 @@ export const PendingOrders = ({ onNavigate }) => {
         return [...new Set(filteredAndSortedOrders.map(o => o.partyName))];
     }, [filteredAndSortedOrders, view]);
 
-    const expandedOrder = useMemo(() => expandedOrderNumber ? orders.find(o => o.orderNumber === expandedOrderNumber) : null, [expandedOrderNumber, orders]);
+    const expandedOrder = useMemo(() => expandedDetailed ? orders.find(o => o.orderNumber === expandedDetailed) : null, [expandedDetailed, orders]);
+    
+    const handleTogglePartyCollapse = (partyName: string) => {
+        const isCurrentlyCollapsed = collapsedSummarized[partyName] ?? true;
+        
+        if (isCurrentlyCollapsed === false) { // it's open, and we are closing it
+            const partyData = summarizedData[partyName];
+            if (partyData && partyData.orders.some(o => o.orderNumber === expandedDetailed)) {
+                setExpandedDetailed(null);
+            }
+        }
+
+        setCollapsedSummarized(prev => ({ ...prev, [partyName]: !isCurrentlyCollapsed }));
+    };
 
     // --- Command Center Logic ---
     const parties = useMemo(() => {
@@ -1339,6 +1297,12 @@ export const PendingOrders = ({ onNavigate }) => {
         setProcessingQty(order.items.reduce((acc, item) => ({...acc, [item.id]: 0}), {}));
     };
     
+    const batchActionToolbarStyle = useMemo(() => ({
+        ...styles.batchActionToolbar,
+        bottom: isMobile ? '80px' : '30px',
+        visibility: isSelectionMode ? 'visible' : 'hidden',
+    }), [isMobile, isSelectionMode]);
+    
     const renderMobileLayout = () => {
         if (isLoading) return <div style={styles.centeredMessage}><Spinner /></div>;
         if (error) return <div style={styles.centeredMessage}>{error}</div>;
@@ -1364,7 +1328,7 @@ export const PendingOrders = ({ onNavigate }) => {
         
         const commonProps = {
             onToggleExpand: handleToggleExpand,
-            expandedOrderNumber: expandedOrderNumber,
+            expandedOrderNumber: expandedDetailed,
             onProcessOrder: handleProcessFullOrder,
             onDeleteOrder: handleDeleteOrder,
             onEditOrder: handleEditOrder,
@@ -1374,7 +1338,6 @@ export const PendingOrders = ({ onNavigate }) => {
             isSelectionMode: isSelectionMode
         };
 
-        // Added key to trigger animation on view change
         const content = view === 'summarized' ? (
              <div key="summarized" style={styles.listContainer} className="fade-in-slide">
                 {partyNamesInOrder.map((partyName, index) => (
@@ -1385,8 +1348,8 @@ export const PendingOrders = ({ onNavigate }) => {
                         {...commonProps}
                         index={index}
                         totalCount={partyNamesInOrder.length}
-                        isCollapsed={!collapsedParties[partyName] && collapsedParties[partyName] !== false ? true : collapsedParties[partyName]}
-                        setIsCollapsed={(v) => setCollapsedParties(prev => ({...prev, [partyName]: v}))}
+                        isCollapsed={collapsedSummarized[partyName] ?? true}
+                        onToggleCollapse={() => handleTogglePartyCollapse(partyName)}
                     >
                         {expandedView}
                     </PartyGroup>
@@ -1492,10 +1455,13 @@ export const PendingOrders = ({ onNavigate }) => {
                     from { opacity: 0; transform: translateX(10px); }
                     to { opacity: 1; transform: translateX(0); }
                 }
-                .batch-toolbar-enter { animation: slideUpBatch 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+                .batch-toolbar-enter { 
+                    animation: slideUpBatch 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+                    visibility: visible;
+                }
                 @keyframes slideUpBatch {
-                    from { transform: translateY(100%); opacity: 0; }
-                    to { transform: translateY(0); opacity: 1; }
+                    from { transform: translateY(100%) scale(0.95); opacity: 0; }
+                    to { transform: translateY(0) scale(1); opacity: 1; }
                 }
                 .header-title-anim {
                     transition: opacity 0.2s ease, transform 0.2s ease;
@@ -1504,6 +1470,11 @@ export const PendingOrders = ({ onNavigate }) => {
                 @keyframes fadeInTitle {
                     from { opacity: 0; transform: translateY(5px); }
                     to { opacity: 1; transform: translateY(0); }
+                }
+                .custom-dropdown-item:hover { background-color: var(--light-grey); }
+                @keyframes dropdown-in {
+                    from { transform: translateY(10px) scale(0.95); opacity: 0; }
+                    to { transform: translateY(0) scale(1); opacity: 1; }
                 }
             `}</style>
             <div style={isMobile ? styles.headerCardMobile : styles.headerCard}>
@@ -1583,8 +1554,8 @@ export const PendingOrders = ({ onNavigate }) => {
                     </div>
                 </div>
             </div>
-            {selectedOrders.length > 0 && (
-                <div className="batch-toolbar-enter" style={styles.batchActionToolbar}>
+            {isSelectionMode && (
+                <div className="batch-toolbar-enter" style={batchActionToolbarStyle}>
                     <div style={styles.batchIconGroup}>
                         <button style={styles.batchIconBtn} onClick={handleBatchProcess} title="Forward for Process"><ProcessIcon/></button>
                         <button style={styles.batchIconBtn} onClick={handleBatchExport} title="Export CSV"><ShareIcon/></button>
@@ -1634,18 +1605,28 @@ const styles: { [key: string]: React.CSSProperties } = {
     mobilePartyHeaderContent: { display: 'flex', alignItems: 'center', width: '100%', gap: '1rem' },
     partyAvatar: { width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '600', fontSize: '1.1rem', flexShrink: 0 },
     mobilePartyInfo: { display: 'flex', flexDirection: 'column', flex: 1, gap: '2px' },
-    mobilePartyName: { fontWeight: '600', fontSize: '1rem', color: 'var(--dark-grey)' },
+    mobilePartyName: { fontWeight: '600', fontSize: '1rem', color: '#000' },
     mobilePartyMeta: { fontSize: '0.8rem', color: 'var(--text-color)' },
     mobileChevron: { color: 'var(--text-color)' },
     cardInfo: { display: 'flex', flexDirection: 'column', gap: '0.25rem', alignItems: 'flex-start' },
-    cardTitle: { fontSize: '1.1rem', fontWeight: 600, color: 'var(--dark-grey)' },
+    cardTitle: { fontSize: '1.1rem', fontWeight: 600, color: '#000' },
     cardSubTitle: { fontSize: '0.85rem', color: 'var(--text-color)', fontWeight: 500 },
     cardDetails: { padding: '0 0 1rem', display: 'flex', flexDirection: 'column' },
     mobileDivider: { height: '1px', backgroundColor: '#e0e0e0', margin: '0 16px' },
     
-    // Animation Wrappers
-    groupContentCollapsed: { maxHeight: 0, opacity: 0, overflow: 'hidden', transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)' },
-    groupContentExpanded: { maxHeight: '2000px', opacity: 1, overflow: 'visible', transition: 'all 0.6s ease-in-out' },
+    // Animation Wrappers - using grid for smoother animations
+    collapsibleContainer: {
+        display: 'grid',
+        gridTemplateRows: '0fr',
+        transition: 'grid-template-rows 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
+    },
+    collapsibleContainerExpanded: {
+        gridTemplateRows: '1fr',
+    },
+    collapsibleContentWrapper: {
+        overflow: 'hidden',
+        minHeight: 0,
+    },
 
     orderItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem 1.5rem', borderTop: '1px solid var(--skeleton-bg)' },
     orderItemActive: { backgroundColor: 'var(--active-bg)'},
@@ -1663,7 +1644,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     td: { padding: '10px 12px', color: 'var(--text-color)', fontSize: '0.9rem', textAlign: 'center' },
     qtyInput: { width: '70px', padding: '8px', textAlign: 'center', border: '1px solid var(--skeleton-bg)', borderRadius: '6px', fontSize: '0.9rem', backgroundColor: '#ffffff', color: 'var(--dark-grey)' },
     tdInput: { padding: '4px' },
-    noteBox: { backgroundColor: '#fffbe6', border: '1px solid #ffe58f', padding: '0.75rem 1rem', borderRadius: '8px', fontSize: '0.9rem', marginTop: '1rem' },
+    noteBox: { backgroundColor: '#ffffff', border: '1px solid #ffe58f', padding: '0.75rem 1rem', borderRadius: '8px', fontSize: '0.9rem', marginTop: '1rem' },
     modalFooter: { padding: '1rem 0 0', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', borderTop: 'none' },
     footerActions: { display: 'flex', gap: '0.75rem', alignItems: 'center', justifyContent: 'flex-end', flex: 1 },
     footerButton: { padding: '0.75rem 1.2rem', fontSize: '0.9rem', fontWeight: 600, color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', transition: 'all 0.2s ease', },
@@ -1680,7 +1661,6 @@ const styles: { [key: string]: React.CSSProperties } = {
         justifyContent: 'center', 
         alignItems: 'center', 
         position: 'fixed', 
-        bottom: '30px', 
         left: '50%', 
         transform: 'translateX(-50%)',
         width: 'auto',
@@ -1742,7 +1722,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     
     // Refined Hierarchy Styles
     cardTopRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.25rem' },
-    cardPartyName: { fontSize: '1.1rem', fontWeight: 700, color: 'var(--dark-grey)', margin: 0, lineHeight: 1.2, flex: 1, paddingRight: '0.5rem' },
+    cardPartyName: { fontSize: '1.1rem', fontWeight: 700, color: '#000', margin: 0, lineHeight: 1.2, flex: 1, paddingRight: '0.5rem' },
     
     cardSecondRow: { display: 'grid', gridTemplateColumns: '1fr auto', gap: '1rem', alignItems: 'start' },
     stylePreviewInline: { fontSize: '0.85rem', color: '#94a3b8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'left', fontWeight: 500 },
@@ -1759,14 +1739,14 @@ const styles: { [key: string]: React.CSSProperties } = {
     // --- History Section ---
     historySection: { marginTop: '1rem', paddingTop: '1rem' },
     historyHeader: { width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer', padding: '0.25rem 0', fontSize: '1rem', fontWeight: 600, color: 'var(--dark-grey)' },
-    historyContent: { padding: '1rem 0 0', display: 'flex', flexDirection: 'column', gap: '1rem' },
+    historyContentWrapper: { paddingTop: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' },
     historyList: { maxHeight: '300px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem', border: '1px solid var(--skeleton-bg)', borderRadius: '8px', padding: '0.75rem', backgroundColor: '#ffffff' },
     historyItem: { display: 'flex', flexDirection: 'column', gap: '0.25rem' },
     historyMeta: { display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.8rem', color: 'var(--text-color)' },
     historyEventType: { fontWeight: 600, padding: '2px 8px', borderRadius: '12px', fontSize: '0.75rem' },
     historyDetails: { fontSize: '0.9rem', color: 'var(--dark-grey)', paddingLeft: '0.25rem' },
     addNoteContainer: { display: 'flex', flexDirection: 'column', gap: '0.5rem' },
-    noteTextarea: { width: '100%', minHeight: '60px', padding: '0.75rem', fontSize: '0.9rem', border: '1px solid var(--skeleton-bg)', borderRadius: '8px', resize: 'vertical' },
+    noteTextarea: { width: '100%', minHeight: '60px', padding: '0.75rem', fontSize: '0.9rem', border: '1px solid var(--skeleton-bg)', borderRadius: '8px', resize: 'vertical', backgroundColor: '#ffffff', color: 'var(--dark-grey)' },
     addNoteButton: { alignSelf: 'flex-end', padding: '0.5rem 1rem', border: 'none', color: 'white', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' },
     // --- Command Center Styles ---
     commandCenterLayout: { display: 'grid', gridTemplateColumns: '280px 1fr 1.5fr', gap: '1rem', flex: 1, minHeight: 0 },
@@ -1786,7 +1766,9 @@ const styles: { [key: string]: React.CSSProperties } = {
     tagsList: { display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' },
     tagsContainer: { display: 'flex', flexWrap: 'wrap', gap: '0.25rem', marginTop: '0.25rem' },
     removeTagButton: { background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', padding: '0', marginLeft: '4px', display: 'flex', alignItems: 'center' },
-    addTagContainer: { display: 'flex', alignItems: 'center' },
-    tagSelect: { padding: '2px 6px', borderRadius: '12px', border: '1px solid var(--skeleton-bg)', fontSize: '0.75rem', color: 'var(--text-color)', backgroundColor: 'var(--light-grey)', outline: 'none', cursor: 'pointer' },
     miniTagDot: { width: '8px', height: '8px', borderRadius: '50%', display: 'inline-block' },
+    customDropdownContainer: { position: 'relative', display: 'inline-block' },
+    customDropdownButton: { padding: '2px 8px', borderRadius: '12px', border: '1px solid var(--skeleton-bg)', fontSize: '0.75rem', color: 'var(--text-color)', backgroundColor: 'var(--light-grey)', cursor: 'pointer', display: 'flex', alignItems: 'center', },
+    customDropdownMenu: { position: 'absolute', top: '100%', left: 0, backgroundColor: 'var(--card-bg)', border: '1px solid var(--skeleton-bg)', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 10, minWidth: '200px', marginTop: '4px', padding: '0.25rem', animation: 'dropdown-in 0.2s ease-out forwards', transformOrigin: 'top center', },
+    customDropdownItem: { display: 'block', width: '100%', padding: '0.5rem 0.75rem', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '0.85rem', borderRadius: '6px', color: 'var(--dark-grey)', },
 };
