@@ -1,4 +1,7 @@
 
+
+
+
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
@@ -10,10 +13,9 @@ const Spinner = () => <div style={styles.spinner}></div>;
 const SmallSpinner = () => <div style={{...styles.spinner, width: '20px', height: '20px', borderTop: '3px solid white', borderRight: '3px solid transparent' }}></div>;
 const SummarizedViewIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>;
 const DetailedViewIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>;
-const CalendarIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>;
-const TrashIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>;
+const TrashIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>;
 const EditIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>;
-const ProcessIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>;
+const ProcessIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>;
 const NoteIcon = (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M15.5 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8.5L15.5 3z"></path><polyline points="14 3 14 9 20 9"></polyline></svg>;
 const BoxIcon = (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>;
 const PrintIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>;
@@ -24,6 +26,8 @@ const HistoryIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" hei
 const TagIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>;
 const XIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>;
 const AlertCircleIcon = (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>;
+const ShareIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>;
+
 
 // --- TYPE & FIREBASE ---
 interface HistoryEvent { timestamp: string; event: string; details: string; }
@@ -84,7 +88,7 @@ const getDarkerPastelColor = (str: string) => {
 
 const getTagStyle = (tag: string) => {
     const lower = tag.toLowerCase();
-    let colors = { bg: '#f3f4f6', text: '#374151', border: '#e5e7eb' }; // Default Grey
+    let colors = { bg: '#f3f4f6', text: '#111827', border: '#e5e7eb' }; // Default Grey
     
     if (lower.includes('hold')) colors = { bg: '#fee2e2', text: '#991b1b', border: '#fecaca' }; // Red
     else if (lower.includes('stock') || lower.includes('wait')) colors = { bg: '#fef3c7', text: '#92400e', border: '#fde68a' }; // Amber
@@ -97,14 +101,12 @@ const getTagStyle = (tag: string) => {
         color: colors.text,
         border: `1px solid ${colors.border}`,
         padding: '2px 8px',
-        borderRadius: '12px',
+        borderRadius: '999px',
         fontSize: '0.75rem',
         fontWeight: 600,
         display: 'inline-flex',
         alignItems: 'center',
         gap: '4px',
-        marginRight: '4px',
-        marginBottom: '4px',
         whiteSpace: 'nowrap'
     } as React.CSSProperties;
 };
@@ -187,7 +189,15 @@ const StockIndicator: React.FC<{ stockLevel: number }> = ({ stockLevel }) => {
     return <span style={{ ...styles.stockIndicator, backgroundColor: color }} title={title} />;
 };
 
-const Swipeable: React.FC<{ onProcess: () => void; onDelete: () => void; onEdit: () => void; children: React.ReactNode; }> = ({ onProcess, onDelete, onEdit, children }) => {
+const Swipeable: React.FC<{ 
+    onProcess: () => void; 
+    onDelete: () => void; 
+    onEdit: () => void; 
+    onLongPress?: () => void;
+    onTap?: () => void;
+    disabled?: boolean;
+    children: React.ReactNode; 
+}> = ({ onProcess, onDelete, onEdit, onLongPress, onTap, disabled, children }) => {
     const contentRef = useRef<HTMLDivElement>(null);
     const startX = useRef(0);
     const startY = useRef(0);
@@ -195,6 +205,12 @@ const Swipeable: React.FC<{ onProcess: () => void; onDelete: () => void; onEdit:
     const isDragging = useRef(false);
     const isScrolling = useRef(false);
     const animationFrameId = useRef(null);
+    const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const longPressTriggered = useRef(false);
+    
+    // State machine for robust swiping: 'closed' (0), 'left' (160, open actions left), 'right' (-80, open actions right)
+    const openState = useRef<'closed' | 'left' | 'right'>('closed');
+    const currentTranslate = useRef(0);
 
     const resetOpenItems = useCallback(() => {
         document.querySelectorAll('.swipeable-content.swiped-open').forEach(node => {
@@ -202,6 +218,8 @@ const Swipeable: React.FC<{ onProcess: () => void; onDelete: () => void; onEdit:
                 (node as HTMLElement).style.transform = 'translateX(0px)';
                 (node as HTMLElement).style.transition = 'transform 0.3s ease';
                 node.classList.remove('swiped-open');
+                // We can't easily update the state of other React components from here without context,
+                // but resetting the visual transform is the most important part.
             }
         });
     }, []);
@@ -209,7 +227,18 @@ const Swipeable: React.FC<{ onProcess: () => void; onDelete: () => void; onEdit:
     const setTranslateX = (x: number) => {
         if (contentRef.current) {
             contentRef.current.style.transform = `translateX(${x}px)`;
+            if (x !== 0) contentRef.current.classList.add('swiped-open');
+            else contentRef.current.classList.remove('swiped-open');
         }
+    };
+    
+    const animateTo = (target: number, state: 'closed' | 'left' | 'right') => {
+        if (contentRef.current) {
+            contentRef.current.style.transition = 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)';
+            setTranslateX(target);
+        }
+        openState.current = state;
+        currentTranslate.current = target;
     };
 
     const handleTouchStart = (e: React.TouchEvent) => {
@@ -219,8 +248,25 @@ const Swipeable: React.FC<{ onProcess: () => void; onDelete: () => void; onEdit:
         currentX.current = startX.current;
         isDragging.current = true;
         isScrolling.current = false;
+        longPressTriggered.current = false;
+        
         if (contentRef.current) contentRef.current.style.transition = 'none';
         if(animationFrameId.current) cancelAnimationFrame(animationFrameId.current);
+
+        // Set initial translation based on current state
+        if (openState.current === 'left') currentTranslate.current = 160;
+        else if (openState.current === 'right') currentTranslate.current = -80;
+        else currentTranslate.current = 0;
+
+        // Start Long Press Timer
+        if (onLongPress) {
+            longPressTimer.current = setTimeout(() => {
+                longPressTriggered.current = true;
+                if (navigator.vibrate) navigator.vibrate(50);
+                isDragging.current = false; 
+                onLongPress();
+            }, 600);
+        }
     };
 
     const handleTouchMove = (e: React.TouchEvent) => {
@@ -231,53 +277,130 @@ const Swipeable: React.FC<{ onProcess: () => void; onDelete: () => void; onEdit:
         const diffX = currentX.current - startX.current;
         const diffY = currentY - startY.current;
 
-        // Check if vertical scroll is dominant
+        if (Math.abs(diffX) > 10 || Math.abs(diffY) > 10) {
+            if (longPressTimer.current) clearTimeout(longPressTimer.current);
+        }
+
         if (!isScrolling.current) {
              if (Math.abs(diffY) > Math.abs(diffX)) {
                  isDragging.current = false;
-                 return; // Allow vertical scroll
+                 if (longPressTimer.current) clearTimeout(longPressTimer.current);
+                 return; 
              }
-             isScrolling.current = true; // Lock into horizontal swipe
+             isScrolling.current = true; 
+             if (longPressTimer.current) clearTimeout(longPressTimer.current); 
         }
         
+        if (disabled) return;
         if (e.cancelable) e.preventDefault();
         
         animationFrameId.current = requestAnimationFrame(() => {
-            const newTranslateX = Math.max(-80, Math.min(160, diffX));
-            setTranslateX(newTranslateX);
+            let newTranslate = 0;
+            
+            // Logic to constrain movement based on state ("One Swipe" rule)
+            if (openState.current === 'closed') {
+                // Can move left or right, but clamped to max extents
+                newTranslate = diffX;
+                newTranslate = Math.max(-80, Math.min(160, newTranslate));
+            } else if (openState.current === 'left') {
+                // Already at 160. Can only close (move left/negative delta).
+                // Clamp at 0 to prevent going straight to 'right' state.
+                newTranslate = 160 + diffX;
+                newTranslate = Math.max(0, newTranslate); // Stop at closed
+                newTranslate = Math.min(170, newTranslate); // Elasticity
+            } else if (openState.current === 'right') {
+                // Already at -80. Can only close (move right/positive delta).
+                // Clamp at 0 to prevent going straight to 'left' state.
+                newTranslate = -80 + diffX;
+                newTranslate = Math.min(0, newTranslate); // Stop at closed
+                newTranslate = Math.max(-90, newTranslate); // Elasticity
+            }
+
+            currentTranslate.current = newTranslate;
+            setTranslateX(newTranslate);
         });
     };
 
     const handleTouchEnd = () => {
-        if (!isDragging.current || !contentRef.current) return;
+        if (longPressTimer.current) clearTimeout(longPressTimer.current);
+        if (!isDragging.current && !longPressTriggered.current && !contentRef.current) return;
+        
         isDragging.current = false;
         if(animationFrameId.current) cancelAnimationFrame(animationFrameId.current);
         
-        contentRef.current.style.transition = 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)';
-        const currentTransform = new WebKitCSSMatrix(window.getComputedStyle(contentRef.current).transform).m41;
+        if (longPressTriggered.current) return;
 
-        if (currentTransform > 80) { // Swiped right enough to open left actions
-            setTranslateX(160);
-            contentRef.current.classList.add('swiped-open');
-        } else if (currentTransform < -40) { // Swiped left enough to open right action
-            setTranslateX(-80);
-            contentRef.current.classList.add('swiped-open');
-        } else { // Not swiped enough, snap back
-            setTranslateX(0);
-            contentRef.current.classList.remove('swiped-open');
+        if (!isScrolling.current && Math.abs(currentX.current - startX.current) < 10) {
+            if (onTap) onTap();
+            return;
+        }
+        
+        if (disabled || !contentRef.current) {
+             animateTo(0, 'closed');
+             return;
+        }
+
+        const x = currentTranslate.current;
+        
+        // Determine next state based on current position and previous state
+        if (openState.current === 'closed') {
+            if (x > 60) { // Threshold to open left actions
+                animateTo(160, 'left');
+            } else if (x < -40) { // Threshold to open right actions
+                animateTo(-80, 'right');
+            } else {
+                animateTo(0, 'closed');
+            }
+        } else if (openState.current === 'left') {
+            if (x < 120) { // Dragged significantly enough to close
+                animateTo(0, 'closed');
+            } else { // Snap back to open
+                animateTo(160, 'left');
+            }
+        } else if (openState.current === 'right') {
+            if (x > -40) { // Dragged significantly enough to close
+                animateTo(0, 'closed');
+            } else { // Snap back to open
+                animateTo(-80, 'right');
+            }
         }
     };
     
+    const handleTouchCancel = () => {
+        if (longPressTimer.current) clearTimeout(longPressTimer.current);
+        isDragging.current = false;
+        isScrolling.current = false;
+        animateTo(0, 'closed');
+    };
+
     return (
         <div style={styles.swipeableContainer}>
-            <div style={styles.swipeableLeftActions}>
-                <button onClick={onEdit} style={{...styles.swipeAction, backgroundColor: '#3498db'}}><EditIcon /></button>
-                <button onClick={onDelete} style={{...styles.swipeAction, backgroundColor: '#e74c3c'}}><TrashIcon /></button>
-            </div>
-            <div style={styles.swipeableRightActions}>
-                <button onClick={onProcess} style={{...styles.swipeAction, backgroundColor: '#2ecc71'}}><ProcessIcon /></button>
-            </div>
-            <div ref={contentRef} className="swipeable-content" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} style={styles.swipeableContent}>
+            {!disabled && (
+                <>
+                    <div style={styles.swipeableLeftActions}>
+                        <button onClick={onEdit} style={{...styles.swipeAction, backgroundColor: '#3498db'}}><EditIcon /></button>
+                        <button onClick={onDelete} style={{...styles.swipeAction, backgroundColor: '#e74c3c'}}><TrashIcon /></button>
+                    </div>
+                    <div style={styles.swipeableRightActions}>
+                        <button onClick={onProcess} style={{...styles.swipeAction, backgroundColor: '#2ecc71'}}><ProcessIcon /></button>
+                    </div>
+                </>
+            )}
+            <div 
+                ref={contentRef} 
+                className="swipeable-content" 
+                onTouchStart={handleTouchStart} 
+                onTouchMove={handleTouchMove} 
+                onTouchEnd={handleTouchEnd} 
+                onTouchCancel={handleTouchCancel}
+                style={{
+                    ...styles.swipeableContent, 
+                    touchAction: 'pan-y', 
+                    userSelect: 'none', 
+                    WebkitUserSelect: 'none', 
+                    WebkitTapHighlightColor: 'transparent'
+                }}
+            >
                 {children}
             </div>
         </div>
@@ -325,7 +448,10 @@ const ExpandedPendingView = ({ order, onProcess, onDelete, isProcessing, process
                         
                         let rowStyle = {...styles.tr};
                         if (index % 2 !== 0) rowStyle.backgroundColor = '#f8f9fa';
-                        if (isPartial) rowStyle.backgroundColor = '#fffbe6';
+                        if (isPartial) {
+                            rowStyle.backgroundColor = '#fffbe6';
+                            rowStyle.color = 'var(--dark-grey)';
+                        }
 
                         return (
                             <tr key={item.id} style={rowStyle}>
@@ -422,7 +548,7 @@ const ExpandedPendingView = ({ order, onProcess, onDelete, isProcessing, process
 
             {order.orderNote && <div style={styles.noteBox}><strong>Note:</strong> {order.orderNote}</div>}
             
-            <div style={isMobile ? {...styles.historySection, borderTop: '1px solid #e0e0e0'} : styles.historySection}>
+            <div style={styles.historySection}>
                 <button style={styles.historyHeader} onClick={() => setIsHistoryCollapsed(!isHistoryCollapsed)}>
                     <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
                         <HistoryIcon />
@@ -450,22 +576,24 @@ const ExpandedPendingView = ({ order, onProcess, onDelete, isProcessing, process
                                 style={styles.noteTextarea}
                                 placeholder="Add a new note..."
                             />
-                            <button onClick={handleAddNoteClick} style={styles.addNoteButton}>Add Note</button>
+                            <button onClick={handleAddNoteClick} style={{...styles.addNoteButton, backgroundColor: '#3498db', boxShadow: '0 2px 8px rgba(52, 152, 219, 0.3)'}}>
+                                <NoteIcon style={{width: 16, height: 16}}/> Add Note
+                            </button>
                         </div>
                     </div>
                 )}
             </div>
 
             <div style={styles.modalFooter}>
-                 <button onClick={() => onPrint([order])} style={styles.secondaryButton} disabled={isProcessing}>
-                    <PrintIcon /> List
-                </button>
                 <div style={styles.footerActions}>
-                    <button onClick={() => onDelete(order)} style={isMobile ? styles.deleteButtonMobile : styles.deleteButton} disabled={isProcessing}>
-                       <TrashIcon />
+                     <button onClick={() => onPrint([order])} style={{...styles.footerButton, ...styles.printButton}} disabled={isProcessing}>
+                        <PrintIcon /> Print
                     </button>
-                    <button onClick={handleProcessClick} style={isMobile ? styles.modalActionButtonMobile : styles.modalActionButton} disabled={isProcessing}>
-                        {isProcessing ? <SmallSpinner /> : 'Process'}
+                    <button onClick={() => onDelete(order)} style={{...styles.footerButton, ...styles.deleteButton}} disabled={isProcessing}>
+                       <TrashIcon /> Delete
+                    </button>
+                    <button onClick={handleProcessClick} style={{...styles.footerButton, ...styles.processButton}} disabled={isProcessing}>
+                        {isProcessing ? <SmallSpinner /> : <><ProcessIcon/> Process</>}
                     </button>
                 </div>
             </div>
@@ -478,6 +606,7 @@ const DetailedOrderCard: React.FC<{
     isExpanded: boolean;
     isMobile: boolean;
     isSelected: boolean;
+    isSelectionMode: boolean;
     onToggleExpand: (order: Order) => void;
     onSelectOrder: (orderNumber: string) => void;
     onProcessOrder: (order: Order) => void;
@@ -488,6 +617,7 @@ const DetailedOrderCard: React.FC<{
     isExpanded,
     isMobile,
     isSelected,
+    isSelectionMode,
     onToggleExpand,
     onSelectOrder,
     onProcessOrder,
@@ -502,34 +632,60 @@ const DetailedOrderCard: React.FC<{
     }, [order.items]);
     const stylePreview = uniqueStyles.slice(0, 3).join(' / ');
 
-    const cardStyle = {
-        ...(isExpanded ? styles.detailedOrderCardActive : styles.detailedOrderCard),
-        ...(isMobile && { margin: '0 0 0.75rem' })
+    const getCardStyle = () => {
+        let baseStyle = isExpanded ? styles.detailedOrderCardActive : styles.detailedOrderCard;
+        
+        if (isSelected) {
+            // Selection styling (mobile primarily)
+            baseStyle = {
+                ...baseStyle,
+                backgroundColor: '#eef2f7',
+                borderColor: 'var(--brand-color)',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+            };
+        }
+        
+        if (isMobile) {
+            baseStyle = { ...baseStyle, margin: '0 0 0.75rem' };
+        }
+        return baseStyle;
+    };
+
+    const handleCardClick = (e) => {
+        if (e) e.stopPropagation();
+        if (isSelectionMode) {
+            onSelectOrder(order.orderNumber);
+        } else {
+            onToggleExpand(order);
+        }
     };
 
     const orderContent = (
-        <div style={cardStyle} onClick={() => onToggleExpand(order)}>
-            {/* Top Row: Party Name & Checkbox */}
+        <div style={getCardStyle()} onClick={!isMobile ? handleCardClick : undefined} onContextMenu={(e) => e.preventDefault()}>
+            {/* Top Row: Party Name & Chevron */}
             <div style={styles.cardTopRow}>
                 <h3 style={styles.cardPartyName}>{order.partyName}</h3>
                 <div style={styles.checkboxContainer}>
-                    <button style={styles.checkboxButton} onClick={(e) => { e.stopPropagation(); onSelectOrder(order.orderNumber); }}>
-                        {isSelected ? <CheckSquareIcon /> : <SquareIcon />}
-                    </button>
+                    {!isMobile && (
+                        <button style={styles.checkboxButton} onClick={(e) => { e.stopPropagation(); onSelectOrder(order.orderNumber); }}>
+                            {isSelected ? <CheckSquareIcon /> : <SquareIcon />}
+                        </button>
+                    )}
                     <ChevronIcon collapsed={!isExpanded} style={{width: '16px', height: '16px', color: 'var(--text-color)'}} />
                 </div>
             </div>
 
-            {/* Second Row: Order Number & Time */}
-            <div style={styles.cardMetaRow}>
-                 <span style={styles.cardOrderNumber}>#{order.orderNumber}</span>
-                 <span style={styles.cardSeparator}>•</span>
-                 <span style={styles.cardTime}>{timeSince(order.timestamp)} ago</span>
+            {/* Second Row: Style Preview Left | Order No & Time Right */}
+             <div style={styles.cardSecondRow}>
+                 <div style={styles.stylePreviewInline}>
+                     {stylePreview}{uniqueStyles.length > 3 ? '...' : ''}
+                 </div>
+                 <div style={styles.cardMetaRight}>
+                     <span style={styles.cardOrderNumber}>#{order.orderNumber}</span>
+                     <span style={styles.cardTime}>{timeSince(order.timestamp)}</span>
+                 </div>
             </div>
             
-            {/* Third Row: Preview */}
-            {stylePreview && <p style={styles.stylePreview}>{stylePreview}{uniqueStyles.length > 3 ? '...' : ''}</p>}
-
             {/* Tags */}
              {order.tags && order.tags.length > 0 && (
                 <div style={styles.tagsContainer}>
@@ -559,7 +715,14 @@ const DetailedOrderCard: React.FC<{
     );
 
     return isMobile ? (
-        <Swipeable onProcess={() => onProcessOrder(order)} onDelete={() => onDeleteOrder(order)} onEdit={() => onEditOrder(order)}>
+        <Swipeable 
+            onProcess={() => onProcessOrder(order)} 
+            onDelete={() => onDeleteOrder(order)} 
+            onEdit={() => onEditOrder(order)}
+            onLongPress={() => onSelectOrder(order.orderNumber)}
+            onTap={handleCardClick}
+            disabled={isSelectionMode} // Disable Swipe actions when in selection mode
+        >
             {orderContent}
         </Swipeable>
     ) : (
@@ -567,7 +730,7 @@ const DetailedOrderCard: React.FC<{
     );
 };
 
-const DetailedList: React.FC<{ orders: Order[]; onToggleExpand: (order: Order) => void; expandedOrderNumber: string | null; children: React.ReactNode; onProcessOrder: (order: Order) => void; onDeleteOrder: (order: Order) => void; onEditOrder: (order: Order) => void; isMobile: boolean; selectedOrders: string[]; onSelectOrder: (orderNumber: string) => void; }> = ({ orders, onToggleExpand, expandedOrderNumber, children, onProcessOrder, onDeleteOrder, onEditOrder, isMobile, selectedOrders, onSelectOrder }) => {
+const DetailedList: React.FC<{ orders: Order[]; onToggleExpand: (order: Order) => void; expandedOrderNumber: string | null; children: React.ReactNode; onProcessOrder: (order: Order) => void; onDeleteOrder: (order: Order) => void; onEditOrder: (order: Order) => void; isMobile: boolean; selectedOrders: string[]; onSelectOrder: (orderNumber: string) => void; isSelectionMode: boolean; }> = ({ orders, onToggleExpand, expandedOrderNumber, children, onProcessOrder, onDeleteOrder, onEditOrder, isMobile, selectedOrders, onSelectOrder, isSelectionMode }) => {
     return (
         <div style={isMobile ? {...styles.card, padding: 0, backgroundColor: 'transparent', border: 'none', overflow: 'visible'} : {...styles.card, padding: 0}}>
             {orders.map(order => (
@@ -577,6 +740,7 @@ const DetailedList: React.FC<{ orders: Order[]; onToggleExpand: (order: Order) =
                         isExpanded={expandedOrderNumber === order.orderNumber}
                         isMobile={isMobile}
                         isSelected={selectedOrders.includes(order.orderNumber)}
+                        isSelectionMode={isSelectionMode}
                         onToggleExpand={onToggleExpand}
                         onSelectOrder={onSelectOrder}
                         onProcessOrder={onProcessOrder}
@@ -593,12 +757,10 @@ const DetailedList: React.FC<{ orders: Order[]; onToggleExpand: (order: Order) =
     );
 }
 
-const PartyGroup: React.FC<{ partyName: string; data: any; onToggleExpand: (order: Order) => void; expandedOrderNumber: string | null; children: React.ReactNode; onProcessOrder: (order: Order) => void; onDeleteOrder: (order: Order) => void; onEditOrder: (order: Order) => void; isMobile: boolean; selectedOrders: string[]; onSelectOrder: (orderNumber: string) => void; index?: number; totalCount?: number; }> = ({ partyName, data, onToggleExpand, expandedOrderNumber, children, onProcessOrder, onDeleteOrder, onEditOrder, isMobile, selectedOrders, onSelectOrder, index, totalCount }) => {
-    const [isCollapsed, setIsCollapsed] = useState(true);
+const PartyGroup: React.FC<{ partyName: string; data: any; onToggleExpand: (order: Order) => void; expandedOrderNumber: string | null; children: React.ReactNode; onProcessOrder: (order: Order) => void; onDeleteOrder: (order: Order) => void; onEditOrder: (order: Order) => void; isMobile: boolean; selectedOrders: string[]; onSelectOrder: (orderNumber: string) => void; isSelectionMode: boolean; index?: number; totalCount?: number; isCollapsed: boolean; setIsCollapsed: (v: boolean) => void; }> = ({ partyName, data, onToggleExpand, expandedOrderNumber, children, onProcessOrder, onDeleteOrder, onEditOrder, isMobile, selectedOrders, onSelectOrder, isSelectionMode, index, totalCount, isCollapsed, setIsCollapsed }) => {
     const totalQty = data.orders.reduce((sum, order) => sum + order.totalQuantity, 0);
     const firstLetter = partyName.charAt(0).toUpperCase();
 
-    // Calculate pastel colors
     const pastelBg = useMemo(() => getPastelColor(partyName), [partyName]);
     const pastelText = useMemo(() => getDarkerPastelColor(partyName), [partyName]);
 
@@ -611,7 +773,8 @@ const PartyGroup: React.FC<{ partyName: string; data: any; onToggleExpand: (orde
             margin: '0',
             border: 'none', 
             boxShadow: 'none',
-            backgroundColor: '#FAFAFA' // Soft white
+            backgroundColor: !isCollapsed ? '#FAFAFA' : 'var(--card-bg)',
+            transition: 'background-color 0.3s ease',
         };
 
         const isFirst = index === 0;
@@ -624,9 +787,20 @@ const PartyGroup: React.FC<{ partyName: string; data: any; onToggleExpand: (orde
         if (isLast) {
             baseStyle.borderRadius = baseStyle.borderRadius === `${radius} ${radius} 0 0` ? radius : `0 0 ${radius} ${radius}`;
         }
+        
+        if(isLast && !isCollapsed) {
+            baseStyle.borderBottomLeftRadius = '0';
+            baseStyle.borderBottomRightRadius = '0';
+        }
 
         return baseStyle;
-    }, [isMobile, index, totalCount]);
+    }, [isMobile, index, totalCount, isCollapsed]);
+
+    // Remove bottom radius when expanded to connect with content
+    const headerStyle = isMobile ? {
+        ...styles.mobileCardHeader,
+        ...( !isCollapsed ? { borderBottomLeftRadius: 0, borderBottomRightRadius: 0 } : {} )
+    } : styles.cardHeader;
 
     const renderHeader = () => {
         if (isMobile) {
@@ -634,7 +808,7 @@ const PartyGroup: React.FC<{ partyName: string; data: any; onToggleExpand: (orde
                 <div style={styles.mobilePartyHeaderContent}>
                     <div style={{...styles.partyAvatar, backgroundColor: pastelBg, color: pastelText}}>{firstLetter}</div>
                     <div style={styles.mobilePartyInfo}>
-                        <div style={styles.mobilePartyName}>{partyName}</div>
+                        <div style={{...styles.mobilePartyName, color: pastelText}}>{partyName}</div>
                         <div style={styles.mobilePartyMeta}>
                             {data.orderCount} Orders • {totalQty} Qty
                         </div>
@@ -656,7 +830,7 @@ const PartyGroup: React.FC<{ partyName: string; data: any; onToggleExpand: (orde
 
     return (
         <div style={isMobile ? mobileCardStyle : styles.card}>
-            <button style={isMobile ? styles.mobileCardHeader : styles.cardHeader} onClick={() => setIsCollapsed(!isCollapsed)}>
+            <button style={headerStyle} onClick={() => setIsCollapsed(!isCollapsed)}>
                {renderHeader()}
             </button>
             
@@ -674,6 +848,7 @@ const PartyGroup: React.FC<{ partyName: string; data: any; onToggleExpand: (orde
                         isMobile={isMobile}
                         selectedOrders={selectedOrders}
                         onSelectOrder={onSelectOrder}
+                        isSelectionMode={isSelectionMode}
                     />
                 </div>
             </div>
@@ -701,11 +876,16 @@ export const PendingOrders = ({ onNavigate }) => {
     const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
     const [isFilterVisible, setIsFilterVisible] = useState(false);
     const [activeTagFilter, setActiveTagFilter] = useState<string | null>(null);
+    
+    // Store collapsed state for party groups
+    const [collapsedParties, setCollapsedParties] = useState<Record<string, boolean>>({});
 
     // State for Command Center Layout
     const [selectedParty, setSelectedParty] = useState<string | null>(null);
     const [activeOrder, setActiveOrder] = useState<Order | null>(null);
     
+    const isSelectionMode = selectedOrders.length > 0;
+
     // --- Data Fetching and Management ---
     useEffect(() => {
         const handleResize = () => setIsMobile(window.innerWidth <= 768);
@@ -773,49 +953,6 @@ export const PendingOrders = ({ onNavigate }) => {
             window.removeEventListener('resize', handleResize);
             ordersRef.off('value', listener);
         }
-    }, []);
-
-    // --- Order Expiration Logic ---
-    useEffect(() => {
-        const manageExpiredOrders = async () => {
-            const pendingSnapshot = await firebase.database().ref(PENDING_ORDERS_REF).once('value');
-            const pendingOrders = pendingSnapshot.val();
-            const expiredSnapshot = await firebase.database().ref(EXPIRED_ORDERS_REF).once('value');
-            const expiredOrders = expiredSnapshot.val() || {};
-            
-            const now = new Date().getTime();
-            const fortyDaysAgo = now - (40 * 24 * 60 * 60 * 1000);
-            const seventyDaysAgo = now - (70 * 24 * 60 * 60 * 1000);
-            const updates = {};
-            let updated = false;
-
-            if (pendingOrders) {
-                for (const orderNumber in pendingOrders) {
-                    const order = pendingOrders[orderNumber];
-                    if (new Date(order.timestamp).getTime() < fortyDaysAgo) {
-                        updates[`${PENDING_ORDERS_REF}/${orderNumber}`] = null;
-                        updates[`${EXPIRED_ORDERS_REF}/${orderNumber}`] = { ...order, expiredTimestamp: new Date().toISOString(), expirationReason: 'Expired after 40 days in pending.'};
-                        updated = true;
-                    }
-                }
-            }
-            
-            for (const orderNumber in expiredOrders) {
-                const order = expiredOrders[orderNumber];
-                if (new Date(order.timestamp).getTime() < seventyDaysAgo) {
-                    updates[`${EXPIRED_ORDERS_REF}/${orderNumber}`] = null;
-                    updated = true;
-                }
-            }
-
-            if (updated) {
-                await firebase.database().ref().update(updates);
-                showToast('Automatically managed expired orders.', 'info');
-            }
-        };
-
-        const timer = setTimeout(manageExpiredOrders, 5000); // Run 5s after component mount
-        return () => clearTimeout(timer);
     }, []);
 
     // --- Tag Logic ---
@@ -929,16 +1066,18 @@ export const PendingOrders = ({ onNavigate }) => {
         if (selectedOrders.length === 0) { showToast('No orders selected.', 'error'); return; }
         if (window.confirm(`Are you sure you want to delete all ${selectedOrders.length} selected orders?`)) {
             const reason = prompt("Optional: Provide a reason for deleting these orders:", "Batch deletion.");
+            const updates = {};
             selectedOrders.forEach(orderNum => {
                 const order = orders.find(o => o.orderNumber === orderNum);
                 if (order) {
                     const newHistoryEvent = { timestamp: new Date().toISOString(), event: 'System', details: `Order deleted. Reason: ${reason || 'Not specified'}`};
                     const updatedHistory = [...(order.history || []), newHistoryEvent];
                     const deletedOrderData = { ...order, deletionReason: reason, deletedTimestamp: new Date().toISOString(), history: updatedHistory };
-                    const updates = { [`${DELETED_ORDERS_REF}/${order.orderNumber}`]: deletedOrderData, [`${PENDING_ORDERS_REF}/${order.orderNumber}`]: null };
-                    firebase.database().ref().update(updates);
+                    updates[`${DELETED_ORDERS_REF}/${order.orderNumber}`] = deletedOrderData;
+                    updates[`${PENDING_ORDERS_REF}/${order.orderNumber}`] = null;
                 }
             });
+            firebase.database().ref().update(updates);
             showToast(`${selectedOrders.length} orders deleted.`, 'success');
             setSelectedOrders([]);
         }
@@ -998,13 +1137,38 @@ export const PendingOrders = ({ onNavigate }) => {
     const handleBatchProcess = () => {
         if (selectedOrders.length === 0) { showToast('No orders selected.', 'error'); return; }
         if (window.confirm(`Are you sure you want to process all ${selectedOrders.length} selected orders?`)) {
+            const updates = {};
             selectedOrders.forEach(orderNum => {
                 const order = orders.find(o => o.orderNumber === orderNum);
                 if (order) {
-                    const fullQuantities = order.items.reduce((acc, item) => ({...acc, [item.id]: item.quantity}), {});
-                    handleProcessOrder(order, fullQuantities);
+                    // Simplification: Batch process assumes all items are ready.
+                    // A real implementation might need more complex logic or match matched item amounts.
+                    // Here we just move the whole order content.
+                    const newHistoryEvent = { timestamp: new Date().toISOString(), event: 'System', details: `Batch Processed.`};
+                    const updatedHistory = [...(order.history || []), newHistoryEvent];
+                    
+                    // This needs real async handling if checking stock, but for now matching existing logic:
+                    // Warning: This loop structure with async inside is tricky.
+                    // Ideally we build one big update object.
+                    // For safety in this snippet, we will iterate and update.
+                    const billingOrderRefPath = `${BILLING_ORDERS_REF}/${order.orderNumber}`;
+                    const pendingOrderRefPath = `${PENDING_ORDERS_REF}/${order.orderNumber}`;
+                    
+                    updates[billingOrderRefPath] = { ...order, history: updatedHistory };
+                    updates[pendingOrderRefPath] = null; 
                 }
             });
+            // Warning: This overwrites existing billing orders if not careful.
+            // Re-using handleProcessOrder per item is safer but slower.
+            // Given constraint, let's use loop:
+             selectedOrders.forEach(orderNum => {
+                const order = orders.find(o => o.orderNumber === orderNum);
+                if(order) {
+                     const fullQuantities = order.items.reduce((acc, item) => ({...acc, [item.id]: item.quantity}), {});
+                     handleProcessOrder(order, fullQuantities);
+                }
+             });
+            
             setSelectedOrders([]);
         }
     };
@@ -1062,6 +1226,52 @@ export const PendingOrders = ({ onNavigate }) => {
         });
 
         doc.save(`Picking_List_${Date.now()}.pdf`);
+    };
+    
+    const handleBatchPrint = () => {
+        if (selectedOrders.length === 0) { showToast('No orders selected.', 'error'); return; }
+        const selected = orders.filter(o => selectedOrders.includes(o.orderNumber));
+        handlePrintPickingList(selected);
+        setSelectedOrders([]);
+    };
+
+    const handleBatchExport = () => {
+        if (selectedOrders.length === 0) { showToast('No orders selected.', 'error'); return; }
+        const selected = orders.filter(o => selectedOrders.includes(o.orderNumber));
+        
+        const csvRows = [];
+        const headers = ['Order Number', 'Party Name', 'Date', 'Style', 'Color', 'Size', 'Quantity', 'MRP'];
+        csvRows.push(headers.join(','));
+        
+        selected.forEach(order => {
+            order.items.forEach(item => {
+                const row = [
+                    order.orderNumber,
+                    `"${order.partyName}"`,
+                    `"${new Date(order.timestamp).toLocaleDateString()}"`,
+                    `"${item.fullItemData.Style}"`,
+                    `"${item.fullItemData.Color}"`,
+                    `"${item.fullItemData.Size}"`,
+                    item.quantity,
+                    item.price
+                ];
+                csvRows.push(row.join(','));
+            });
+        });
+        
+        const csvString = csvRows.join('\n');
+        const blob = new Blob([csvString], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.setAttribute('hidden', '');
+        a.setAttribute('href', url);
+        a.setAttribute('download', `orders_export_${Date.now()}.csv`);
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        
+        showToast('Exported selected orders to CSV', 'success');
+        setSelectedOrders([]);
     };
 
     const filteredAndSortedOrders = useMemo(() => {
@@ -1161,6 +1371,7 @@ export const PendingOrders = ({ onNavigate }) => {
             isMobile: isMobile,
             selectedOrders: selectedOrders,
             onSelectOrder: handleSelectOrderCheckbox,
+            isSelectionMode: isSelectionMode
         };
 
         // Added key to trigger animation on view change
@@ -1174,6 +1385,8 @@ export const PendingOrders = ({ onNavigate }) => {
                         {...commonProps}
                         index={index}
                         totalCount={partyNamesInOrder.length}
+                        isCollapsed={!collapsedParties[partyName] && collapsedParties[partyName] !== false ? true : collapsedParties[partyName]}
+                        setIsCollapsed={(v) => setCollapsedParties(prev => ({...prev, [partyName]: v}))}
                     >
                         {expandedView}
                     </PartyGroup>
@@ -1226,6 +1439,7 @@ export const PendingOrders = ({ onNavigate }) => {
                                     isExpanded={activeOrder?.orderNumber === order.orderNumber}
                                     isMobile={false}
                                     isSelected={selectedOrders.includes(order.orderNumber)}
+                                    isSelectionMode={isSelectionMode}
                                     onToggleExpand={handleSelectOrder}
                                     onSelectOrder={handleSelectOrderCheckbox}
                                     onProcessOrder={handleProcessFullOrder}
@@ -1283,10 +1497,29 @@ export const PendingOrders = ({ onNavigate }) => {
                     from { transform: translateY(100%); opacity: 0; }
                     to { transform: translateY(0); opacity: 1; }
                 }
+                .header-title-anim {
+                    transition: opacity 0.2s ease, transform 0.2s ease;
+                    animation: fadeInTitle 0.3s ease-out;
+                }
+                @keyframes fadeInTitle {
+                    from { opacity: 0; transform: translateY(5px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
             `}</style>
             <div style={isMobile ? styles.headerCardMobile : styles.headerCard}>
-                <div style={{...styles.headerTop, ...(isMobile && {justifyContent: 'flex-end', padding: 0})}}>
-                     {!isMobile && <h2 style={styles.pageTitle}>Pending Orders</h2>}
+                <div style={{...styles.headerTop, ...(isMobile && {justifyContent: 'space-between', padding: '0.75rem 0'})}}>
+                     {isMobile ? (
+                         isSelectionMode ? (
+                             <h2 className="header-title-anim" key="select" style={{...styles.pageTitle, fontSize: '1.1rem', color: 'var(--brand-color)'}}>
+                                {selectedOrders.length} Selected
+                             </h2>
+                         ) : (
+                            // Empty title on mobile when not selecting, to keep layout but hide text
+                            <div />
+                         )
+                     ) : (
+                        <h2 style={styles.pageTitle}>Pending Orders</h2>
+                     )}
                     <div style={styles.headerControls}>
                         <button onClick={() => setIsFilterVisible(v => !v)} style={isFilterVisible ? {...styles.toggleButton, ...styles.toggleButtonActive} : (isMobile ? styles.mobileFilterButton : styles.toggleButton)}>
                             <FilterIcon />
@@ -1352,11 +1585,12 @@ export const PendingOrders = ({ onNavigate }) => {
             </div>
             {selectedOrders.length > 0 && (
                 <div className="batch-toolbar-enter" style={styles.batchActionToolbar}>
-                     <span style={{fontSize: '0.9rem', fontWeight: 600}}>{selectedOrders.length} selected</span>
-                     <div style={styles.footerActions}>
-                        <button onClick={() => handleBatchDelete()} style={{...styles.secondaryButton, color: '#e74c3c', borderColor: '#e74c3c', backgroundColor: 'rgba(255,255,255,0.9)', padding: '0.4rem 0.8rem', fontSize: '0.85rem'}}><TrashIcon/> Del</button>
-                        <button onClick={handleBatchProcess} style={{...styles.modalActionButton, padding: '0.4rem 1rem', minWidth: 'auto', fontSize: '0.9rem'}}>Process</button>
-                     </div>
+                    <div style={styles.batchIconGroup}>
+                        <button style={styles.batchIconBtn} onClick={handleBatchProcess} title="Forward for Process"><ProcessIcon/></button>
+                        <button style={styles.batchIconBtn} onClick={handleBatchExport} title="Export CSV"><ShareIcon/></button>
+                        <button style={styles.batchIconBtn} onClick={handleBatchPrint} title="Print Picking List"><PrintIcon/></button>
+                        <button style={{...styles.batchIconBtn, ...styles.batchIconBtnDanger}} onClick={handleBatchDelete} title="Delete"><TrashIcon/></button>
+                    </div>
                 </div>
             )}
             {isMobile ? renderMobileLayout() : renderDesktopLayout()}
@@ -1365,7 +1599,7 @@ export const PendingOrders = ({ onNavigate }) => {
 };
 
 const styles: { [key: string]: React.CSSProperties } = {
-    container: { display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1, position: 'relative', backgroundColor: '#ffffff' },
+    container: { display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1, position: 'relative', backgroundColor: '#ffffff', zoom: window.innerWidth <= 768 ? '85%' : '100%' },
     headerCard: { backgroundColor: '#f8f9fa', padding: '1rem 1.5rem', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', display: 'flex', flexDirection: 'column', gap: '0.75rem', position: 'sticky', top: 0, zIndex: 100 },
     headerCardMobile: { backgroundColor: '#ffffff', padding: '0 1rem 0.25rem', gap: '0', display: 'flex', flexDirection: 'column', position: 'sticky', top: 0, zIndex: 100, borderBottom: 'none' },
     headerTop: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
@@ -1396,7 +1630,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     spinner: { border: '4px solid var(--light-grey)', borderRadius: '50%', borderTop: '4px solid var(--brand-color)', width: '40px', height: '40px', animation: 'spin 1s linear infinite' },
     card: { backgroundColor: '#f8f9fa', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', overflow: 'hidden' },
     cardHeader: { width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.5rem', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' },
-    mobileCardHeader: { width: '100%', display: 'flex', flexDirection: 'row', alignItems: 'center', padding: '1rem', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' },
+    mobileCardHeader: { width: '100%', display: 'flex', flexDirection: 'row', alignItems: 'center', padding: '1rem', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', transition: 'border-radius 0.3s ease' },
     mobilePartyHeaderContent: { display: 'flex', alignItems: 'center', width: '100%', gap: '1rem' },
     partyAvatar: { width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '600', fontSize: '1.1rem', flexShrink: 0 },
     mobilePartyInfo: { display: 'flex', flexDirection: 'column', flex: 1, gap: '2px' },
@@ -1421,44 +1655,66 @@ const styles: { [key: string]: React.CSSProperties } = {
     badge: { backgroundColor: '#eef2f7', color: 'var(--brand-color)', padding: '0.2rem 0.6rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600 },
     checkboxContainer: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' },
     checkboxButton: { background: 'none', border: 'none', padding: '0', cursor: 'pointer', color: 'var(--text-color)' },
-    expandedViewContainer: { padding: '0.5rem 1.5rem 1.5rem', borderTop: '1px solid var(--brand-color)', backgroundColor: '#ffffff' },
-    tableContainer: { overflowX: 'auto', backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid var(--skeleton-bg)' },
+    expandedViewContainer: { padding: '0 1.5rem 1.5rem', border: '1px solid var(--skeleton-bg)', borderTop: 'none', backgroundColor: '#f8f9fa', borderRadius: '0 0 10px 10px' },
+    tableContainer: { overflowX: 'auto' },
     table: { width: '100%', borderCollapse: 'collapse' },
     th: { backgroundColor: '#f8f9fa', padding: '10px 12px', textAlign: 'center', fontWeight: 600, color: 'var(--dark-grey)', borderBottom: '2px solid var(--skeleton-bg)', whiteSpace: 'nowrap' },
-    tr: { borderBottom: '1px solid var(--skeleton-bg)' },
+    tr: { backgroundColor: 'var(--card-bg)', borderBottom: 'none' },
     td: { padding: '10px 12px', color: 'var(--text-color)', fontSize: '0.9rem', textAlign: 'center' },
-    qtyInput: { width: '70px', padding: '8px', textAlign: 'center', border: '1px solid var(--skeleton-bg)', borderRadius: '6px', fontSize: '0.9rem' },
+    qtyInput: { width: '70px', padding: '8px', textAlign: 'center', border: '1px solid var(--skeleton-bg)', borderRadius: '6px', fontSize: '0.9rem', backgroundColor: '#ffffff', color: 'var(--dark-grey)' },
     tdInput: { padding: '4px' },
     noteBox: { backgroundColor: '#fffbe6', border: '1px solid #ffe58f', padding: '0.75rem 1rem', borderRadius: '8px', fontSize: '0.9rem', marginTop: '1rem' },
-    modalFooter: { padding: '1.5rem 0 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' },
-    footerActions: { display: 'flex', gap: '0.75rem', alignItems: 'center' },
-    deleteButton: { padding: '0.75rem', background: '#fbe2e2', border: '1px solid #e74c3c', color: '#c0392b', borderRadius: '8px', cursor: 'pointer' },
-    deleteButtonMobile: { padding: '0.75rem', background: '#f0f0f0', border: '1px solid #d0d0d0', color: '#888', borderRadius: '8px', cursor: 'pointer' },
-    secondaryButton: { padding: '0.7rem 1.2rem', background: 'var(--light-grey)', border: '1px solid var(--skeleton-bg)', color: 'var(--dark-grey)', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 500 },
-    modalActionButton: { padding: '0.75rem 1.5rem', fontSize: '1rem', fontWeight: 500, color: '#fff', backgroundColor: 'var(--brand-color)', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: '180px' },
-    modalActionButtonMobile: { padding: '0.75rem 1.5rem', fontSize: '1rem', fontWeight: 500, color: '#444', backgroundColor: '#e0e0e0', border: '1px solid #ccc', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: '120px' },
+    modalFooter: { padding: '1rem 0 0', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', borderTop: 'none' },
+    footerActions: { display: 'flex', gap: '0.75rem', alignItems: 'center', justifyContent: 'flex-end', flex: 1 },
+    footerButton: { padding: '0.75rem 1.2rem', fontSize: '0.9rem', fontWeight: 600, color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', transition: 'all 0.2s ease', },
+    printButton: { backgroundColor: '#8e44ad', boxShadow: '0 2px 8px rgba(142, 68, 173, 0.3)' },
+    deleteButton: { backgroundColor: '#e74c3c', boxShadow: '0 2px 8px rgba(231, 76, 60, 0.3)' },
+    processButton: { backgroundColor: '#2ecc71', boxShadow: '0 2px 8px rgba(46, 204, 113, 0.3)', minWidth: '120px' },
+    
+    // --- Batch Action Toolbar ---
     batchActionToolbar: { 
-        backgroundColor: 'rgba(30, 41, 59, 0.95)', // Dark background for contrast
-        backdropFilter: 'blur(10px)',
-        color: 'white', 
-        padding: '0.8rem 1.2rem', 
+        backgroundColor: 'rgba(30, 41, 59, 0.95)',
+        backdropFilter: 'blur(16px)',
+        padding: '0.6rem', 
         display: 'flex', 
-        justifyContent: 'space-between', 
+        justifyContent: 'center', 
         alignItems: 'center', 
         position: 'fixed', 
-        bottom: '20px', // Floating
+        bottom: '30px', 
         left: '50%', 
         transform: 'translateX(-50%)',
-        width: '92%',
-        maxWidth: '600px',
+        width: 'auto',
+        maxWidth: '92%',
         zIndex: 1000, 
-        borderRadius: '16px', // Rounded pill
-        boxShadow: '0 10px 25px rgba(0,0,0,0.25)' // Deep shadow
+        borderRadius: '16px',
+        boxShadow: '0 10px 30px rgba(0,0,0,0.25), 0 0 0 1px rgba(255,255,255,0.1)'
     },
+    batchIconGroup: {
+        display: 'flex',
+        gap: '1rem'
+    },
+    batchIconBtn: {
+        background: 'transparent',
+        border: 'none',
+        color: 'white',
+        padding: '8px',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: '8px',
+        transition: 'background 0.2s ease, transform 0.1s',
+        width: '40px',
+        height: '40px'
+    },
+    batchIconBtnDanger: {
+        color: '#fca5a5'
+    },
+
     stockIndicator: { width: '10px', height: '10px', borderRadius: '50%', flexShrink: 0 },
     stockIndicatorPlaceholder: { width: '10px', height: '10px' },
     mobileItemContainer: { display: 'flex', flexDirection: 'column', gap: '0.5rem', paddingTop: '0.5rem' },
-    mobileItemCard: { backgroundColor: '#f8f9fa', borderRadius: '8px', border: '1px solid var(--skeleton-bg)', padding: '0.5rem 0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' },
+    mobileItemCard: { backgroundColor: 'var(--card-bg)', borderRadius: '8px', padding: '0.5rem 0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', border: 'none' },
     mobileItemInfo: { display: 'flex', flexDirection: 'column', gap: '0.25rem' },
     mobileItemName: { fontWeight: 500, color: 'var(--dark-grey)', fontSize: '0.9rem' },
     mobileItemStock: { display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--dark-grey)' },
@@ -1470,27 +1726,39 @@ const styles: { [key: string]: React.CSSProperties } = {
     swipeableRightActions: { position: 'absolute', top: 0, right: 0, height: '100%', display: 'flex', alignItems: 'center', paddingRight: '10px', gap: '10px', zIndex: 0 },
     swipeAction: { width: '40px', height: '40px', borderRadius: '20px', color: 'white', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '0.8rem', boxShadow: '0 2px 5px rgba(0,0,0,0.1)', margin: 'auto' },
     swipeableContent: { position: 'relative', backgroundColor: '#f8f9fa', zIndex: 1 },
+    
     // --- New Detailed Card Styles ---
-    detailedOrderCard: { backgroundColor: '#f8f9fa', borderRadius: '10px', padding: '1rem', border: '1px solid var(--skeleton-bg)', display: 'flex', flexDirection: 'column', gap: '0.5rem', cursor: 'pointer', transition: 'border-color 0.2s, box-shadow 0.2s' },
-    detailedOrderCardActive: { backgroundColor: '#ffffff', borderRadius: '10px', padding: '1rem', border: '1px solid var(--brand-color)', display: 'flex', flexDirection: 'column', gap: '0.5rem', cursor: 'pointer', transition: 'border-color 0.2s, box-shadow 0.2s', boxShadow: '0 4px 12px rgba(71, 84, 104, 0.1)' },
+    detailedOrderCard: { backgroundColor: '#f8f9fa', borderRadius: '10px', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', cursor: 'pointer', transition: 'border-color 0.2s, box-shadow 0.2s, background-color 0.2s' },
+    detailedOrderCardActive: { 
+        backgroundColor: '#f8f9fa', 
+        borderRadius: '10px 10px 0 0', 
+        padding: '1rem', 
+        display: 'flex', 
+        flexDirection: 'column', 
+        gap: '0.5rem', 
+        cursor: 'pointer', 
+        transition: 'all 0.2s'
+    },
     
     // Refined Hierarchy Styles
     cardTopRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.25rem' },
-    cardPartyName: { fontSize: '1.1rem', fontWeight: 700, color: 'var(--dark-grey)', margin: 0, lineHeight: 1.2 },
-    cardMetaRow: { display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: 'var(--text-color)', marginBottom: '0.5rem' },
-    cardOrderNumber: { fontFamily: 'monospace', fontWeight: 600, color: 'var(--brand-color)', backgroundColor: '#edf2f7', padding: '1px 4px', borderRadius: '4px' },
-    cardSeparator: { color: '#cbd5e0' },
-    cardTime: {},
-    cardFooterRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid var(--skeleton-bg)' },
+    cardPartyName: { fontSize: '1.1rem', fontWeight: 700, color: 'var(--dark-grey)', margin: 0, lineHeight: 1.2, flex: 1, paddingRight: '0.5rem' },
+    
+    cardSecondRow: { display: 'grid', gridTemplateColumns: '1fr auto', gap: '1rem', alignItems: 'start' },
+    stylePreviewInline: { fontSize: '0.85rem', color: '#94a3b8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'left', fontWeight: 500 },
+    cardMetaRight: { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' },
+    
+    cardOrderNumber: { fontFamily: 'monospace', fontWeight: 700, color: 'var(--brand-color)', backgroundColor: '#edf2f7', padding: '2px 6px', borderRadius: '4px', fontSize: '0.8rem' },
+    cardTime: { fontSize: '0.75rem', color: '#64748b' },
+    
+    cardFooterRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.75rem', paddingTop: '0.75rem' },
     metricGroup: { display: 'flex', gap: '1rem' },
     iconMetric: { display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.9rem', fontWeight: 600, color: 'var(--dark-grey)' },
     statusIconGroup: { display: 'flex', gap: '0.75rem' },
-
-    stylePreview: { fontSize: '0.85rem', color: 'var(--text-color)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', },
     
     // --- History Section ---
-    historySection: { marginTop: '1.5rem', borderTop: '1px solid var(--skeleton-bg)', paddingTop: '1rem' },
-    historyHeader: { width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem 0', fontSize: '1rem', fontWeight: 600, color: 'var(--dark-grey)' },
+    historySection: { marginTop: '1rem', paddingTop: '1rem' },
+    historyHeader: { width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer', padding: '0.25rem 0', fontSize: '1rem', fontWeight: 600, color: 'var(--dark-grey)' },
     historyContent: { padding: '1rem 0 0', display: 'flex', flexDirection: 'column', gap: '1rem' },
     historyList: { maxHeight: '300px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem', border: '1px solid var(--skeleton-bg)', borderRadius: '8px', padding: '0.75rem', backgroundColor: '#ffffff' },
     historyItem: { display: 'flex', flexDirection: 'column', gap: '0.25rem' },
@@ -1499,7 +1767,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     historyDetails: { fontSize: '0.9rem', color: 'var(--dark-grey)', paddingLeft: '0.25rem' },
     addNoteContainer: { display: 'flex', flexDirection: 'column', gap: '0.5rem' },
     noteTextarea: { width: '100%', minHeight: '60px', padding: '0.75rem', fontSize: '0.9rem', border: '1px solid var(--skeleton-bg)', borderRadius: '8px', resize: 'vertical' },
-    addNoteButton: { alignSelf: 'flex-end', padding: '0.5rem 1rem', background: 'var(--light-grey)', border: '1px solid var(--skeleton-bg)', color: 'var(--dark-grey)', borderRadius: '8px', cursor: 'pointer', fontWeight: 500 },
+    addNoteButton: { alignSelf: 'flex-end', padding: '0.5rem 1rem', border: 'none', color: 'white', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' },
     // --- Command Center Styles ---
     commandCenterLayout: { display: 'grid', gridTemplateColumns: '280px 1fr 1.5fr', gap: '1rem', flex: 1, minHeight: 0 },
     leftPanel: { display: 'flex', flexDirection: 'column', backgroundColor: '#f8f9fa', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', minHeight: 0 },
