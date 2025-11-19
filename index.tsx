@@ -88,6 +88,7 @@ const NavIcon = ({ name }) => { const icons = {
 const Spinner = () => <div style={styles.spinner}></div>;
 const CollapseIcon = ({ collapsed }) => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: collapsed ? 'rotate(180deg)' : 'none', transition: 'transform 0.3s ease' }}><path d="m15 18-6-6 6-6"/></svg>;
 const AlertTriangleIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.46 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>;
+const EditIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>;
 
 // --- DATABASE LOGIC ---
 interface CachedImage { id: string; blob: Blob; url: string; }
@@ -128,7 +129,26 @@ const ToggleSwitch = ({ checked, onChange }) => (
     </div>
 );
 
-const Preferences = ({ session, theme, toggleTheme }) => {
+const Preferences = ({ session, theme, toggleTheme, onUpdateUser }) => {
+    const [isNameModalOpen, setIsNameModalOpen] = useState(false);
+    const [newName, setNewName] = useState('');
+    const showToast = useToast();
+
+    const handleEditClick = () => {
+        setNewName(session.userName);
+        setIsNameModalOpen(true);
+    };
+
+    const handleSaveName = () => {
+        if (newName.trim().length === 0) {
+            showToast('Name cannot be empty', 'error');
+            return;
+        }
+        onUpdateUser(newName.trim());
+        setIsNameModalOpen(false);
+        showToast('Display name updated successfully', 'success');
+    };
+
     return (
         <div style={styles.preferencesPageWrapper}>
              <div style={styles.preferencesHeaderCenter}>
@@ -147,6 +167,13 @@ const Preferences = ({ session, theme, toggleTheme }) => {
                     <div style={styles.preferenceRow}>
                         <span style={styles.preferenceLabel}>User ID</span>
                         <span style={styles.preferenceValue}>{session.userId}</span>
+                    </div>
+                    <div style={styles.preferenceRow}>
+                        <span style={styles.preferenceLabel}>Display Name</span>
+                        <div style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
+                            <span style={styles.preferenceValue}>{session.userName}</span>
+                            <button onClick={handleEditClick} style={styles.iconButton}><EditIcon /></button>
+                        </div>
                     </div>
                     <div style={styles.preferenceRow}>
                         <span style={styles.preferenceLabel}>Email</span>
@@ -175,6 +202,25 @@ const Preferences = ({ session, theme, toggleTheme }) => {
                     </div>
                 </div>
              </div>
+
+            {isNameModalOpen && (
+                <div style={styles.modalOverlay}>
+                    <div style={styles.modalContent}>
+                        <h3 style={styles.modalTitle}>Change Display Name</h3>
+                        <input 
+                            type="text" 
+                            value={newName} 
+                            onChange={(e) => setNewName(e.target.value)}
+                            style={styles.input}
+                            autoFocus
+                        />
+                        <div style={styles.modalActions}>
+                            <button onClick={() => setIsNameModalOpen(false)} style={styles.secondaryButton}>Cancel</button>
+                            <button onClick={handleSaveName} style={styles.primaryButton}>Save</button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
@@ -424,10 +470,11 @@ type MainContentProps = {
     isMobile: boolean;
     theme: string;
     toggleTheme: () => void;
+    onUpdateUser: (name: string) => void;
 };
 
 const MainContent = React.forwardRef<HTMLElement, MainContentProps>(
-    ({ activeView, onNavigate, session, isMobile, theme, toggleTheme }, ref) => {
+    ({ activeView, onNavigate, session, isMobile, theme, toggleTheme, onUpdateUser }, ref) => {
         let mainStyle = styles.mainContent;
 
         if (isMobile) {
@@ -455,7 +502,7 @@ const MainContent = React.forwardRef<HTMLElement, MainContentProps>(
                 case 'Billed': return <BilledOrders />;
                 case 'Deleted': return <DeletedOrders />;
                 case 'Expired': return <ExpiredOrders />;
-                case 'Preferences': return <Preferences session={session} theme={theme} toggleTheme={toggleTheme} />;
+                case 'Preferences': return <Preferences session={session} theme={theme} toggleTheme={toggleTheme} onUpdateUser={onUpdateUser} />;
                 default: return <PageContent />;
             }
         };
@@ -466,7 +513,7 @@ const MainContent = React.forwardRef<HTMLElement, MainContentProps>(
 
 
 // --- HOMEPAGE WRAPPER ---
-const HomePage = ({ session, onLogout, appLogoSrc }) => {
+const HomePage = ({ session, onLogout, appLogoSrc, onUpdateUser }) => {
     const [activeView, setActiveView] = useState('Dashboard');
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -659,6 +706,7 @@ const HomePage = ({ session, onLogout, appLogoSrc }) => {
                     isMobile={isMobile} 
                     theme={theme}
                     toggleTheme={toggleTheme}
+                    onUpdateUser={onUpdateUser}
                 />
             </div>
             {isMobile && activeView !== 'Entry' && <BottomNavBar activeView={activeView} onNavigate={handleNavigate} />}
@@ -769,13 +817,19 @@ const KAOMSLogin = () => {
         setPassword('');
     };
     
+    const updateUserName = (newName) => {
+        const updatedSession = { ...session, userName: newName };
+        setSession(updatedSession);
+        localStorage.setItem('ka-oms-session', JSON.stringify(updatedSession));
+    };
+    
     const cardStyles = { ...styles.card, padding: isMobile ? '2.5rem 1.5rem' : '2.5rem 2rem', boxShadow: isMobile ? '0 4px 15px rgba(0, 0, 0, 0.06)' : 'var(--box-shadow)', transform: isMounted ? 'translateY(0)' : 'translateY(20px)', opacity: isMounted ? 1 : 0 };
     const titleStyles = { ...styles.title, fontSize: isMobile ? '1.5rem' : '1.75rem' };
     const subtitleStyles = { ...styles.subtitle, fontSize: isMobile ? '0.9rem' : '1rem', marginBottom: isMobile ? '1.5rem' : '2rem' };
     const logoStyles = { ...styles.logo, opacity: areImagesReady ? 1 : 0, transition: 'opacity 0.3s ease-in' };
 
     if (isLoggedIn && session) {
-        return <HomePage session={session} onLogout={handleLogout} appLogoSrc={appLogoSrc} />;
+        return <HomePage session={session} onLogout={handleLogout} appLogoSrc={appLogoSrc} onUpdateUser={updateUserName} />;
     }
 
     return (
@@ -899,6 +953,14 @@ const styles: { [key: string]: React.CSSProperties } = {
     preferenceRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.25rem', borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--card-bg)' },
     preferenceLabel: { color: 'var(--dark-grey)', fontSize: '0.95rem', fontWeight: 500 },
     preferenceValue: { color: 'var(--text-color)', fontWeight: 400, fontSize: '0.95rem' },
+    // Modal Styles
+    modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.05)', backdropFilter: 'blur(1.5px)', WebkitBackdropFilter: 'blur(1.5px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' },
+    modalContent: { backgroundColor: 'var(--card-bg)', padding: '1.5rem', borderRadius: '12px', width: '90%', maxWidth: '350px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '1rem' },
+    modalTitle: { margin: 0, fontSize: '1.1rem', fontWeight: 600, color: 'var(--dark-grey)' },
+    modalActions: { display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' },
+    primaryButton: { padding: '0.6rem 1.2rem', backgroundColor: 'var(--brand-color)', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 500 },
+    secondaryButton: { padding: '0.6rem 1.2rem', backgroundColor: 'transparent', color: 'var(--text-color)', border: '1px solid var(--border-color)', borderRadius: '6px', cursor: 'pointer', fontSize: '0.9rem' },
+    iconButton: { background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-color)', display: 'flex', alignItems: 'center', padding: '4px' },
 };
 
 const container = document.getElementById('root');
