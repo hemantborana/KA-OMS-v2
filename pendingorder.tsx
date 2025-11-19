@@ -1,5 +1,8 @@
 
 
+
+
+
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
@@ -1596,7 +1599,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     tagFilterContainer: { display: 'flex', flexDirection: 'column', gap: '0.5rem' },
     tagScrollContainer: { display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.5rem', scrollbarWidth: 'none' },
     tagFilterButton: { background: 'var(--card-bg)', border: '1px solid var(--skeleton-bg)', padding: '0.3rem 0.8rem', borderRadius: '14px', cursor: 'pointer', fontSize: '0.8rem', whiteSpace: 'nowrap' },
-    listContainer: { flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0rem', padding: '0 0 1rem' },
+    listContainer: { flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0rem', padding: '0 0 90px' },
     centeredMessage: { flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'var(--text-color)', fontSize: '1.1rem' },
     spinner: { border: '4px solid var(--light-grey)', borderRadius: '50%', borderTop: '4px solid var(--brand-color)', width: '40px', height: '40px', animation: 'spin 1s linear infinite' },
     card: { backgroundColor: '#f8f9fa', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', overflow: 'hidden' },
@@ -1626,6 +1629,9 @@ const styles: { [key: string]: React.CSSProperties } = {
     collapsibleContentWrapper: {
         overflow: 'hidden',
         minHeight: 0,
+        // Promote to own layer to prevent text blur during animation
+        transform: 'translateZ(0)',
+        backfaceVisibility: 'hidden',
     },
 
     orderItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem 1.5rem', borderTop: '1px solid var(--skeleton-bg)' },
@@ -1767,7 +1773,13 @@ const styles: { [key: string]: React.CSSProperties } = {
     tagsContainer: { display: 'flex', flexWrap: 'wrap', gap: '0.25rem', marginTop: '0.25rem' },
     removeTagButton: { background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', padding: '0', marginLeft: '4px', display: 'flex', alignItems: 'center' },
     miniTagDot: { width: '8px', height: '8px', borderRadius: '50%', display: 'inline-block' },
-    customDropdownContainer: { position: 'relative', display: 'inline-block' },
+    customDropdownContainer: {
+        position: 'relative',
+        display: 'inline-block',
+        // Promote to own layer to prevent text blur during animation
+        transform: 'translateZ(0)',
+        backfaceVisibility: 'hidden',
+    },
     customDropdownButton: { padding: '2px 8px', borderRadius: '12px', border: '1px solid var(--skeleton-bg)', fontSize: '0.75rem', color: 'var(--text-color)', backgroundColor: 'var(--light-grey)', cursor: 'pointer', display: 'flex', alignItems: 'center', },
     customDropdownMenu: { position: 'absolute', top: '100%', left: 0, backgroundColor: 'var(--card-bg)', border: '1px solid var(--skeleton-bg)', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 10, minWidth: '200px', marginTop: '4px', padding: '0.25rem', animation: 'dropdown-in 0.2s ease-out forwards', transformOrigin: 'top center', },
     customDropdownItem: { display: 'block', width: '100%', padding: '0.5rem 0.75rem', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '0.85rem', borderRadius: '6px', color: 'var(--dark-grey)', },
