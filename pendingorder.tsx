@@ -1,7 +1,4 @@
 
-
-
-
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
@@ -743,7 +740,7 @@ const PartyGroup: React.FC<{ partyName: string; data: any; onToggleExpand: (orde
     };
 
     return (
-        <div style={styles.card}>
+        <div style={styles.card} className={!isCollapsed ? 'party-group-expanded' : ''}>
             <button style={isMobile ? styles.mobileCardHeader : headerButtonStyle} onClick={onToggleCollapse}>
                {renderHeader()}
             </button>
@@ -1437,6 +1434,37 @@ export const PendingOrders = ({ onNavigate }) => {
                 @keyframes dropdown-in {
                     from { transform: translateY(10px) scale(0.95); opacity: 0; }
                     to { transform: translateY(0) scale(1); opacity: 1; }
+                }
+                @keyframes gradient-flow {
+                    0% { background-position: 0% 50%; }
+                    50% { background-position: 100% 50%; }
+                    100% { background-position: 0% 50%; }
+                }
+                .party-group-expanded {
+                    position: relative;
+                    overflow: visible; 
+                }
+                .party-group-expanded::after { /* The border */
+                    content: '';
+                    position: absolute;
+                    z-index: -1;
+                    inset: -2px; /* Made thicker */
+                    border-radius: calc(var(--border-radius) + 2px); /* Adjusted radius */
+                    background: linear-gradient(90deg, #f72585, #b5179e, #7209b7, #480ca8, #f72585);
+                    background-size: 300%;
+                    animation: gradient-flow 2.5s linear infinite; /* Made faster */
+                }
+                .party-group-expanded::before { /* The glow */
+                    content: '';
+                    position: absolute;
+                    z-index: -2;
+                    inset: -8px; /* Made wider */
+                    border-radius: calc(var(--border-radius) + 8px); /* Adjusted radius */
+                    background: linear-gradient(90deg, #f72585, #b5179e, #7209b7, #480ca8, #f72585);
+                    background-size: 300%;
+                    animation: gradient-flow 2.5s linear infinite; /* Made faster */
+                    filter: blur(16px); /* Made blurrier */
+                    opacity: 0.9; /* Slightly more opaque */
                 }
             `}</style>
             <div style={isMobile ? styles.headerCardMobile : styles.headerCard}>
