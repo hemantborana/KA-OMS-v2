@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
@@ -1435,36 +1436,12 @@ export const PendingOrders = ({ onNavigate }) => {
                     from { transform: translateY(10px) scale(0.95); opacity: 0; }
                     to { transform: translateY(0) scale(1); opacity: 1; }
                 }
-                @keyframes gradient-flow {
-                    0% { background-position: 0% 50%; }
-                    50% { background-position: 100% 50%; }
-                    100% { background-position: 0% 50%; }
-                }
                 .party-group-expanded {
+                    /* A solid pink border and a matching glow using box-shadow */
+                    /* This is more robust and avoids z-index/clipping issues */
+                    box-shadow: 0 0 0 2px #e83e8c, 0 0 12px 3px rgba(232, 62, 140, 0.6);
+                    z-index: 1;
                     position: relative;
-                    overflow: visible; 
-                }
-                .party-group-expanded::after { /* The border */
-                    content: '';
-                    position: absolute;
-                    z-index: -1;
-                    inset: -2px; /* Made thicker */
-                    border-radius: calc(var(--border-radius) + 2px); /* Adjusted radius */
-                    background: linear-gradient(90deg, #f72585, #b5179e, #7209b7, #480ca8, #f72585);
-                    background-size: 300%;
-                    animation: gradient-flow 2.5s linear infinite; /* Made faster */
-                }
-                .party-group-expanded::before { /* The glow */
-                    content: '';
-                    position: absolute;
-                    z-index: -2;
-                    inset: -8px; /* Made wider */
-                    border-radius: calc(var(--border-radius) + 8px); /* Adjusted radius */
-                    background: linear-gradient(90deg, #f72585, #b5179e, #7209b7, #480ca8, #f72585);
-                    background-size: 300%;
-                    animation: gradient-flow 2.5s linear infinite; /* Made faster */
-                    filter: blur(16px); /* Made blurrier */
-                    opacity: 0.9; /* Slightly more opaque */
                 }
             `}</style>
             <div style={isMobile ? styles.headerCardMobile : styles.headerCard}>
