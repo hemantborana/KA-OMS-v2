@@ -1627,7 +1627,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     badge: { backgroundColor: '#eef2f7', color: 'var(--brand-color)', padding: '0.2rem 0.6rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600 },
     checkboxContainer: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' },
     checkboxButton: { background: 'none', border: 'none', padding: '0', cursor: 'pointer', color: 'var(--text-color)' },
-    expandedViewContainer: { padding: '0 1.5rem 1.5rem', backgroundColor: '#FFF', borderRadius: '0 0 10px 10px' },
+    expandedViewContainer: { padding: '0 1.5rem 1.5rem', backgroundColor: '#FFF', borderRadius: '0 0 10px 10px', border: '2px solid var(--brand-color)', borderTop: 'none' },
     tableContainer: { overflowX: 'auto', backgroundColor: 'var(--card-bg)', borderRadius: '8px' },
     table: { width: '100%', borderCollapse: 'collapse' },
     th: { backgroundColor: '#f8f9fa', padding: '10px 12px', textAlign: 'center', fontWeight: 600, color: 'var(--dark-grey)', borderBottom: '2px solid var(--skeleton-bg)', whiteSpace: 'nowrap' },
@@ -1699,7 +1699,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     swipeableContent: { position: 'relative', backgroundColor: '#FFF', zIndex: 1, borderRadius: '10px' },
     
     // --- New Detailed Card Styles ---
-    detailedOrderCard: { backgroundColor: '#FFF', borderRadius: '10px', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', cursor: 'pointer', transition: 'border-color 0.2s, box-shadow 0.2s, background-color 0.2s', border: '1px solid #eef2f7', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' },
+    detailedOrderCard: { backgroundColor: '#FFF', borderRadius: '10px', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', cursor: 'pointer', transition: 'border-color 0.2s, box-shadow 0.2s, background-color 0.2s', border: '2px solid #eef2f7', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' },
     detailedOrderCardActive: { 
         backgroundColor: '#FFF', 
         borderRadius: '10px 10px 0 0', 
@@ -1709,7 +1709,8 @@ const styles: { [key: string]: React.CSSProperties } = {
         gap: '0.5rem', 
         cursor: 'pointer', 
         transition: 'all 0.2s',
-        border: '1px solid #eef2f7',
+        border: '2px solid var(--brand-color)',
+        borderBottom: 'none',
         boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
     },
     
@@ -1771,3 +1772,4 @@ const styles: { [key: string]: React.CSSProperties } = {
     customDropdownMenu: { position: 'absolute', top: '100%', left: 0, backgroundColor: 'var(--card-bg)', border: '1px solid var(--skeleton-bg)', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 10, minWidth: '200px', marginTop: '4px', padding: '0.25rem', animation: 'dropdown-in 0.2s ease-out forwards', transformOrigin: 'top center', },
     customDropdownItem: { display: 'block', width: '100%', padding: '0.5rem 0.75rem', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '0.85rem', borderRadius: '6px', color: 'var(--dark-grey)', },
 };
+
