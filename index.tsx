@@ -71,6 +71,9 @@ const MenuIcon = () => <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/sv
 const CloseSidebarIcon = () => <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" width="24" height="24"><path fillRule="evenodd" clipRule="evenodd" d="M4 5C3.44772 5 3 5.44772 3 6C3 6.55228 3.44772 7 4 7H20C20.5523 7 21 6.55228 21 6C21 5.44772 20.5523 5 20 5H4ZM7 12C7 11.4477 7.44772 11 8 11H20C20.5523 11 21 11.4477 21 12C21 12.5523 20.5523 13 20 13H8C7.44772 13 7 12.5523 7 12ZM13 18C13 17.4477 13.4477 17 14 17H20C20.5523 17 21 17.4477 21 18C21 18.5523 20.5523 19 20 19H14C13.4477 19 13 18.5523 13 18Z" fill="currentColor"/></svg>;
 const LogoutIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>;
 const UserIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>;
+const ShieldIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>;
+const ChevronRightIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>;
+const ChevronLeftIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>;
 const NavIcon = ({ name }) => { const icons = { 
     Dashboard: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>, 
     Entry: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"></path><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>, 
@@ -89,6 +92,12 @@ const Spinner = () => <div style={styles.spinner}></div>;
 const CollapseIcon = ({ collapsed }) => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: collapsed ? 'rotate(180deg)' : 'none', transition: 'transform 0.3s ease' }}><path d="m15 18-6-6 6-6"/></svg>;
 const AlertTriangleIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.46 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>;
 const EditIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>;
+const IdCardIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="16" rx="2" ry="2"></rect><circle cx="9" cy="10" r="2"></circle><line x1="15" y1="8" x2="17" y2="8"></line><line x1="15" y1="12" x2="17" y2="12"></line><line x1="7" y1="16" x2="17" y2="16"></line></svg>;
+const AtSignIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-3.92 7.94"></path></svg>;
+const CheckCircleIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>;
+const InfoIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>;
+const ThemeIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>;
+
 
 // --- AVATAR SYSTEM ---
 const AvatarOne = () => <svg viewBox="0 0 61.8 61.8" xmlns="http://www.w3.org/2000/svg"><circle cx="30.9" cy="30.9" r="30.9" fill="#58b0e0"/><path fill="#ffe8be" fillRule="evenodd" d="M31.129 8.432c21.281 0 12.987 35.266 0 35.266-12.266 0-21.281-35.266 0-35.266z"/><path fill="#60350a" fillRule="evenodd" d="M45.487 19.987l-29.173.175s1.048 16.148-2.619 21.21h35.701c-.92-1.35-3.353-1.785-3.909-21.385z"/><path fill="#d5e1ed" fillRule="evenodd" d="M18.135 45.599l7.206-3.187 11.55-.3 7.42 3.897-5.357 11.215-7.613 4.088-7.875-4.35-5.331-11.363z"/><path fill="#f9dca4" fillRule="evenodd" d="M24.744 38.68l12.931.084v8.949l-12.931-.085V38.68z"/><path fillRule="evenodd" opacity=".11" d="M37.677 38.778v3.58a9.168 9.168 0 0 1-.04 1.226 6.898 6.898 0 0 1-.313 1.327c-4.37 4.165-11.379.78-12.49-6.333z"/><path fill="#434955" fillRule="evenodd" d="M52.797 52.701a30.896 30.896 0 0 1-44.08-.293l1.221-3.098 9.103-4.122c3.262 5.98 6.81 11.524 12.317 15.455A45.397 45.397 0 0 0 43.2 45.483l8.144 3.853z"/><path fill="#f9dca4" fillRule="evenodd" d="M19.11 24.183c-2.958 1.29-.442 7.41 1.42 7.383a30.842 30.842 0 0 1-1.42-7.383zM43.507 24.182c2.96 1.292.443 7.411-1.419 7.384a30.832 30.832 0 0 0 1.419-7.384z"/><path fill="#ffe8be" fillRule="evenodd" d="M31.114 8.666c8.722 0 12.377 6.2 12.601 13.367.307 9.81-5.675 21.43-12.6 21.43-6.56 0-12.706-12.018-12.333-21.928.26-6.953 3.814-12.869 12.332-12.869z"/><path fill="#464449" fillRule="evenodd" d="M33.399 24.983a7.536 7.536 0 0 1 5.223-.993h.005c5.154.63 5.234 2.232 4.733 2.601a2.885 2.885 0 0 0-.785 1.022 6.566 6.566 0 0 1-1.052 2.922 5.175 5.175 0 0 1-3.464 2.312c-.168.027-.34.048-.516.058a4.345 4.345 0 0 1-3.65-1.554 8.33 8.33 0 0 1-1.478-2.53v.003s-.797-1.636-2.072-.114a8.446 8.446 0 0 1-1.52 2.64 4.347 4.347 0 0 1-3.651 1.555 5.242 5.242 0 0 1-.516-.058 5.176 5.176 0 0 1-3.464-2.312 6.568 6.568 0 0 1-1.052-2.921 2.75 2.75 0 0 0-.77-1.023c-.5-.37-.425-1.973 4.729-2.603a7.545 7.545 0 0 1 5.24 1.01l.003.002.215.131a3.93 3.93 0 0 0 3.842-.148zm-4.672.638a6.638 6.638 0 0 0-6.157-.253c-1.511.686-1.972 1.17-1.386 3.163a5.617 5.617 0 0 0 .712 1.532 4.204 4.204 0 0 0 3.326 1.995 3.536 3.536 0 0 0 2.966-1.272 7.597 7.597 0 0 0 1.36-2.37c.679-1.78.862-1.863-.82-2.795zm10.947-.45a6.727 6.727 0 0 0-5.886.565c-1.538.911-1.258 1.063-.578 2.79a7.476 7.476 0 0 0 1.316 2.26 3.536 3.536 0 0 0 2.967 1.272 4.228 4.228 0 0 0 .43-.048 4.34 4.34 0 0 0 2.896-1.947 5.593 5.593 0 0 0 .684-1.44c.702-2.25.076-2.751-1.828-3.451z"/><path fill="#8a5c42" fillRule="evenodd" d="M17.89 25.608c0-.638.984-.886 1.598 2.943a22.164 22.164 0 0 0 .956-4.813c1.162.225 2.278 2.848 1.927 5.148 3.166-.777 11.303-5.687 13.949-12.324 6.772 3.901 6.735 12.094 6.735 12.094s.358-1.9.558-3.516c.066-.538.293-.733.798-.213C48.073 17.343 42.3 5.75 31.297 5.57c-15.108-.246-17.03 16.114-13.406 20.039z"/><path fill="#fff" fillRule="evenodd" d="M24.765 42.431a14.125 14.125 0 0 0 6.463 5.236l-4.208 6.144-5.917-9.78z"/><path fill="#fff" fillRule="evenodd" d="M37.682 42.431a14.126 14.126 0 0 1-6.463 5.236l4.209 6.144 5.953-9.668z"/><circle cx="31.223" cy="52.562" r=".839" fill="#434955"/><circle cx="31.223" cy="56.291" r=".839" fill="#434955"/><path fill="#464449" fillRule="evenodd" d="M41.997 24.737c1.784.712 1.719 1.581 1.367 1.841a2.886 2.886 0 0 0-.785 1.022 6.618 6.618 0 0 1-.582 2.086v-4.949zm-21.469 4.479a6.619 6.619 0 0 1-.384-1.615 2.748 2.748 0 0 0-.77-1.023c-.337-.249-.413-1.06 1.154-1.754z"/></svg>;
@@ -191,16 +200,90 @@ const ToggleSwitch = ({ checked, onChange }) => (
     </div>
 );
 
-const Preferences = ({ session, theme, toggleTheme, updateUserProfile }) => {
+const PrivacyPolicyPage = ({ onClose }) => {
+    const [isClosing, setIsClosing] = useState(false);
+
+    const handleClose = () => {
+        setIsClosing(true);
+        setTimeout(onClose, 300);
+    };
+
+    return (
+        <div style={{ ...styles.privacyPage, animation: isClosing ? 'slideOutRight 0.3s forwards' : 'slideInRight 0.3s forwards' }}>
+            <header style={styles.privacyPageHeader}>
+                <button onClick={handleClose} style={styles.privacyBackButton}>
+                    <ChevronLeftIcon />
+                </button>
+                <h2 style={styles.privacyPageTitle}>Privacy Policy</h2>
+            </header>
+            <div style={styles.privacyPageContent}>
+                <h3 style={styles.privacySectionTitle}>1. Introduction</h3>
+                <p style={styles.privacyText}>
+                    Welcome to KA-OMS. We are committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our application.
+                </p>
+
+                <h3 style={styles.privacySectionTitle}>2. Information We Collect</h3>
+                <p style={styles.privacyText}>
+                    We may collect personal identification information, such as your name, user ID, and email address, when you register and log in to the application. We also collect data related to your orders, including party names, items, quantities, and timestamps.
+                </p>
+
+                <h3 style={styles.privacySectionTitle}>3. How We Use Your Information</h3>
+                <p style={styles.privacyText}>
+                    The information we collect is used to:
+                    - Create and manage your account.
+                    - Process and track your orders.
+                    - Improve application functionality and user experience.
+                    - Communicate with you regarding your account or orders.
+                </p>
+                
+                <h3 style={styles.privacySectionTitle}>4. Data Security</h3>
+                <p style={styles.privacyText}>
+                    We use administrative, technical, and physical security measures to help protect your personal information. While we have taken reasonable steps to secure the personal information you provide to us, please be aware that despite our efforts, no security measures are perfect or impenetrable.
+                </p>
+
+                 <h3 style={styles.privacySectionTitle}>5. Data Retention</h3>
+                <p style={styles.privacyText}>
+                    We will retain your personal information and order data only for as long as is necessary for the purposes set out in this Privacy Policy.
+                </p>
+
+                <h3 style={styles.privacySectionTitle}>6. Your Rights</h3>
+                <p style={styles.privacyText}>
+                    You have the right to access, update, or delete your personal information. You can manage your display name and avatar within the application's preferences. For other requests, please contact the administrator.
+                </p>
+
+                <h3 style={styles.privacySectionTitle}>7. Changes to This Privacy Policy</h3>
+                <p style={styles.privacyText}>
+                    We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy within the application.
+                </p>
+            </div>
+        </div>
+    );
+};
+
+
+const Preferences = ({ session, theme, toggleTheme, updateUserProfile, onLogout }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isClosing, setIsClosing] = useState(false);
     const [newName, setNewName] = useState('');
     const [selectedAvatar, setSelectedAvatar] = useState(0);
+    const [isPrivacyPolicyVisible, setIsPrivacyPolicyVisible] = useState(false);
+    const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+    const [isLogoutModalClosing, setIsLogoutModalClosing] = useState(false);
     const showToast = useToast();
 
     const handleEditClick = () => {
         setNewName(session.userName);
         setSelectedAvatar(session.avatarId || 0);
+        setIsClosing(false);
         setIsModalOpen(true);
+    };
+
+    const handleCloseModal = () => {
+        setIsClosing(true);
+        setTimeout(() => {
+            setIsModalOpen(false);
+            setIsClosing(false);
+        }, 300);
     };
 
     const handleSave = () => {
@@ -209,8 +292,25 @@ const Preferences = ({ session, theme, toggleTheme, updateUserProfile }) => {
             return;
         }
         updateUserProfile(newName.trim(), selectedAvatar);
-        setIsModalOpen(false);
+        handleCloseModal();
         showToast('Profile updated successfully', 'success');
+    };
+    
+    const handleLogoutClick = () => {
+        setIsLogoutModalClosing(false);
+        setIsLogoutModalOpen(true);
+    };
+
+    const handleCloseLogoutModal = () => {
+        setIsLogoutModalClosing(true);
+        setTimeout(() => {
+            setIsLogoutModalOpen(false);
+        }, 300);
+    };
+    
+    const handleConfirmLogout = () => {
+        handleCloseLogoutModal();
+        setTimeout(onLogout, 300);
     };
 
     // Array of IDs: 0 is default, 1-7 are SVG avatars
@@ -230,22 +330,34 @@ const Preferences = ({ session, theme, toggleTheme, updateUserProfile }) => {
                 <h3 style={styles.preferenceSectionTitleOutside}>Account Details</h3>
                 <div style={styles.preferenceTileCard}>
                     <div style={styles.preferenceRow}>
-                        <span style={styles.preferenceLabel}>User ID</span>
+                        <div style={{display: 'flex', alignItems: 'center', gap: '1rem'}}>
+                            <IdCardIcon />
+                            <span style={styles.preferenceLabel}>User ID</span>
+                        </div>
                         <span style={styles.preferenceValue}>{session.userId}</span>
                     </div>
                     <div style={styles.preferenceRow}>
-                        <span style={styles.preferenceLabel}>Display Name & Icon</span>
+                        <div style={{display: 'flex', alignItems: 'center', gap: '1rem'}}>
+                            <UserIcon />
+                            <span style={styles.preferenceLabel}>Display Name & Icon</span>
+                        </div>
                         <div style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
                             <span style={styles.preferenceValue}>{session.userName}</span>
                             <button onClick={handleEditClick} style={styles.iconButton}><EditIcon /></button>
                         </div>
                     </div>
                     <div style={styles.preferenceRow}>
-                        <span style={styles.preferenceLabel}>Email</span>
+                        <div style={{display: 'flex', alignItems: 'center', gap: '1rem'}}>
+                            <AtSignIcon />
+                            <span style={styles.preferenceLabel}>Email</span>
+                        </div>
                         <span style={styles.preferenceValue}>{session.email || 'Not set'}</span>
                     </div>
                     <div style={{...styles.preferenceRow, borderBottom: 'none'}}>
-                        <span style={styles.preferenceLabel}>Status</span>
+                         <div style={{display: 'flex', alignItems: 'center', gap: '1rem'}}>
+                            <CheckCircleIcon />
+                            <span style={styles.preferenceLabel}>Status</span>
+                        </div>
                         <span style={{...styles.preferenceValue, color: '#2ecc71', fontWeight: 600}}>Active</span>
                     </div>
                 </div>
@@ -255,11 +367,17 @@ const Preferences = ({ session, theme, toggleTheme, updateUserProfile }) => {
                 <h3 style={styles.preferenceSectionTitleOutside}>Application</h3>
                 <div style={styles.preferenceTileCard}>
                      <div style={styles.preferenceRow}>
-                        <span style={styles.preferenceLabel}>Version</span>
+                         <div style={{display: 'flex', alignItems: 'center', gap: '1rem'}}>
+                            <InfoIcon />
+                            <span style={styles.preferenceLabel}>Version</span>
+                        </div>
                         <span style={styles.preferenceValue}>2.0.1</span>
                     </div>
                     <div style={{...styles.preferenceRow, borderBottom: 'none'}}>
-                        <span style={styles.preferenceLabel}>Theme</span>
+                        <div style={{display: 'flex', alignItems: 'center', gap: '1rem'}}>
+                            <ThemeIcon />
+                            <span style={styles.preferenceLabel}>Theme</span>
+                        </div>
                         <div style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
                              <span style={{fontSize: '0.9rem', color: 'var(--text-color)'}}>{theme === 'dark' ? 'Dark' : 'Light'}</span>
                              <ToggleSwitch checked={theme === 'dark'} onChange={toggleTheme} />
@@ -268,9 +386,51 @@ const Preferences = ({ session, theme, toggleTheme, updateUserProfile }) => {
                 </div>
              </div>
 
+            <div style={styles.preferenceSection}>
+                <h3 style={styles.preferenceSectionTitleOutside}>Legal & Account</h3>
+                <div style={styles.preferenceTileCard}>
+                    <div 
+                        onClick={() => setIsPrivacyPolicyVisible(true)} 
+                        style={{...styles.preferenceRow, cursor: 'pointer'}}
+                    >
+                        <div style={{display: 'flex', alignItems: 'center', gap: '1rem'}}>
+                            <ShieldIcon />
+                            <span style={styles.preferenceLabel}>Privacy Policy</span>
+                        </div>
+                        <ChevronRightIcon />
+                    </div>
+                     <div
+                        onClick={handleLogoutClick}
+                        style={{...styles.preferenceRow, borderBottom: 'none', cursor: 'pointer'}}
+                    >
+                        <div style={{display: 'flex', alignItems: 'center', gap: '1rem', color: '#e74c3c'}}>
+                            <LogoutIcon />
+                            <span style={{...styles.preferenceLabel, color: 'inherit', fontWeight: 500}}>Logout</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {isPrivacyPolicyVisible && <PrivacyPolicyPage onClose={() => setIsPrivacyPolicyVisible(false)} />}
+            
+            {isLogoutModalOpen && (
+                <div style={{...styles.modalOverlay, animation: isLogoutModalClosing ? 'overlayOut 0.3s forwards' : 'overlayIn 0.3s forwards'}} onClick={handleCloseLogoutModal}>
+                    <div style={{...styles.modalContent, maxWidth: '350px', animation: isLogoutModalClosing ? 'modalOut 0.3s forwards' : 'modalIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards'}} onClick={(e) => e.stopPropagation()}>
+                        <h3 style={{...styles.modalTitle, textAlign: 'center', marginBottom: '0.5rem'}}>Confirm Logout</h3>
+                        <p style={{textAlign: 'center', color: 'var(--text-color)', marginBottom: '1.5rem', fontSize: '0.95rem'}}>
+                            Are you sure you want to log out from your session?
+                        </p>
+                        <div style={{...styles.modalActions, justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem'}}>
+                            <button onClick={handleCloseLogoutModal} style={styles.secondaryButton}>Cancel</button>
+                            <button onClick={handleConfirmLogout} style={{...styles.primaryButton, backgroundColor: '#e74c3c'}}>Logout</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {isModalOpen && (
-                <div style={styles.modalOverlay}>
-                    <div style={{...styles.modalContent, maxWidth: '400px'}}>
+                <div style={{...styles.modalOverlay, animation: isClosing ? 'overlayOut 0.3s forwards' : 'overlayIn 0.3s forwards'}} onClick={handleCloseModal}>
+                    <div style={{...styles.modalContent, maxWidth: '400px', animation: isClosing ? 'modalOut 0.3s forwards' : 'modalIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards'}} onClick={(e) => e.stopPropagation()}>
                         <h3 style={{...styles.modalTitle, textAlign: 'center', marginBottom: '1rem'}}>Edit Profile</h3>
                         
                         <div style={{display: 'flex', justifyContent: 'center', marginBottom: '1.5rem'}}>
@@ -302,7 +462,7 @@ const Preferences = ({ session, theme, toggleTheme, updateUserProfile }) => {
                         </div>
 
                         <div style={styles.modalActions}>
-                            <button onClick={() => setIsModalOpen(false)} style={styles.secondaryButton}>Cancel</button>
+                            <button onClick={handleCloseModal} style={styles.secondaryButton}>Cancel</button>
                             <button onClick={handleSave} style={styles.primaryButton}>Save Changes</button>
                         </div>
                     </div>
@@ -501,10 +661,6 @@ const Sidebar = ({ activeView, onNavigate, isMobile, isOpen, onClose, session, o
                             </button>
                          )}
                      </div>
-                     <button onClick={onLogout} style={isActuallyCollapsed ? { ...styles.sidebarLogoutButton, ...styles.sidebarLogoutButtonCollapsed } : styles.sidebarLogoutButton}>
-                         <LogoutIcon />
-                         {!isActuallyCollapsed && <span>Logout</span>}
-                     </button>
                 </div>
                 <div style={styles.sidebarNav}>
                     {primaryItems.map(item => (
@@ -558,10 +714,11 @@ type MainContentProps = {
     theme: string;
     toggleTheme: () => void;
     updateUserProfile: (name: string, avatarId: number) => void;
+    onLogout: () => void;
 };
 
 const MainContent = React.forwardRef<HTMLElement, MainContentProps>(
-    ({ activeView, onNavigate, session, isMobile, theme, toggleTheme, updateUserProfile }, ref) => {
+    ({ activeView, onNavigate, session, isMobile, theme, toggleTheme, updateUserProfile, onLogout }, ref) => {
         let mainStyle = styles.mainContent;
 
         if (isMobile) {
@@ -574,9 +731,11 @@ const MainContent = React.forwardRef<HTMLElement, MainContentProps>(
             mainStyle = {
                 ...styles.mainContent,
                 ...mobilePadding,
-                maskImage: 'linear-gradient(to bottom, transparent, black 5%, black 90%, transparent 100%)',
-                WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 5%, black 90%, transparent 100%)',
             };
+            if (activeView === 'Pending') {
+                mainStyle.maskImage = 'linear-gradient(to bottom, transparent, black 5%, black 90%, transparent 100%)';
+                mainStyle.WebkitMaskImage = 'linear-gradient(to bottom, transparent, black 5%, black 90%, transparent 100%)';
+            }
         }
 
         const renderView = () => {
@@ -589,7 +748,7 @@ const MainContent = React.forwardRef<HTMLElement, MainContentProps>(
                 case 'Billed': return <BilledOrders />;
                 case 'Deleted': return <DeletedOrders />;
                 case 'Expired': return <ExpiredOrders />;
-                case 'Preferences': return <Preferences session={session} theme={theme} toggleTheme={toggleTheme} updateUserProfile={updateUserProfile} />;
+                case 'Preferences': return <Preferences session={session} theme={theme} toggleTheme={toggleTheme} updateUserProfile={updateUserProfile} onLogout={onLogout} />;
                 default: return <PageContent />;
             }
         };
@@ -794,6 +953,7 @@ const HomePage = ({ session, onLogout, appLogoSrc, updateUserProfile }) => {
                     theme={theme}
                     toggleTheme={toggleTheme}
                     updateUserProfile={updateUserProfile}
+                    onLogout={onLogout}
                 />
             </div>
             {isMobile && activeView !== 'Entry' && <BottomNavBar activeView={activeView} onNavigate={handleNavigate} />}
@@ -879,7 +1039,8 @@ const KAOMSLogin = () => {
                     userName: result.userName, 
                     expiry, 
                     email: result.email,
-                    avatarId: 0 
+                    // Set default avatar to 7 (Avatar 8) instead of 0
+                    avatarId: 7 
                 }; 
                 localStorage.setItem('ka-oms-session', JSON.stringify(newSession));
                 setSession(newSession);
@@ -962,7 +1123,7 @@ const KAOMSLogin = () => {
 const styles: { [key: string]: React.CSSProperties } = {
     // --- App Layout ---
     appContainer: { display: 'flex', flexDirection: 'column', height: '100vh', backgroundColor: 'var(--light-grey)' },
-    appHeader: { display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', padding: '0.75rem 1.5rem 1rem', background: 'linear-gradient(to bottom, var(--card-bg) 60%, transparent)', borderBottom: 'none', flexShrink: 0, zIndex: 10 },
+    appHeader: { display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', padding: '0.75rem 1.5rem', backgroundColor: 'var(--light-grey)', flexShrink: 0, zIndex: 10 },
     headerLeft: { gridColumn: '1', display: 'flex', alignItems: 'center', gap: '1rem', justifySelf: 'start' },
     headerCenter: { gridColumn: '2', textAlign: 'center', minWidth: 0 },
     headerRight: { gridColumn: '3', justifySelf: 'end' },
@@ -1048,8 +1209,8 @@ const styles: { [key: string]: React.CSSProperties } = {
     preferenceLabel: { color: 'var(--dark-grey)', fontSize: '0.95rem', fontWeight: 500 },
     preferenceValue: { color: 'var(--text-color)', fontWeight: 400, fontSize: '0.95rem' },
     // Modal Styles
-    modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.05)', backdropFilter: 'blur(1.5px)', WebkitBackdropFilter: 'blur(1.5px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' },
-    modalContent: { backgroundColor: 'var(--card-bg)', padding: '1.5rem', borderRadius: '12px', width: '90%', maxWidth: '350px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '1rem' },
+    modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.05)', backdropFilter: 'blur(1.5px)', WebkitBackdropFilter: 'blur(1.5px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0 },
+    modalContent: { backgroundColor: 'var(--card-bg)', padding: '1.5rem', borderRadius: '12px', width: '90%', maxWidth: '350px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '1rem', transform: 'scale(0.95)', opacity: 0 },
     modalTitle: { margin: 0, fontSize: '1.1rem', fontWeight: 600, color: 'var(--dark-grey)' },
     modalActions: { display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' },
     primaryButton: { padding: '0.6rem 1.2rem', backgroundColor: 'var(--brand-color)', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 500 },
@@ -1058,8 +1219,17 @@ const styles: { [key: string]: React.CSSProperties } = {
     
     // Avatar Selection
     avatarGrid: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', marginTop: '0.5rem' },
-    avatarOption: { display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '5px', borderRadius: '50%', cursor: 'pointer', border: '2px solid transparent', transition: 'all 0.2s' },
-    avatarOptionSelected: { display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '5px', borderRadius: '50%', cursor: 'pointer', border: '2px solid var(--brand-color)', transform: 'scale(1.1)' },
+    avatarOption: { width: '60px', height: '60px', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '4px', borderRadius: '50%', cursor: 'pointer', border: '2px solid transparent', transition: 'all 0.2s', boxSizing: 'border-box' },
+    avatarOptionSelected: { width: '60px', height: '60px', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '4px', borderRadius: '50%', cursor: 'pointer', border: '2px solid var(--brand-color)', backgroundColor: 'transparent', boxSizing: 'border-box' },
+    
+    // Privacy Policy Page
+    privacyPage: { position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'var(--light-grey)', zIndex: 1100, display: 'flex', flexDirection: 'column' },
+    privacyPageHeader: { display: 'flex', alignItems: 'center', padding: '0.75rem 1rem', backgroundColor: 'var(--light-grey)', borderBottom: 'none', flexShrink: 0 },
+    privacyBackButton: { background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', color: 'var(--dark-grey)' },
+    privacyPageTitle: { fontSize: '1.2rem', fontWeight: 600, color: 'var(--dark-grey)', margin: 0, textAlign: 'center', flex: 1, paddingRight: '48px' /* Balance the back button */ },
+    privacyPageContent: { flex: 1, overflowY: 'auto', padding: '1.5rem' },
+    privacySectionTitle: { fontSize: '1.2rem', fontWeight: 600, color: 'var(--dark-grey)', marginTop: '1.5rem', marginBottom: '0.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' },
+    privacyText: { fontSize: '1rem', color: 'var(--text-color)', lineHeight: 1.6, marginBottom: '1rem' },
 };
 
 const container = document.getElementById('root');
@@ -1080,6 +1250,30 @@ styleSheet.innerText = `
     @keyframes spin {
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
+    }
+    @keyframes overlayIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    @keyframes overlayOut {
+        from { opacity: 1; }
+        to { opacity: 0; }
+    }
+    @keyframes modalIn {
+        from { opacity: 0; transform: scale(0.95); }
+        to { opacity: 1; transform: scale(1); }
+    }
+    @keyframes modalOut {
+        from { opacity: 1; transform: scale(1); }
+        to { opacity: 0; transform: scale(0.95); }
+    }
+    @keyframes slideInRight {
+        from { transform: translateX(100%); }
+        to { transform: translateX(0); }
+    }
+    @keyframes slideOutRight {
+        from { transform: translateX(0); }
+        to { transform: translateX(100%); }
     }
 `;
 document.head.appendChild(styleSheet);
