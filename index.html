@@ -5,6 +5,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KA-OMS Login</title>
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="https://i.ibb.co/spDFy1wW/applogo-1.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="KA-OMS">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -166,9 +171,13 @@
     <script>
         (function() {
             var savedTheme = localStorage.getItem('theme') || 'light';
+            var themeColor = '#F0F3F4'; // Default light theme background
             if (savedTheme === 'dark') {
                 document.body.classList.add('dark-mode');
+                themeColor = '#191919'; // Dark theme background
             }
+            // Add theme-color meta tag dynamically to prevent flash of wrong color
+            document.head.insertAdjacentHTML('beforeend', '<meta name="theme-color" content="' + themeColor + '">');
         })();
     </script>
 </head>

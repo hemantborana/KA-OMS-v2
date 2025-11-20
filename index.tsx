@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
 import { NewOrderEntry } from './neworderentry';
@@ -793,6 +794,11 @@ const HomePage = ({ session, onLogout, appLogoSrc, updateUserProfile }) => {
     useEffect(() => {
         document.body.className = theme === 'dark' ? 'dark-mode' : '';
         localStorage.setItem('theme', theme);
+        const themeColor = theme === 'dark' ? '#191919' : '#F0F3F4';
+        const themeMeta = document.querySelector('meta[name="theme-color"]');
+        if (themeMeta) {
+            themeMeta.setAttribute('content', themeColor);
+        }
     }, [theme]);
 
     const toggleTheme = () => {
@@ -1252,6 +1258,18 @@ if (container) {
     root.render(<React.StrictMode><ToastProvider><KAOMSLogin /></ToastProvider></React.StrictMode>);
 } else {
     console.error('Failed to find the root element');
+}
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/service-worker.js')
+      .then(registration => {
+        console.log('ServiceWorker registered with scope: ', registration.scope);
+      })
+      .catch(error => {
+        console.log('ServiceWorker registration failed: ', error);
+      });
+  });
 }
 
 const styleSheet = document.createElement("style");
