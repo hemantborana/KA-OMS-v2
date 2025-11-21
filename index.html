@@ -106,6 +106,25 @@
             overflow: hidden; /* Prevent scrollbars from layout shift */
         }
 
+        input[type="text"],
+        input[type="email"],
+        input[type="password"],
+        input[type="number"],
+        textarea {
+            caret-color: var(--brand-color);
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        input[type="text"]:focus,
+        input[type="email"]:focus,
+        input[type="password"]:focus,
+        input[type="number"]:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--brand-color);
+            box-shadow: 0 0 0 3px rgba(97, 85, 245, 0.15);
+        }
+
         .container {
             display: flex;
             width: 100%;
