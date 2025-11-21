@@ -809,6 +809,12 @@ const HomePage = ({ session, onLogout, appLogoSrc, updateUserProfile }) => {
         if (themeMeta) {
             themeMeta.setAttribute('content', themeColor);
         }
+
+        const appleStatusBarStyle = theme === 'dark' ? 'black' : 'default';
+        const appleStatusMeta = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+        if (appleStatusMeta) {
+            appleStatusMeta.setAttribute('content', appleStatusBarStyle);
+        }
     }, [theme]);
 
     const toggleTheme = () => {

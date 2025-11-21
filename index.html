@@ -241,12 +241,23 @@
         (function() {
             var savedTheme = localStorage.getItem('theme') || 'light';
             var themeColor = '#F0F0F3'; // Default light theme background
+            var appleStatusBarStyle = 'default';
+
             if (savedTheme === 'dark') {
                 document.body.classList.add('dark-mode');
                 themeColor = '#191919'; // Dark theme background
+                appleStatusBarStyle = 'black';
             }
+            
             // Add theme-color meta tag dynamically to prevent flash of wrong color
+            // This is inserted after other meta tags, so it will take precedence.
             document.head.insertAdjacentHTML('beforeend', '<meta name="theme-color" content="' + themeColor + '">');
+            
+            // Update apple status bar style
+            var appleStatusMeta = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+            if (appleStatusMeta) {
+                appleStatusMeta.setAttribute('content', appleStatusBarStyle);
+            }
         })();
     </script>
 </head>

@@ -1,11 +1,11 @@
 {
-  "name": "KA V2",
-  "short_name": "KA V2",
-  "description": "StreakWise Analytics is a comprehensive productivity app that helps students study sessions with a Pomodoro timer, monitor progress with analytics, and stay motivated with achievements and goals.",
+  "name": "KA-OMS V2",
+  "short_name": "KA-OMS",
+  "description": "Kambeshwar Agencies Order Management System (KA-OMS) for efficient order processing and tracking.",
   "start_url": "/index.html",
   "display": "standalone",
-  "background_color": "#fbfbfb",
-  "theme_color": "#ffffff",
+  "background_color": "#F0F0F3",
+  "theme_color": "#F0F0F3",
   "icons": [
     {
       "src": "icons/192x192/icon-192x192.png",
