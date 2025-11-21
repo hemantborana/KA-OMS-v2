@@ -432,9 +432,9 @@ const Preferences = ({ session, theme, toggleTheme, updateUserProfile, onLogout 
                         <p style={{textAlign: 'center', color: 'var(--text-color)', marginBottom: '1.5rem', fontSize: '0.95rem'}}>
                             Are you sure you want to log out from your session?
                         </p>
-                        <div style={{...styles.modalActions, justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem'}}>
-                            <button onClick={handleCloseLogoutModal} style={styles.secondaryButton}>Cancel</button>
-                            <button onClick={handleConfirmLogout} style={{...styles.primaryButton, backgroundColor: 'rgba(255, 56, 60, 0.7)'}}>Logout</button>
+                        <div style={styles.iosModalActions}>
+                            <button onClick={handleCloseLogoutModal} style={styles.iosModalButtonSecondary}>Cancel</button>
+                            <button onClick={handleConfirmLogout} style={{...styles.iosModalButtonPrimary, color: 'var(--red)'}}>Logout</button>
                         </div>
                     </div>
                 </div>
@@ -469,6 +469,7 @@ const Preferences = ({ session, theme, toggleTheme, updateUserProfile, onLogout 
                                 value={newName} 
                                 onChange={(e) => setNewName(e.target.value)}
                                 style={styles.modalInput}
+                                className="modal-input"
                                 placeholder="Enter your display name"
                             />
                         </div>
@@ -1240,7 +1241,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     // Modal Styles
     modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.2)', backdropFilter: 'blur(2px)', WebkitBackdropFilter: 'blur(2px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0 },
     modalContent: { backgroundColor: 'var(--glass-bg)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', padding: '1.5rem', borderRadius: '12px', width: '90%', boxShadow: '0 8px 32px rgba(0,0,0,0.1)', border: '1px solid var(--glass-border)', display: 'flex', flexDirection: 'column', gap: '1rem', transform: 'scale(0.95)', opacity: 0 },
-    modalInput: { width: '100%', padding: '10px 15px', fontSize: '1rem', border: '1px solid var(--border-color)', borderRadius: '8px', backgroundColor: 'var(--card-bg)', color: 'var(--dark-grey)', transition: 'border-color 0.3s ease' },
+    modalInput: { width: '100%', padding: '10px 15px', fontSize: '1rem', border: '1px solid var(--border-color)', borderRadius: '8px', backgroundColor: 'var(--card-bg)', color: 'var(--dark-grey)', transition: 'border-color 0.2s ease, box-shadow 0.2s ease', caretColor: 'var(--brand-color)' },
     modalTitle: { margin: 0, fontSize: '1.1rem', fontWeight: 600, color: 'var(--dark-grey)' },
     modalActions: { display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' },
     primaryButton: { padding: '0.6rem 1.2rem', backgroundColor: 'var(--glass-brand-bg)', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 500, backdropFilter: 'blur(5px)' },
@@ -1320,6 +1321,11 @@ styleSheet.innerText = `
     @keyframes slideOutRight {
         from { transform: translateX(0); }
         to { transform: translateX(100%); }
+    }
+    .modal-input:focus {
+        outline: none;
+        border-color: var(--brand-color);
+        box-shadow: 0 0 0 3px rgba(97, 85, 245, 0.15);
     }
 `;
 document.head.appendChild(styleSheet);
