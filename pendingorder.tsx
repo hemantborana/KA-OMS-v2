@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
@@ -799,21 +800,16 @@ const CustomTagModal: React.FC<{
     return (
         <div style={{...styles.modalOverlay, animation: isClosing ? 'overlayOut 0.3s forwards' : 'overlayIn 0.3s forwards'}} onClick={handleClose}>
             <div style={{...styles.modalContent, maxWidth: '380px', animation: isClosing ? 'modalOut 0.3s forwards' : 'modalIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards'}} onClick={(e) => e.stopPropagation()}>
-                <h3 style={{...styles.modalTitle, textAlign: 'center', marginBottom: '1rem'}}>Create Custom Tag</h3>
-                
-                <div style={{...styles.inputGroup, marginTop: '1rem'}}>
-                    <label style={{...styles.label, fontSize: '0.85rem', color: 'var(--text-color)', position: 'static', display: 'block', marginBottom: '0.5rem'}}>Tag Name</label>
-                    <input 
-                        type="text" 
-                        value={tagName} 
-                        onChange={(e) => setTagName(e.target.value)}
-                        style={styles.modalInput}
-                        className="modal-input"
-                        placeholder="e.g., Follow up"
-                        autoFocus
-                    />
-                </div>
-
+                <h3 style={{...styles.modalTitle, textAlign: 'center', marginBottom: '0.5rem'}}>Create Custom Tag</h3>
+                <p style={styles.modalSubtitleText}>This tag will be saved and available for all future orders.</p>
+                <input 
+                    type="text" 
+                    value={tagName} 
+                    onChange={(e) => setTagName(e.target.value)}
+                    style={styles.modalInput}
+                    className="modal-input"
+                    placeholder="e.g., Follow up"
+                />
                 <div style={styles.iosModalActions}>
                     <button onClick={handleClose} style={styles.iosModalButtonSecondary}>Cancel</button>
                     <button onClick={handleSave} style={styles.iosModalButtonPrimary}>Save Tag</button>
@@ -850,7 +846,6 @@ const AddNoteModal: React.FC<{
     };
     
     useEffect(() => {
-        // Clear text when modal is closed
         if (!isOpen) {
             setNoteText('');
         }
@@ -861,15 +856,14 @@ const AddNoteModal: React.FC<{
     return (
         <div style={{...styles.modalOverlay, animation: isClosing ? 'overlayOut 0.3s forwards' : 'overlayIn 0.3s forwards'}} onClick={handleClose}>
             <div style={{...styles.modalContent, maxWidth: '420px', animation: isClosing ? 'modalOut 0.3s forwards' : 'modalIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards'}} onClick={(e) => e.stopPropagation()}>
-                <h3 style={{...styles.modalTitle, textAlign: 'center', marginBottom: '1rem'}}>Add a New Note</h3>
-                
+                <h3 style={{...styles.modalTitle, textAlign: 'center', marginBottom: '0.5rem'}}>Add a New Note</h3>
+                <p style={styles.modalSubtitleText}>This note will be permanently added to the order's history.</p>
                 <textarea 
                     value={noteText} 
                     onChange={(e) => setNoteText(e.target.value)}
                     style={styles.modalTextarea}
                     placeholder="Type your note here..."
                 />
-
                 <div style={styles.iosModalActions}>
                     <button onClick={handleClose} style={styles.iosModalButtonSecondary}>Cancel</button>
                     <button onClick={handleSave} style={styles.iosModalButtonPrimary}>Save Note</button>
@@ -904,11 +898,13 @@ export const PendingOrders = ({ onNavigate }) => {
     
     const [isCustomTagModalOpen, setIsCustomTagModalOpen] = useState(false);
     const [orderForCustomTag, setOrderForCustomTag] = useState<Order | null>(null);
-    const [globalTags, setGlobalTags] = useState<string[]>([]);
     
     const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
     const [orderForNewNote, setOrderForNewNote] = useState<Order | null>(null);
     
+    // FIX: Add state for globalTags to resolve 'Cannot find name' errors.
+    const [globalTags, setGlobalTags] = useState<string[]>([]);
+
     const isSelectionMode = selectedOrders.length > 0;
 
     // --- Data Fetching and Management ---
@@ -1932,11 +1928,12 @@ const styles: { [key: string]: React.CSSProperties } = {
         backfaceVisibility: 'hidden',
     },
     customDropdownButton: { padding: '2px 8px', borderRadius: '12px', border: '1px solid var(--skeleton-bg)', fontSize: '0.75rem', color: 'var(--text-color)', backgroundColor: 'var(--light-grey)', cursor: 'pointer', display: 'flex', alignItems: 'center', },
-    customDropdownMenu: { position: 'absolute', top: '100%', left: 0, backgroundColor: 'var(--glass-bg)', backdropFilter: 'blur(7px)', WebkitBackdropFilter: 'blur(7px)', border: '1px solid var(--glass-border)', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 1100, minWidth: '200px', marginTop: '4px', padding: '0.25rem', animation: 'dropdown-in 0.2s ease-out forwards', transformOrigin: 'top center', },
+    customDropdownMenu: { position: 'absolute', top: '100%', left: 0, backgroundColor: 'var(--glass-bg)', backdropFilter: 'blur(7px)', WebkitBackdropFilter: 'blur(7px)', border: '1px solid var(--glass-border)', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 1200, minWidth: '200px', marginTop: '4px', padding: '0.25rem', animation: 'dropdown-in 0.2s ease-out forwards', transformOrigin: 'top center', },
     customDropdownItem: { display: 'block', width: '100%', padding: '0.5rem 0.75rem', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '0.85rem', borderRadius: '6px', color: 'var(--dark-grey)', },
     // Modal Styles
-    modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.2)', backdropFilter: 'blur(7px)', WebkitBackdropFilter: 'blur(7px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0 },
+    modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.2)', backdropFilter: 'blur(7px)', WebkitBackdropFilter: 'blur(7px)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0 },
     modalContent: { backgroundColor: 'var(--glass-bg)', padding: '1.5rem', borderRadius: '12px', width: '90%', boxShadow: '0 8px 32px rgba(0,0,0,0.1)', border: '1px solid var(--glass-border)', display: 'flex', flexDirection: 'column', gap: '1rem', transform: 'scale(0.95)', opacity: 0 },
+    modalSubtitleText: { textAlign: 'center', color: 'var(--text-color)', marginBottom: '1rem', fontSize: '0.9rem', padding: '0 1rem' },
     modalInput: { width: '100%', padding: '10px 15px', fontSize: '1rem', border: '1px solid var(--border-color)', borderRadius: '8px', backgroundColor: 'var(--card-bg)', color: 'var(--dark-grey)' },
     modalTextarea: { width: '100%', minHeight: '120px', padding: '0.75rem', fontSize: '0.9rem', border: '1px solid var(--border-color)', borderRadius: '8px', resize: 'vertical', backgroundColor: 'var(--card-bg)', color: 'var(--dark-grey)' },
     modalTitle: { margin: 0, fontSize: '1.1rem', fontWeight: 600, color: 'var(--dark-grey)' },
