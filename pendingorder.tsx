@@ -846,6 +846,52 @@ const AddNoteModal: React.FC<{
     );
 };
 
+const DeleteConfirmationModal = ({ state, setState, onConfirm }) => {
+    const { isOpen, isClosing, orders, reason, isLoading } = state;
+
+    const handleClose = () => {
+        if (isLoading) return;
+        setState(prev => ({ ...prev, isClosing: true }));
+        setTimeout(() => {
+            setState({ isOpen: false, isClosing: false, orders: [], reason: '' });
+        }, 300);
+    };
+
+    const handleReasonChange = (e) => {
+        setState(prev => ({ ...prev, reason: e.target.value }));
+    };
+
+    if (!isOpen) return null;
+
+    const isBatch = orders.length > 1;
+    const title = "Confirm Deletion";
+    const message = isBatch
+        ? `Are you sure you want to delete ${orders.length} selected orders? This action cannot be undone.`
+        : `Are you sure you want to delete order #${orders[0]?.orderNumber}? This action cannot be undone.`;
+
+    return (
+        <div style={{...styles.modalOverlay, zIndex: 2000, animation: isClosing ? 'overlayOut 0.3s forwards' : 'overlayIn 0.3s forwards'}} onClick={handleClose}>
+            <div style={{...styles.modalContent, maxWidth: '420px', animation: isClosing ? 'modalOut 0.3s forwards' : 'modalIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards'}} onClick={(e) => e.stopPropagation()}>
+                <h3 style={{...styles.modalTitle, textAlign: 'center', marginBottom: '0.5rem'}}>{title}</h3>
+                <p style={styles.modalSubtitleText}>{message}</p>
+                <textarea 
+                    value={reason} 
+                    onChange={handleReasonChange}
+                    style={styles.modalTextarea}
+                    placeholder="Optional: Provide a reason for deletion"
+                />
+                <div style={styles.iosModalActions}>
+                    <button onClick={handleClose} style={styles.iosModalButtonSecondary} disabled={isLoading}>Cancel</button>
+                    <button onClick={onConfirm} style={{...styles.iosModalButtonPrimary, color: 'var(--red)'}} disabled={isLoading}>
+                        {isLoading ? <SmallSpinner /> : 'Delete'}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+
 export const PendingOrders = ({ onNavigate }) => {
     const [orders, setOrders] = useState<Order[]>([]);
     const [stockData, setStockData] = useState({});
@@ -875,8 +921,9 @@ export const PendingOrders = ({ onNavigate }) => {
     const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
     const [orderForNewNote, setOrderForNewNote] = useState<Order | null>(null);
     
-    // FIX: Add state for globalTags to resolve 'Cannot find name' errors.
     const [globalTags, setGlobalTags] = useState<string[]>([]);
+    const [deleteModalState, setDeleteModalState] = useState({ isOpen: false, isClosing: false, orders: [], reason: '', isLoading: false });
+
 
     const isSelectionMode = selectedOrders.length > 0;
 
@@ -1089,51 +1136,53 @@ export const PendingOrders = ({ onNavigate }) => {
         }
     }, []);
 
-    const handleDeleteOrder = useCallback(async (order: Order) => {
-        if (!window.confirm(`Are you sure you want to delete order ${order.orderNumber}?`)) return;
-        setProcessingOrder(order.orderNumber);
-        const reason = prompt("Optional: Provide a reason for deleting this order:", "");
-        const newHistoryEvent = {
-            timestamp: new Date().toISOString(),
-            event: 'System',
-            details: `Order deleted. Reason: ${reason || 'Not specified'}`
-        };
-        const updatedHistory = [...(order.history || []), newHistoryEvent];
-        const deletedOrderData = { ...order, deletionReason: reason, deletedTimestamp: new Date().toISOString(), history: updatedHistory };
-
-        try {
-            const updates = { [`${DELETED_ORDERS_REF}/${order.orderNumber}`]: deletedOrderData, [`${PENDING_ORDERS_REF}/${order.orderNumber}`]: null };
-            await firebase.database().ref().update(updates);
-            showToast('Order moved to Deleted archive.', 'success');
-            setExpandedDetailed(null);
-            setActiveOrder(null);
-        } catch(e) {
-            console.error(e);
-            showToast('Failed to delete order.', 'error');
-        } finally {
-            setProcessingOrder(null);
-        }
+    const openDeleteModalForOrder = useCallback((order: Order) => {
+        setDeleteModalState({ isOpen: true, isClosing: false, orders: [order], reason: '', isLoading: false });
     }, []);
     
-    const handleBatchDelete = () => {
-        if (selectedOrders.length === 0) { showToast('No orders selected.', 'error'); return; }
-        if (window.confirm(`Are you sure you want to delete all ${selectedOrders.length} selected orders?`)) {
-            const reason = prompt("Optional: Provide a reason for deleting these orders:", "Batch deletion.");
-            const updates = {};
-            selectedOrders.forEach(orderNum => {
-                const order = orders.find(o => o.orderNumber === orderNum);
-                if (order) {
-                    const newHistoryEvent = { timestamp: new Date().toISOString(), event: 'System', details: `Order deleted. Reason: ${reason || 'Not specified'}`};
-                    const updatedHistory = [...(order.history || []), newHistoryEvent];
-                    const deletedOrderData = { ...order, deletionReason: reason, deletedTimestamp: new Date().toISOString(), history: updatedHistory };
-                    updates[`${DELETED_ORDERS_REF}/${order.orderNumber}`] = deletedOrderData;
-                    updates[`${PENDING_ORDERS_REF}/${order.orderNumber}`] = null;
-                }
-            });
-            firebase.database().ref().update(updates);
-            showToast(`${selectedOrders.length} orders deleted.`, 'success');
-            setSelectedOrders([]);
+    const handleConfirmDeletion = async () => {
+        const { orders: ordersToDelete, reason } = deleteModalState;
+        if (ordersToDelete.length === 0) return;
+
+        setDeleteModalState(prev => ({ ...prev, isLoading: true }));
+
+        const updates = {};
+        ordersToDelete.forEach(order => {
+            const newHistoryEvent = { timestamp: new Date().toISOString(), event: 'System', details: `Order deleted. Reason: ${reason || 'Not specified'}` };
+            const updatedHistory = [...(order.history || []), newHistoryEvent];
+            const deletedOrderData = { ...order, deletionReason: reason, deletedTimestamp: new Date().toISOString(), history: updatedHistory };
+            updates[`${DELETED_ORDERS_REF}/${order.orderNumber}`] = deletedOrderData;
+            updates[`${PENDING_ORDERS_REF}/${order.orderNumber}`] = null;
+        });
+
+        try {
+            await firebase.database().ref().update(updates);
+            showToast(`${ordersToDelete.length} order(s) moved to Deleted archive.`, 'success');
+            if (expandedDetailed && ordersToDelete.some(o => o.orderNumber === expandedDetailed)) {
+                setExpandedDetailed(null);
+            }
+            if (activeOrder && ordersToDelete.some(o => o.orderNumber === activeOrder.orderNumber)) {
+                setActiveOrder(null);
+            }
+            setSelectedOrders(prev => prev.filter(id => !ordersToDelete.some(o => o.orderNumber === id)));
+        } catch (e) {
+            console.error(e);
+            showToast('Failed to delete order(s).', 'error');
+        } finally {
+            setDeleteModalState(prev => ({ ...prev, isClosing: true, isLoading: false }));
+            setTimeout(() => {
+                setDeleteModalState({ isOpen: false, isClosing: false, orders: [], reason: '', isLoading: false });
+            }, 300);
         }
+    };
+
+    const handleBatchDelete = () => {
+        if (selectedOrders.length === 0) { 
+            showToast('No orders selected.', 'error'); 
+            return; 
+        }
+        const ordersToDelete = orders.filter(o => selectedOrders.includes(o.orderNumber));
+        setDeleteModalState({ isOpen: true, isClosing: false, orders: ordersToDelete, reason: 'Batch deletion.', isLoading: false });
     };
 
     const handleEditOrder = useCallback((order: Order) => {
@@ -1411,7 +1460,7 @@ export const PendingOrders = ({ onNavigate }) => {
             <ExpandedPendingView
                 order={expandedOrder}
                 onProcess={handleProcessOrder}
-                onDelete={handleDeleteOrder}
+                onDelete={openDeleteModalForOrder}
                 isProcessing={processingOrder === expandedOrder.orderNumber}
                 processingQty={processingQty}
                 onQtyChange={handleProcessingQtyChange}
@@ -1430,7 +1479,7 @@ export const PendingOrders = ({ onNavigate }) => {
             onToggleExpand: handleToggleExpand,
             expandedOrderNumber: expandedDetailed,
             onProcessOrder: handleProcessFullOrder,
-            onDeleteOrder: handleDeleteOrder,
+            onDeleteOrder: openDeleteModalForOrder,
             onEditOrder: handleEditOrder,
             isMobile: isMobile,
             selectedOrders: selectedOrders,
@@ -1504,7 +1553,7 @@ export const PendingOrders = ({ onNavigate }) => {
                                     onToggleExpand={handleSelectOrder}
                                     onSelectOrder={handleSelectOrderCheckbox}
                                     onProcessOrder={handleProcessFullOrder}
-                                    onDeleteOrder={handleDeleteOrder}
+                                    onDeleteOrder={openDeleteModalForOrder}
                                     onEditOrder={handleEditOrder}
                                 />
                              </div>
@@ -1518,7 +1567,7 @@ export const PendingOrders = ({ onNavigate }) => {
                         <ExpandedPendingView
                             order={activeOrder}
                             onProcess={handleProcessOrder}
-                            onDelete={handleDeleteOrder}
+                            onDelete={openDeleteModalForOrder}
                             isProcessing={processingOrder === activeOrder.orderNumber}
                             processingQty={processingQty}
                             onQtyChange={handleProcessingQtyChange}
@@ -1549,6 +1598,11 @@ export const PendingOrders = ({ onNavigate }) => {
     
     return (
         <div style={styles.container}>
+            <DeleteConfirmationModal
+                state={deleteModalState}
+                setState={setDeleteModalState}
+                onConfirm={handleConfirmDeletion}
+            />
             <CustomTagModal isOpen={isCustomTagModalOpen} onClose={() => setIsCustomTagModalOpen(false)} onSave={handleSaveCustomTag} />
             <AddNoteModal isOpen={isNoteModalOpen} onClose={() => setIsNoteModalOpen(false)} onSave={handleSaveNote} />
             <style>{`
@@ -1911,7 +1965,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     modalContent: { backgroundColor: 'var(--glass-bg)', padding: '1.5rem', borderRadius: '12px', width: '90%', boxShadow: '0 8px 32px rgba(0,0,0,0.1)', border: '1px solid var(--glass-border)', display: 'flex', flexDirection: 'column', gap: '1rem', transform: 'scale(0.95)', opacity: 0 },
     modalSubtitleText: { textAlign: 'center', color: 'var(--text-color)', marginBottom: '1rem', fontSize: '0.9rem', padding: '0 1rem' },
     modalInput: { width: '100%', padding: '10px 15px', fontSize: '1rem', border: '1px solid var(--border-color)', borderRadius: '8px', backgroundColor: 'var(--card-bg)', color: 'var(--dark-grey)' },
-    modalTextarea: { width: '100%', minHeight: '120px', padding: '0.75rem', fontSize: '0.9rem', border: '1px solid var(--border-color)', borderRadius: '8px', resize: 'vertical', backgroundColor: 'var(--card-bg)', color: 'var(--dark-grey)' },
+    modalTextarea: { width: '100%', minHeight: '80px', padding: '0.75rem', fontSize: '0.9rem', border: '1px solid var(--border-color)', borderRadius: '8px', resize: 'vertical', backgroundColor: 'var(--card-bg)', color: 'var(--dark-grey)' },
     modalTitle: { margin: 0, fontSize: '1.1rem', fontWeight: 600, color: 'var(--dark-grey)' },
     iosModalActions: { display: 'flex', width: 'calc(100% + 3rem)', marginLeft: '-1.5rem', marginBottom: '-1.5rem', borderTop: '1px solid var(--glass-border)', marginTop: '1.5rem' },
     iosModalButtonSecondary: { background: 'transparent', border: 'none', padding: '1rem 0', cursor: 'pointer', fontSize: '1rem', textAlign: 'center', transition: 'background-color 0.2s ease', flex: 1, color: 'var(--dark-grey)', borderRight: '1px solid var(--glass-border)', fontWeight: 400 },
