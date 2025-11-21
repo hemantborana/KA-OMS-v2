@@ -581,7 +581,7 @@ const DetailedOrderCard: React.FC<{
         if (!order.items) return [];
         return [...new Set(order.items.map(item => item.fullItemData.Style))];
     }, [order.items]);
-    const stylePreview = uniqueStyles.slice(0, 3).join(' / ');
+    const stylePreview = uniqueStyles.join(' / ');
 
     const getCardStyle = () => {
         let baseStyle = isExpanded ? styles.detailedOrderCardActive : styles.detailedOrderCard;
@@ -622,7 +622,7 @@ const DetailedOrderCard: React.FC<{
             {/* Second Row: Style Preview Left | Order No & Time Right */}
              <div style={styles.cardSecondRow}>
                  <div style={styles.stylePreviewInline}>
-                     {stylePreview}{uniqueStyles.length > 3 ? '...' : ''}
+                     {stylePreview}
                  </div>
                  <div style={styles.cardMetaRight}>
                      <span style={styles.cardOrderNumber}>#{order.orderNumber}</span>
@@ -1607,7 +1607,7 @@ const styles: { [key: string]: React.CSSProperties } = {
         display: 'grid',
         gridTemplateRows: '0fr',
         transition: 'grid-template-rows 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
-        backgroundColor: '#FFF'
+        backgroundColor: '#f8f9fa'
     },
     collapsibleContainerExpanded: {
         gridTemplateRows: '1fr',
@@ -1628,7 +1628,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     badge: { backgroundColor: '#eef2f7', color: 'var(--brand-color)', padding: '0.2rem 0.6rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600 },
     checkboxContainer: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' },
     checkboxButton: { background: 'none', border: 'none', padding: '0', cursor: 'pointer', color: 'var(--text-color)' },
-    expandedViewContainer: { padding: '0 1.5rem 1.5rem', backgroundColor: 'var(--active-bg)', borderRadius: '0 0 10px 10px', border: '2px solid var(--brand-color)', borderTop: 'none' },
+    expandedViewContainer: { padding: '0 1.5rem 1.5rem', backgroundColor: '#f0f3f5', borderRadius: '0 0 10px 10px', border: '2px solid var(--brand-color)', borderTop: 'none' },
     tableContainer: { overflowX: 'auto', backgroundColor: 'var(--card-bg)', borderRadius: '8px' },
     table: { width: '100%', borderCollapse: 'collapse' },
     th: { backgroundColor: '#f8f9fa', padding: '10px 12px', textAlign: 'center', fontWeight: 600, color: 'var(--dark-grey)', borderBottom: '2px solid var(--skeleton-bg)', whiteSpace: 'nowrap' },
@@ -1700,14 +1700,14 @@ const styles: { [key: string]: React.CSSProperties } = {
     swipeableContent: { position: 'relative', backgroundColor: '#FFF', zIndex: 1, borderRadius: '10px' },
     
     // --- New Detailed Card Styles ---
-    detailedOrderCard: { backgroundColor: '#FFF', borderRadius: '10px', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', cursor: 'pointer', transition: 'border-color 0.2s, box-shadow 0.2s, background-color 0.2s', border: '2px solid #eef2f7', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' },
+    detailedOrderCard: { backgroundColor: '#FFF', borderRadius: '10px', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.25rem', cursor: 'pointer', transition: 'border-color 0.2s, box-shadow 0.2s, background-color 0.2s', border: '2px solid #eef2f7', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' },
     detailedOrderCardActive: { 
-        backgroundColor: '#e3eaf4', 
+        backgroundColor: '#eaf0f7', 
         borderRadius: '10px 10px 0 0', 
         padding: '1rem', 
         display: 'flex', 
         flexDirection: 'column', 
-        gap: '0.5rem', 
+        gap: '0.25rem', 
         cursor: 'pointer', 
         transition: 'all 0.2s',
         border: '2px solid var(--brand-color)',
@@ -1720,13 +1720,13 @@ const styles: { [key: string]: React.CSSProperties } = {
     cardPartyName: { fontSize: '1.1rem', fontWeight: 700, color: '#000', margin: 0, lineHeight: 1.2, flex: 1, paddingRight: '0.5rem' },
     
     cardSecondRow: { display: 'grid', gridTemplateColumns: '1fr auto', gap: '1rem', alignItems: 'start' },
-    stylePreviewInline: { fontSize: '0.85rem', color: '#94a3b8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'left', fontWeight: 500 },
+    stylePreviewInline: { fontSize: '0.85rem', color: '#94a3b8', whiteSpace: 'normal', textAlign: 'left', fontWeight: 500 },
     cardMetaRight: { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' },
     
     cardOrderNumber: { fontFamily: 'monospace', fontWeight: 700, color: 'var(--brand-color)', backgroundColor: '#edf2f7', padding: '2px 6px', borderRadius: '4px', fontSize: '0.8rem' },
     cardTime: { fontSize: '0.75rem', color: '#64748b' },
     
-    cardFooterRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.75rem', paddingTop: '0.75rem' },
+    cardFooterRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.25rem', paddingTop: '0.5rem' },
     metricGroup: { display: 'flex', gap: '1rem' },
     iconMetric: { display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.9rem', fontWeight: 600, color: 'var(--dark-grey)' },
     statusIconGroup: { display: 'flex', gap: '0.75rem' },
