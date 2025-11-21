@@ -1384,11 +1384,22 @@ export const PendingOrders = ({ onNavigate }) => {
         setProcessingQty(order.items.reduce((acc, item) => ({...acc, [item.id]: 0}), {}));
     };
     
-    const batchActionToolbarStyle = useMemo(() => ({
-        ...styles.batchActionToolbar,
-        bottom: isMobile ? '80px' : '30px',
-        visibility: isSelectionMode ? 'visible' : 'hidden',
-    }), [isMobile, isSelectionMode]);
+    const batchActionToolbarStyle = useMemo(() => {
+        const style: React.CSSProperties = {
+            ...styles.batchActionToolbar,
+            bottom: isMobile ? '80px' : '30px',
+            visibility: isSelectionMode ? 'visible' : 'hidden',
+        };
+
+        if (isMobile) {
+            style.left = '25px';
+            style.right = '25px';
+            style.width = 'auto';
+            style.transform = 'none';
+        }
+
+        return style;
+    }, [isMobile, isSelectionMode]);
     
     const renderMobileLayout = () => {
         if (isLoading) return <div style={styles.centeredMessage}><Spinner /></div>;
@@ -1648,9 +1659,9 @@ export const PendingOrders = ({ onNavigate }) => {
             {isSelectionMode && (
                 <div className="batch-toolbar-enter" style={batchActionToolbarStyle}>
                     <div style={styles.batchIconGroup}>
-                        <button style={styles.batchIconBtn} onClick={handleBatchProcess} title="Forward for Process"><ProcessIcon/></button>
-                        <button style={styles.batchIconBtn} onClick={handleBatchExport} title="Export CSV"><ShareIcon/></button>
-                        <button style={styles.batchIconBtn} onClick={handleBatchPrint} title="Print Picking List"><PrintIcon/></button>
+                        <button style={{...styles.batchIconBtn, color: 'var(--green)'}} onClick={handleBatchProcess} title="Forward for Process"><ProcessIcon/></button>
+                        <button style={{...styles.batchIconBtn, color: 'var(--orange)'}} onClick={handleBatchExport} title="Export CSV"><ShareIcon/></button>
+                        <button style={{...styles.batchIconBtn, color: 'var(--blue)'}} onClick={handleBatchPrint} title="Print Picking List"><PrintIcon/></button>
                         <button style={{...styles.batchIconBtn, ...styles.batchIconBtnDanger}} onClick={handleBatchDelete} title="Delete"><TrashIcon/></button>
                     </div>
                 </div>
@@ -1769,21 +1780,21 @@ const styles: { [key: string]: React.CSSProperties } = {
     processButtonDisabled: { backgroundColor: 'var(--gray-3)', boxShadow: 'none', cursor: 'not-allowed' },
     
     // --- Batch Action Toolbar ---
-    batchActionToolbar: { 
+    batchActionToolbar: {
         backgroundColor: 'var(--glass-bg)',
-        backdropFilter: 'blur(16px)',
-        padding: '0.6rem', 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        position: 'fixed', 
-        left: '50%', 
+        backdropFilter: 'blur(7px)',
+        WebkitBackdropFilter: 'blur(7px)',
+        padding: '0.6rem',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        position: 'fixed',
+        left: '50%',
         transform: 'translateX(-50%)',
         width: 'auto',
-        maxWidth: '92%',
-        zIndex: 1000, 
+        zIndex: 1000,
         borderRadius: '16px',
-        boxShadow: '0 10px 30px rgba(0,0,0,0.25), 0 0 0 1px var(--glass-border)'
+        boxShadow: '0 8px 24px rgba(0,0,0,0.2), 0 0 0 1px var(--glass-border)',
     },
     batchIconGroup: {
         display: 'flex',
