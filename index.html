@@ -12,21 +12,56 @@
     <meta name="apple-mobile-web-app-title" content="KA-OMS">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Inter+Tight:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
     <style>
         :root {
-            --brand-color: #475468;      /* A deep, muted blue from the image */
-            --dark-grey: #2d3748;      /* A strong dark grey for titles */
-            --light-grey: #F0F3F4;     /* A soft, cool grey from the image's background */
-            --text-color: #6A7280;     /* A readable mid-grey for labels */
-            --card-bg: #FFFFFF;        /* A clean white for the login card */
-            --active-bg: #eef2f7;      /* A very light blue for active nav items */
+            /* Brand color */
+            --brand-color: #6155F5;
+
+            /* UI Neutrals */
+            --light-grey: #F0F0F3;     /* Primary Background */
+            --card-bg: #FFFFFF;        /* Card Elements */
+
+            /* Text Hierarchy */
+            --dark-grey: #000000;      /* Primary Text */
+            --text-color: rgba(60, 60, 67, 0.6); /* Secondary Text */
+            --text-tertiary: rgba(60, 60, 67, 0.3); /* Tertiary Text */
+            --text-quaternary: rgba(60, 60, 67, 0.18);/* Quaternary / for subtle elements */
+            
+            /* Borders & Skeletons */
+            --border-color: #E5E5EA;    /* Gray 5 - for component borders */
+            --skeleton-bg: #E5E5EA;     /* Gray 5 - for loading skeletons */
+            --separator-color: var(--text-quaternary); /* for dividers/separators */
+            
+            /* States */
+            --active-bg: rgba(97, 85, 245, 0.1);
+
+            /* Full Palette */
+            --red: #FF383C;
+            --orange: #FF8D28;
+            --yellow: #FFCC00;
+            --green: #34C759;
+            --mint: #00C8B3;
+            --teal: #00C3D0;
+            --cyan: #00C0E8;
+            --blue: #0088FF;
+            --indigo: #6155F5;
+            --purple: #CB30E0;
+            --pink: #FF2D55;
+            --brown: #AC7F5E;
+            
+            /* Grays */
+            --gray: #8E8E93;
+            --gray-2: #AEAEB2;
+            --gray-3: #C7C7CC;
+            --gray-4: #D1D1D6;
+            --gray-5: #E5E5EA;
+            --gray-6: #F2F2F7;
+
             --border-radius: 12px;
             --box-shadow: 0 10px 30px rgba(0, 0, 0, 0.07);
-            --skeleton-bg: #e2e8f0;    /* A light grey for skeleton loaders */
-            --border-color: #e2e8f0;
         }
 
         body.dark-mode {
@@ -39,6 +74,8 @@
             --box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
             --skeleton-bg: #323232;
             --border-color: #323232;
+            --separator-color: rgba(255, 255, 255, 0.1);
+            --text-tertiary: rgba(255, 255, 255, 0.3);
         }
 
         * {
@@ -171,7 +208,7 @@
     <script>
         (function() {
             var savedTheme = localStorage.getItem('theme') || 'light';
-            var themeColor = '#F0F3F4'; // Default light theme background
+            var themeColor = '#F0F0F3'; // Default light theme background
             if (savedTheme === 'dark') {
                 document.body.classList.add('dark-mode');
                 themeColor = '#191919'; // Dark theme background
