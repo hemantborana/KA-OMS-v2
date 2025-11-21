@@ -24,7 +24,7 @@ const HistoryIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" hei
 const TagIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>;
 const XIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>;
 const AlertCircleIcon = (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>;
-const ShareIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>;
+const ShareIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>;
 
 
 // --- TYPE & FIREBASE ---
@@ -379,6 +379,55 @@ const CustomTagDropdown: React.FC<{ onAddTag: (order: Order, tag: string) => voi
 
 
 // --- COMPONENTS ---
+const QuantityControl: React.FC<{
+    value: string | number;
+    onChange: (value: string) => void;
+    onStep: (step: number) => void;
+    size?: 'small' | 'default';
+}> = ({ value, onChange, onStep, size = 'default' }) => {
+    
+    const s = useMemo(() => {
+        const base = {
+            button: styles.quantityButton,
+            input: styles.quantityInput,
+            container: styles.quantityControl,
+        };
+        if (size === 'small') {
+            base.button = { ...base.button, width: '30px', height: '30px', fontSize: '1.2rem' };
+            base.input = { ...base.input, width: '40px', height: '30px', fontSize: '0.9rem', padding: '4px 2px' };
+            base.container = {...base.container, height: '30px'};
+        } else {
+             base.button = { ...base.button, width: '32px', height: '32px', fontSize: '1.2rem' };
+             base.input = { ...base.input, width: '50px', height: '32px', fontSize: '1rem', padding: '6px 2px' };
+        }
+        return base;
+    }, [size]);
+
+    return (
+        <div style={s.container}>
+            <button
+                style={{ ...s.button, borderRadius: '6px 0 0 6px' }}
+                onClick={(e) => {e.stopPropagation(); onStep(-1)}}
+                aria-label="Decrease quantity"
+            >-</button>
+            <input
+                type="number"
+                min="0"
+                style={s.input}
+                value={value}
+                onChange={(e) => {e.stopPropagation(); onChange(e.target.value)}}
+                onClick={e => e.stopPropagation()}
+                placeholder="0"
+            />
+            <button
+                style={{ ...s.button, borderRadius: '0 6px 6px 0' }}
+                onClick={(e) => {e.stopPropagation(); onStep(1)}}
+                aria-label="Increase quantity"
+            >+</button>
+        </div>
+    );
+};
+
 const ExpandedPendingView = ({ order, onProcess, onDelete, isProcessing, processingQty, onQtyChange, stockData, isMobile, onPrint, onAddNote, onAddTag, onRemoveTag }) => {
     const [note, setNote] = useState('');
     const [isHistoryCollapsed, setIsHistoryCollapsed] = useState(true);
@@ -436,7 +485,15 @@ const ExpandedPendingView = ({ order, onProcess, onDelete, isProcessing, process
                                 </td>
                                 <td style={{...styles.td, textAlign: 'right'}}>{item.quantity}</td>
                                 <td style={{...styles.td, ...styles.tdInput}}>
-                                    <input type="number" style={{...styles.qtyInput, textAlign: 'right'}} value={processingQty[item.id] || ''} onChange={(e) => onQtyChange(item.id, e.target.value, item.quantity)} placeholder="0" max={item.quantity} min="0" />
+                                    <QuantityControl
+                                        value={processingQty[item.id] || ''}
+                                        onChange={(value) => onQtyChange(item.id, value, item.quantity)}
+                                        onStep={(step) => {
+                                            const currentValue = processingQty[item.id] || 0;
+                                            const newValue = String(currentValue + step);
+                                            onQtyChange(item.id, newValue, item.quantity);
+                                        }}
+                                    />
                                 </td>
                             </tr>
                         );
@@ -461,7 +518,16 @@ const ExpandedPendingView = ({ order, onProcess, onDelete, isProcessing, process
                         </div>
                         <div style={styles.mobileItemQty}>
                             <div style={styles.mobileQtyLabel}>Ord: {item.quantity}</div>
-                             <input type="number" style={{...styles.qtyInput, width: '60px', padding: '6px'}} value={processingQty[item.id] || ''} onChange={(e) => onQtyChange(item.id, e.target.value, item.quantity)} placeholder="0" max={item.quantity} min="0" />
+                             <QuantityControl
+                                value={processingQty[item.id] || ''}
+                                onChange={(value) => onQtyChange(item.id, value, item.quantity)}
+                                onStep={(step) => {
+                                    const currentValue = processingQty[item.id] || 0;
+                                    const newValue = String(currentValue + step);
+                                    onQtyChange(item.id, newValue, item.quantity);
+                                }}
+                                size="small"
+                            />
                         </div>
                     </div>
                 )
@@ -1634,7 +1700,6 @@ const styles: { [key: string]: React.CSSProperties } = {
     th: { backgroundColor: '#f8f9fa', padding: '10px 12px', textAlign: 'center', fontWeight: 600, color: 'var(--dark-grey)', borderBottom: '2px solid var(--skeleton-bg)', whiteSpace: 'nowrap' },
     tr: { backgroundColor: 'var(--card-bg)', borderBottom: 'none' },
     td: { padding: '10px 12px', color: 'var(--text-color)', fontSize: '0.9rem', textAlign: 'center' },
-    qtyInput: { width: '70px', padding: '8px', textAlign: 'center', border: '1px solid var(--skeleton-bg)', borderRadius: '6px', fontSize: '0.9rem', backgroundColor: '#ffffff', color: 'var(--dark-grey)' },
     tdInput: { padding: '4px' },
     noteBox: { backgroundColor: '#FFF', border: '1px solid #ffe58f', padding: '0.75rem 1rem', borderRadius: '8px', fontSize: '0.9rem', marginTop: '1rem' },
     modalFooter: { padding: '1rem 0 0', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', borderTop: 'none' },
@@ -1772,4 +1837,39 @@ const styles: { [key: string]: React.CSSProperties } = {
     customDropdownButton: { padding: '2px 8px', borderRadius: '12px', border: '1px solid var(--skeleton-bg)', fontSize: '0.75rem', color: 'var(--text-color)', backgroundColor: 'var(--light-grey)', cursor: 'pointer', display: 'flex', alignItems: 'center', },
     customDropdownMenu: { position: 'absolute', top: '100%', left: 0, backgroundColor: 'var(--card-bg)', border: '1px solid var(--skeleton-bg)', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 10, minWidth: '200px', marginTop: '4px', padding: '0.25rem', animation: 'dropdown-in 0.2s ease-out forwards', transformOrigin: 'top center', },
     customDropdownItem: { display: 'block', width: '100%', padding: '0.5rem 0.75rem', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '0.85rem', borderRadius: '6px', color: 'var(--dark-grey)', },
+
+    // --- Quantity Control ---
+    quantityControl: { display: 'flex', alignItems: 'center', justifyContent: 'center' },
+    quantityInput: { 
+        padding: '6px 2px', 
+        fontSize: '1rem', 
+        border: '1px solid var(--skeleton-bg)', 
+        borderLeft: 'none', 
+        borderRight: 'none', 
+        backgroundColor: '#ffffff', 
+        color: 'var(--dark-grey)', 
+        textAlign: 'center', 
+        outline: 'none', 
+        borderRadius: 0, 
+        boxSizing: 'border-box', 
+        appearance: 'textfield', 
+        MozAppearance: 'textfield' as any,
+        width: '50px',
+        height: '32px',
+    },
+    quantityButton: { 
+        backgroundColor: 'var(--light-grey)', 
+        border: '1px solid var(--skeleton-bg)', 
+        color: 'var(--dark-grey)', 
+        width: '32px', 
+        height: '32px', 
+        fontSize: '1.2rem', 
+        cursor: 'pointer', 
+        padding: 0, 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        transition: 'background-color 0.2s', 
+        lineHeight: 1, 
+    },
 };
