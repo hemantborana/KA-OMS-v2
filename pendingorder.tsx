@@ -767,11 +767,43 @@ const DetailedList: React.FC<{ orders: Order[]; onToggleExpand: (order: Order) =
     );
 }
 
-const PartyGroup: React.FC<{ partyName: string; data: any; onToggleExpand: (order: Order) => void; expandedOrderNumber: string | null; children: React.ReactNode; onProcessOrder: (order: Order) => void; onDeleteOrder: (order: Order) => void; onEditOrder: (order: Order) => void; isMobile: boolean; selectedOrders: string[]; onSelectOrder: (orderNumber: string) => void; isSelectionMode: boolean; isCollapsed: boolean; onToggleCollapse: () => void; }> = ({ partyName, data, onToggleExpand, expandedOrderNumber, children, onProcessOrder, onDeleteOrder, onEditOrder, isMobile, selectedOrders, onSelectOrder, isSelectionMode, isCollapsed, onToggleCollapse }) => {
+const PartyGroup: React.FC<{ partyName: string; data: any; onToggleExpand: (order: Order) => void; expandedOrderNumber: string | null; children: React.ReactNode; onProcessOrder: (order: Order) => void; onDeleteOrder: (order: Order) => void; onEditOrder: (order: Order) => void; isMobile: boolean; selectedOrders: string[]; onSelectOrder: (orderNumber: string) => void; isSelectionMode: boolean; isCollapsed: boolean; onToggleCollapse: () => void; stockData: any; }> = ({ partyName, data, onToggleExpand, expandedOrderNumber, children, onProcessOrder, onDeleteOrder, onEditOrder, isMobile, selectedOrders, onSelectOrder, isSelectionMode, isCollapsed, onToggleCollapse, stockData }) => {
     const totalQty = data.orders.reduce((sum, order) => sum + order.totalQuantity, 0);
     const firstLetter = partyName.charAt(0).toUpperCase();
 
     const pastelBg = useMemo(() => getPastelColor(partyName), [partyName]);
+
+    const { stockProgress, uniqueStylesWithColors } = useMemo(() => {
+        if (!data.orders || !stockData || Object.keys(stockData).length === 0) {
+            return { stockProgress: 0, uniqueStylesWithColors: [] };
+        }
+    
+        let totalOrdered = 0;
+        let totalAvailable = 0;
+        const styleColorSet = new Set<string>();
+    
+        data.orders.forEach(order => {
+            order.items.forEach(item => {
+                totalOrdered += item.quantity;
+                
+                const stockKey = `${normalizeKeyPart(item.fullItemData.Style)}-${normalizeKeyPart(item.fullItemData.Color)}-${normalizeKeyPart(item.fullItemData.Size)}`;
+                const stockLevel = stockData[stockKey] ?? 0;
+                
+                totalAvailable += Math.min(item.quantity, stockLevel);
+    
+                styleColorSet.add(`${item.fullItemData.Style} - ${item.fullItemData.Color}`);
+            });
+        });
+        
+        const stockProgress = totalOrdered > 0 ? (totalAvailable / totalOrdered) * 100 : 0;
+    
+        const uniqueStylesWithColors = Array.from(styleColorSet).sort().map(styleColor => ({
+            id: styleColor,
+            style: styleColor.split(' - ')[0],
+        }));
+    
+        return { stockProgress, uniqueStylesWithColors };
+    }, [data.orders, stockData]);
 
     const headerButtonStyle: React.CSSProperties = {
         ...styles.cardHeader,
@@ -787,6 +819,22 @@ const PartyGroup: React.FC<{ partyName: string; data: any; onToggleExpand: (orde
                         <div style={styles.mobilePartyName}>{partyName}</div>
                         <div style={styles.mobilePartyMeta}>
                             {data.orderCount} Orders • {totalQty} Qty
+                        </div>
+                        <div style={styles.progressBarContainer}>
+                            <div style={{ ...styles.progressBar, width: `${stockProgress}%` }} />
+                        </div>
+                        <div style={styles.styleTagsContainer}>
+                            {uniqueStylesWithColors.map(({ id, style }) => (
+                                <span key={id} style={{
+                                    backgroundColor: getPastelColor(style),
+                                    color: getDarkerPastelColor(style),
+                                    padding: '2px 6px',
+                                    borderRadius: '4px',
+                                    fontSize: '0.65rem',
+                                    fontWeight: 600,
+                                    whiteSpace: 'nowrap',
+                                }}>{id}</span>
+                            ))}
                         </div>
                     </div>
                     <div style={styles.mobileChevron}>
@@ -1377,6 +1425,7 @@ export const PendingOrders = ({ onNavigate }) => {
                         {...commonProps}
                         isCollapsed={collapsedSummarized[partyName] ?? true}
                         onToggleCollapse={() => handleTogglePartyCollapse(partyName)}
+                        stockData={stockData}
                     >
                         {expandedView}
                     </PartyGroup>
@@ -1656,7 +1705,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     card: { backgroundColor: '#FFF', borderRadius: 'var(--border-radius)', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)', border: 'none', overflow: 'hidden' },
     cardHeader: { width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.5rem', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', borderBottom: '1px solid var(--skeleton-bg)' },
     mobileCardHeader: { width: '100%', display: 'flex', flexDirection: 'row', alignItems: 'center', padding: '1rem', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', transition: 'border-radius 0.3s ease' },
-    mobilePartyHeaderContent: { display: 'flex', alignItems: 'center', width: '100%', gap: '1rem' },
+    mobilePartyHeaderContent: { display: 'flex', alignItems: 'flex-start', width: '100%', gap: '1rem' },
     partyAvatar: { width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '600', fontSize: '1.1rem', flexShrink: 0 },
     mobilePartyInfo: { display: 'flex', flexDirection: 'column', flex: 1, gap: '2px' },
     mobilePartyName: { fontWeight: '600', fontSize: '1rem', color: '#000' },
@@ -1871,5 +1920,27 @@ const styles: { [key: string]: React.CSSProperties } = {
         justifyContent: 'center', 
         transition: 'background-color 0.2s', 
         lineHeight: 1, 
+    },
+    progressBarContainer: {
+        height: '6px',
+        width: '100%',
+        backgroundColor: '#e2e8f0',
+        borderRadius: '3px',
+        overflow: 'hidden',
+        marginTop: '8px',
+    },
+    progressBar: {
+        height: '100%',
+        backgroundColor: '#2ecc71',
+        borderRadius: '3px',
+        transition: 'width 0.5s ease-in-out',
+    },
+    styleTagsContainer: {
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: '4px',
+        marginTop: '8px',
+        maxHeight: '40px',
+        overflow: 'hidden',
     },
 };
