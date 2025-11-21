@@ -603,12 +603,11 @@ const DetailedOrderCard: React.FC<{
     };
 
     const handleCardClick = (e) => {
-        if (e) e.stopPropagation();
         onToggleExpand(order);
     };
 
     const orderContent = (
-        <div style={getCardStyle()} onClick={!isMobile ? handleCardClick : undefined} onContextMenu={(e) => e.preventDefault()}>
+        <div style={getCardStyle()} onClick={handleCardClick} onContextMenu={(e) => e.preventDefault()}>
             {/* Top Row: Party Name & Chevron */}
             <div style={styles.cardTopRow}>
                 <h3 style={styles.cardPartyName}>{order.partyName}</h3>
@@ -664,7 +663,6 @@ const DetailedOrderCard: React.FC<{
             onProcess={() => onProcessOrder(order)} 
             onDelete={() => onDeleteOrder(order)} 
             onEdit={() => onEditOrder(order)}
-            onTap={handleCardClick}
             disabled={isSelectionMode}
         >
             {orderContent}
@@ -1031,14 +1029,17 @@ export const PendingOrders = ({ onNavigate }) => {
 
     const handleToggleExpand = (order: Order) => {
         const orderNumber = order.orderNumber;
-        const currentExpanded = view === 'summarized' ? expandedDetailed : expandedDetailed;
-        const setExpanded = view === 'summarized' ? setExpandedDetailed : setExpandedDetailed;
-
-        if (currentExpanded === orderNumber) {
-            setExpanded(null);
+        
+        if (isMobile) {
+            if (expandedDetailed === orderNumber) {
+                setExpandedDetailed(null);
+            } else {
+                setProcessingQty(order.items.reduce((acc, item) => ({...acc, [item.id]: 0}), {}));
+                setExpandedDetailed(orderNumber);
+            }
         } else {
-            setProcessingQty(order.items.reduce((acc, item) => ({...acc, [item.id]: 0}), {}));
-            setExpanded(orderNumber);
+            // Desktop behavior (Command Center)
+            handleSelectOrder(order);
         }
     };
     
@@ -1627,7 +1628,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     badge: { backgroundColor: '#eef2f7', color: 'var(--brand-color)', padding: '0.2rem 0.6rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600 },
     checkboxContainer: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' },
     checkboxButton: { background: 'none', border: 'none', padding: '0', cursor: 'pointer', color: 'var(--text-color)' },
-    expandedViewContainer: { padding: '0 1.5rem 1.5rem', backgroundColor: '#FFF', borderRadius: '0 0 10px 10px', border: '2px solid var(--brand-color)', borderTop: 'none' },
+    expandedViewContainer: { padding: '0 1.5rem 1.5rem', backgroundColor: 'var(--active-bg)', borderRadius: '0 0 10px 10px', border: '2px solid var(--brand-color)', borderTop: 'none' },
     tableContainer: { overflowX: 'auto', backgroundColor: 'var(--card-bg)', borderRadius: '8px' },
     table: { width: '100%', borderCollapse: 'collapse' },
     th: { backgroundColor: '#f8f9fa', padding: '10px 12px', textAlign: 'center', fontWeight: 600, color: 'var(--dark-grey)', borderBottom: '2px solid var(--skeleton-bg)', whiteSpace: 'nowrap' },
@@ -1701,7 +1702,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     // --- New Detailed Card Styles ---
     detailedOrderCard: { backgroundColor: '#FFF', borderRadius: '10px', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', cursor: 'pointer', transition: 'border-color 0.2s, box-shadow 0.2s, background-color 0.2s', border: '2px solid #eef2f7', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' },
     detailedOrderCardActive: { 
-        backgroundColor: '#FFF', 
+        backgroundColor: '#e3eaf4', 
         borderRadius: '10px 10px 0 0', 
         padding: '1rem', 
         display: 'flex', 
@@ -1735,7 +1736,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     historyHeader: { width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer', padding: '0.25rem 0', fontSize: '1rem', fontWeight: 600, color: 'var(--dark-grey)' },
     historyContentWrapper: { paddingTop: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' },
     historyList: { maxHeight: '300px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem', border: '1px solid var(--skeleton-bg)', borderRadius: '8px', padding: '0.75rem', backgroundColor: '#ffffff' },
-    historyItem: { display: 'flex', flexDirection: 'column', gap: '0.25rem' },
+    historyItem: { display: 'flex', flexDirection: 'column', gap: '0.25rem', borderLeft: '3px solid var(--skeleton-bg)', paddingLeft: '1rem' },
     historyMeta: { display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.8rem', color: 'var(--text-color)' },
     historyEventType: { fontWeight: 600, padding: '2px 8px', borderRadius: '12px', fontSize: '0.75rem' },
     historyDetails: { fontSize: '0.9rem', color: 'var(--dark-grey)', paddingLeft: '0.25rem' },
@@ -1772,4 +1773,3 @@ const styles: { [key: string]: React.CSSProperties } = {
     customDropdownMenu: { position: 'absolute', top: '100%', left: 0, backgroundColor: 'var(--card-bg)', border: '1px solid var(--skeleton-bg)', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 10, minWidth: '200px', marginTop: '4px', padding: '0.25rem', animation: 'dropdown-in 0.2s ease-out forwards', transformOrigin: 'top center', },
     customDropdownItem: { display: 'block', width: '100%', padding: '0.5rem 0.75rem', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '0.85rem', borderRadius: '6px', color: 'var(--dark-grey)', },
 };
-
