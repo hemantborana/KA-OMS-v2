@@ -24,7 +24,7 @@ const HistoryIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" hei
 const TagIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>;
 const XIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>;
 const AlertCircleIcon = (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>;
-const ShareIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>;
+const ShareIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>;
 
 
 // --- TYPE & FIREBASE ---
@@ -379,6 +379,55 @@ const CustomTagDropdown: React.FC<{ onAddTag: (order: Order, tag: string) => voi
 
 
 // --- COMPONENTS ---
+const QuantityControl: React.FC<{
+    value: string | number;
+    onChange: (value: string) => void;
+    onStep: (step: number) => void;
+    size?: 'small' | 'default';
+}> = ({ value, onChange, onStep, size = 'default' }) => {
+    
+    const s = useMemo(() => {
+        const base = {
+            button: styles.quantityButton,
+            input: styles.quantityInput,
+            container: styles.quantityControl,
+        };
+        if (size === 'small') {
+            base.button = { ...base.button, width: '30px', height: '30px', fontSize: '1.2rem' };
+            base.input = { ...base.input, width: '40px', height: '30px', fontSize: '0.9rem', padding: '4px 2px' };
+            base.container = {...base.container, height: '30px'};
+        } else {
+             base.button = { ...base.button, width: '32px', height: '32px', fontSize: '1.2rem' };
+             base.input = { ...base.input, width: '50px', height: '32px', fontSize: '1rem', padding: '6px 2px' };
+        }
+        return base;
+    }, [size]);
+
+    return (
+        <div style={s.container}>
+            <button
+                style={{ ...s.button, borderRadius: '6px 0 0 6px' }}
+                onClick={(e) => {e.stopPropagation(); onStep(-1)}}
+                aria-label="Decrease quantity"
+            >-</button>
+            <input
+                type="number"
+                min="0"
+                style={s.input}
+                value={value}
+                onChange={(e) => {e.stopPropagation(); onChange(e.target.value)}}
+                onClick={e => e.stopPropagation()}
+                placeholder="0"
+            />
+            <button
+                style={{ ...s.button, borderRadius: '0 6px 6px 0' }}
+                onClick={(e) => {e.stopPropagation(); onStep(1)}}
+                aria-label="Increase quantity"
+            >+</button>
+        </div>
+    );
+};
+
 const ExpandedPendingView = ({ order, onProcess, onDelete, isProcessing, processingQty, onQtyChange, stockData, isMobile, onPrint, onAddNote, onAddTag, onRemoveTag }) => {
     const [note, setNote] = useState('');
     const [isHistoryCollapsed, setIsHistoryCollapsed] = useState(true);
@@ -436,7 +485,15 @@ const ExpandedPendingView = ({ order, onProcess, onDelete, isProcessing, process
                                 </td>
                                 <td style={{...styles.td, textAlign: 'right'}}>{item.quantity}</td>
                                 <td style={{...styles.td, ...styles.tdInput}}>
-                                    <input type="number" style={{...styles.qtyInput, textAlign: 'right'}} value={processingQty[item.id] || ''} onChange={(e) => onQtyChange(item.id, e.target.value, item.quantity)} placeholder="0" max={item.quantity} min="0" />
+                                    <QuantityControl
+                                        value={processingQty[item.id] || ''}
+                                        onChange={(value) => onQtyChange(item.id, value, item.quantity)}
+                                        onStep={(step) => {
+                                            const currentValue = processingQty[item.id] || 0;
+                                            const newValue = String(currentValue + step);
+                                            onQtyChange(item.id, newValue, item.quantity);
+                                        }}
+                                    />
                                 </td>
                             </tr>
                         );
@@ -461,7 +518,16 @@ const ExpandedPendingView = ({ order, onProcess, onDelete, isProcessing, process
                         </div>
                         <div style={styles.mobileItemQty}>
                             <div style={styles.mobileQtyLabel}>Ord: {item.quantity}</div>
-                             <input type="number" style={{...styles.qtyInput, width: '60px', padding: '6px'}} value={processingQty[item.id] || ''} onChange={(e) => onQtyChange(item.id, e.target.value, item.quantity)} placeholder="0" max={item.quantity} min="0" />
+                             <QuantityControl
+                                value={processingQty[item.id] || ''}
+                                onChange={(value) => onQtyChange(item.id, value, item.quantity)}
+                                onStep={(step) => {
+                                    const currentValue = processingQty[item.id] || 0;
+                                    const newValue = String(currentValue + step);
+                                    onQtyChange(item.id, newValue, item.quantity);
+                                }}
+                                size="small"
+                            />
                         </div>
                     </div>
                 )
@@ -581,7 +647,7 @@ const DetailedOrderCard: React.FC<{
         if (!order.items) return [];
         return [...new Set(order.items.map(item => item.fullItemData.Style))];
     }, [order.items]);
-    const stylePreview = uniqueStyles.slice(0, 3).join(' / ');
+    const stylePreview = uniqueStyles.join(' / ');
 
     const getCardStyle = () => {
         let baseStyle = isExpanded ? styles.detailedOrderCardActive : styles.detailedOrderCard;
@@ -622,7 +688,7 @@ const DetailedOrderCard: React.FC<{
             {/* Second Row: Style Preview Left | Order No & Time Right */}
              <div style={styles.cardSecondRow}>
                  <div style={styles.stylePreviewInline}>
-                     {stylePreview}{uniqueStyles.length > 3 ? '...' : ''}
+                     {stylePreview}
                  </div>
                  <div style={styles.cardMetaRight}>
                      <span style={styles.cardOrderNumber}>#{order.orderNumber}</span>
@@ -701,11 +767,43 @@ const DetailedList: React.FC<{ orders: Order[]; onToggleExpand: (order: Order) =
     );
 }
 
-const PartyGroup: React.FC<{ partyName: string; data: any; onToggleExpand: (order: Order) => void; expandedOrderNumber: string | null; children: React.ReactNode; onProcessOrder: (order: Order) => void; onDeleteOrder: (order: Order) => void; onEditOrder: (order: Order) => void; isMobile: boolean; selectedOrders: string[]; onSelectOrder: (orderNumber: string) => void; isSelectionMode: boolean; isCollapsed: boolean; onToggleCollapse: () => void; }> = ({ partyName, data, onToggleExpand, expandedOrderNumber, children, onProcessOrder, onDeleteOrder, onEditOrder, isMobile, selectedOrders, onSelectOrder, isSelectionMode, isCollapsed, onToggleCollapse }) => {
+const PartyGroup: React.FC<{ partyName: string; data: any; onToggleExpand: (order: Order) => void; expandedOrderNumber: string | null; children: React.ReactNode; onProcessOrder: (order: Order) => void; onDeleteOrder: (order: Order) => void; onEditOrder: (order: Order) => void; isMobile: boolean; selectedOrders: string[]; onSelectOrder: (orderNumber: string) => void; isSelectionMode: boolean; isCollapsed: boolean; onToggleCollapse: () => void; stockData: any; }> = ({ partyName, data, onToggleExpand, expandedOrderNumber, children, onProcessOrder, onDeleteOrder, onEditOrder, isMobile, selectedOrders, onSelectOrder, isSelectionMode, isCollapsed, onToggleCollapse, stockData }) => {
     const totalQty = data.orders.reduce((sum, order) => sum + order.totalQuantity, 0);
     const firstLetter = partyName.charAt(0).toUpperCase();
 
     const pastelBg = useMemo(() => getPastelColor(partyName), [partyName]);
+
+    const { stockProgress, uniqueStylesWithColors } = useMemo(() => {
+        if (!data.orders || !stockData || Object.keys(stockData).length === 0) {
+            return { stockProgress: 0, uniqueStylesWithColors: [] };
+        }
+    
+        let totalOrdered = 0;
+        let totalAvailable = 0;
+        const styleColorSet = new Set<string>();
+    
+        data.orders.forEach(order => {
+            order.items.forEach(item => {
+                totalOrdered += item.quantity;
+                
+                const stockKey = `${normalizeKeyPart(item.fullItemData.Style)}-${normalizeKeyPart(item.fullItemData.Color)}-${normalizeKeyPart(item.fullItemData.Size)}`;
+                const stockLevel = stockData[stockKey] ?? 0;
+                
+                totalAvailable += Math.min(item.quantity, stockLevel);
+    
+                styleColorSet.add(`${item.fullItemData.Style} - ${item.fullItemData.Color}`);
+            });
+        });
+        
+        const stockProgress = totalOrdered > 0 ? (totalAvailable / totalOrdered) * 100 : 0;
+    
+        const uniqueStylesWithColors = Array.from(styleColorSet).sort().map(styleColor => ({
+            id: styleColor,
+            style: styleColor.split(' - ')[0],
+        }));
+    
+        return { stockProgress, uniqueStylesWithColors };
+    }, [data.orders, stockData]);
 
     const headerButtonStyle: React.CSSProperties = {
         ...styles.cardHeader,
@@ -721,6 +819,22 @@ const PartyGroup: React.FC<{ partyName: string; data: any; onToggleExpand: (orde
                         <div style={styles.mobilePartyName}>{partyName}</div>
                         <div style={styles.mobilePartyMeta}>
                             {data.orderCount} Orders • {totalQty} Qty
+                        </div>
+                        <div style={styles.progressBarContainer}>
+                            <div style={{ ...styles.progressBar, width: `${stockProgress}%` }} />
+                        </div>
+                        <div style={styles.styleTagsContainer}>
+                            {uniqueStylesWithColors.map(({ id, style }) => (
+                                <span key={id} style={{
+                                    backgroundColor: getPastelColor(style),
+                                    color: getDarkerPastelColor(style),
+                                    padding: '2px 6px',
+                                    borderRadius: '4px',
+                                    fontSize: '0.65rem',
+                                    fontWeight: 600,
+                                    whiteSpace: 'nowrap',
+                                }}>{id}</span>
+                            ))}
                         </div>
                     </div>
                     <div style={styles.mobileChevron}>
@@ -1311,6 +1425,7 @@ export const PendingOrders = ({ onNavigate }) => {
                         {...commonProps}
                         isCollapsed={collapsedSummarized[partyName] ?? true}
                         onToggleCollapse={() => handleTogglePartyCollapse(partyName)}
+                        stockData={stockData}
                     >
                         {expandedView}
                     </PartyGroup>
@@ -1590,7 +1705,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     card: { backgroundColor: '#FFF', borderRadius: 'var(--border-radius)', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)', border: 'none', overflow: 'hidden' },
     cardHeader: { width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.5rem', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', borderBottom: '1px solid var(--skeleton-bg)' },
     mobileCardHeader: { width: '100%', display: 'flex', flexDirection: 'row', alignItems: 'center', padding: '1rem', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', transition: 'border-radius 0.3s ease' },
-    mobilePartyHeaderContent: { display: 'flex', alignItems: 'center', width: '100%', gap: '1rem' },
+    mobilePartyHeaderContent: { display: 'flex', alignItems: 'flex-start', width: '100%', gap: '1rem' },
     partyAvatar: { width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '600', fontSize: '1.1rem', flexShrink: 0 },
     mobilePartyInfo: { display: 'flex', flexDirection: 'column', flex: 1, gap: '2px' },
     mobilePartyName: { fontWeight: '600', fontSize: '1rem', color: '#000' },
@@ -1607,7 +1722,7 @@ const styles: { [key: string]: React.CSSProperties } = {
         display: 'grid',
         gridTemplateRows: '0fr',
         transition: 'grid-template-rows 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
-        backgroundColor: '#FFF'
+        backgroundColor: '#f8f9fa'
     },
     collapsibleContainerExpanded: {
         gridTemplateRows: '1fr',
@@ -1628,13 +1743,12 @@ const styles: { [key: string]: React.CSSProperties } = {
     badge: { backgroundColor: '#eef2f7', color: 'var(--brand-color)', padding: '0.2rem 0.6rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600 },
     checkboxContainer: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' },
     checkboxButton: { background: 'none', border: 'none', padding: '0', cursor: 'pointer', color: 'var(--text-color)' },
-    expandedViewContainer: { padding: '0 1.5rem 1.5rem', backgroundColor: 'var(--active-bg)', borderRadius: '0 0 10px 10px', border: '2px solid var(--brand-color)', borderTop: 'none' },
+    expandedViewContainer: { padding: '0 1.5rem 1.5rem', backgroundColor: '#f0f3f5', borderRadius: '0 0 10px 10px', border: '2px solid var(--brand-color)', borderTop: 'none' },
     tableContainer: { overflowX: 'auto', backgroundColor: 'var(--card-bg)', borderRadius: '8px' },
     table: { width: '100%', borderCollapse: 'collapse' },
     th: { backgroundColor: '#f8f9fa', padding: '10px 12px', textAlign: 'center', fontWeight: 600, color: 'var(--dark-grey)', borderBottom: '2px solid var(--skeleton-bg)', whiteSpace: 'nowrap' },
     tr: { backgroundColor: 'var(--card-bg)', borderBottom: 'none' },
     td: { padding: '10px 12px', color: 'var(--text-color)', fontSize: '0.9rem', textAlign: 'center' },
-    qtyInput: { width: '70px', padding: '8px', textAlign: 'center', border: '1px solid var(--skeleton-bg)', borderRadius: '6px', fontSize: '0.9rem', backgroundColor: '#ffffff', color: 'var(--dark-grey)' },
     tdInput: { padding: '4px' },
     noteBox: { backgroundColor: '#FFF', border: '1px solid #ffe58f', padding: '0.75rem 1rem', borderRadius: '8px', fontSize: '0.9rem', marginTop: '1rem' },
     modalFooter: { padding: '1rem 0 0', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', borderTop: 'none' },
@@ -1700,14 +1814,14 @@ const styles: { [key: string]: React.CSSProperties } = {
     swipeableContent: { position: 'relative', backgroundColor: '#FFF', zIndex: 1, borderRadius: '10px' },
     
     // --- New Detailed Card Styles ---
-    detailedOrderCard: { backgroundColor: '#FFF', borderRadius: '10px', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', cursor: 'pointer', transition: 'border-color 0.2s, box-shadow 0.2s, background-color 0.2s', border: '2px solid #eef2f7', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' },
+    detailedOrderCard: { backgroundColor: '#FFF', borderRadius: '10px', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.25rem', cursor: 'pointer', transition: 'border-color 0.2s, box-shadow 0.2s, background-color 0.2s', border: '2px solid #eef2f7', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' },
     detailedOrderCardActive: { 
-        backgroundColor: '#e3eaf4', 
+        backgroundColor: '#eaf0f7', 
         borderRadius: '10px 10px 0 0', 
         padding: '1rem', 
         display: 'flex', 
         flexDirection: 'column', 
-        gap: '0.5rem', 
+        gap: '0.25rem', 
         cursor: 'pointer', 
         transition: 'all 0.2s',
         border: '2px solid var(--brand-color)',
@@ -1720,13 +1834,13 @@ const styles: { [key: string]: React.CSSProperties } = {
     cardPartyName: { fontSize: '1.1rem', fontWeight: 700, color: '#000', margin: 0, lineHeight: 1.2, flex: 1, paddingRight: '0.5rem' },
     
     cardSecondRow: { display: 'grid', gridTemplateColumns: '1fr auto', gap: '1rem', alignItems: 'start' },
-    stylePreviewInline: { fontSize: '0.85rem', color: '#94a3b8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'left', fontWeight: 500 },
+    stylePreviewInline: { fontSize: '0.85rem', color: '#94a3b8', whiteSpace: 'normal', textAlign: 'left', fontWeight: 500 },
     cardMetaRight: { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' },
     
     cardOrderNumber: { fontFamily: 'monospace', fontWeight: 700, color: 'var(--brand-color)', backgroundColor: '#edf2f7', padding: '2px 6px', borderRadius: '4px', fontSize: '0.8rem' },
     cardTime: { fontSize: '0.75rem', color: '#64748b' },
     
-    cardFooterRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.75rem', paddingTop: '0.75rem' },
+    cardFooterRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.25rem', paddingTop: '0.5rem' },
     metricGroup: { display: 'flex', gap: '1rem' },
     iconMetric: { display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.9rem', fontWeight: 600, color: 'var(--dark-grey)' },
     statusIconGroup: { display: 'flex', gap: '0.75rem' },
@@ -1772,4 +1886,59 @@ const styles: { [key: string]: React.CSSProperties } = {
     customDropdownButton: { padding: '2px 8px', borderRadius: '12px', border: '1px solid var(--skeleton-bg)', fontSize: '0.75rem', color: 'var(--text-color)', backgroundColor: 'var(--light-grey)', cursor: 'pointer', display: 'flex', alignItems: 'center', },
     customDropdownMenu: { position: 'absolute', top: '100%', left: 0, backgroundColor: 'var(--card-bg)', border: '1px solid var(--skeleton-bg)', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 10, minWidth: '200px', marginTop: '4px', padding: '0.25rem', animation: 'dropdown-in 0.2s ease-out forwards', transformOrigin: 'top center', },
     customDropdownItem: { display: 'block', width: '100%', padding: '0.5rem 0.75rem', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '0.85rem', borderRadius: '6px', color: 'var(--dark-grey)', },
+
+    // --- Quantity Control ---
+    quantityControl: { display: 'flex', alignItems: 'center', justifyContent: 'center' },
+    quantityInput: { 
+        padding: '6px 2px', 
+        fontSize: '1rem', 
+        border: '1px solid var(--skeleton-bg)', 
+        borderLeft: 'none', 
+        borderRight: 'none', 
+        backgroundColor: '#ffffff', 
+        color: 'var(--dark-grey)', 
+        textAlign: 'center', 
+        outline: 'none', 
+        borderRadius: 0, 
+        boxSizing: 'border-box', 
+        appearance: 'textfield', 
+        MozAppearance: 'textfield' as any,
+        width: '50px',
+        height: '32px',
+    },
+    quantityButton: { 
+        backgroundColor: 'var(--light-grey)', 
+        border: '1px solid var(--skeleton-bg)', 
+        color: 'var(--dark-grey)', 
+        width: '32px', 
+        height: '32px', 
+        fontSize: '1.2rem', 
+        cursor: 'pointer', 
+        padding: 0, 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        transition: 'background-color 0.2s', 
+        lineHeight: 1, 
+    },
+    progressBarContainer: {
+        height: '6px',
+        width: '100%',
+        backgroundColor: '#e2e8f0',
+        borderRadius: '3px',
+        overflow: 'hidden',
+        marginTop: '8px',
+    },
+    progressBar: {
+        height: '100%',
+        backgroundColor: '#2ecc71',
+        borderRadius: '3px',
+        transition: 'width 0.5s ease-in-out',
+    },
+    styleTagsContainer: {
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: '4px',
+        marginTop: '8px',
+    },
 };
