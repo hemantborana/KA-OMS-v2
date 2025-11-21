@@ -23,7 +23,8 @@ const HistoryIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" hei
 const TagIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>;
 const XIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>;
 const AlertCircleIcon = (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>;
-const ShareIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>;
+const ShareIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>;
+const PlusIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>;
 
 
 // --- TYPE & FIREBASE ---
@@ -33,6 +34,7 @@ const PENDING_ORDERS_REF = 'Pending_Order_V2';
 const BILLING_ORDERS_REF = 'Ready_For_Billing_V2';
 const DELETED_ORDERS_REF = 'Deleted_Orders_V2';
 const EXPIRED_ORDERS_REF = 'Expired_Orders_V2';
+const CUSTOM_TAGS_REF = 'Custom_Tags_V2';
 const STOCK_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyY4ys2VzcsmslZj-vYieV1l-RRTp90eDMwcdANFZ3qecf8VRPgz-dNo46jqIqencqF/exec';
 
 
@@ -329,13 +331,24 @@ const Swipeable: React.FC<{
     );
 };
 
-const CustomTagDropdown: React.FC<{ onAddTag: (order: Order, tag: string) => void; order: Order; }> = ({ onAddTag, order }) => {
+const CustomTagDropdown: React.FC<{
+    onAddTag: (order: Order, tag: string) => void;
+    onOpenCustomTagModal: (order: Order) => void;
+    order: Order;
+    globalTags: string[];
+}> = ({ onAddTag, onOpenCustomTagModal, order, globalTags }) => {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef(null);
-    const options = [
+    
+    const predefinedOptions = [
         "On Hold", "Awaiting Stock", "Customer Confirmation Needed",
-        "Urgent", "Partial Shipment", "custom"
+        "Urgent", "Partial Shipment"
     ];
+
+    const options = useMemo(() => {
+        const combined = new Set([...predefinedOptions, ...globalTags]);
+        return [...Array.from(combined).sort(), "Create Custom..."];
+    }, [globalTags]);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -348,9 +361,8 @@ const CustomTagDropdown: React.FC<{ onAddTag: (order: Order, tag: string) => voi
     }, [dropdownRef]);
 
     const handleSelect = (option: string) => {
-        if (option === 'custom') {
-            const custom = prompt("Enter custom tag:");
-            if (custom) onAddTag(order, custom);
+        if (option === 'Create Custom...') {
+            onOpenCustomTagModal(order);
         } else if (option) {
             onAddTag(order, option);
         }
@@ -367,7 +379,7 @@ const CustomTagDropdown: React.FC<{ onAddTag: (order: Order, tag: string) => voi
                 <div style={styles.customDropdownMenu}>
                     {options.map(option => (
                         <button key={option} className="custom-dropdown-item" style={styles.customDropdownItem} onClick={() => handleSelect(option)}>
-                            {option === 'custom' ? 'Create Custom...' : option}
+                            {option}
                         </button>
                     ))}
                 </div>
@@ -378,10 +390,8 @@ const CustomTagDropdown: React.FC<{ onAddTag: (order: Order, tag: string) => voi
 
 
 // --- COMPONENTS ---
-const ExpandedPendingView = ({ order, onProcess, onDelete, isProcessing, processingQty, onQtyChange, stockData, isMobile, onPrint, onAddNote, onAddTag, onRemoveTag }) => {
-    const [note, setNote] = useState('');
+const ExpandedPendingView: React.FC<{ order: Order, onProcess, onDelete, isProcessing, processingQty, onQtyChange, stockData, isMobile, onPrint, onAddTag, onRemoveTag, onOpenCustomTagModal, onOpenNoteModal, globalTags }> = ({ order, onProcess, onDelete, isProcessing, processingQty, onQtyChange, stockData, isMobile, onPrint, onAddTag, onRemoveTag, onOpenCustomTagModal, onOpenNoteModal, globalTags }) => {
     const [isHistoryCollapsed, setIsHistoryCollapsed] = useState(true);
-
     const isProcessable = Object.values(processingQty).some(qty => Number(qty) > 0);
 
     const handleProcessClick = () => {
@@ -392,13 +402,7 @@ const ExpandedPendingView = ({ order, onProcess, onDelete, isProcessing, process
         }
         onProcess(order, processingQty);
     };
-
-    const handleAddNoteClick = () => {
-        if (!note.trim()) return;
-        onAddNote(order, note);
-        setNote('');
-    };
-
+    
     const renderDesktopTable = () => (
          <div style={styles.tableContainer}>
             <table style={styles.table}>
@@ -418,7 +422,7 @@ const ExpandedPendingView = ({ order, onProcess, onDelete, isProcessing, process
                         const stockLevel = stockData[stockKey] ?? 0;
                         
                         let rowStyle = {...styles.tr};
-                        if (index % 2 !== 0) rowStyle.backgroundColor = '#f8f9fa';
+                        if (index % 2 !== 0) rowStyle.backgroundColor = 'var(--light-grey)';
                         if (isPartial) {
                             rowStyle.backgroundColor = '#fffbe6';
                             rowStyle.color = 'var(--dark-grey)';
@@ -492,7 +496,7 @@ const ExpandedPendingView = ({ order, onProcess, onDelete, isProcessing, process
                             <button onClick={() => onRemoveTag(order, tag)} style={styles.removeTagButton}><XIcon/></button>
                         </span>
                     ))}
-                     <CustomTagDropdown onAddTag={onAddTag} order={order} />
+                     <CustomTagDropdown onAddTag={onAddTag} onOpenCustomTagModal={onOpenCustomTagModal} order={order} globalTags={globalTags} />
                 </div>
             </div>
 
@@ -507,8 +511,8 @@ const ExpandedPendingView = ({ order, onProcess, onDelete, isProcessing, process
                     <ChevronIcon collapsed={isHistoryCollapsed} />
                 </button>
                 <div style={isHistoryCollapsed ? styles.collapsibleContainer : {...styles.collapsibleContainer, ...styles.collapsibleContainerExpanded}}>
-                    <div style={styles.collapsibleContentWrapper}>
-                        <div style={styles.historyContentWrapper}>
+                     <div style={styles.collapsibleContentWrapper}>
+                        <div style={styles.notesAndHistoryContainer}>
                             <div style={styles.historyList}>
                                 {(order.history || []).map((event, index) => (
                                     <div key={index} style={styles.historyItem}>
@@ -521,14 +525,8 @@ const ExpandedPendingView = ({ order, onProcess, onDelete, isProcessing, process
                                 ))}
                             </div>
                             <div style={styles.addNoteContainer}>
-                                <textarea
-                                    value={note}
-                                    onChange={(e) => setNote(e.target.value)}
-                                    style={styles.noteTextarea}
-                                    placeholder="Add a new note..."
-                                />
-                                <button onClick={handleAddNoteClick} style={{...styles.addNoteButton, backgroundColor: '#3498db', boxShadow: '0 2px 8px rgba(52, 152, 219, 0.3)'}}>
-                                    <NoteIcon style={{width: 16, height: 16}}/> Add Note
+                                <button onClick={() => onOpenNoteModal(order)} style={styles.addNoteButton}>
+                                    <PlusIcon />
                                 </button>
                             </div>
                         </div>
@@ -544,7 +542,7 @@ const ExpandedPendingView = ({ order, onProcess, onDelete, isProcessing, process
                     <button onClick={() => onDelete(order)} style={{...styles.footerIconButton, ...styles.deleteButton}} disabled={isProcessing} title="Delete">
                        <TrashIcon />
                     </button>
-                    <button onClick={handleProcessClick} style={{...styles.footerButton, ...styles.processButton}} disabled={isProcessing || !isProcessable}>
+                    <button onClick={handleProcessClick} style={{...styles.footerButton, ...styles.processButton, ...((isProcessing || !isProcessable) && styles.processButtonDisabled)}} disabled={isProcessing || !isProcessable}>
                         {isProcessing ? <SmallSpinner /> : <><ProcessIcon/> Process</>}
                     </button>
                 </div>
@@ -769,6 +767,118 @@ const PartyGroup: React.FC<{ partyName: string; data: any; onToggleExpand: (orde
     );
 };
 
+// New Component: CustomTagModal
+const CustomTagModal: React.FC<{
+    isOpen: boolean;
+    onClose: () => void;
+    onSave: (tagName: string) => void;
+}> = ({ isOpen, onClose, onSave }) => {
+    const [tagName, setTagName] = useState('');
+    const [isClosing, setIsClosing] = useState(false);
+
+    const handleClose = () => {
+        setIsClosing(true);
+        setTimeout(() => {
+            onClose();
+            setIsClosing(false);
+            setTagName('');
+        }, 300);
+    };
+
+    const handleSave = () => {
+        if (tagName.trim()) {
+            onSave(tagName.trim());
+            handleClose();
+        } else {
+            showToast('Tag name cannot be empty.', 'error');
+        }
+    };
+    
+    if (!isOpen) return null;
+
+    return (
+        <div style={{...styles.modalOverlay, animation: isClosing ? 'overlayOut 0.3s forwards' : 'overlayIn 0.3s forwards'}} onClick={handleClose}>
+            <div style={{...styles.modalContent, maxWidth: '380px', animation: isClosing ? 'modalOut 0.3s forwards' : 'modalIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards'}} onClick={(e) => e.stopPropagation()}>
+                <h3 style={{...styles.modalTitle, textAlign: 'center', marginBottom: '1rem'}}>Create Custom Tag</h3>
+                
+                <div style={{...styles.inputGroup, marginTop: '1rem'}}>
+                    <label style={{...styles.label, fontSize: '0.85rem', color: 'var(--text-color)', position: 'static', display: 'block', marginBottom: '0.5rem'}}>Tag Name</label>
+                    <input 
+                        type="text" 
+                        value={tagName} 
+                        onChange={(e) => setTagName(e.target.value)}
+                        style={styles.modalInput}
+                        className="modal-input"
+                        placeholder="e.g., Follow up"
+                        autoFocus
+                    />
+                </div>
+
+                <div style={styles.iosModalActions}>
+                    <button onClick={handleClose} style={styles.iosModalButtonSecondary}>Cancel</button>
+                    <button onClick={handleSave} style={styles.iosModalButtonPrimary}>Save Tag</button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const AddNoteModal: React.FC<{
+    isOpen: boolean;
+    onClose: () => void;
+    onSave: (noteText: string) => void;
+}> = ({ isOpen, onClose, onSave }) => {
+    const [noteText, setNoteText] = useState('');
+    const [isClosing, setIsClosing] = useState(false);
+
+    const handleClose = () => {
+        setIsClosing(true);
+        setTimeout(() => {
+            onClose();
+            setIsClosing(false);
+            setNoteText('');
+        }, 300);
+    };
+
+    const handleSave = () => {
+        if (noteText.trim()) {
+            onSave(noteText.trim());
+            handleClose();
+        } else {
+            showToast('Note cannot be empty.', 'error');
+        }
+    };
+    
+    useEffect(() => {
+        // Clear text when modal is closed
+        if (!isOpen) {
+            setNoteText('');
+        }
+    }, [isOpen]);
+    
+    if (!isOpen) return null;
+
+    return (
+        <div style={{...styles.modalOverlay, animation: isClosing ? 'overlayOut 0.3s forwards' : 'overlayIn 0.3s forwards'}} onClick={handleClose}>
+            <div style={{...styles.modalContent, maxWidth: '420px', animation: isClosing ? 'modalOut 0.3s forwards' : 'modalIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards'}} onClick={(e) => e.stopPropagation()}>
+                <h3 style={{...styles.modalTitle, textAlign: 'center', marginBottom: '1rem'}}>Add a New Note</h3>
+                
+                <textarea 
+                    value={noteText} 
+                    onChange={(e) => setNoteText(e.target.value)}
+                    style={styles.modalTextarea}
+                    placeholder="Type your note here..."
+                />
+
+                <div style={styles.iosModalActions}>
+                    <button onClick={handleClose} style={styles.iosModalButtonSecondary}>Cancel</button>
+                    <button onClick={handleSave} style={styles.iosModalButtonPrimary}>Save Note</button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 export const PendingOrders = ({ onNavigate }) => {
     const [orders, setOrders] = useState<Order[]>([]);
     const [stockData, setStockData] = useState({});
@@ -792,6 +902,13 @@ export const PendingOrders = ({ onNavigate }) => {
     const [selectedParty, setSelectedParty] = useState<string | null>(null);
     const [activeOrder, setActiveOrder] = useState<Order | null>(null);
     
+    const [isCustomTagModalOpen, setIsCustomTagModalOpen] = useState(false);
+    const [orderForCustomTag, setOrderForCustomTag] = useState<Order | null>(null);
+    const [globalTags, setGlobalTags] = useState<string[]>([]);
+    
+    const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
+    const [orderForNewNote, setOrderForNewNote] = useState<Order | null>(null);
+    
     const isSelectionMode = selectedOrders.length > 0;
 
     // --- Data Fetching and Management ---
@@ -807,6 +924,12 @@ export const PendingOrders = ({ onNavigate }) => {
             console.error(err);
             setError('Failed to fetch orders.');
             setIsLoading(false);
+        });
+
+        const tagsRef = firebase.database().ref(CUSTOM_TAGS_REF);
+        const tagsListener = tagsRef.on('value', (snapshot) => {
+            const data = snapshot.val();
+            setGlobalTags(data ? Object.keys(data) : []);
         });
 
         const loadStockData = async () => {
@@ -860,6 +983,7 @@ export const PendingOrders = ({ onNavigate }) => {
         return () => {
             window.removeEventListener('resize', handleResize);
             ordersRef.off('value', listener);
+            tagsRef.off('value', tagsListener);
         }
     }, []);
 
@@ -887,6 +1011,26 @@ export const PendingOrders = ({ onNavigate }) => {
         } catch(e) { console.error(e); showToast('Failed to add tag.', 'error'); }
     };
 
+    const handleOpenCustomTagModal = (order: Order) => {
+        setOrderForCustomTag(order);
+        setIsCustomTagModalOpen(true);
+    };
+    
+    const handleSaveCustomTag = async (tagName: string) => {
+        if (!orderForCustomTag) return;
+        if (globalTags.includes(tagName) || ['On Hold', 'Urgent'].includes(tagName)) { // check predefined too
+            await handleAddTag(orderForCustomTag, tagName);
+        } else {
+            try {
+                await firebase.database().ref(`${CUSTOM_TAGS_REF}/${tagName}`).set(true);
+                await handleAddTag(orderForCustomTag, tagName);
+            } catch (e) {
+                console.error(e);
+                showToast('Failed to save new tag.', 'error');
+            }
+        }
+    };
+
     const handleRemoveTag = async (order: Order, tag: string) => {
         const newTags = (order.tags || []).filter(t => t !== tag);
         const newEvent = { timestamp: new Date().toISOString(), event: 'Tag Removed', details: `Removed tag: ${tag}` };
@@ -895,6 +1039,33 @@ export const PendingOrders = ({ onNavigate }) => {
              await firebase.database().ref(`${PENDING_ORDERS_REF}/${order.orderNumber}`).update({ tags: newTags, history: updatedHistory });
              showToast(`Tag "${tag}" removed.`, 'success');
         } catch(e) { console.error(e); showToast('Failed to remove tag.', 'error'); }
+    };
+
+    const handleOpenNoteModal = (order: Order) => {
+        setOrderForNewNote(order);
+        setIsNoteModalOpen(true);
+    };
+
+    const handleSaveNote = async (noteText: string) => {
+        if (!orderForNewNote) return;
+        
+        const newNoteEvent = {
+            timestamp: new Date().toISOString(),
+            event: 'Note',
+            details: noteText.trim()
+        };
+        const updatedHistory = [...(orderForNewNote.history || []), newNoteEvent];
+        
+        try {
+            await firebase.database().ref(`${PENDING_ORDERS_REF}/${orderForNewNote.orderNumber}/history`).set(updatedHistory);
+            showToast('Note added successfully!', 'success');
+        } catch (e) {
+            console.error('Failed to add note:', e);
+            showToast('Failed to add note.', 'error');
+        }
+        
+        setIsNoteModalOpen(false);
+        setOrderForNewNote(null);
     };
 
 
@@ -993,23 +1164,6 @@ export const PendingOrders = ({ onNavigate }) => {
             firebase.database().ref().update(updates);
             showToast(`${selectedOrders.length} orders deleted.`, 'success');
             setSelectedOrders([]);
-        }
-    };
-
-    const handleAddNote = async (order: Order, noteText: string) => {
-        if (!noteText.trim()) return;
-        const newNoteEvent = {
-            timestamp: new Date().toISOString(),
-            event: 'Note',
-            details: noteText.trim()
-        };
-        const updatedHistory = [...(order.history || []), newNoteEvent];
-        try {
-            await firebase.database().ref(`${PENDING_ORDERS_REF}/${order.orderNumber}/history`).set(updatedHistory);
-            showToast('Note added successfully!', 'success');
-        } catch (e) {
-            console.error('Failed to add note:', e);
-            showToast('Failed to add note.', 'error');
         }
     };
 
@@ -1284,9 +1438,11 @@ export const PendingOrders = ({ onNavigate }) => {
                 stockData={stockData}
                 isMobile={isMobile}
                 onPrint={handlePrintPickingList}
-                onAddNote={handleAddNote}
                 onAddTag={handleAddTag}
                 onRemoveTag={handleRemoveTag}
+                onOpenCustomTagModal={handleOpenCustomTagModal}
+                onOpenNoteModal={handleOpenNoteModal}
+                globalTags={globalTags}
             />
         ) : null;
         
@@ -1389,9 +1545,11 @@ export const PendingOrders = ({ onNavigate }) => {
                             stockData={stockData}
                             isMobile={false}
                             onPrint={handlePrintPickingList}
-                            onAddNote={handleAddNote}
                             onAddTag={handleAddTag}
                             onRemoveTag={handleRemoveTag}
+                            onOpenCustomTagModal={handleOpenCustomTagModal}
+                            onOpenNoteModal={handleOpenNoteModal}
+                            globalTags={globalTags}
                         />
                     ) : (
                         <div style={styles.rightPanelPlaceholder}>
@@ -1411,6 +1569,8 @@ export const PendingOrders = ({ onNavigate }) => {
     
     return (
         <div style={styles.container}>
+            <CustomTagModal isOpen={isCustomTagModalOpen} onClose={() => setIsCustomTagModalOpen(false)} onSave={handleSaveCustomTag} />
+            <AddNoteModal isOpen={isNoteModalOpen} onClose={() => setIsNoteModalOpen(false)} onSave={handleSaveNote} />
             <style>{`
                 .fade-in-slide { animation: fadeInSlide 0.3s ease-out forwards; }
                 @keyframes fadeInSlide {
@@ -1632,7 +1792,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     expandedViewContainer: { padding: '0 1.5rem 1.5rem', backgroundColor: 'var(--card-bg)', borderRadius: '0 0 10px 10px', border: '2px solid var(--brand-color)', borderTop: 'none' },
     tableContainer: { overflowX: 'auto', backgroundColor: 'var(--card-bg)', borderRadius: '8px' },
     table: { width: '100%', borderCollapse: 'collapse' },
-    th: { backgroundColor: '#f8f9fa', padding: '10px 12px', textAlign: 'center', fontWeight: 600, color: 'var(--dark-grey)', borderBottom: '2px solid var(--skeleton-bg)', whiteSpace: 'nowrap' },
+    th: { backgroundColor: 'var(--light-grey)', padding: '10px 12px', textAlign: 'center', fontWeight: 600, color: 'var(--dark-grey)', borderBottom: '2px solid var(--skeleton-bg)', whiteSpace: 'nowrap' },
     tr: { backgroundColor: 'var(--card-bg)', borderBottom: 'none' },
     td: { padding: '10px 12px', color: 'var(--text-color)', fontSize: '0.9rem', textAlign: 'center' },
     qtyInput: { width: '70px', padding: '8px', textAlign: 'center', border: '1px solid var(--skeleton-bg)', borderRadius: '6px', fontSize: '0.9rem', backgroundColor: '#ffffff', color: 'var(--dark-grey)' },
@@ -1640,11 +1800,12 @@ const styles: { [key: string]: React.CSSProperties } = {
     noteBox: { backgroundColor: '#FFF', border: '1px solid #ffe58f', padding: '0.75rem 1rem', borderRadius: '8px', fontSize: '0.9rem', marginTop: '1rem' },
     modalFooter: { padding: '1rem 0 0', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', borderTop: 'none' },
     footerActions: { display: 'flex', gap: '0.75rem', alignItems: 'center', justifyContent: 'flex-end', flex: 1 },
-    footerButton: { padding: '0.75rem 1.2rem', fontSize: '0.9rem', fontWeight: 600, color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', transition: 'all 0.2s ease', },
+    footerButton: { padding: '0.75rem 1.2rem', fontSize: '0.9rem', fontWeight: 600, color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', transition: 'all 0.2s ease', height: '44px' },
     footerIconButton: { padding: '0', fontSize: '0.9rem', fontWeight: 600, color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s ease', width: '44px', height: '44px' },
-    printButton: { backgroundColor: '#8e44ad', boxShadow: '0 2px 8px rgba(142, 68, 173, 0.3)' },
-    deleteButton: { backgroundColor: '#e74c3c', boxShadow: '0 2px 8px rgba(231, 76, 60, 0.3)' },
+    printButton: { backgroundColor: 'transparent', color: 'var(--dark-grey)', border: '1px solid var(--skeleton-bg)' },
+    deleteButton: { backgroundColor: 'transparent', color: 'var(--red)', border: '1px solid var(--skeleton-bg)' },
     processButton: { backgroundColor: '#2ecc71', boxShadow: '0 2px 8px rgba(46, 204, 113, 0.3)', minWidth: '120px' },
+    processButtonDisabled: { backgroundColor: 'rgba(46, 204, 113, 0.4)', boxShadow: 'none', cursor: 'not-allowed' },
     
     // --- Batch Action Toolbar ---
     batchActionToolbar: { 
@@ -1702,7 +1863,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     swipeableContent: { position: 'relative', backgroundColor: '#FFF', zIndex: 1, borderRadius: '10px' },
     
     // --- New Detailed Card Styles ---
-    detailedOrderCard: { backgroundColor: '#FFF', borderRadius: '10px', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', cursor: 'pointer', transition: 'border-color 0.2s, box-shadow 0.2s, background-color 0.2s', border: '2px solid #eef2f7', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' },
+    detailedOrderCard: { backgroundColor: 'var(--card-bg)', borderRadius: '10px', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', cursor: 'pointer', transition: 'border-color 0.2s, box-shadow 0.2s, background-color 0.2s', border: '2px solid transparent', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' },
     detailedOrderCardActive: { 
         backgroundColor: '#FFF', 
         borderRadius: '10px 10px 0 0', 
@@ -1736,15 +1897,14 @@ const styles: { [key: string]: React.CSSProperties } = {
     // --- History Section ---
     historySection: { marginTop: '1rem', paddingTop: '1rem' },
     historyHeader: { width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer', padding: '0.25rem 0', fontSize: '1rem', fontWeight: 600, color: 'var(--dark-grey)' },
-    historyContentWrapper: { paddingTop: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' },
-    historyList: { maxHeight: '300px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem', border: 'none', borderRadius: '8px', padding: '0.75rem', backgroundColor: 'transparent' },
+    notesAndHistoryContainer: { border: '1px solid var(--skeleton-bg)', borderRadius: '8px', overflow: 'hidden', backgroundColor: 'transparent' },
+    historyList: { maxHeight: '300px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem', padding: '0.75rem', backgroundColor: 'transparent' },
     historyItem: { display: 'flex', flexDirection: 'column', gap: '0.25rem', borderLeft: '3px solid var(--skeleton-bg)', paddingLeft: '1rem' },
     historyMeta: { display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.8rem', color: 'var(--text-color)' },
     historyEventType: { fontWeight: 600, padding: '2px 8px', borderRadius: '12px', fontSize: '0.75rem' },
     historyDetails: { fontSize: '0.9rem', color: 'var(--dark-grey)', paddingLeft: '0.25rem' },
-    addNoteContainer: { display: 'flex', flexDirection: 'column', gap: '0.5rem' },
-    noteTextarea: { width: '100%', minHeight: '60px', padding: '0.75rem', fontSize: '0.9rem', border: '1px solid var(--skeleton-bg)', borderRadius: '8px', resize: 'vertical', backgroundColor: 'transparent', color: 'var(--dark-grey)' },
-    addNoteButton: { alignSelf: 'flex-end', padding: '0.5rem 1rem', border: 'none', color: 'white', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' },
+    addNoteContainer: { display: 'flex', justifyContent: 'flex-end', padding: '0.5rem 0.75rem', borderTop: '1px solid var(--skeleton-bg)' },
+    addNoteButton: { background: 'var(--brand-color)', border: 'none', color: 'white', width: '36px', height: '36px', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(97, 85, 245, 0.3)', flexShrink: 0 },
     // --- Command Center Styles ---
     commandCenterLayout: { display: 'grid', gridTemplateColumns: '280px 1fr 1.5fr', gap: '1rem', flex: 1, minHeight: 0 },
     leftPanel: { display: 'flex', flexDirection: 'column', backgroundColor: '#FFF', borderRadius: 'var(--border-radius)', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)', border: 'none', minHeight: 0 },
@@ -1772,6 +1932,17 @@ const styles: { [key: string]: React.CSSProperties } = {
         backfaceVisibility: 'hidden',
     },
     customDropdownButton: { padding: '2px 8px', borderRadius: '12px', border: '1px solid var(--skeleton-bg)', fontSize: '0.75rem', color: 'var(--text-color)', backgroundColor: 'var(--light-grey)', cursor: 'pointer', display: 'flex', alignItems: 'center', },
-    customDropdownMenu: { position: 'absolute', top: '100%', left: 0, backgroundColor: 'var(--glass-bg)', backdropFilter: 'blur(7px)', WebkitBackdropFilter: 'blur(7px)', border: '1px solid var(--glass-border)', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 10, minWidth: '200px', marginTop: '4px', padding: '0.25rem', animation: 'dropdown-in 0.2s ease-out forwards', transformOrigin: 'top center', },
+    customDropdownMenu: { position: 'absolute', top: '100%', left: 0, backgroundColor: 'var(--glass-bg)', backdropFilter: 'blur(7px)', WebkitBackdropFilter: 'blur(7px)', border: '1px solid var(--glass-border)', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 1100, minWidth: '200px', marginTop: '4px', padding: '0.25rem', animation: 'dropdown-in 0.2s ease-out forwards', transformOrigin: 'top center', },
     customDropdownItem: { display: 'block', width: '100%', padding: '0.5rem 0.75rem', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '0.85rem', borderRadius: '6px', color: 'var(--dark-grey)', },
+    // Modal Styles
+    modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.2)', backdropFilter: 'blur(7px)', WebkitBackdropFilter: 'blur(7px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0 },
+    modalContent: { backgroundColor: 'var(--glass-bg)', padding: '1.5rem', borderRadius: '12px', width: '90%', boxShadow: '0 8px 32px rgba(0,0,0,0.1)', border: '1px solid var(--glass-border)', display: 'flex', flexDirection: 'column', gap: '1rem', transform: 'scale(0.95)', opacity: 0 },
+    modalInput: { width: '100%', padding: '10px 15px', fontSize: '1rem', border: '1px solid var(--border-color)', borderRadius: '8px', backgroundColor: 'var(--card-bg)', color: 'var(--dark-grey)' },
+    modalTextarea: { width: '100%', minHeight: '120px', padding: '0.75rem', fontSize: '0.9rem', border: '1px solid var(--border-color)', borderRadius: '8px', resize: 'vertical', backgroundColor: 'var(--card-bg)', color: 'var(--dark-grey)' },
+    modalTitle: { margin: 0, fontSize: '1.1rem', fontWeight: 600, color: 'var(--dark-grey)' },
+    iosModalActions: { display: 'flex', width: 'calc(100% + 3rem)', marginLeft: '-1.5rem', marginBottom: '-1.5rem', borderTop: '1px solid var(--glass-border)', marginTop: '1.5rem' },
+    iosModalButtonSecondary: { background: 'transparent', border: 'none', padding: '1rem 0', cursor: 'pointer', fontSize: '1rem', textAlign: 'center', transition: 'background-color 0.2s ease', flex: 1, color: 'var(--dark-grey)', borderRight: '1px solid var(--glass-border)', fontWeight: 400 },
+    iosModalButtonPrimary: { background: 'transparent', border: 'none', padding: '1rem 0', cursor: 'pointer', fontSize: '1rem', textAlign: 'center', transition: 'background-color 0.2s ease', flex: 1, color: 'var(--brand-color)', fontWeight: 600 },
+    inputGroup: { position: 'relative' },
+    label: { position: 'absolute', left: '15px', top: '15px', color: 'var(--text-tertiary)', pointerEvents: 'none', transition: 'all 0.2s ease-out' },
 };
