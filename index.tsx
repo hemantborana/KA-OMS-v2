@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
 import { NewOrderEntry } from './neworderentry';
@@ -21,7 +20,7 @@ const useToast = () => React.useContext(ToastContext);
 const Toast: React.FC<{ message: any, type: any, onClose: any }> = ({ message, type, onClose }) => {
     const toastStyles = {
         ...styles.toast,
-        backgroundColor: type === 'success' ? '#2ecc71' : type === 'error' ? '#e74c3c' : '#3498db',
+        backgroundColor: type === 'success' ? 'var(--green)' : type === 'error' ? 'var(--red)' : 'var(--blue)',
     };
 
     useEffect(() => {
@@ -191,7 +190,7 @@ const ToggleSwitch = ({ checked, onChange }) => (
         style={{
             width: '44px', 
             height: '24px', 
-            backgroundColor: checked ? 'var(--brand-color)' : '#cbd5e0', 
+            backgroundColor: checked ? 'var(--brand-color)' : 'var(--gray-3)', 
             borderRadius: '12px', 
             position: 'relative', 
             cursor: 'pointer',
@@ -370,7 +369,7 @@ const Preferences = ({ session, theme, toggleTheme, updateUserProfile, onLogout 
                             <CheckCircleIcon />
                             <span style={styles.preferenceLabel}>Status</span>
                         </div>
-                        <span style={{...styles.preferenceValue, color: '#2ecc71', fontWeight: 600}}>Active</span>
+                        <span style={{...styles.preferenceValue, color: 'var(--green)', fontWeight: 600}}>Active</span>
                     </div>
                 </div>
              </div>
@@ -415,7 +414,7 @@ const Preferences = ({ session, theme, toggleTheme, updateUserProfile, onLogout 
                         onClick={handleLogoutClick}
                         style={{...styles.preferenceRow, borderBottom: 'none', cursor: 'pointer'}}
                     >
-                        <div style={{display: 'flex', alignItems: 'center', gap: '1rem', color: '#e74c3c'}}>
+                        <div style={{display: 'flex', alignItems: 'center', gap: '1rem', color: 'var(--red)'}}>
                             <LogoutIcon />
                             <span style={{...styles.preferenceLabel, color: 'inherit', fontWeight: 500}}>Logout</span>
                         </div>
@@ -434,7 +433,7 @@ const Preferences = ({ session, theme, toggleTheme, updateUserProfile, onLogout 
                         </p>
                         <div style={{...styles.modalActions, justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem'}}>
                             <button onClick={handleCloseLogoutModal} style={styles.secondaryButton}>Cancel</button>
-                            <button onClick={handleConfirmLogout} style={{...styles.primaryButton, backgroundColor: '#e74c3c'}}>Logout</button>
+                            <button onClick={handleConfirmLogout} style={{...styles.primaryButton, backgroundColor: 'var(--red)'}}>Logout</button>
                         </div>
                     </div>
                 </div>
@@ -535,8 +534,8 @@ const Dashboard = ({ onNavigate, session }) => {
     }, []);
     
     const kpiCards = [
-        { title: 'Pending Orders', value: stats.pending, icon: <NavIcon name="Pending" /> },
-        { title: 'Ready for Billing', value: stats.billing, icon: <NavIcon name="Billing" /> },
+        { title: 'Pending Orders', value: stats.pending, icon: <NavIcon name="Pending" />, color: 'var(--orange)' },
+        { title: 'Ready for Billing', value: stats.billing, icon: <NavIcon name="Billing" />, color: 'var(--blue)' },
     ];
 
     const actionCard = stats.overdue > 0 ? {
@@ -555,7 +554,7 @@ const Dashboard = ({ onNavigate, session }) => {
                     {/* KPI Cards */}
                     {kpiCards.map(card => (
                         <div key={card.title} style={styles.kpiCard}>
-                            <div style={styles.kpiIcon}>{card.icon}</div>
+                            <div style={{...styles.kpiIcon, color: card.color}}>{card.icon}</div>
                             <div>
                                 <div style={styles.kpiTitle}>{card.title}</div>
                                 <div style={styles.kpiValue}>{card.value}</div>
@@ -566,7 +565,7 @@ const Dashboard = ({ onNavigate, session }) => {
                     {/* Action Card */}
                     {actionCard && (
                          <div key={actionCard.title} style={{...styles.kpiCard, ...actionCard.style, cursor: 'pointer'}} onClick={actionCard.onClick}>
-                            <div style={{...styles.kpiIcon, color: '#c0392b'}}>{actionCard.icon}</div>
+                            <div style={{...styles.kpiIcon, color: 'var(--red)'}}>{actionCard.icon}</div>
                             <div>
                                 <div style={styles.kpiTitle}>{actionCard.title}</div>
                                 <div style={styles.kpiValue}>{actionCard.value}</div>
@@ -578,9 +577,18 @@ const Dashboard = ({ onNavigate, session }) => {
                     <div style={{...styles.dashboardCard, gridColumn: 'span 2'}}>
                         <h3 style={styles.cardTitle}>Quick Actions</h3>
                         <div style={styles.quickActions}>
-                            <button style={styles.actionButton} onClick={() => onNavigate('Entry')}><NavIcon name="Entry" /> New Order</button>
-                            <button style={styles.actionButton} onClick={() => onNavigate('Stock')}><NavIcon name="Stock" /> View Stock</button>
-                            <button style={styles.actionButton} onClick={() => onNavigate('Billed')}><NavIcon name="Billed" /> View Billed Archive</button>
+                            <button style={styles.actionButton} onClick={() => onNavigate('Entry')}>
+                                <span style={{color: 'var(--green)', display: 'flex'}}><NavIcon name="Entry" /></span>
+                                New Order
+                            </button>
+                             <button style={styles.actionButton} onClick={() => onNavigate('Stock')}>
+                                <span style={{color: 'var(--teal)', display: 'flex'}}><NavIcon name="Stock" /></span>
+                                View Stock
+                            </button>
+                             <button style={styles.actionButton} onClick={() => onNavigate('Billed')}>
+                                <span style={{color: 'var(--purple)', display: 'flex'}}><NavIcon name="Billed" /></span>
+                                View Billed Archive
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -794,7 +802,7 @@ const HomePage = ({ session, onLogout, appLogoSrc, updateUserProfile }) => {
     useEffect(() => {
         document.body.className = theme === 'dark' ? 'dark-mode' : '';
         localStorage.setItem('theme', theme);
-        const themeColor = theme === 'dark' ? '#191919' : '#F0F3F4';
+        const themeColor = theme === 'dark' ? '#191919' : '#F0F0F3';
         const themeMeta = document.querySelector('meta[name="theme-color"]');
         if (themeMeta) {
             themeMeta.setAttribute('content', themeColor);
@@ -1149,22 +1157,22 @@ const styles: { [key: string]: React.CSSProperties } = {
     headerRight: { gridColumn: '3', justifySelf: 'end' },
     headerLogo: { height: '36px', width: '36px' },
     headerTitle: { fontSize: '1.25rem', fontWeight: 600, color: 'var(--dark-grey)' },
-    headerPageTitle: { fontSize: '1.2rem', fontWeight: 600, color: 'var(--dark-grey)', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+    headerPageTitle: { fontFamily: "'Inter Tight', sans-serif", fontSize: '1.2rem', fontWeight: 500, color: 'var(--dark-grey)', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
     menuButton: { background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', color: 'var(--dark-grey)' },
     appBody: { display: 'flex', flex: 1, overflow: 'hidden' },
-    sidebar: { width: '250px', backgroundColor: 'var(--card-bg)', borderRight: '1px solid var(--skeleton-bg)', flexShrink: 0, transition: 'width 0.3s ease, transform 0.3s ease', display: 'flex', flexDirection: 'column' },
+    sidebar: { width: '250px', backgroundColor: 'var(--card-bg)', borderRight: '1px solid var(--border-color)', flexShrink: 0, transition: 'width 0.3s ease, transform 0.3s ease', display: 'flex', flexDirection: 'column' },
     sidebarCollapsed: { width: '80px' },
     sidebarMobile: { position: 'fixed', top: 0, left: 0, height: '100%', zIndex: 200 },
     overlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.05)', backdropFilter: 'blur(1.5px)', WebkitBackdropFilter: 'blur(1.5px)', zIndex: 199 },
-    sidebarHeader: { padding: '1.5rem', borderBottom: '1px solid var(--skeleton-bg)' },
+    sidebarHeader: { padding: '1.5rem', borderBottom: '1px solid var(--separator-color)' },
     sidebarUser: { display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' },
     sidebarUserInfo: { transition: 'opacity 0.2s ease' },
     sidebarUserName: { fontWeight: 600, color: 'var(--dark-grey)', whiteSpace: 'nowrap' },
     sidebarUserRole: { fontSize: '0.8rem', color: 'var(--text-color)', whiteSpace: 'nowrap' },
-    sidebarLogoutButton: { background: 'none', border: '1px solid var(--skeleton-bg)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.6rem', width: '100%', color: 'var(--text-color)', fontSize: '0.9rem', borderRadius: '8px', transition: 'all 0.2s ease' },
+    sidebarLogoutButton: { background: 'none', border: '1px solid var(--border-color)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.6rem', width: '100%', color: 'var(--text-color)', fontSize: '0.9rem', borderRadius: '8px', transition: 'all 0.2s ease' },
     sidebarLogoutButtonCollapsed: { padding: '0.6rem', width: '44px', height: '44px' },
     sidebarNav: { display: 'flex', flexDirection: 'column', padding: '1rem 0.5rem', flex: 1, overflowY: 'auto' },
-    sidebarSeparator: { margin: '0.75rem 1rem', border: 'none', borderTop: '1px solid var(--skeleton-bg)' },
+    sidebarSeparator: { margin: '0.75rem 1rem', border: 'none', borderTop: '1px solid var(--separator-color)' },
     sidebarFooter: { marginTop: 'auto', padding: '1rem 0.5rem' },
     collapseButtonSidebar: { background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem 1rem', width: '100%', color: 'var(--text-color)', fontSize: '0.9rem', borderRadius: '8px', transition: 'background-color 0.2s ease, color 0.2s ease', justifyContent: 'flex-start' },
     navItem: { display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem 1rem', textDecoration: 'none', color: 'var(--text-color)', borderRadius: '8px', marginBottom: '0.25rem', fontWeight: 500, whiteSpace: 'nowrap', transition: 'background-color 0.2s, color 0.2s' },
@@ -1174,25 +1182,25 @@ const styles: { [key: string]: React.CSSProperties } = {
     bottomNav: { display: 'flex', justifyContent: 'space-around', background: 'linear-gradient(to top, var(--card-bg) 70%, transparent)', borderTop: 'none', position: 'fixed', bottom: 0, left: 0, right: 0, height: '70px', zIndex: 100 },
     bottomNavItem: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, textDecoration: 'none', color: 'var(--text-color)' },
     bottomNavItemActive: { color: 'var(--brand-color)' },
-    pageContainer: { backgroundColor: 'var(--card-bg)', padding: '2rem', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)' },
+    pageContainer: { backgroundColor: 'var(--card-bg)', padding: '2rem', borderRadius: 'var(--border-radius)', border: '1px solid var(--border-color)' },
     // --- Dashboard Styles ---
     dashboardContainer: { display: 'flex', flexDirection: 'column', gap: '1.5rem' },
-    dashboardWelcome: { fontSize: '1.75rem', fontWeight: 600, color: 'var(--dark-grey)' },
+    dashboardWelcome: { fontFamily: "'Inter Tight', sans-serif", fontSize: '1.75rem', fontWeight: 500, color: 'var(--dark-grey)' },
     dashboardGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' },
-    dashboardCard: { backgroundColor: 'var(--card-bg)', padding: '1.5rem', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', gridColumn: 'span 1' },
-    kpiCard: { backgroundColor: 'var(--card-bg)', padding: '1.5rem', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', display: 'flex', alignItems: 'center', gap: '1.5rem' },
-    kpiCardAlert: { backgroundColor: '#fbe2e2', border: '1px solid #e74c3c' },
+    dashboardCard: { backgroundColor: 'var(--card-bg)', padding: '1.5rem', borderRadius: 'var(--border-radius)', border: '1px solid var(--border-color)', gridColumn: 'span 1' },
+    kpiCard: { backgroundColor: 'var(--card-bg)', padding: '1.5rem', borderRadius: 'var(--border-radius)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '1.5rem' },
+    kpiCardAlert: { backgroundColor: 'rgba(255, 56, 60, 0.1)', border: '1px solid var(--red)' },
     kpiIcon: { color: 'var(--brand-color)' },
     kpiTitle: { fontSize: '0.9rem', color: 'var(--text-color)', marginBottom: '0.25rem' },
     kpiValue: { fontSize: '1.5rem', fontWeight: 600, color: 'var(--dark-grey)' },
     cardTitle: { fontSize: '1.1rem', fontWeight: 600, color: 'var(--dark-grey)', marginBottom: '1rem' },
     cardText: { fontSize: '0.9rem', color: 'var(--text-color)' },
     quickActions: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem' },
-    actionButton: { display: 'flex', alignItems: 'center', gap: '0.75rem', width: '100%', padding: '0.75rem 1rem', fontSize: '1rem', background: 'var(--light-grey)', border: '1px solid var(--skeleton-bg)', borderRadius: '8px', cursor: 'pointer', textAlign: 'left', color: 'var(--dark-grey)', fontWeight: 500 },
+    actionButton: { display: 'flex', alignItems: 'center', gap: '0.75rem', width: '100%', padding: '0.75rem 1rem', fontSize: '1rem', background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '8px', cursor: 'pointer', textAlign: 'left', color: 'var(--dark-grey)', fontWeight: 500 },
     itemList: { listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem' },
     listItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem 0', borderBottom: '1px solid var(--light-grey)', fontSize: '0.9rem' },
-    lowStockBadge: { backgroundColor: '#fbe2e2', color: '#c0392b', padding: '0.2rem 0.5rem', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 600 },
-    activityTime: { color: 'var(--text-color)', fontSize: '0.8rem' },
+    lowStockBadge: { backgroundColor: 'rgba(255, 56, 60, 0.1)', color: 'var(--red)', padding: '0.2rem 0.5rem', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 600 },
+    activityTime: { color: 'var(--text-tertiary)', fontSize: '0.8rem' },
     // --- Toast Styles ---
     toastContainer: { position: 'fixed', bottom: '20px', right: '20px', zIndex: 1000, display: 'flex', flexDirection: 'column', gap: '10px' },
     toast: { padding: '12px 20px', borderRadius: '8px', color: 'white', boxShadow: '0 4px 15px rgba(0,0,0,0.1)', animation: 'toast-in 0.5s forwards' },
@@ -1205,13 +1213,13 @@ const styles: { [key: string]: React.CSSProperties } = {
     form: { width: '100%', display: 'flex', flexDirection: 'column', gap: '1.25rem' },
     inputGroup: { position: 'relative' },
     input: { width: '100%', padding: '12px 15px', paddingTop: '18px', fontSize: '1rem', border: '1px solid var(--border-color)', borderRadius: '8px', backgroundColor: 'var(--card-bg)', color: 'var(--dark-grey)', transition: 'border-color 0.3s ease' },
-    label: { position: 'absolute', left: '15px', top: '15px', color: 'var(--text-color)', pointerEvents: 'none', transition: 'all 0.2s ease-out' },
+    label: { position: 'absolute', left: '15px', top: '15px', color: 'var(--text-tertiary)', pointerEvents: 'none', transition: 'all 0.2s ease-out' },
     labelFocused: { top: '5px', fontSize: '0.75rem', color: 'var(--brand-color)' },
     eyeIcon: { position: 'absolute', top: '50%', right: '15px', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-color)', padding: '0' },
     button: { padding: '15px', fontSize: '1rem', fontWeight: 500, color: '#fff', backgroundColor: 'var(--brand-color)', border: 'none', borderRadius: '8px', cursor: 'pointer', transition: 'background-color 0.3s ease, transform 0.1s ease', marginTop: '0.5rem' },
     link: { color: 'var(--brand-color)', textDecoration: 'none', fontSize: '0.9rem', marginTop: '0.5rem' },
-    error: { color: '#e74c3c', fontSize: '0.85rem', textAlign: 'center', marginTop: '-0.5rem', marginBottom: '0.5rem' },
-    success: { color: '#2ecc71', fontSize: '0.85rem', textAlign: 'center' },
+    error: { color: 'var(--red)', fontSize: '0.85rem', textAlign: 'center', marginTop: '-0.5rem', marginBottom: '0.5rem' },
+    success: { color: 'var(--green)', fontSize: '0.85rem', textAlign: 'center' },
     spinner: { border: '4px solid var(--light-grey)', borderRadius: '50%', borderTop: '4px solid var(--brand-color)', width: '40px', height: '40px', animation: 'spin 1s linear infinite', margin: 'auto' },
     
     // --- Preferences Styles ---
@@ -1225,7 +1233,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     preferenceSection: { display: 'flex', flexDirection: 'column', gap: '0.5rem' },
     preferenceSectionTitleOutside: { fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-color)', marginLeft: '0.5rem', textTransform: 'capitalize' },
     preferenceTileCard: { backgroundColor: 'var(--card-bg)', borderRadius: '12px', border: 'none', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', overflow: 'hidden' },
-    preferenceRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.25rem', borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--card-bg)' },
+    preferenceRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.25rem', borderBottom: '1px solid var(--separator-color)', backgroundColor: 'var(--card-bg)' },
     preferenceLabel: { color: 'var(--dark-grey)', fontSize: '0.95rem', fontWeight: 500 },
     preferenceValue: { color: 'var(--text-color)', fontWeight: 400, fontSize: '0.95rem' },
     // Modal Styles
@@ -1248,7 +1256,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     privacyBackButton: { background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', color: 'var(--dark-grey)' },
     privacyPageTitle: { fontSize: '1.2rem', fontWeight: 600, color: 'var(--dark-grey)', margin: 0, textAlign: 'center', flex: 1, paddingRight: '48px' /* Balance the back button */ },
     privacyPageContent: { flex: 1, overflowY: 'auto', padding: '1.5rem' },
-    privacySectionTitle: { fontSize: '1.2rem', fontWeight: 600, color: 'var(--dark-grey)', marginTop: '1.5rem', marginBottom: '0.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' },
+    privacySectionTitle: { fontSize: '1.2rem', fontWeight: 600, color: 'var(--dark-grey)', marginTop: '1.5rem', marginBottom: '0.5rem', borderBottom: '1px solid var(--separator-color)', paddingBottom: '0.5rem' },
     privacyText: { fontSize: '1rem', color: 'var(--text-color)', lineHeight: 1.6, marginBottom: '1rem' },
 };
 
