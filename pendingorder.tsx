@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
@@ -383,6 +382,8 @@ const ExpandedPendingView = ({ order, onProcess, onDelete, isProcessing, process
     const [note, setNote] = useState('');
     const [isHistoryCollapsed, setIsHistoryCollapsed] = useState(true);
 
+    const isProcessable = Object.values(processingQty).some(qty => Number(qty) > 0);
+
     const handleProcessClick = () => {
         const totalToProcess = Object.values(processingQty).reduce((sum: number, qty: number) => sum + qty, 0);
         if (totalToProcess === 0) {
@@ -537,13 +538,13 @@ const ExpandedPendingView = ({ order, onProcess, onDelete, isProcessing, process
 
             <div style={styles.modalFooter}>
                 <div style={styles.footerActions}>
-                     <button onClick={() => onPrint([order])} style={{...styles.footerButton, ...styles.printButton}} disabled={isProcessing}>
-                        <PrintIcon /> Print
+                     <button onClick={() => onPrint([order])} style={{...styles.footerIconButton, ...styles.printButton}} disabled={isProcessing} title="Print">
+                        <PrintIcon />
                     </button>
-                    <button onClick={() => onDelete(order)} style={{...styles.footerButton, ...styles.deleteButton}} disabled={isProcessing}>
-                       <TrashIcon /> Delete
+                    <button onClick={() => onDelete(order)} style={{...styles.footerIconButton, ...styles.deleteButton}} disabled={isProcessing} title="Delete">
+                       <TrashIcon />
                     </button>
-                    <button onClick={handleProcessClick} style={{...styles.footerButton, ...styles.processButton}} disabled={isProcessing}>
+                    <button onClick={handleProcessClick} style={{...styles.footerButton, ...styles.processButton}} disabled={isProcessing || !isProcessable}>
                         {isProcessing ? <SmallSpinner /> : <><ProcessIcon/> Process</>}
                     </button>
                 </div>
@@ -1628,7 +1629,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     badge: { backgroundColor: '#eef2f7', color: 'var(--brand-color)', padding: '0.2rem 0.6rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600 },
     checkboxContainer: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' },
     checkboxButton: { background: 'none', border: 'none', padding: '0', cursor: 'pointer', color: 'var(--text-color)' },
-    expandedViewContainer: { padding: '0 1.5rem 1.5rem', backgroundColor: 'var(--active-bg)', borderRadius: '0 0 10px 10px', border: '2px solid var(--brand-color)', borderTop: 'none' },
+    expandedViewContainer: { padding: '0 1.5rem 1.5rem', backgroundColor: 'var(--card-bg)', borderRadius: '0 0 10px 10px', border: '2px solid var(--brand-color)', borderTop: 'none' },
     tableContainer: { overflowX: 'auto', backgroundColor: 'var(--card-bg)', borderRadius: '8px' },
     table: { width: '100%', borderCollapse: 'collapse' },
     th: { backgroundColor: '#f8f9fa', padding: '10px 12px', textAlign: 'center', fontWeight: 600, color: 'var(--dark-grey)', borderBottom: '2px solid var(--skeleton-bg)', whiteSpace: 'nowrap' },
@@ -1640,6 +1641,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     modalFooter: { padding: '1rem 0 0', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', borderTop: 'none' },
     footerActions: { display: 'flex', gap: '0.75rem', alignItems: 'center', justifyContent: 'flex-end', flex: 1 },
     footerButton: { padding: '0.75rem 1.2rem', fontSize: '0.9rem', fontWeight: 600, color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', transition: 'all 0.2s ease', },
+    footerIconButton: { padding: '0', fontSize: '0.9rem', fontWeight: 600, color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s ease', width: '44px', height: '44px' },
     printButton: { backgroundColor: '#8e44ad', boxShadow: '0 2px 8px rgba(142, 68, 173, 0.3)' },
     deleteButton: { backgroundColor: '#e74c3c', boxShadow: '0 2px 8px rgba(231, 76, 60, 0.3)' },
     processButton: { backgroundColor: '#2ecc71', boxShadow: '0 2px 8px rgba(46, 204, 113, 0.3)', minWidth: '120px' },
@@ -1702,7 +1704,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     // --- New Detailed Card Styles ---
     detailedOrderCard: { backgroundColor: '#FFF', borderRadius: '10px', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', cursor: 'pointer', transition: 'border-color 0.2s, box-shadow 0.2s, background-color 0.2s', border: '2px solid #eef2f7', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' },
     detailedOrderCardActive: { 
-        backgroundColor: '#e3eaf4', 
+        backgroundColor: '#FFF', 
         borderRadius: '10px 10px 0 0', 
         padding: '1rem', 
         display: 'flex', 
@@ -1756,7 +1758,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     partyCountBadge: { backgroundColor: 'var(--light-grey)', color: 'var(--text-color)', padding: '0.2rem 0.6rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600 },
     rightPanelPlaceholder: { display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', color: 'var(--text-color)', textAlign: 'center', padding: '2rem' },
     // --- Tag Styles ---
-    tagsSection: { marginBottom: '1rem', padding: '0.5rem', backgroundColor: '#fff', border: '1px solid var(--skeleton-bg)', borderRadius: '8px' },
+    tagsSection: { marginBottom: '1rem', padding: '0.5rem', backgroundColor: 'transparent', border: '1px solid var(--skeleton-bg)', borderRadius: '8px' },
     tagsHeader: { marginBottom: '0.5rem' },
     tagsList: { display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' },
     tagsContainer: { display: 'flex', flexWrap: 'wrap', gap: '0.25rem', marginTop: '0.25rem' },
