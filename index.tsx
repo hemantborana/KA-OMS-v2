@@ -468,14 +468,14 @@ const Preferences = ({ session, theme, toggleTheme, updateUserProfile, onLogout 
                                 type="text" 
                                 value={newName} 
                                 onChange={(e) => setNewName(e.target.value)}
-                                style={styles.input}
+                                style={styles.modalInput}
                                 placeholder="Enter your display name"
                             />
                         </div>
 
-                        <div style={styles.modalActions}>
-                            <button onClick={handleCloseModal} style={styles.secondaryButton}>Cancel</button>
-                            <button onClick={handleSave} style={styles.primaryButton}>Save Changes</button>
+                        <div style={styles.iosModalActions}>
+                            <button onClick={handleCloseModal} style={styles.iosModalButtonSecondary}>Cancel</button>
+                            <button onClick={handleSave} style={styles.iosModalButtonPrimary}>Save Changes</button>
                         </div>
                     </div>
                 </div>
@@ -1238,14 +1238,19 @@ const styles: { [key: string]: React.CSSProperties } = {
     preferenceLabel: { color: 'var(--dark-grey)', fontSize: '0.95rem', fontWeight: 500 },
     preferenceValue: { color: 'var(--text-color)', fontWeight: 400, fontSize: '0.95rem' },
     // Modal Styles
-    modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.2)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0 },
+    modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.2)', backdropFilter: 'blur(2px)', WebkitBackdropFilter: 'blur(2px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0 },
     modalContent: { backgroundColor: 'var(--glass-bg)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', padding: '1.5rem', borderRadius: '12px', width: '90%', boxShadow: '0 8px 32px rgba(0,0,0,0.1)', border: '1px solid var(--glass-border)', display: 'flex', flexDirection: 'column', gap: '1rem', transform: 'scale(0.95)', opacity: 0 },
+    modalInput: { width: '100%', padding: '10px 15px', fontSize: '1rem', border: '1px solid var(--border-color)', borderRadius: '8px', backgroundColor: 'var(--card-bg)', color: 'var(--dark-grey)', transition: 'border-color 0.3s ease' },
     modalTitle: { margin: 0, fontSize: '1.1rem', fontWeight: 600, color: 'var(--dark-grey)' },
     modalActions: { display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' },
     primaryButton: { padding: '0.6rem 1.2rem', backgroundColor: 'var(--glass-brand-bg)', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 500, backdropFilter: 'blur(5px)' },
     secondaryButton: { padding: '0.6rem 1.2rem', backgroundColor: 'var(--glass-button-bg)', color: 'var(--dark-grey)', border: '1px solid var(--glass-border)', borderRadius: '6px', cursor: 'pointer', fontSize: '0.9rem', backdropFilter: 'blur(5px)' },
     iconButton: { background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-color)', display: 'flex', alignItems: 'center', padding: '4px' },
     
+    iosModalActions: { display: 'flex', width: 'calc(100% + 3rem)', marginLeft: '-1.5rem', marginBottom: '-1.5rem', borderTop: '1px solid var(--glass-border)', marginTop: '1.5rem' },
+    iosModalButtonSecondary: { background: 'transparent', border: 'none', padding: '1rem 0', cursor: 'pointer', fontSize: '1rem', textAlign: 'center', transition: 'background-color 0.2s ease', flex: 1, color: 'var(--dark-grey)', borderRight: '1px solid var(--glass-border)', fontWeight: 400 },
+    iosModalButtonPrimary: { background: 'transparent', border: 'none', padding: '1rem 0', cursor: 'pointer', fontSize: '1rem', textAlign: 'center', transition: 'background-color 0.2s ease', flex: 1, color: 'var(--brand-color)', fontWeight: 600 },
+
     // Avatar Selection
     avatarGrid: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', marginTop: '0.5rem' },
     avatarOption: { width: '60px', height: '60px', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '4px', borderRadius: '50%', cursor: 'pointer', border: '2px solid transparent', transition: 'all 0.2s', boxSizing: 'border-box' },
