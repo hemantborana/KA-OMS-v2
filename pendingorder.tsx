@@ -1,9 +1,4 @@
 
-
-
-
-
-
 import React, { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import firebase from 'firebase/compat/app';
@@ -31,6 +26,9 @@ const XIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="12" height="1
 const AlertCircleIcon = (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>;
 const ShareIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>;
 const PlusIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>;
+const CloseIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>;
+const CheckIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>;
+const CalendarIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>;
 
 
 // --- TYPE & FIREBASE ---
@@ -64,6 +62,9 @@ const timeSince = (dateString) => {
     if (interval > 1) return Math.floor(interval) + "m";
     return "now";
 };
+
+const formatDate = (isoString) => isoString ? new Date(isoString).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A';
+
 
 const normalizeKeyPart = (part: any): string => {
     if (!part) return '';
@@ -944,6 +945,147 @@ const DeleteConfirmationModal = ({ state, setState, onConfirm }) => {
     );
 };
 
+const RecommendedProducts = () => {
+    const recommendedStyles = [
+        'A039', 'A042', 'A072', 'A025', 'A066', 'A001', 'A011', 'A012', 'A045', 'A055', 'A077',
+        'EN-5901', 'PO-31', 'EN-2905', 'EN-3117'
+    ];
+    // Duplicate for seamless scroll
+    const scrollingItems = [...recommendedStyles, ...recommendedStyles];
+
+    return (
+        <div style={styles.recommendationsContainer}>
+            <div style={styles.scrollingTrack}>
+                {scrollingItems.map((style, index) => (
+                    <div key={index} style={styles.recommendationBubble}>
+                        {style}
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
+const EditBottomSheet: React.FC<{ order: Order | null; onClose: () => void; }> = ({ order, onClose }) => {
+    const [isClosing, setIsClosing] = useState(false);
+    const [isSearchFocused, setIsSearchFocused] = useState(false);
+    const sheetRef = useRef<HTMLDivElement>(null);
+    const dragStartPos = useRef<number | null>(null);
+    const initialSheetHeight = useRef<number>(0);
+
+    const handleClose = useCallback(() => {
+        setIsClosing(true);
+        setTimeout(() => {
+            onClose();
+        }, 300); // Animation duration
+    }, [onClose]);
+
+    const handleTouchStart = (e: React.TouchEvent) => {
+        if (!sheetRef.current) return;
+        dragStartPos.current = e.touches[0].clientY;
+        sheetRef.current.style.transition = 'none'; // Remove transition for smooth dragging
+        initialSheetHeight.current = sheetRef.current.offsetHeight;
+    };
+
+    const handleTouchMove = (e: React.TouchEvent) => {
+        if (dragStartPos.current === null || !sheetRef.current) return;
+        const currentY = e.touches[0].clientY;
+        const deltaY = currentY - dragStartPos.current;
+        if (deltaY > 0) { // Only allow dragging down
+            sheetRef.current.style.transform = `translateY(${deltaY}px)`;
+        }
+    };
+
+    const handleTouchEnd = (e: React.TouchEvent) => {
+        if (dragStartPos.current === null || !sheetRef.current) return;
+        const endY = e.changedTouches[0].clientY;
+        const deltaY = endY - dragStartPos.current;
+
+        // If dragged more than 1/3 of the way down, close it
+        if (deltaY > initialSheetHeight.current / 3) {
+            handleClose();
+        } else {
+            // Snap back to open position
+            sheetRef.current.style.transition = 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)';
+            sheetRef.current.style.transform = 'translateY(0px)';
+        }
+        dragStartPos.current = null;
+    };
+
+    useEffect(() => {
+        if (order) {
+            setIsClosing(false); // Reset closing state when a new order is passed
+            document.body.style.overflow = 'hidden';
+        }
+        return () => {
+            document.body.style.overflow = 'auto';
+        };
+    }, [order]);
+    
+    if (!order) return null;
+
+    const sheetStyle: React.CSSProperties = {
+        ...styles.bottomSheetContainer,
+        animation: isClosing 
+            ? 'slideDownSheet 0.3s cubic-bezier(0.4, 0, 0.6, 1) forwards' 
+            : 'slideUpSheet 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards'
+    };
+
+    return createPortal(
+        <>
+            <div 
+                style={{...styles.bottomSheetOverlay, animation: isClosing ? 'overlayOut 0.3s forwards' : 'overlayIn 0.3s forwards'}} 
+                onClick={handleClose} 
+            />
+            <div 
+                ref={sheetRef}
+                style={sheetStyle}
+            >
+                <div 
+                    style={styles.bottomSheetHandleContainer}
+                    onTouchStart={handleTouchStart}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
+                >
+                    <div style={styles.bottomSheetHandle} />
+                </div>
+                <div style={styles.bottomSheetHeader}>
+                    <button style={styles.sheetCloseButton} onClick={handleClose} aria-label="Close">
+                        <CloseIcon />
+                    </button>
+                    <h3 style={styles.sheetTitle}>Editing Order #{order.orderNumber}</h3>
+                    <button style={styles.sheetConfirmButton} aria-label="Confirm Edit">
+                        <CheckIcon />
+                    </button>
+                </div>
+                <div style={styles.bottomSheetBody}>
+                    <h2 style={styles.editSheetPartyName}>{order.partyName}</h2>
+                    <div style={styles.editSheetInfoBubbles}>
+                        <div style={{...styles.infoBubble, backgroundColor: 'var(--active-bg)', color: 'var(--brand-color)'}}>
+                            <CalendarIcon /> {formatDate(order.timestamp)}
+                        </div>
+                         <div style={{...styles.infoBubble, backgroundColor: 'var(--gray-5)', color: 'var(--text-color)'}}>
+                            #{order.orderNumber}
+                        </div>
+                    </div>
+                    <div style={{...styles.editSheetSearchContainer, ...(isSearchFocused && styles.editSheetSearchContainerActive)}}>
+                        <SearchIcon />
+                        <input
+                            type="text"
+                            placeholder="Search to add new styles..."
+                            style={styles.editSheetSearchInput}
+                            onFocus={() => setIsSearchFocused(true)}
+                            onBlur={() => setIsSearchFocused(false)}
+                        />
+                    </div>
+                    {isSearchFocused && <RecommendedProducts />}
+                </div>
+            </div>
+        </>,
+        document.body
+    );
+};
+
 
 export const PendingOrders = ({ onNavigate }) => {
     const [orders, setOrders] = useState<Order[]>([]);
@@ -976,6 +1118,7 @@ export const PendingOrders = ({ onNavigate }) => {
     
     const [globalTags, setGlobalTags] = useState<string[]>([]);
     const [deleteModalState, setDeleteModalState] = useState({ isOpen: false, isClosing: false, orders: [], reason: '', isLoading: false });
+    const [editingOrder, setEditingOrder] = useState<Order | null>(null);
 
 
     const isSelectionMode = selectedOrders.length > 0;
@@ -1239,9 +1382,8 @@ export const PendingOrders = ({ onNavigate }) => {
     };
 
     const handleEditOrder = useCallback((order: Order) => {
-        sessionStorage.setItem('orderToEdit', JSON.stringify(order));
-        onNavigate('Entry');
-    }, [onNavigate]);
+        setEditingOrder(order);
+    }, []);
     
     const handleProcessFullOrder = useCallback((order: Order) => {
         if (window.confirm(`Process all items for order ${order.orderNumber}?`)) {
@@ -1658,6 +1800,7 @@ export const PendingOrders = ({ onNavigate }) => {
             />, document.body)}
             {createPortal(<CustomTagModal isOpen={isCustomTagModalOpen} onClose={() => setIsCustomTagModalOpen(false)} onSave={handleSaveCustomTag} />, document.body)}
             {createPortal(<AddNoteModal isOpen={isNoteModalOpen} onClose={() => setIsNoteModalOpen(false)} onSave={handleSaveNote} />, document.body)}
+            <EditBottomSheet order={editingOrder} onClose={() => setEditingOrder(null)} />
             <style>{`
                 .fade-in-slide { animation: fadeInSlide 0.3s ease-out forwards; }
                 @keyframes fadeInSlide {
@@ -1684,6 +1827,14 @@ export const PendingOrders = ({ onNavigate }) => {
                 @keyframes dropdown-in {
                     from { transform: translateY(10px) scale(0.95); opacity: 0; }
                     to { transform: translateY(0) scale(1); opacity: 1; }
+                }
+                 @keyframes overlayIn { from { opacity: 0; } to { opacity: 1; } }
+                @keyframes overlayOut { from { opacity: 1; } to { opacity: 0; } }
+                @keyframes slideUpSheet { from { transform: translateY(100%); } to { transform: translateY(0); } }
+                @keyframes slideDownSheet { from { transform: translateY(0); } to { transform: translateY(100%); } }
+                @keyframes scrollLeft {
+                    from { transform: translateX(0); }
+                    to { transform: translateX(-50%); }
                 }
             `}</style>
             <div style={isMobile ? styles.headerCardMobile : styles.headerCard}>
@@ -1817,7 +1968,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     
     filtersCollapsed: { maxHeight: 0, opacity: 0, overflow: 'hidden', transition: 'max-height 0.4s ease-out, opacity 0.4s ease-out, margin-top 0.4s ease-out', marginTop: 0 },
     filtersVisible: { maxHeight: '300px', opacity: 1, overflow: 'visible', transition: 'max-height 0.4s ease-in, opacity 0.4s ease-in, margin-top 0.4s ease-in', marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' },
-    searchContainer: { display: 'flex', alignItems: 'center', gap: '0.75rem', backgroundColor: 'var(--light-grey)', padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--skeleton-bg)' },
+    searchContainer: { display: 'flex', alignItems: 'center', gap: '0.75rem', backgroundColor: 'var(--card-bg-secondary)', padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--separator-color)' },
     searchInput: { flex: 1, border: 'none', background: 'none', outline: 'none', fontSize: '1rem', color: 'var(--dark-grey)' },
     filterContainer: { display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center', position: 'relative', zIndex: 101 },
     filterButton: { background: 'var(--light-grey)', border: '1px solid var(--skeleton-bg)', color: 'var(--text-color)', padding: '0.4rem 0.8rem', borderRadius: '16px', cursor: 'pointer', fontSize: '0.85rem' },
@@ -1976,13 +2127,13 @@ const styles: { [key: string]: React.CSSProperties } = {
     // --- History Section ---
     historySection: { marginTop: '1rem', paddingTop: '1rem' },
     historyHeader: { width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer', padding: '0.25rem 0', fontSize: '1rem', fontWeight: 600, color: 'var(--dark-grey)' },
-    notesAndHistoryContainer: { border: '1px solid var(--skeleton-bg)', borderRadius: '8px', overflow: 'hidden', backgroundColor: 'transparent' },
+    notesAndHistoryContainer: { border: '1px solid var(--separator-color)', borderRadius: '8px', overflow: 'hidden', backgroundColor: 'transparent' },
     historyList: { maxHeight: '300px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem', padding: '0.75rem', backgroundColor: 'transparent' },
-    historyItem: { display: 'flex', flexDirection: 'column', gap: '0.25rem', borderLeft: '3px solid var(--skeleton-bg)', paddingLeft: '1rem' },
+    historyItem: { display: 'flex', flexDirection: 'column', gap: '0.25rem', borderLeft: '3px solid var(--separator-color)', paddingLeft: '1rem' },
     historyMeta: { display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.8rem', color: 'var(--text-color)' },
     historyEventType: { fontWeight: 600, padding: '2px 8px', borderRadius: '12px', fontSize: '0.75rem' },
     historyDetails: { fontSize: '0.9rem', color: 'var(--dark-grey)', paddingLeft: '0.25rem' },
-    addNoteContainer: { display: 'flex', justifyContent: 'flex-end', padding: '0.5rem 0.75rem', borderTop: '1px solid var(--skeleton-bg)' },
+    addNoteContainer: { display: 'flex', justifyContent: 'flex-end', padding: '0.5rem 0.75rem', borderTop: '1px solid var(--separator-color)' },
     addNoteButton: { background: 'var(--brand-color)', border: 'none', color: '#fff', width: '36px', height: '36px', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(97, 85, 245, 0.3)', flexShrink: 0 },
     // --- Command Center Styles ---
     commandCenterLayout: { display: 'grid', gridTemplateColumns: '280px 1fr 1.5fr', gap: '1rem', flex: 1, minHeight: 0 },
@@ -1997,7 +2148,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     partyCountBadge: { backgroundColor: 'var(--light-grey)', color: 'var(--text-color)', padding: '0.2rem 0.6rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600 },
     rightPanelPlaceholder: { display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', color: 'var(--text-color)', textAlign: 'center', padding: '2rem' },
     // --- Tag Styles ---
-    tagsSection: { marginBottom: '1rem', padding: '0.5rem', backgroundColor: 'transparent', border: '1px solid var(--skeleton-bg)', borderRadius: '8px' },
+    tagsSection: { marginBottom: '1rem', padding: '0.5rem', backgroundColor: 'transparent', border: '1px solid var(--separator-color)', borderRadius: '8px' },
     tagsHeader: { marginBottom: '0.5rem' },
     tagsList: { display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' },
     tagsContainer: { display: 'flex', flexWrap: 'wrap', gap: '0.25rem', marginTop: '0.25rem' },
@@ -2010,7 +2161,7 @@ const styles: { [key: string]: React.CSSProperties } = {
         transform: 'translateZ(0)',
         backfaceVisibility: 'hidden',
     },
-    customDropdownButton: { padding: '2px 8px', borderRadius: '12px', border: '1px solid var(--skeleton-bg)', fontSize: '0.75rem', color: 'var(--text-color)', backgroundColor: 'var(--light-grey)', cursor: 'pointer', display: 'flex', alignItems: 'center', },
+    customDropdownButton: { padding: '2px 8px', borderRadius: '12px', border: '1px solid var(--separator-color)', fontSize: '0.75rem', color: 'var(--text-color)', backgroundColor: 'var(--light-grey)', cursor: 'pointer', display: 'flex', alignItems: 'center', },
     customDropdownMenu: {
         backgroundColor: 'var(--glass-bg)',
         backdropFilter: 'blur(7px)',
@@ -2028,12 +2179,34 @@ const styles: { [key: string]: React.CSSProperties } = {
     modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.2)', backdropFilter: 'blur(7px)', WebkitBackdropFilter: 'blur(7px)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0 },
     modalContent: { backgroundColor: 'var(--glass-bg)', padding: '1.5rem', borderRadius: '12px', width: '90%', boxShadow: '0 8px 32px rgba(0,0,0,0.1)', border: '1px solid var(--glass-border)', display: 'flex', flexDirection: 'column', gap: '1rem', transform: 'scale(0.95)', opacity: 0 },
     modalSubtitleText: { textAlign: 'center', color: 'var(--text-color)', marginBottom: '1rem', fontSize: '0.9rem', padding: '0 1rem' },
-    modalInput: { width: '100%', padding: '10px 15px', fontSize: '1rem', border: '1px solid var(--border-color)', borderRadius: '8px', backgroundColor: 'var(--card-bg)', color: 'var(--dark-grey)', fontFamily: "'Inter', sans-serif" },
-    modalTextarea: { width: '100%', minHeight: '40px', padding: '0.75rem', fontSize: '0.9rem', border: '1px solid var(--border-color)', borderRadius: '8px', resize: 'vertical', backgroundColor: 'var(--card-bg)', color: 'var(--dark-grey)', fontFamily: "'Inter', sans-serif" },
+    modalInput: { width: '100%', padding: '10px 15px', fontSize: '1rem', border: '1px solid var(--separator-color)', borderRadius: '8px', backgroundColor: 'var(--card-bg)', color: 'var(--dark-grey)', fontFamily: "'Inter', sans-serif" },
+    modalTextarea: { width: '100%', minHeight: '40px', padding: '0.75rem', fontSize: '0.9rem', border: '1px solid var(--separator-color)', borderRadius: '8px', resize: 'vertical', backgroundColor: 'var(--card-bg)', color: 'var(--dark-grey)', fontFamily: "'Inter', sans-serif" },
     modalTitle: { margin: 0, fontSize: '1.1rem', fontWeight: 600, color: 'var(--dark-grey)' },
     iosModalActions: { display: 'flex', width: 'calc(100% + 3rem)', marginLeft: '-1.5rem', marginBottom: '-1.5rem', borderTop: '1px solid var(--glass-border)', marginTop: '1.5rem' },
     iosModalButtonSecondary: { background: 'transparent', border: 'none', padding: '1rem 0', cursor: 'pointer', fontSize: '1rem', textAlign: 'center', transition: 'background-color 0.2s ease', flex: 1, color: 'var(--dark-grey)', borderRight: '1px solid var(--glass-border)', fontWeight: 400 },
     iosModalButtonPrimary: { background: 'transparent', border: 'none', padding: '1rem 0', cursor: 'pointer', fontSize: '1rem', textAlign: 'center', transition: 'background-color 0.2s ease', flex: 1, color: 'var(--brand-color)', fontWeight: 600 },
     inputGroup: { position: 'relative' },
     label: { position: 'absolute', left: '15px', top: '15px', color: 'var(--text-tertiary)', pointerEvents: 'none', transition: 'all 0.2s ease-out' },
+
+    // --- Bottom Sheet Styles ---
+    bottomSheetOverlay: { position: 'fixed', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.3)', backdropFilter: 'blur(1px)', WebkitBackdropFilter: 'blur(1px)', zIndex: 1100 },
+    bottomSheetContainer: { position: 'fixed', left: 0, right: 0, bottom: 0, top: '30px', backgroundColor: 'var(--card-bg)', borderTopLeftRadius: '24px', borderTopRightRadius: '24px', boxShadow: '0 -4px 20px rgba(0,0,0,0.15)', zIndex: 1101, display: 'flex', flexDirection: 'column' },
+    bottomSheetHandleContainer: { padding: '8px 0', display: 'flex', justifyContent: 'center', cursor: 'grab', flexShrink: 0 },
+    bottomSheetHandle: { width: '40px', height: '5px', backgroundColor: 'var(--gray-4)', borderRadius: '2.5px' },
+    bottomSheetHeader: { display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center', padding: '4px 16px 12px', gap: '16px', flexShrink: 0, },
+    sheetTitle: { gridColumn: '2', textAlign: 'center', fontSize: '1rem', fontWeight: 600, color: 'var(--dark-grey)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+    sheetCloseButton: { gridColumn: '1', width: '32px', height: '32px', borderRadius: '50%', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backgroundColor: 'var(--gray-5)', color: 'var(--text-color)' },
+    sheetConfirmButton: { gridColumn: '3', width: '32px', height: '32px', borderRadius: '50%', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backgroundColor: 'var(--brand-color)', color: '#fff' },
+    bottomSheetBody: { flex: 1, overflowY: 'auto', padding: '0 16px 16px' },
+
+    // Edit Bottom Sheet Content
+    editSheetPartyName: { fontSize: '1.75rem', fontWeight: 700, color: 'var(--dark-grey)', marginBottom: '0.5rem', textAlign: 'left' },
+    editSheetInfoBubbles: { display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', flexWrap: 'wrap' },
+    infoBubble: { padding: '0.4rem 0.8rem', borderRadius: '16px', fontSize: '0.8rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.3rem' },
+    editSheetSearchContainer: { display: 'flex', alignItems: 'center', gap: '0.75rem', backgroundColor: 'var(--light-grey)', padding: '0.75rem 1rem', borderRadius: '12px', border: '1px solid var(--separator-color)', marginBottom: '1rem', transition: 'border-color 0.2s ease, box-shadow 0.2s ease' },
+    editSheetSearchContainerActive: { borderColor: 'var(--brand-color)', boxShadow: '0 0 0 3px rgba(0, 122, 255, 0.15)' },
+    editSheetSearchInput: { flex: 1, border: 'none', background: 'transparent', outline: 'none', fontSize: '1rem', color: 'var(--dark-grey)' },
+    recommendationsContainer: { marginTop: '1rem', overflow: 'hidden', position: 'relative', width: '100%', maskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)', WebkitMaskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)', },
+    scrollingTrack: { display: 'flex', animation: 'scrollLeft 30s linear infinite', },
+    recommendationBubble: { padding: '0.5rem 1rem', backgroundColor: 'var(--card-bg)', color: 'var(--dark-grey)', border: 'none', borderRadius: '20px', fontSize: '0.9rem', fontWeight: 500, marginRight: '0.75rem', whiteSpace: 'nowrap', boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)' },
 };
