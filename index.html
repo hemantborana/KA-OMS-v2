@@ -136,13 +136,33 @@
             overflow: hidden; /* Prevent scrollbars from layout shift */
         }
 
+        /* --- Global Input & Textarea Styling --- */
         input[type="text"],
         input[type="email"],
         input[type="password"],
         input[type="number"],
         textarea {
+            /* Set typing cursor to brand blue */
             caret-color: var(--brand-color);
             transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        /* Enforce white background in light mode */
+        body:not(.dark-mode) input[type="text"],
+        body:not(.dark-mode) input[type="email"],
+        body:not(.dark-mode) input[type="password"],
+        body:not(.dark-mode) input[type="number"],
+        body:not(.dark-mode) textarea {
+            background-color: #fff !important;
+        }
+        
+        /* Enforce black background in dark mode */
+        body.dark-mode input[type="text"],
+        body.dark-mode input[type="email"],
+        body.dark-mode input[type="password"],
+        body.dark-mode input[type="number"],
+        body.dark-mode textarea {
+            background-color: var(--black) !important;
         }
 
         input[type="text"]:focus,
@@ -230,6 +250,9 @@
 
         /* Responsive Design */
         @media (max-width: 768px) {
+            html {
+                font-size: 85%;
+            }
             .branding-pane {
                 display: none; /* Hide image to save space and simplify UI on mobile */
             }
