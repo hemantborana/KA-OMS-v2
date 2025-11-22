@@ -804,7 +804,7 @@ const HomePage = ({ session, onLogout, appLogoSrc, updateUserProfile }) => {
     useEffect(() => {
         document.body.className = theme === 'dark' ? 'dark-mode' : '';
         localStorage.setItem('theme', theme);
-        const themeColor = theme === 'dark' ? '#191919' : '#F0F0F3';
+        const themeColor = theme === 'dark' ? '#000000' : '#F2F2F7';
         const themeMeta = document.querySelector('meta[name="theme-color"]');
         if (themeMeta) {
             themeMeta.setAttribute('content', themeColor);
@@ -1168,7 +1168,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     headerPageTitle: { fontFamily: "'Inter Tight', sans-serif", fontSize: '1.2rem', fontWeight: 500, color: 'var(--dark-grey)', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
     menuButton: { background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', color: 'var(--dark-grey)' },
     appBody: { display: 'flex', flex: 1, overflow: 'hidden' },
-    sidebar: { width: '250px', backgroundColor: 'var(--card-bg)', borderRight: '1px solid var(--border-color)', flexShrink: 0, transition: 'width 0.3s ease, transform 0.3s ease', display: 'flex', flexDirection: 'column' },
+    sidebar: { width: '250px', backgroundColor: 'var(--card-bg)', borderRight: '1px solid var(--separator-color)', flexShrink: 0, transition: 'width 0.3s ease, transform 0.3s ease', display: 'flex', flexDirection: 'column' },
     sidebarCollapsed: { width: '80px' },
     sidebarMobile: { position: 'fixed', top: 0, left: 0, height: '100%', zIndex: 200 },
     overlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.05)', backdropFilter: 'blur(1.5px)', WebkitBackdropFilter: 'blur(1.5px)', zIndex: 199 },
@@ -1190,13 +1190,13 @@ const styles: { [key: string]: React.CSSProperties } = {
     bottomNav: { display: 'flex', justifyContent: 'space-around', background: 'linear-gradient(to top, var(--card-bg) 70%, transparent)', borderTop: 'none', position: 'fixed', bottom: 0, left: 0, right: 0, height: '70px', zIndex: 100 },
     bottomNavItem: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, textDecoration: 'none', color: 'var(--text-color)' },
     bottomNavItemActive: { color: 'var(--brand-color)' },
-    pageContainer: { backgroundColor: 'var(--card-bg)', padding: '2rem', borderRadius: 'var(--border-radius)', border: '1px solid var(--border-color)' },
+    pageContainer: { backgroundColor: 'var(--card-bg)', padding: '2rem', borderRadius: 'var(--border-radius)', boxShadow: 'var(--box-shadow)' },
     // --- Dashboard Styles ---
     dashboardContainer: { display: 'flex', flexDirection: 'column', gap: '1.5rem' },
     dashboardWelcome: { fontFamily: "'Inter Tight', sans-serif", fontSize: '1.75rem', fontWeight: 500, color: 'var(--dark-grey)' },
     dashboardGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' },
-    dashboardCard: { backgroundColor: 'var(--card-bg)', padding: '1.5rem', borderRadius: 'var(--border-radius)', border: '1px solid var(--border-color)', gridColumn: 'span 1' },
-    kpiCard: { backgroundColor: 'var(--card-bg)', padding: '1.5rem', borderRadius: 'var(--border-radius)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '1.5rem' },
+    dashboardCard: { backgroundColor: 'var(--card-bg)', padding: '1.5rem', borderRadius: 'var(--border-radius)', boxShadow: 'var(--box-shadow)', gridColumn: 'span 1' },
+    kpiCard: { backgroundColor: 'var(--card-bg)', padding: '1.5rem', borderRadius: 'var(--border-radius)', boxShadow: 'var(--box-shadow)', display: 'flex', alignItems: 'center', gap: '1.5rem' },
     kpiCardAlert: { backgroundColor: 'rgba(255, 56, 60, 0.1)', border: '1px solid var(--red)' },
     kpiIcon: { color: 'var(--brand-color)' },
     kpiTitle: { fontSize: '0.9rem', color: 'var(--text-color)', marginBottom: '0.25rem' },
@@ -1204,7 +1204,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     cardTitle: { fontSize: '1.1rem', fontWeight: 600, color: 'var(--dark-grey)', marginBottom: '1rem' },
     cardText: { fontSize: '0.9rem', color: 'var(--text-color)' },
     quickActions: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem' },
-    actionButton: { display: 'flex', alignItems: 'center', gap: '0.75rem', width: '100%', padding: '0.75rem 1rem', fontSize: '1rem', background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '8px', cursor: 'pointer', textAlign: 'left', color: 'var(--dark-grey)', fontWeight: 500 },
+    actionButton: { display: 'flex', alignItems: 'center', gap: '0.75rem', width: '100%', padding: '0.75rem 1rem', fontSize: '1rem', background: 'var(--card-bg)', border: '1px solid var(--separator-color)', borderRadius: '8px', cursor: 'pointer', textAlign: 'left', color: 'var(--dark-grey)', fontWeight: 500 },
     itemList: { listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem' },
     listItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem 0', borderBottom: '1px solid var(--light-grey)', fontSize: '0.9rem' },
     lowStockBadge: { backgroundColor: 'rgba(255, 56, 60, 0.1)', color: 'var(--red)', padding: '0.2rem 0.5rem', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 600 },
@@ -1214,13 +1214,13 @@ const styles: { [key: string]: React.CSSProperties } = {
     toast: { padding: '12px 20px', borderRadius: '8px', color: 'white', boxShadow: '0 4px 15px rgba(0,0,0,0.1)', animation: 'toast-in 0.5s forwards' },
     // --- Login Styles ---
     loginContainer: { display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' },
-    card: { width: '100%', maxWidth: '420px', minHeight: '580px', padding: '2.5rem 2rem', backgroundColor: 'var(--card-bg)', backdropFilter: 'blur(10px)', borderRadius: 'var(--border-radius)', boxShadow: 'var(--box-shadow)', textAlign: 'center', border: '1px solid rgba(255, 255, 255, 0.2)', transition: 'transform 0.5s ease-out, opacity 0.5s ease-out, box-shadow 0.3s ease-out', display: 'flex', flexDirection: 'column', justifyContent: 'center' },
+    card: { width: '100%', maxWidth: '420px', minHeight: '580px', padding: '2.5rem 2rem', backgroundColor: 'var(--card-bg)', backdropFilter: 'blur(10px)', borderRadius: 'var(--border-radius)', boxShadow: 'var(--box-shadow)', textAlign: 'center', border: '1px solid var(--border-color)', transition: 'transform 0.5s ease-out, opacity 0.5s ease-out, box-shadow 0.3s ease-out', display: 'flex', flexDirection: 'column', justifyContent: 'center' },
     logo: { width: '80px', height: '80px', marginBottom: '0.5rem', margin: '0 auto 0.5rem', opacity: 0 },
     title: { color: 'var(--dark-grey)', fontWeight: 600, marginBottom: '0.25rem' },
     subtitle: { color: 'var(--text-color)', marginBottom: '2rem', fontSize: '1rem' },
     form: { width: '100%', display: 'flex', flexDirection: 'column', gap: '1.25rem' },
     inputGroup: { position: 'relative' },
-    input: { width: '100%', padding: '12px 15px', paddingTop: '18px', fontSize: '1rem', border: '1px solid var(--border-color)', borderRadius: '8px', backgroundColor: 'var(--card-bg)', color: 'var(--dark-grey)', transition: 'border-color 0.3s ease' },
+    input: { width: '100%', padding: '12px 15px', paddingTop: '18px', fontSize: '1rem', border: '1px solid var(--separator-color)', borderRadius: '8px', backgroundColor: 'var(--card-bg)', color: 'var(--dark-grey)', transition: 'border-color 0.3s ease' },
     label: { position: 'absolute', left: '15px', top: '15px', color: 'var(--text-tertiary)', pointerEvents: 'none', transition: 'all 0.2s ease-out' },
     labelFocused: { top: '5px', fontSize: '0.75rem', color: 'var(--brand-color)' },
     eyeIcon: { position: 'absolute', top: '50%', right: '15px', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-color)', padding: '0' },
@@ -1247,7 +1247,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     // Modal Styles
     modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.2)', backdropFilter: 'blur(7px)', WebkitBackdropFilter: 'blur(7px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0 },
     modalContent: { backgroundColor: 'var(--glass-bg)', padding: '1.5rem', borderRadius: '12px', width: '90%', boxShadow: '0 8px 32px rgba(0,0,0,0.1)', border: '1px solid var(--glass-border)', display: 'flex', flexDirection: 'column', gap: '1rem', transform: 'scale(0.95)', opacity: 0 },
-    modalInput: { width: '100%', padding: '10px 15px', fontSize: '1rem', border: '1px solid var(--border-color)', borderRadius: '8px', backgroundColor: 'var(--card-bg)', color: 'var(--dark-grey)' },
+    modalInput: { width: '100%', padding: '10px 15px', fontSize: '1rem', border: '1px solid var(--separator-color)', borderRadius: '8px', backgroundColor: 'var(--card-bg)', color: 'var(--dark-grey)' },
     modalTitle: { margin: 0, fontSize: '1.1rem', fontWeight: 600, color: 'var(--dark-grey)' },
     modalActions: { display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' },
     primaryButton: { padding: '0.6rem 1.2rem', backgroundColor: 'var(--glass-brand-bg)', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 500, backdropFilter: 'blur(5px)' },

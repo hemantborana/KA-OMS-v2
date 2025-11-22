@@ -18,31 +18,33 @@
     <style>
         :root {
             /* Brand color */
-            --brand-color: #6155F5;
+            --brand-color: #007AFF;
 
             /* UI Neutrals */
-            --light-grey: #F0F0F3;     /* Primary Background */
+            --light-grey: #F2F2F7;     /* Primary Background */
             --card-bg: #FFFFFF;        /* Card Elements */
+            --card-bg-secondary: #FFFFFF;
+            --card-bg-tertiary: #F2F2F7;
 
             /* Glassmorphism */
-            --glass-bg: rgba(255, 255, 255, 0.7);
-            --glass-border: rgba(0, 0, 0, 0.1);
-            --glass-button-bg: rgba(255, 255, 255, 0.3);
-            --glass-brand-bg: rgba(97, 85, 245, 0.7);
+            --glass-bg: rgba(242, 242, 247, 0.8);
+            --glass-border: rgba(0, 0, 0, 0.08);
+            --glass-button-bg: rgba(255, 255, 255, 0.5);
+            --glass-brand-bg: rgba(0, 122, 255, 0.8);
 
             /* Text Hierarchy */
-            --dark-grey: #000000;      /* Primary Text */
-            --text-color: rgba(60, 60, 67, 0.6); /* Secondary Text */
-            --text-tertiary: rgba(60, 60, 67, 0.3); /* Tertiary Text */
-            --text-quaternary: rgba(60, 60, 67, 0.18);/* Quaternary / for subtle elements */
+            --dark-grey: #1D1D1F;      /* Primary Text */
+            --text-color: rgba(29, 29, 31, 0.75); /* Secondary Text */
+            --text-tertiary: rgba(29, 29, 31, 0.5); /* Tertiary Text */
+            --text-quaternary: rgba(29, 29, 31, 0.2);/* Quaternary / for subtle elements */
             
             /* Borders & Skeletons */
-            --border-color: #E5E5EA;    /* Gray 5 - for component borders */
-            --skeleton-bg: #E5E5EA;     /* Gray 5 - for loading skeletons */
-            --separator-color: var(--text-quaternary); /* for dividers/separators */
+            --border-color: transparent;
+            --skeleton-bg: #E5E5EA;
+            --separator-color: rgba(60, 60, 67, 0.15);
             
             /* States */
-            --active-bg: rgba(97, 85, 245, 0.1);
+            --active-bg: rgba(0, 122, 255, 0.08);
 
             /* Full Palette */
             --red: #FF383C;
@@ -52,9 +54,9 @@
             --mint: #00C8B3;
             --teal: #00C3D0;
             --cyan: #00C0E8;
-            --blue: #0088FF;
-            --indigo: #6155F5;
-            --purple: #CB30E0;
+            --blue: #007AFF;
+            --indigo: #5856D6;
+            --purple: #AF52DE;
             --pink: #FF2D55;
             --brown: #AC7F5E;
             
@@ -67,28 +69,56 @@
             --gray-6: #F2F2F7;
 
             --border-radius: 12px;
-            --box-shadow: 0 10px 30px rgba(0, 0, 0, 0.07);
+            --box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
         }
 
         body.dark-mode {
-            --brand-color: #3186ff;    /* Blue accent for dark mode */
-            --dark-grey: #FFFFFF;      /* Primary Text */
-            --light-grey: #191919;     /* Primary Background */
-            --text-color: #a0aec0;     /* Secondary Text */
-            --card-bg: #1f1f1f;        /* Secondary/Card Background */
+            /* Brand color */
+            --brand-color: #0091FF;
+
+            /* UI Neutrals */
+            --light-grey: #000000;     /* Primary Background */
+            --card-bg: #1A1A1A;        /* Primary Elements */
+            --card-bg-secondary: #2C2C2E; /* Secondary Elements */
+            --card-bg-tertiary: #3A3A3C;  /* Tertiary Elements */
 
             /* Glassmorphism */
-            --glass-bg: rgba(40, 40, 40, 0.7);
+            --glass-bg: rgba(26, 26, 26, 0.7);
             --glass-border: rgba(255, 255, 255, 0.15);
-            --glass-button-bg: rgba(255, 255, 255, 0.1);
-            --glass-brand-bg: rgba(49, 134, 255, 0.7);
+            --glass-button-bg: rgba(58, 58, 60, 0.7);
+            --glass-brand-bg: rgba(0, 145, 255, 0.7);
 
-            --active-bg: #323232;      /* Accent/Hover */
-            --box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-            --skeleton-bg: #323232;
-            --border-color: #323232;
-            --separator-color: rgba(255, 255, 255, 0.1);
-            --text-tertiary: rgba(255, 255, 255, 0.3);
+            /* Text Hierarchy */
+            --dark-grey: #FFFFFF;      /* Primary Text */
+            --text-color: rgba(235, 235, 245, 0.6); /* Secondary Text */
+            --text-tertiary: rgba(235, 235, 245, 0.3); /* Tertiary Text */
+            --text-quaternary: rgba(235, 235, 245, 0.16);/* Quaternary Text */
+            
+            /* Borders, States & Shadows */
+            --active-bg: #2C2C2E;
+            --box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            --skeleton-bg: #2C2C2E;
+            --border-color: transparent;
+            --separator-color: rgba(84, 84, 88, 0.65);
+
+            /* Full Palette Overrides */
+            --red: #FF4245;
+            --orange: #FF9230;
+            --yellow: #FFD600;
+            --green: #30D158;
+            --mint: #00DAC3;
+            --teal: #00D2E0;
+            --cyan: #3CD3FE;
+            --blue: #0091FF;
+            --indigo: #6B5DFF;
+            --purple: #DB34F2;
+            --pink: #FF375F;
+            --brown: #B78A66;
+            
+            /* Grays & Misc */
+            --gray: #8E8E93;
+            --black: #000000;
+            --white: #FFFFFF;
         }
 
         * {
@@ -122,7 +152,15 @@
         textarea:focus {
             outline: none;
             border-color: var(--brand-color);
-            box-shadow: 0 0 0 3px rgba(97, 85, 245, 0.15);
+            box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.15);
+        }
+
+        body.dark-mode input[type="text"]:focus,
+        body.dark-mode input[type="email"]:focus,
+        body.dark-mode input[type="password"]:focus,
+        body.dark-mode input[type="number"]:focus,
+        body.dark-mode textarea:focus {
+            box-shadow: 0 0 0 3px rgba(0, 145, 255, 0.25);
         }
 
         .container {
@@ -213,6 +251,10 @@
             scrollbar-width: thin;
             scrollbar-color: rgba(150, 150, 150, 0.5) transparent;
         }
+        
+        body.dark-mode * {
+            scrollbar-color: rgba(100, 100, 100, 0.7) transparent;
+        }
 
         /* For Webkit browsers (Chrome, Safari, Edge) */
         ::-webkit-scrollbar {
@@ -232,20 +274,28 @@
             background-clip: content-box;
             transition: background-color .3s;
         }
+        
+        body.dark-mode ::-webkit-scrollbar-thumb {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
 
         ::-webkit-scrollbar-thumb:hover {
             background-color: rgba(0, 0, 0, 0.4);
+        }
+        
+        body.dark-mode ::-webkit-scrollbar-thumb:hover {
+            background-color: rgba(255, 255, 255, 0.4);
         }
     </style>
     <script>
         (function() {
             var savedTheme = localStorage.getItem('theme') || 'light';
-            var themeColor = '#F0F0F3'; // Default light theme background
+            var themeColor = '#F2F2F7'; // Default light theme background
             var appleStatusBarStyle = 'default';
 
             if (savedTheme === 'dark') {
                 document.body.classList.add('dark-mode');
-                themeColor = '#191919'; // Dark theme background
+                themeColor = '#000000'; // Dark theme background
                 appleStatusBarStyle = 'black';
             }
             
