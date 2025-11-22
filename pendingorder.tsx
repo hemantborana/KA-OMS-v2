@@ -2,6 +2,8 @@
 
 
 
+
+
 import React, { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import firebase from 'firebase/compat/app';
@@ -823,7 +825,7 @@ const CustomTagModal: React.FC<{
 
     return (
         <div style={{...styles.modalOverlay, animation: isClosing ? 'overlayOut 0.3s forwards' : 'overlayIn 0.3s forwards'}} onClick={handleClose}>
-            <div style={{...styles.modalContent, maxWidth: '380px', animation: isClosing ? 'modalOut 0.3s forwards' : 'modalIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards'}} onClick={(e) => e.stopPropagation()}>
+            <div style={{...styles.modalContent, maxWidth: '360px', animation: isClosing ? 'modalOut 0.3s forwards' : 'modalIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards'}} onClick={(e) => e.stopPropagation()}>
                 <h3 style={{...styles.modalTitle, textAlign: 'center', marginBottom: '0.5rem'}}>Create Custom Tag</h3>
                 <p style={styles.modalSubtitleText}>This tag will be saved and available for all future orders.</p>
                 <input 
@@ -879,7 +881,7 @@ const AddNoteModal: React.FC<{
 
     return (
         <div style={{...styles.modalOverlay, animation: isClosing ? 'overlayOut 0.3s forwards' : 'overlayIn 0.3s forwards'}} onClick={handleClose}>
-            <div style={{...styles.modalContent, maxWidth: '420px', animation: isClosing ? 'modalOut 0.3s forwards' : 'modalIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards'}} onClick={(e) => e.stopPropagation()}>
+            <div style={{...styles.modalContent, maxWidth: '400px', animation: isClosing ? 'modalOut 0.3s forwards' : 'modalIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards'}} onClick={(e) => e.stopPropagation()}>
                 <h3 style={{...styles.modalTitle, textAlign: 'center', marginBottom: '0.5rem'}}>Add a New Note</h3>
                 <p style={styles.modalSubtitleText}>This note will be permanently added to the order's history.</p>
                 <textarea 
@@ -922,7 +924,7 @@ const DeleteConfirmationModal = ({ state, setState, onConfirm }) => {
 
     return (
         <div style={{...styles.modalOverlay, animation: isClosing ? 'overlayOut 0.3s forwards' : 'overlayIn 0.3s forwards'}} onClick={handleClose}>
-            <div style={{...styles.modalContent, maxWidth: '420px', animation: isClosing ? 'modalOut 0.3s forwards' : 'modalIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards'}} onClick={(e) => e.stopPropagation()}>
+            <div style={{...styles.modalContent, maxWidth: '400px', animation: isClosing ? 'modalOut 0.3s forwards' : 'modalIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards'}} onClick={(e) => e.stopPropagation()}>
                 <h3 style={{...styles.modalTitle, textAlign: 'center', marginBottom: '0.5rem'}}>{title}</h3>
                 <p style={styles.modalSubtitleText}>{message}</p>
                 <textarea 
@@ -2026,8 +2028,8 @@ const styles: { [key: string]: React.CSSProperties } = {
     modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.2)', backdropFilter: 'blur(7px)', WebkitBackdropFilter: 'blur(7px)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0 },
     modalContent: { backgroundColor: 'var(--glass-bg)', padding: '1.5rem', borderRadius: '12px', width: '90%', boxShadow: '0 8px 32px rgba(0,0,0,0.1)', border: '1px solid var(--glass-border)', display: 'flex', flexDirection: 'column', gap: '1rem', transform: 'scale(0.95)', opacity: 0 },
     modalSubtitleText: { textAlign: 'center', color: 'var(--text-color)', marginBottom: '1rem', fontSize: '0.9rem', padding: '0 1rem' },
-    modalInput: { width: '100%', padding: '10px 15px', fontSize: '1rem', border: '1px solid var(--border-color)', borderRadius: '8px', backgroundColor: 'var(--card-bg)', color: 'var(--dark-grey)' },
-    modalTextarea: { width: '100%', minHeight: '80px', padding: '0.75rem', fontSize: '0.9rem', border: '1px solid var(--border-color)', borderRadius: '8px', resize: 'vertical', backgroundColor: 'var(--card-bg)', color: 'var(--dark-grey)' },
+    modalInput: { width: '100%', padding: '10px 15px', fontSize: '1rem', border: '1px solid var(--border-color)', borderRadius: '8px', backgroundColor: 'var(--card-bg)', color: 'var(--dark-grey)', fontFamily: "'Inter', sans-serif" },
+    modalTextarea: { width: '100%', minHeight: '40px', padding: '0.75rem', fontSize: '0.9rem', border: '1px solid var(--border-color)', borderRadius: '8px', resize: 'vertical', backgroundColor: 'var(--card-bg)', color: 'var(--dark-grey)', fontFamily: "'Inter', sans-serif" },
     modalTitle: { margin: 0, fontSize: '1.1rem', fontWeight: 600, color: 'var(--dark-grey)' },
     iosModalActions: { display: 'flex', width: 'calc(100% + 3rem)', marginLeft: '-1.5rem', marginBottom: '-1.5rem', borderTop: '1px solid var(--glass-border)', marginTop: '1.5rem' },
     iosModalButtonSecondary: { background: 'transparent', border: 'none', padding: '1rem 0', cursor: 'pointer', fontSize: '1rem', textAlign: 'center', transition: 'background-color 0.2s ease', flex: 1, color: 'var(--dark-grey)', borderRight: '1px solid var(--glass-border)', fontWeight: 400 },
