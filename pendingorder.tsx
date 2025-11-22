@@ -1,7 +1,8 @@
 
 
 
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+
+import React, { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
@@ -320,8 +321,10 @@ const CustomTagDropdown: React.FC<{
     globalTags: string[];
 }> = ({ onAddTag, onOpenCustomTagModal, order, globalTags }) => {
     const [isOpen, setIsOpen] = useState(false);
-    const dropdownRef = useRef(null);
-    
+    const buttonRef = useRef<HTMLButtonElement>(null);
+    const menuRef = useRef<HTMLDivElement>(null);
+    const [menuStyle, setMenuStyle] = useState<React.CSSProperties>({});
+
     const predefinedOptions = [
         "On Hold", "Awaiting Stock", "Customer Confirmation Needed",
         "Urgent", "Partial Shipment"
@@ -332,15 +335,47 @@ const CustomTagDropdown: React.FC<{
         return [...Array.from(combined).sort(), "Create Custom..."];
     }, [globalTags]);
 
+    useLayoutEffect(() => {
+        if (isOpen && buttonRef.current && menuRef.current) {
+            const buttonRect = buttonRef.current.getBoundingClientRect();
+            const menuRect = menuRef.current.getBoundingClientRect();
+            const spaceBelow = window.innerHeight - buttonRect.bottom;
+            
+            let top;
+            let transformOrigin = 'top center';
+
+            // Check if there's enough space below, otherwise position above
+            if (spaceBelow < menuRect.height && buttonRect.top > menuRect.height) {
+                top = buttonRect.top - menuRect.height - 4; // Position above button with a small gap
+                transformOrigin = 'bottom center';
+            } else {
+                top = buttonRect.bottom + 4; // Position below button with a small gap
+            }
+            
+            setMenuStyle({
+                position: 'fixed',
+                top: `${top}px`,
+                left: `${buttonRect.left}px`,
+                minWidth: `${buttonRect.width}px`,
+                transformOrigin: transformOrigin,
+            });
+        }
+    }, [isOpen]);
+
     useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        if (!isOpen) return;
+
+        const handleClickOutside = (event: MouseEvent) => {
+            if (
+                buttonRef.current && !buttonRef.current.contains(event.target as Node) &&
+                menuRef.current && !menuRef.current.contains(event.target as Node)
+            ) {
                 setIsOpen(false);
             }
         };
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, [dropdownRef]);
+    }, [isOpen]);
 
     const handleSelect = (option: string) => {
         if (option === 'Create Custom...') {
@@ -351,21 +386,35 @@ const CustomTagDropdown: React.FC<{
         setIsOpen(false);
     };
 
+    const renderMenu = () => {
+        return createPortal(
+            <div
+                ref={menuRef}
+                style={{
+                    ...styles.customDropdownMenu,
+                    ...menuStyle,
+                    zIndex: 9000,
+                    // Hide until position is calculated to prevent flicker
+                    visibility: Object.keys(menuStyle).length === 0 ? 'hidden' : 'visible',
+                }}
+            >
+                {options.map(option => (
+                    <button key={option} className="custom-dropdown-item" style={styles.customDropdownItem} onClick={() => handleSelect(option)}>
+                        {option}
+                    </button>
+                ))}
+            </div>,
+            document.body
+        );
+    };
+
     return (
-        <div style={styles.customDropdownContainer} ref={dropdownRef}>
-            <button style={styles.customDropdownButton} onClick={() => setIsOpen(!isOpen)}>
+        <div style={styles.customDropdownContainer}>
+            <button ref={buttonRef} style={styles.customDropdownButton} onClick={() => setIsOpen(prev => !prev)}>
                 + Add Tag
                 <ChevronIcon collapsed={!isOpen} style={{width: 12, height: 12, marginLeft: 4}} />
             </button>
-            {isOpen && (
-                <div style={styles.customDropdownMenu}>
-                    {options.map(option => (
-                        <button key={option} className="custom-dropdown-item" style={styles.customDropdownItem} onClick={() => handleSelect(option)}>
-                            {option}
-                        </button>
-                    ))}
-                </div>
-            )}
+            {isOpen && renderMenu()}
         </div>
     );
 };
@@ -1960,7 +2009,18 @@ const styles: { [key: string]: React.CSSProperties } = {
         backfaceVisibility: 'hidden',
     },
     customDropdownButton: { padding: '2px 8px', borderRadius: '12px', border: '1px solid var(--skeleton-bg)', fontSize: '0.75rem', color: 'var(--text-color)', backgroundColor: 'var(--light-grey)', cursor: 'pointer', display: 'flex', alignItems: 'center', },
-    customDropdownMenu: { position: 'absolute', top: '100%', left: 0, backgroundColor: 'var(--glass-bg)', backdropFilter: 'blur(7px)', WebkitBackdropFilter: 'blur(7px)', border: '1px solid var(--glass-border)', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 1200, minWidth: '200px', marginTop: '4px', padding: '0.25rem', animation: 'dropdown-in 0.2s ease-out forwards', transformOrigin: 'top center', },
+    customDropdownMenu: {
+        backgroundColor: 'var(--glass-bg)',
+        backdropFilter: 'blur(7px)',
+        WebkitBackdropFilter: 'blur(7px)',
+        border: '1px solid var(--glass-border)',
+        borderRadius: '8px',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+        zIndex: 9000,
+        minWidth: '200px',
+        padding: '0.25rem',
+        animation: 'dropdown-in 0.2s ease-out forwards',
+    },
     customDropdownItem: { display: 'block', width: '100%', padding: '0.5rem 0.75rem', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '0.85rem', borderRadius: '6px', color: 'var(--dark-grey)', },
     // Modal Styles
     modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.2)', backdropFilter: 'blur(7px)', WebkitBackdropFilter: 'blur(7px)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0 },
