@@ -79,8 +79,8 @@
             /* UI Neutrals */
             --light-grey: #000000;     /* Primary Background */
             --card-bg: #1A1A1A;        /* Primary Elements */
-            --card-bg-secondary: #2C2C2E; /* Secondary Elements */
-            --card-bg-tertiary: #3A3A3C;  /* Tertiary Elements */
+            --card-bg-secondary: var(--gray-5); /* Secondary Elements */
+            --card-bg-tertiary: var(--gray-4);  /* Tertiary Elements */
 
             /* Glassmorphism */
             --glass-bg: rgba(26, 26, 26, 0.7);
@@ -95,11 +95,11 @@
             --text-quaternary: rgba(235, 235, 245, 0.16);/* Quaternary Text */
             
             /* Borders, States & Shadows */
-            --active-bg: #2C2C2E;
+            --active-bg: var(--gray-5);
             --box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-            --skeleton-bg: #2C2C2E;
+            --skeleton-bg: var(--gray-5);
             --border-color: transparent;
-            --separator-color: rgba(84, 84, 88, 0.65);
+            --separator-color: var(--gray-6);
 
             /* Full Palette Overrides */
             --red: #FF4245;
@@ -116,7 +116,12 @@
             --brown: #B78A66;
             
             /* Grays & Misc */
-            --gray: #8E8E93;
+            --gray: #8E8E93;   /* Grey 1 */
+            --gray-2: #636366;
+            --gray-3: #48484A;
+            --gray-4: #3A3A3C;
+            --gray-5: #2C2C2E;
+            --gray-6: #1C1C1E;
             --black: #000000;
             --white: #FFFFFF;
         }
