@@ -1,6 +1,8 @@
 
 
+
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
 
@@ -870,7 +872,7 @@ const DeleteConfirmationModal = ({ state, setState, onConfirm }) => {
         : `Are you sure you want to delete order #${orders[0]?.orderNumber}? This action cannot be undone.`;
 
     return (
-        <div style={{...styles.modalOverlay, zIndex: 2000, animation: isClosing ? 'overlayOut 0.3s forwards' : 'overlayIn 0.3s forwards'}} onClick={handleClose}>
+        <div style={{...styles.modalOverlay, animation: isClosing ? 'overlayOut 0.3s forwards' : 'overlayIn 0.3s forwards'}} onClick={handleClose}>
             <div style={{...styles.modalContent, maxWidth: '420px', animation: isClosing ? 'modalOut 0.3s forwards' : 'modalIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards'}} onClick={(e) => e.stopPropagation()}>
                 <h3 style={{...styles.modalTitle, textAlign: 'center', marginBottom: '0.5rem'}}>{title}</h3>
                 <p style={styles.modalSubtitleText}>{message}</p>
@@ -1598,13 +1600,13 @@ export const PendingOrders = ({ onNavigate }) => {
     
     return (
         <div style={styles.container}>
-            <DeleteConfirmationModal
+            {createPortal(<DeleteConfirmationModal
                 state={deleteModalState}
                 setState={setDeleteModalState}
                 onConfirm={handleConfirmDeletion}
-            />
-            <CustomTagModal isOpen={isCustomTagModalOpen} onClose={() => setIsCustomTagModalOpen(false)} onSave={handleSaveCustomTag} />
-            <AddNoteModal isOpen={isNoteModalOpen} onClose={() => setIsNoteModalOpen(false)} onSave={handleSaveNote} />
+            />, document.body)}
+            {createPortal(<CustomTagModal isOpen={isCustomTagModalOpen} onClose={() => setIsCustomTagModalOpen(false)} onSave={handleSaveCustomTag} />, document.body)}
+            {createPortal(<AddNoteModal isOpen={isNoteModalOpen} onClose={() => setIsNoteModalOpen(false)} onSave={handleSaveNote} />, document.body)}
             <style>{`
                 .fade-in-slide { animation: fadeInSlide 0.3s ease-out forwards; }
                 @keyframes fadeInSlide {
@@ -1961,7 +1963,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     customDropdownMenu: { position: 'absolute', top: '100%', left: 0, backgroundColor: 'var(--glass-bg)', backdropFilter: 'blur(7px)', WebkitBackdropFilter: 'blur(7px)', border: '1px solid var(--glass-border)', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 1200, minWidth: '200px', marginTop: '4px', padding: '0.25rem', animation: 'dropdown-in 0.2s ease-out forwards', transformOrigin: 'top center', },
     customDropdownItem: { display: 'block', width: '100%', padding: '0.5rem 0.75rem', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '0.85rem', borderRadius: '6px', color: 'var(--dark-grey)', },
     // Modal Styles
-    modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.2)', backdropFilter: 'blur(7px)', WebkitBackdropFilter: 'blur(7px)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0 },
+    modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.2)', backdropFilter: 'blur(7px)', WebkitBackdropFilter: 'blur(7px)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0 },
     modalContent: { backgroundColor: 'var(--glass-bg)', padding: '1.5rem', borderRadius: '12px', width: '90%', boxShadow: '0 8px 32px rgba(0,0,0,0.1)', border: '1px solid var(--glass-border)', display: 'flex', flexDirection: 'column', gap: '1rem', transform: 'scale(0.95)', opacity: 0 },
     modalSubtitleText: { textAlign: 'center', color: 'var(--text-color)', marginBottom: '1rem', fontSize: '0.9rem', padding: '0 1rem' },
     modalInput: { width: '100%', padding: '10px 15px', fontSize: '1rem', border: '1px solid var(--border-color)', borderRadius: '8px', backgroundColor: 'var(--card-bg)', color: 'var(--dark-grey)' },
