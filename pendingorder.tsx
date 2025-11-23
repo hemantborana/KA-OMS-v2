@@ -39,9 +39,6 @@ const CalendarIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="14" he
 // --- TYPE & FIREBASE ---
 interface HistoryEvent { timestamp: string; event: string; details: string; }
 interface Order { orderNumber: string; partyName: string; timestamp: string; totalQuantity: number; totalValue: number; orderNote?: string; items: any[]; history?: HistoryEvent[]; tags?: string[]; }
-// FIX: Added explicit types for summarized data and parties to prevent type inference issues with reduce.
-interface SummarizedData { [partyName: string]: { orderCount: number; orders: Order[]; } }
-interface Parties { [partyName: string]: number; }
 const PENDING_ORDERS_REF = 'Pending_Order_V2';
 const BILLING_ORDERS_REF = 'Ready_For_Billing_V2';
 const DELETED_ORDERS_REF = 'Deleted_Orders_V2';
@@ -702,10 +699,7 @@ const DetailedOrderCard: React.FC<{
         <div style={getCardStyle()} onClick={handleCardClick} onContextMenu={(e) => e.preventDefault()}>
             {/* Top Row: Party Name & Chevron */}
             <div style={styles.cardTopRow}>
-                <h3 style={styles.cardPartyName}>
-                    <span style={styles.cardTotalQuantityBadge}>{order.totalQuantity}</span>
-                    {order.partyName}
-                </h3>
+                <h3 style={styles.cardPartyName}>{order.partyName}</h3>
                 <div style={styles.checkboxContainer}>
                     <button style={styles.checkboxButton} onClick={(e) => { e.stopPropagation(); onSelectOrder(order.orderNumber); }}>
                         {isSelected ? <CheckSquareIcon /> : <SquareIcon />}
@@ -734,6 +728,12 @@ const DetailedOrderCard: React.FC<{
 
             {/* Footer: Icons/Metrics */}
             <div style={styles.cardFooterRow}>
+                <div style={styles.metricGroup}>
+                    <div style={styles.iconMetric} title="Total Quantity">
+                        <BoxIcon /> <span>{order.totalQuantity}</span>
+                    </div>
+                </div>
+                
                 {/* Status Icons Grouped at the end */}
                 <div style={styles.statusIconGroup}>
                     {order.orderNote && <NoteIcon style={{color: 'var(--orange)', fill: 'var(--orange)', fillOpacity: 0.2}} title="Has Note" />}
@@ -787,26 +787,9 @@ const DetailedList: React.FC<{ orders: Order[]; onToggleExpand: (order: Order) =
     );
 }
 
-const PartyGroup: React.FC<{ partyName: string; data: { orderCount: number; orders: Order[] }; onToggleExpand: (order: Order) => void; expandedOrderNumber: string | null; children: React.ReactNode; onProcessOrder: (order: Order) => void; onDeleteOrder: (order: Order) => void; onEditOrder: (order: Order) => void; isMobile: boolean; selectedOrders: string[]; onSelectOrder: (orderNumber: string) => void; isSelectionMode: boolean; isCollapsed: boolean; onToggleCollapse: () => void; }> = ({ partyName, data, onToggleExpand, expandedOrderNumber, children, onProcessOrder, onDeleteOrder, onEditOrder, isMobile, selectedOrders, onSelectOrder, isSelectionMode, isCollapsed, onToggleCollapse }) => {
+const PartyGroup: React.FC<{ partyName: string; data: any; onToggleExpand: (order: Order) => void; expandedOrderNumber: string | null; children: React.ReactNode; onProcessOrder: (order: Order) => void; onDeleteOrder: (order: Order) => void; onEditOrder: (order: Order) => void; isMobile: boolean; selectedOrders: string[]; onSelectOrder: (orderNumber: string) => void; isSelectionMode: boolean; isCollapsed: boolean; onToggleCollapse: () => void; }> = ({ partyName, data, onToggleExpand, expandedOrderNumber, children, onProcessOrder, onDeleteOrder, onEditOrder, isMobile, selectedOrders, onSelectOrder, isSelectionMode, isCollapsed, onToggleCollapse }) => {
     const totalQty = data.orders.reduce((sum, order) => sum + order.totalQuantity, 0);
     const firstLetter = partyName.charAt(0).toUpperCase();
-
-    const uniqueStyleColorPairs = useMemo(() => {
-        if (!data || !data.orders) return [];
-        const pairs = new Set<string>();
-        data.orders.forEach(order => {
-            order.items.forEach(item => {
-                if (item.fullItemData) {
-                    const style = item.fullItemData.Style;
-                    const color = item.fullItemData.Color;
-                    if (style && color) {
-                        pairs.add(`${style}-${color}`);
-                    }
-                }
-            });
-        });
-        return Array.from(pairs).sort();
-    }, [data]);
 
     const headerButtonStyle: React.CSSProperties = {
         ...styles.cardHeader,
@@ -823,11 +806,6 @@ const PartyGroup: React.FC<{ partyName: string; data: { orderCount: number; orde
                         <div style={styles.mobilePartyMeta}>
                             {data.orderCount} Orders • {totalQty} Qty
                         </div>
-                        {isCollapsed && uniqueStyleColorPairs.length > 0 && (
-                            <div style={styles.stylePreview}>
-                                {uniqueStyleColorPairs.slice(0, 3).join(' / ')}{uniqueStyleColorPairs.length > 3 ? '...' : ''}
-                            </div>
-                        )}
                     </div>
                     <div style={styles.mobileChevron}>
                          <ChevronIcon collapsed={isCollapsed} />
@@ -839,11 +817,6 @@ const PartyGroup: React.FC<{ partyName: string; data: { orderCount: number; orde
             <div style={styles.cardInfo}>
                 <span style={styles.cardTitle}>{partyName}</span>
                 <span style={styles.cardSubTitle}>{data.orderCount} Orders | Total Qty: {totalQty}</span>
-                 {isCollapsed && uniqueStyleColorPairs.length > 0 && (
-                    <div style={styles.stylePreview}>
-                        {uniqueStyleColorPairs.slice(0, 5).join(' / ')}{uniqueStyleColorPairs.length > 5 ? '...' : ''}
-                    </div>
-                )}
                 <ChevronIcon collapsed={isCollapsed} />
             </div>
         );
@@ -1791,12 +1764,12 @@ export const PendingOrders = ({ onNavigate }) => {
     }, [orders, searchTerm, sortConfig, activeTagFilter]);
 
     const summarizedData = useMemo(() => {
-        return filteredAndSortedOrders.reduce((acc: SummarizedData, order) => {
+        return filteredAndSortedOrders.reduce((acc, order) => {
             if (!acc[order.partyName]) { acc[order.partyName] = { orderCount: 0, orders: [] }; }
             acc[order.partyName].orderCount += 1;
             acc[order.partyName].orders.push(order);
             return acc;
-        }, {} as SummarizedData);
+        }, {});
     }, [filteredAndSortedOrders]);
 
     const partyNamesInOrder = useMemo(() => {
@@ -1821,13 +1794,13 @@ export const PendingOrders = ({ onNavigate }) => {
 
     // --- Command Center Logic ---
     const parties = useMemo(() => {
-        return filteredAndSortedOrders.reduce((acc: Parties, order) => {
+        return filteredAndSortedOrders.reduce((acc, order) => {
             if (!acc[order.partyName]) {
                 acc[order.partyName] = 0;
             }
             acc[order.partyName]++;
             return acc;
-        }, {} as Parties);
+        }, {});
     }, [filteredAndSortedOrders]);
 
     const ordersForMiddlePanel = useMemo(() => {
@@ -1942,7 +1915,7 @@ export const PendingOrders = ({ onNavigate }) => {
                                 onClick={() => handleSelectParty(partyName)}
                             >
                                 <span style={styles.partyNameText}>{partyName}</span>
-                                <span style={styles.partyCountBadge}>{count as React.ReactNode}</span>
+                                <span style={styles.partyCountBadge}>{count}</span>
                             </button>
                         ))}
                     </div>
@@ -2145,6 +2118,28 @@ export const PendingOrders = ({ onNavigate }) => {
             {isSelectionMode && (
                 <div className="batch-toolbar-enter" style={batchActionToolbarStyle}>
                     <div style={styles.batchIconGroup}>
+                        <button
+                            style={{
+                                ...styles.batchIconBtn,
+                                color: 'var(--indigo)',
+                                transition: 'all 0.3s ease-out',
+                                width: selectedOrders.length === 1 ? '40px' : '0px',
+                                opacity: selectedOrders.length === 1 ? 1 : 0,
+                                padding: selectedOrders.length === 1 ? '8px' : '0px',
+                                marginRight: selectedOrders.length === 1 ? '0' : '-1rem',
+                                overflow: 'hidden',
+                            }}
+                            onClick={() => {
+                                if (selectedOrders.length === 1) {
+                                    const orderToEdit = orders.find(o => o.orderNumber === selectedOrders[0]);
+                                    if (orderToEdit) handleEditOrder(orderToEdit);
+                                }
+                            }}
+                            title="Edit Order"
+                            disabled={selectedOrders.length !== 1}
+                        >
+                            <EditIcon />
+                        </button>
                         <button style={{...styles.batchIconBtn, color: 'var(--green)'}} onClick={handleBatchProcess} title="Forward for Process"><ProcessIcon/></button>
                         <button style={{...styles.batchIconBtn, color: 'var(--orange)'}} onClick={handleBatchExport} title="Export CSV"><ShareIcon/></button>
                         <button style={{...styles.batchIconBtn, color: 'var(--blue)'}} onClick={handleBatchPrint} title="Print Picking List"><PrintIcon/></button>
@@ -2228,15 +2223,15 @@ const styles: { [key: string]: React.CSSProperties } = {
     mobileCardHeader: { width: '100%', display: 'flex', flexDirection: 'row', alignItems: 'center', padding: '1rem', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', transition: 'border-radius 0.3s ease' },
     mobilePartyHeaderContent: { display: 'flex', alignItems: 'center', width: '100%', gap: '1rem' },
     partyAvatar: { width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '600', fontSize: '1.1rem', flexShrink: 0, backgroundColor: 'var(--active-bg)', color: 'var(--brand-color)' },
-    mobilePartyInfo: { display: 'flex', flexDirection: 'column', flex: 1, gap: '2px', overflow: 'hidden' },
+    mobilePartyInfo: { display: 'flex', flexDirection: 'column', flex: 1, gap: '2px' },
     mobilePartyName: { fontWeight: '600', fontSize: '1rem', color: 'var(--dark-grey)' },
     mobilePartyMeta: { fontSize: '0.8rem', color: 'var(--text-color)' },
     mobileChevron: { color: 'var(--text-color)' },
-    cardInfo: { display: 'flex', flexDirection: 'column', gap: '0.25rem', alignItems: 'flex-start', flex: 1, overflow: 'hidden' },
+    cardInfo: { display: 'flex', flexDirection: 'column', gap: '0.25rem', alignItems: 'flex-start' },
     cardTitle: { fontSize: '1.1rem', fontWeight: 600, color: 'var(--dark-grey)' },
     cardSubTitle: { fontSize: '0.85rem', color: 'var(--text-color)', fontWeight: 500 },
     cardDetails: { padding: '0 0 1rem', display: 'flex', flexDirection: 'column' },
-    stylePreview: { fontSize: '0.8rem', color: 'var(--text-color)', marginTop: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+    mobileDivider: { display: 'none' },
     
     // Animation Wrappers - using grid for smoother animations
     collapsibleContainer: {
@@ -2302,7 +2297,8 @@ const styles: { [key: string]: React.CSSProperties } = {
     },
     batchIconGroup: {
         display: 'flex',
-        gap: '1rem'
+        gap: '1rem',
+        alignItems: 'center',
     },
     batchIconBtn: {
         background: 'transparent',
@@ -2356,8 +2352,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     
     // Refined Hierarchy Styles
     cardTopRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.25rem' },
-    cardPartyName: { fontSize: '1.1rem', fontWeight: 700, color: 'var(--dark-grey)', margin: 0, lineHeight: 1.2, flex: 1, paddingRight: '0.5rem', display: 'flex', alignItems: 'center' },
-    cardTotalQuantityBadge: { fontSize: '0.9rem', fontWeight: 700, color: 'var(--brand-color)', backgroundColor: 'var(--active-bg)', padding: '3px 8px', borderRadius: '6px', marginRight: '0.75rem', minWidth: '30px', textAlign: 'center' },
+    cardPartyName: { fontSize: '1.1rem', fontWeight: 700, color: 'var(--dark-grey)', margin: 0, lineHeight: 1.2, flex: 1, paddingRight: '0.5rem' },
     
     cardSecondRow: { display: 'grid', gridTemplateColumns: '1fr auto', gap: '1rem', alignItems: 'start' },
     stylePreviewInline: { fontSize: '0.85rem', color: 'var(--text-color)', textAlign: 'left', fontWeight: 500, lineHeight: 1.4 },
@@ -2366,7 +2361,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     cardOrderNumber: { fontFamily: 'monospace', fontWeight: 700, color: 'var(--brand-color)', backgroundColor: 'var(--active-bg)', padding: '2px 6px', borderRadius: '4px', fontSize: '0.8rem' },
     cardTime: { fontSize: '0.75rem', color: 'var(--text-color)' },
     
-    cardFooterRow: { display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginTop: '0.5rem', paddingTop: '0.5rem' },
+    cardFooterRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem', paddingTop: '0.5rem' },
     metricGroup: { display: 'flex', gap: '1rem' },
     iconMetric: { display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.9rem', fontWeight: 600, color: 'var(--dark-grey)' },
     statusIconGroup: { display: 'flex', gap: '0.75rem' },
