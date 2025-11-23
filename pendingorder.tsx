@@ -1,6 +1,9 @@
 
 
 
+
+
+
 import React, { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import firebase from 'firebase/compat/app';
@@ -789,9 +792,27 @@ const PartyGroup: React.FC<{ partyName: string; data: any; onToggleExpand: (orde
     const totalQty = data.orders.reduce((sum, order) => sum + order.totalQuantity, 0);
     const firstLetter = partyName.charAt(0).toUpperCase();
 
+    const uniqueStyleColors = useMemo(() => {
+        const styleColorSet = new Set<string>();
+        data.orders.forEach(order => {
+            (order.items || []).forEach(item => {
+                const style = item.fullItemData.Style;
+                const color = item.fullItemData.Color;
+                if (style && color) {
+                    styleColorSet.add(`${style} - ${color}`);
+                }
+            });
+        });
+        return Array.from(styleColorSet).sort();
+    }, [data.orders]);
+
     const headerButtonStyle: React.CSSProperties = {
         ...styles.cardHeader,
         borderBottom: isCollapsed ? 'none' : '1px solid var(--skeleton-bg)',
+        height: 'auto',
+        alignItems: 'flex-start',
+        paddingTop: '1rem',
+        paddingBottom: '1rem',
     };
     
     const renderHeader = () => {
@@ -804,6 +825,11 @@ const PartyGroup: React.FC<{ partyName: string; data: any; onToggleExpand: (orde
                         <div style={styles.mobilePartyMeta}>
                             {data.orderCount} Orders • {totalQty} Qty
                         </div>
+                        {isCollapsed && uniqueStyleColors.length > 0 && (
+                            <div style={styles.styleColorTagsContainer}>
+                                {uniqueStyleColors.map(sc => <span key={sc} style={styles.styleColorTag}>{sc}</span>)}
+                            </div>
+                        )}
                     </div>
                     <div style={styles.mobileChevron}>
                          <ChevronIcon collapsed={isCollapsed} />
@@ -812,11 +838,19 @@ const PartyGroup: React.FC<{ partyName: string; data: any; onToggleExpand: (orde
             );
         }
         return (
-            <div style={styles.cardInfo}>
-                <span style={styles.cardTitle}>{partyName}</span>
-                <span style={styles.cardSubTitle}>{data.orderCount} Orders | Total Qty: {totalQty}</span>
+            <>
+                <div style={styles.cardInfo}>
+                    <span style={styles.cardTitle}>{partyName}</span>
+                    <span style={styles.cardSubTitle}>{data.orderCount} Orders | Total Qty: {totalQty}</span>
+                    {isCollapsed && uniqueStyleColors.length > 0 && (
+                        <div style={styles.styleColorTagsContainer}>
+                            {uniqueStyleColors.slice(0, 10).map(sc => <span key={sc} style={styles.styleColorTag}>{sc}</span>)}
+                            {uniqueStyleColors.length > 10 && <span style={styles.styleColorTag}>+{uniqueStyleColors.length - 10} more</span>}
+                        </div>
+                    )}
+                </div>
                 <ChevronIcon collapsed={isCollapsed} />
-            </div>
+            </>
         );
     };
 
@@ -2172,7 +2206,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     mobilePartyName: { fontWeight: '600', fontSize: '1rem', color: 'var(--dark-grey)' },
     mobilePartyMeta: { fontSize: '0.8rem', color: 'var(--text-color)' },
     mobileChevron: { color: 'var(--text-color)' },
-    cardInfo: { display: 'flex', flexDirection: 'column', gap: '0.25rem', alignItems: 'flex-start' },
+    cardInfo: { display: 'flex', flexDirection: 'column', gap: '0.25rem', alignItems: 'flex-start', flex: 1 },
     cardTitle: { fontSize: '1.1rem', fontWeight: 600, color: 'var(--dark-grey)' },
     cardSubTitle: { fontSize: '0.85rem', color: 'var(--text-color)', fontWeight: 500 },
     cardDetails: { padding: '0 0 1rem', display: 'flex', flexDirection: 'column' },
@@ -2409,4 +2443,20 @@ const styles: { [key: string]: React.CSSProperties } = {
     recommendationsContainer: { marginTop: '1rem', overflow: 'hidden', position: 'relative', width: '100%', maskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)', WebkitMaskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)', padding: '0.5rem 0', height: '54px' },
     scrollingTrack: { display: 'flex', animation: 'scrollLeft 30s linear infinite', },
     recommendationBubble: { padding: '0.5rem 1rem', border: 'none', borderRadius: '20px', fontSize: '0.9rem', fontWeight: 600, marginRight: '0.75rem', whiteSpace: 'nowrap', transition: 'transform 0.2s ease' },
+    styleColorTagsContainer: {
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: '4px',
+        paddingTop: '8px',
+        maxWidth: '100%',
+    },
+    styleColorTag: {
+        backgroundColor: 'var(--light-grey)',
+        color: 'var(--text-color)',
+        padding: '3px 8px',
+        borderRadius: '12px',
+        fontSize: '0.7rem',
+        fontWeight: 500,
+        whiteSpace: 'nowrap',
+    },
 };
