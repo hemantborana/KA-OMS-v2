@@ -59,9 +59,7 @@ export const ExportMatching: React.FC<ExportMatchingProps> = ({ isOpen, onClose,
                             partyName: order.partyName,
                             orderDate: order.timestamp,
                             items: order.items.map(item => ({
-                                itemName: item.fullItemData.Style,
-                                color: item.fullItemData.Color,
-                                size: item.fullItemData.Size,
+                                barcode: item.fullItemData.Barcode,
                                 quantity: item.quantity,
                             }))
                         };

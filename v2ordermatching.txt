@@ -363,7 +363,7 @@ function createProcessedCopy(templateSheet, orderData) {
 }
 
 /**
- * Match order items with template and fill quantities
+ * Match order items with template and fill quantities using Barcode
  */
 function matchAndFillQuantities(processedSheet, items) {
   try {
@@ -371,34 +371,39 @@ function matchAndFillQuantities(processedSheet, items) {
     const templateData = sheet.getDataRange().getValues();
     
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('MATCHING DEBUG INFO');
+    console.log('MATCHING DEBUG INFO (Barcode)');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('Template has', templateData.length, 'rows');
     
     // Column indices (0-based)
-    const styleCol = 7;    // H - Style/Item Name (column H = index 7)
-    const colorCol = 5;    // F - Color (column F = index 5)
-    const sizeCol = 10;    // K - Size (column K = index 10)
+    const barcodeCol = 1;  // B - Barcode (column B = index 1)
     const qtyCol = 14;     // O - Order Qty (column O = index 14)
     
-    console.log('Column mapping: Style=H(7), Color=F(5), Size=K(10), Qty=O(14)');
+    console.log('Column mapping: Barcode=B(1), Qty=O(14)');
     
-    // Consolidate orders (combine same item/color/size)
+    // Create a map of barcodes to row index for faster lookup
+    const barcodeMap = new Map();
+    for (let i = 0; i < templateData.length; i++) {
+        const row = templateData[i];
+        if (row && row.length > barcodeCol) {
+            const barcode = String(row[barcodeCol] || '').trim();
+            if (barcode) {
+                barcodeMap.set(barcode, i); // store 0-based row index
+            }
+        }
+    }
+    console.log('Created barcode map with', barcodeMap.size, 'entries');
+
+    // Consolidate orders (combine same barcode)
     const consolidated = {};
     for (const item of items) {
-      // Normalize order item values - remove leading/trailing spaces and underscores
-      const normalizedItemName = String(item.itemName || '').trim().replace(/^[_\s]+|[_\s]+$/g, '');
-      const normalizedColor = String(item.color || '').trim().replace(/^[_\s]+|[_\s]+$/g, '');
-      const normalizedSize = String(item.size || '').trim().replace(/^[_\s]+|[_\s]+$/g, '');
-      
-      const key = `${normalizedItemName}|${normalizedColor}|${normalizedSize}`.toLowerCase();
+      if (!item.barcode) continue;
+      const key = String(item.barcode).trim();
       if (consolidated[key]) {
         consolidated[key].quantity += item.quantity;
       } else {
         consolidated[key] = {
-          itemName: normalizedItemName,
-          color: normalizedColor,
-          size: normalizedSize,
+          barcode: key,
           quantity: item.quantity
         };
       }
@@ -408,61 +413,32 @@ function matchAndFillQuantities(processedSheet, items) {
     console.log('Items to match:');
     for (const key in consolidated) {
       const item = consolidated[key];
-      console.log(`  - ${item.itemName} | ${item.color} | ${item.size} | Qty: ${item.quantity}`);
+      console.log(`  - Barcode: [${item.barcode}] | Qty: ${item.quantity}`);
     }
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     
     let matched = 0;
     const unmatched = [];
     
-    // Match with template
+    // Match with template using the map
     for (const key in consolidated) {
       const orderItem = consolidated[key];
-      let found = false;
-      
-      console.log(`\nSearching for: ${orderItem.itemName} | ${orderItem.color} | ${orderItem.size}`);
-      
-      for (let j = 0; j < templateData.length; j++) {
-        const tRow = templateData[j];
+      const orderBarcode = orderItem.barcode;
+
+      if (barcodeMap.has(orderBarcode)) {
+        const rowIndex = barcodeMap.get(orderBarcode);
+        const currentQty = Number(templateData[rowIndex][qtyCol]) || 0;
+        const newQty = currentQty + orderItem.quantity;
         
-        // Skip invalid rows
-        if (!tRow || tRow.length <= Math.max(styleCol, colorCol, sizeCol, qtyCol)) {
-          continue;
-        }
+        // Update quantity in the sheet
+        sheet.getRange(rowIndex + 1, qtyCol + 1).setValue(newQty);
         
-        // Get template values and normalize - remove leading/trailing spaces and underscores
-        const tStyle = String(tRow[styleCol] || '').trim().replace(/^[_\s]+|[_\s]+$/g, '').toLowerCase();
-        const tColor = String(tRow[colorCol] || '').trim().replace(/^[_\s]+|[_\s]+$/g, '').toLowerCase();
-        const tSize = String(tRow[sizeCol] || '').trim().replace(/^[_\s]+|[_\s]+$/g, '').toLowerCase();
-        
-        // Debug logging - show first 10 rows for each search
-        if (j < 10) {
-          console.log(`  Row ${j + 1}: [${tStyle}] | [${tColor}] | [${tSize}]`);
-        }
-        
-        // Match item
-        if (tStyle === orderItem.itemName.toLowerCase() && 
-            tColor === orderItem.color.toLowerCase() && 
-            tSize === orderItem.size.toLowerCase()) {
-          
-          // Update quantity
-          const currentQty = Number(tRow[qtyCol]) || 0;
-          const newQty = currentQty + orderItem.quantity;
-          
-          sheet.getRange(j + 1, qtyCol + 1).setValue(newQty);
-          
-          console.log(`✓✓✓ MATCH FOUND at Row ${j + 1}: ${orderItem.itemName} | ${orderItem.color} | ${orderItem.size} → Qty: ${newQty}`);
-          matched++;
-          found = true;
-          break;
-        }
-      }
-      
-      // Track unmatched items
-      if (!found) {
-        const unmatchedLabel = `${orderItem.itemName} | ${orderItem.color} | ${orderItem.size} (Qty: ${orderItem.quantity})`;
+        console.log(`✓✓✓ MATCH FOUND for barcode [${orderBarcode}] at Row ${rowIndex + 1} → New Qty: ${newQty}`);
+        matched++;
+      } else {
+        const unmatchedLabel = `Barcode: [${orderBarcode}] (Qty: ${orderItem.quantity})`;
         unmatched.push(unmatchedLabel);
-        console.log('✗✗✗ NO MATCH FOUND:', unmatchedLabel);
+        console.log('✗✗✗ NO MATCH FOUND for', unmatchedLabel);
       }
     }
     
@@ -478,34 +454,14 @@ function matchAndFillQuantities(processedSheet, items) {
       console.log('Unmatched items:');
       unmatched.forEach(item => console.log('  -', item));
       
-      // Collect debug info for error email
-      const templateSample = [];
-      for (let i = 0; i < Math.min(10, templateData.length); i++) {
-        const row = templateData[i];
-        if (row && row.length > Math.max(styleCol, colorCol, sizeCol)) {
-          const style = String(row[styleCol] || '').trim().replace(/^[_\s]+|[_\s]+$/g, '');
-          const color = String(row[colorCol] || '').trim().replace(/^[_\s]+|[_\s]+$/g, '');
-          const size = String(row[sizeCol] || '').trim().replace(/^[_\s]+|[_\s]+$/g, '');
-          if (style || color || size) {
-            templateSample.push({
-              rowNum: i + 1,
-              style: style,
-              color: color,
-              size: size
-            });
-          }
-        }
-      }
-      
       // Send detailed error email with unmatched items
       const debugInfo = {
         items: Object.values(consolidated),
-        templateSample: templateSample,
         unmatched: unmatched
       };
       
       sendErrorEmail(
-        `${unmatched.length} item(s) could not be matched in template`,
+        `${unmatched.length} item(s) could not be matched by barcode`,
         debugInfo
       );
     }
@@ -513,7 +469,7 @@ function matchAndFillQuantities(processedSheet, items) {
     
     return { matched, unmatched };
   } catch (err) {
-    throw new Error('Failed to match quantities: ' + err.message);
+    throw new Error('Failed to match quantities by barcode: ' + err.message);
   }
 }
 
@@ -1141,14 +1097,7 @@ function sendErrorEmail(errorMsg, debugInfo = null) {
       if (debugInfo.items) {
         body += `\nItems to Match (${debugInfo.items.length}):\n`;
         debugInfo.items.forEach((item, idx) => {
-          body += `  ${idx + 1}. Item: [${item.itemName}] | Color: [${item.color}] | Size: [${item.size}] | Qty: ${item.quantity}\n`;
-        });
-      }
-      
-      if (debugInfo.templateSample) {
-        body += `\nTemplate Sample (First 10 rows with data):\n`;
-        debugInfo.templateSample.forEach((row, idx) => {
-          body += `  Row ${row.rowNum}: Style=[${row.style}] | Color=[${row.color}] | Size=[${row.size}]\n`;
+          body += `  ${idx + 1}. Barcode: [${item.barcode}] | Qty: ${item.quantity}\n`;
         });
       }
       
