@@ -1,4 +1,6 @@
 
+
+
 import React, { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import firebase from 'firebase/compat/app';
@@ -16,6 +18,7 @@ const EditIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height
 const ProcessIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>;
 const NoteIcon = (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M15.5 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8.5L15.5 3z"></path><polyline points="14 3 14 9 20 9"></polyline></svg>;
 const BoxIcon = (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>;
+const BoxesIcon = (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" {...props}><path d="M16.2 7.8 22 4.9V14l-5.8 2.9L10.4 14l5.8-2.9zM5.8 16.2 11.6 19.1V9.2L5.8 6.3 0 9.2v9.8l5.8-2.9zM10.4 9.2 16.2 12l-5.8 2.9-5.8-2.9 5.8-2.9z"/></svg>;
 const PrintIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>;
 const FilterIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>;
 const CheckSquareIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>;
@@ -694,7 +697,10 @@ const DetailedOrderCard: React.FC<{
         <div style={getCardStyle()} onClick={handleCardClick} onContextMenu={(e) => e.preventDefault()}>
             {/* Top Row: Party Name & Chevron */}
             <div style={styles.cardTopRow}>
-                <h3 style={styles.cardPartyName}>{order.partyName}</h3>
+                <h3 style={styles.cardPartyName}>
+                    <span style={styles.cardQtyPrefix}>{order.totalQuantity}</span>
+                    {order.partyName}
+                </h3>
                 <div style={styles.checkboxContainer}>
                     <button style={styles.checkboxButton} onClick={(e) => { e.stopPropagation(); onSelectOrder(order.orderNumber); }}>
                         {isSelected ? <CheckSquareIcon /> : <SquareIcon />}
@@ -724,15 +730,12 @@ const DetailedOrderCard: React.FC<{
             {/* Footer: Icons/Metrics */}
             <div style={styles.cardFooterRow}>
                 <div style={styles.metricGroup}>
-                    <div style={styles.iconMetric} title="Total Quantity">
-                        <BoxIcon /> <span>{order.totalQuantity}</span>
-                    </div>
                 </div>
                 
                 {/* Status Icons Grouped at the end */}
                 <div style={styles.statusIconGroup}>
                     {order.orderNote && <NoteIcon style={{color: 'var(--orange)', fill: 'var(--orange)', fillOpacity: 0.2}} title="Has Note" />}
-                    {order.totalQuantity > 50 && <BoxIcon style={{color: 'var(--blue)', fill: 'var(--blue)', fillOpacity: 0.2}} title="High Volume" />}
+                    {order.totalQuantity > 50 && <BoxesIcon style={{color: 'var(--blue)', fill: 'var(--blue)', fillOpacity: 0.2}} title="High Volume" />}
                     {isOverdue && <AlertCircleIcon style={{color: 'var(--red)', fill: 'var(--red)', fillOpacity: 0.2}} title="Overdue" />}
                 </div>
             </div>
@@ -1004,26 +1007,73 @@ const RecommendedProducts = () => {
     ];
     // Duplicate for seamless scroll
     const scrollingItems = [...recommendedStyles, ...recommendedStyles];
+    const pastelColors = [
+        { bg: '#E6F7FF', text: '#0050B3' }, // Blue
+        { bg: '#F6FFED', text: '#389E0D' },  // Green
+        { bg: '#FFF7E6', text: '#D46B08' }, // Orange
+        { bg: '#FCF4FF', text: '#722ED1' }, // Purple
+        { bg: '#FFF1F0', text: '#CF1322' },  // Red
+        { bg: '#E6FFFB', text: '#08979C' }, // Cyan
+    ];
 
     return (
         <div style={styles.recommendationsContainer}>
             <div style={styles.scrollingTrack}>
-                {scrollingItems.map((style, index) => (
-                    <div key={index} style={styles.recommendationBubble}>
-                        {style}
-                    </div>
-                ))}
+                {scrollingItems.map((style, index) => {
+                    const colorScheme = pastelColors[index % pastelColors.length];
+                    const bubbleStyle: React.CSSProperties = {
+                        ...styles.recommendationBubble,
+                        backgroundColor: colorScheme.bg,
+                        color: colorScheme.text,
+                        border: `1px solid ${colorScheme.text}20`
+                    };
+                    return (
+                        <div key={index} style={bubbleStyle}>
+                            {style}
+                        </div>
+                    );
+                })}
             </div>
         </div>
     );
 };
 
-const EditBottomSheet: React.FC<{ order: Order | null; onClose: () => void; }> = ({ order, onClose }) => {
+interface EditBottomSheetProps {
+    order: Order | null;
+    onClose: () => void;
+    allParties: string[];
+    onUpdateOrder: (orderNumber: string, updates: Partial<Order>) => void;
+}
+
+const EditBottomSheet: React.FC<EditBottomSheetProps> = ({ order, onClose, allParties, onUpdateOrder }) => {
     const [isClosing, setIsClosing] = useState(false);
     const [isSearchFocused, setIsSearchFocused] = useState(false);
     const sheetRef = useRef<HTMLDivElement>(null);
     const dragStartPos = useRef<number | null>(null);
     const initialSheetHeight = useRef<number>(0);
+
+    const [isEditingPartyName, setIsEditingPartyName] = useState(false);
+    const [editedPartyName, setEditedPartyName] = useState('');
+    const [partyNameSuggestions, setPartyNameSuggestions] = useState<string[]>([]);
+    const partyNameInputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        if (order) {
+            setEditedPartyName(order.partyName);
+            setIsEditingPartyName(false);
+            setIsClosing(false); 
+            document.body.style.overflow = 'hidden';
+        }
+        return () => {
+            document.body.style.overflow = 'auto';
+        };
+    }, [order]);
+    
+    useEffect(() => {
+        if (isEditingPartyName && partyNameInputRef.current) {
+            partyNameInputRef.current.focus();
+        }
+    }, [isEditingPartyName]);
 
     const handleClose = useCallback(() => {
         setIsClosing(true);
@@ -1031,6 +1081,26 @@ const EditBottomSheet: React.FC<{ order: Order | null; onClose: () => void; }> =
             onClose();
         }, 300); // Animation duration
     }, [onClose]);
+    
+    const handleSaveChanges = () => {
+        if (order && order.partyName !== editedPartyName) {
+            onUpdateOrder(order.orderNumber, { partyName: editedPartyName });
+        }
+        handleClose();
+    };
+
+    const handlePartyNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        setEditedPartyName(value);
+        const filtered = allParties.filter(p => p.toLowerCase().includes(value.toLowerCase()));
+        setPartyNameSuggestions(filtered);
+    };
+    
+    const handleSuggestionClick = (partyName: string) => {
+        setEditedPartyName(partyName);
+        setPartyNameSuggestions([]);
+        setIsEditingPartyName(false);
+    };
 
     const handleTouchStart = (e: React.TouchEvent) => {
         if (!sheetRef.current) return;
@@ -1058,21 +1128,13 @@ const EditBottomSheet: React.FC<{ order: Order | null; onClose: () => void; }> =
             handleClose();
         } else {
             // Snap back to open position
-            sheetRef.current.style.transition = 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)';
-            sheetRef.current.style.transform = 'translateY(0px)';
+            if (sheetRef.current) {
+                sheetRef.current.style.transition = 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)';
+                sheetRef.current.style.transform = 'translateY(0px)';
+            }
         }
         dragStartPos.current = null;
     };
-
-    useEffect(() => {
-        if (order) {
-            setIsClosing(false); // Reset closing state when a new order is passed
-            document.body.style.overflow = 'hidden';
-        }
-        return () => {
-            document.body.style.overflow = 'auto';
-        };
-    }, [order]);
     
     if (!order) return null;
 
@@ -1106,18 +1168,47 @@ const EditBottomSheet: React.FC<{ order: Order | null; onClose: () => void; }> =
                         <CloseIcon />
                     </button>
                     <h3 style={styles.sheetTitle}>Editing Order #{order.orderNumber}</h3>
-                    <button style={styles.sheetConfirmButton} aria-label="Confirm Edit">
+                    <button style={styles.sheetConfirmButton} onClick={handleSaveChanges} aria-label="Confirm Edit">
                         <CheckIcon />
                     </button>
                 </div>
                 <div style={styles.bottomSheetBody}>
-                    <h2 style={styles.editSheetPartyName}>{order.partyName}</h2>
+                     {isEditingPartyName ? (
+                        <div style={styles.partyNameEditContainer} onBlur={(e) => {
+                            if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                                setIsEditingPartyName(false);
+                                setPartyNameSuggestions([]);
+                            }
+                        }}>
+                            <input
+                                ref={partyNameInputRef}
+                                type="text"
+                                value={editedPartyName}
+                                onChange={handlePartyNameChange}
+                                style={styles.partyNameInput}
+                                placeholder="Enter party name"
+                            />
+                            {partyNameSuggestions.length > 0 && (
+                                <div style={styles.partyNameSuggestions}>
+                                    {partyNameSuggestions.map(p => (
+                                        <div key={p} onMouseDown={(e) => e.preventDefault()} onClick={() => handleSuggestionClick(p)} style={styles.suggestionItem}>
+                                            {p}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        <h2 style={styles.editSheetPartyName} onClick={() => {
+                            setIsEditingPartyName(true);
+                            setPartyNameSuggestions(allParties);
+                        }}>
+                            {editedPartyName}
+                        </h2>
+                    )}
                     <div style={styles.editSheetInfoBubbles}>
                         <div style={{...styles.infoBubble, backgroundColor: 'var(--active-bg)', color: 'var(--brand-color)'}}>
                             <CalendarIcon /> {formatDate(order.timestamp)}
-                        </div>
-                         <div style={{...styles.infoBubble, backgroundColor: 'var(--gray-5)', color: 'var(--text-color)'}}>
-                            #{order.orderNumber}
                         </div>
                     </div>
                     <div style={{...styles.editSheetSearchContainer, ...(isSearchFocused && styles.editSheetSearchContainerActive)}}>
@@ -1171,6 +1262,7 @@ export const PendingOrders = ({ onNavigate }) => {
     const [globalTags, setGlobalTags] = useState<string[]>([]);
     const [deleteModalState, setDeleteModalState] = useState({ isOpen: false, isClosing: false, orders: [], reason: '', isLoading: false });
     const [editingOrder, setEditingOrder] = useState<Order | null>(null);
+    const [allParties, setAllParties] = useState<string[]>([]);
 
 
     const isSelectionMode = selectedOrders.length > 0;
@@ -1194,6 +1286,17 @@ export const PendingOrders = ({ onNavigate }) => {
         const tagsListener = tagsRef.on('value', (snapshot) => {
             const data = snapshot.val();
             setGlobalTags(data ? Object.keys(data) : []);
+        });
+
+        const partyRef = firebase.database().ref('PartyData');
+        const partyListener = partyRef.on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                const partyList = Object.values(data).map((p: any) => p.name).filter(Boolean);
+                setAllParties([...new Set(partyList)]);
+            } else {
+                setAllParties([]);
+            }
         });
 
         const loadStockData = async () => {
@@ -1248,6 +1351,7 @@ export const PendingOrders = ({ onNavigate }) => {
             window.removeEventListener('resize', handleResize);
             ordersRef.off('value', listener);
             tagsRef.off('value', tagsListener);
+            partyRef.off('value', partyListener);
         }
     }, []);
 
@@ -1436,6 +1540,28 @@ export const PendingOrders = ({ onNavigate }) => {
     const handleEditOrder = useCallback((order: Order) => {
         setEditingOrder(order);
     }, []);
+
+    const handleUpdateOrderDetails = async (orderNumber: string, updates: Partial<Order>) => {
+        const newEvent = {
+            timestamp: new Date().toISOString(),
+            event: 'System',
+            details: `Order details updated. Changed: ${Object.keys(updates).join(', ')}.`
+        };
+        
+        const orderRef = firebase.database().ref(`${PENDING_ORDERS_REF}/${orderNumber}`);
+        const snapshot = await orderRef.once('value');
+        const order = snapshot.val();
+        
+        const updatedHistory = [...(order.history || []), newEvent];
+        
+        try {
+            await orderRef.update({ ...updates, history: updatedHistory });
+            showToast('Order updated successfully!', 'success');
+        } catch (e) {
+            console.error('Failed to update order:', e);
+            showToast('Failed to update order.', 'error');
+        }
+    };
     
     const handleProcessFullOrder = useCallback((order: Order) => {
         if (window.confirm(`Process all items for order ${order.orderNumber}?`)) {
@@ -1852,7 +1978,12 @@ export const PendingOrders = ({ onNavigate }) => {
             />, document.body)}
             {createPortal(<CustomTagModal isOpen={isCustomTagModalOpen} onClose={() => setIsCustomTagModalOpen(false)} onSave={handleSaveCustomTag} />, document.body)}
             {createPortal(<AddNoteModal isOpen={isNoteModalOpen} onClose={() => setIsNoteModalOpen(false)} onSave={handleSaveNote} />, document.body)}
-            <EditBottomSheet order={editingOrder} onClose={() => setEditingOrder(null)} />
+            <EditBottomSheet 
+                order={editingOrder} 
+                onClose={() => setEditingOrder(null)} 
+                allParties={allParties}
+                onUpdateOrder={handleUpdateOrderDetails}
+            />
             <style>{`
                 .fade-in-slide { animation: fadeInSlide 0.3s ease-out forwards; }
                 @keyframes fadeInSlide {
@@ -1876,6 +2007,7 @@ export const PendingOrders = ({ onNavigate }) => {
                     to { opacity: 1; transform: translateY(0); }
                 }
                 .custom-dropdown-item:hover { background-color: var(--active-bg); }
+                .suggestion-item:hover { background-color: var(--active-bg); }
                 @keyframes dropdown-in {
                     from { transform: translateY(10px) scale(0.95); opacity: 0; }
                     to { transform: translateY(0) scale(1); opacity: 1; }
@@ -2164,8 +2296,18 @@ const styles: { [key: string]: React.CSSProperties } = {
     
     // Refined Hierarchy Styles
     cardTopRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.25rem' },
-    cardPartyName: { fontSize: '1.1rem', fontWeight: 700, color: 'var(--dark-grey)', margin: 0, lineHeight: 1.2, flex: 1, paddingRight: '0.5rem' },
-    
+    cardPartyName: { fontSize: '1.1rem', fontWeight: 700, color: 'var(--dark-grey)', margin: 0, lineHeight: 1.2, flex: 1, paddingRight: '0.5rem', display: 'flex', alignItems: 'center' },
+    cardQtyPrefix: {
+        backgroundColor: 'var(--light-grey)',
+        color: 'var(--text-color)',
+        padding: '2px 8px',
+        borderRadius: '6px',
+        fontSize: '0.9rem',
+        fontWeight: 600,
+        marginRight: '0.75rem',
+        display: 'inline-block',
+        verticalAlign: 'middle',
+    },
     cardSecondRow: { display: 'grid', gridTemplateColumns: '1fr auto', gap: '1rem', alignItems: 'start' },
     stylePreviewInline: { fontSize: '0.85rem', color: 'var(--text-color)', textAlign: 'left', fontWeight: 500, lineHeight: 1.4 },
     cardMetaRight: { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' },
@@ -2254,13 +2396,17 @@ const styles: { [key: string]: React.CSSProperties } = {
     bottomSheetBody: { flex: 1, overflowY: 'auto', padding: '0 16px 16px' },
 
     // Edit Bottom Sheet Content
-    editSheetPartyName: { fontSize: '1.75rem', fontWeight: 700, color: 'var(--dark-grey)', marginBottom: '0.5rem', textAlign: 'left' },
+    editSheetPartyName: { fontSize: '1.75rem', fontWeight: 700, color: 'var(--dark-grey)', marginBottom: '0.5rem', textAlign: 'left', padding: '8px 12px', margin: '0 -12px', borderRadius: '8px', cursor: 'text', transition: 'background-color 0.2s ease' },
+    partyNameEditContainer: { position: 'relative', fontSize: '1.75rem', fontWeight: 700, color: 'var(--dark-grey)', marginBottom: '0.5rem', textAlign: 'left', padding: '8px 12px', margin: '0 -12px', borderRadius: '8px', backgroundColor: 'var(--light-grey)', border: '1px solid var(--separator-color)' },
+    partyNameInput: { font: 'inherit', color: 'inherit', width: '100%', background: 'transparent', border: 'none', outline: 'none', padding: 0, margin: 0, caretColor: 'var(--brand-color)' },
+    partyNameSuggestions: { position: 'absolute', top: '100%', left: 0, right: 0, backgroundColor: 'var(--card-bg)', border: '1px solid var(--separator-color)', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', maxHeight: '150px', overflowY: 'auto', zIndex: 1200, marginTop: '4px' },
+    suggestionItem: { padding: '10px 16px', cursor: 'pointer', fontSize: '1rem', color: 'var(--dark-grey)' },
     editSheetInfoBubbles: { display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', flexWrap: 'wrap' },
     infoBubble: { padding: '0.4rem 0.8rem', borderRadius: '16px', fontSize: '0.8rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.3rem' },
-    editSheetSearchContainer: { display: 'flex', alignItems: 'center', gap: '0.75rem', backgroundColor: 'var(--light-grey)', padding: '0.75rem 1rem', borderRadius: '12px', border: '1px solid var(--separator-color)', marginBottom: '1rem', transition: 'border-color 0.2s ease, box-shadow 0.2s ease' },
+    editSheetSearchContainer: { display: 'flex', alignItems: 'center', gap: '0.75rem', backgroundColor: 'var(--light-grey)', padding: '0.75rem 1rem', borderRadius: '12px', border: '1px solid transparent', marginBottom: '1rem', transition: 'border-color 0.2s ease, box-shadow 0.2s ease' },
     editSheetSearchContainerActive: { borderColor: 'var(--brand-color)', boxShadow: '0 0 0 3px rgba(0, 122, 255, 0.15)' },
     editSheetSearchInput: { flex: 1, border: 'none', background: 'transparent', outline: 'none', fontSize: '1rem', color: 'var(--dark-grey)' },
-    recommendationsContainer: { marginTop: '1rem', overflow: 'hidden', position: 'relative', width: '100%', maskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)', WebkitMaskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)', },
+    recommendationsContainer: { marginTop: '1rem', overflow: 'hidden', position: 'relative', width: '100%', maskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)', WebkitMaskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)', padding: '0.5rem 0', height: '54px' },
     scrollingTrack: { display: 'flex', animation: 'scrollLeft 30s linear infinite', },
-    recommendationBubble: { padding: '0.5rem 1rem', backgroundColor: 'var(--card-bg)', color: 'var(--dark-grey)', border: 'none', borderRadius: '20px', fontSize: '0.9rem', fontWeight: 500, marginRight: '0.75rem', whiteSpace: 'nowrap', boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)' },
+    recommendationBubble: { padding: '0.5rem 1rem', border: 'none', borderRadius: '20px', fontSize: '0.9rem', fontWeight: 600, marginRight: '0.75rem', whiteSpace: 'nowrap', transition: 'transform 0.2s ease' },
 };
