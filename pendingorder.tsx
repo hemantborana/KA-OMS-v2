@@ -424,6 +424,52 @@ const CustomTagDropdown: React.FC<{
 
 
 // --- COMPONENTS ---
+const ProcessQuantityControl: React.FC<{
+    value: string | number;
+    max: number;
+    onUpdate: (value: string) => void;
+    size?: 'small' | 'default';
+}> = ({ value, max, onUpdate, size = 'default' }) => {
+    const currentValue = Number(value) || 0;
+
+    const handleStep = (step: number) => {
+        const newValue = Math.max(0, Math.min(max, currentValue + step));
+        onUpdate(String(newValue));
+    };
+    
+    const s = useMemo(() => {
+        const base = {
+            button: styles.processQtyButton,
+            input: styles.processQtyInput,
+            container: styles.processQtyContainer,
+        };
+        if (size === 'small') {
+            base.button = { ...base.button, width: '30px', height: '30px', fontSize: '1rem' };
+            base.input = { ...base.input, width: '40px', height: '30px', fontSize: '0.9rem' };
+        } else {
+            base.button = { ...base.button, width: '32px', height: '32px', fontSize: '1.2rem' };
+            base.input = { ...base.input, width: '50px', height: '32px' };
+        }
+        return base;
+    }, [size]);
+
+    return (
+        <div style={s.container}>
+            <button onClick={() => handleStep(-1)} style={{ ...s.button, borderRadius: '6px 0 0 6px' }} aria-label="Decrease quantity">-</button>
+            <input 
+                type="number" 
+                value={value} 
+                onChange={(e) => onUpdate(e.target.value)} 
+                style={s.input} 
+                max={max}
+                min="0"
+                placeholder="0"
+            />
+            <button onClick={() => handleStep(1)} style={{ ...s.button, borderRadius: '0 6px 6px 0' }} aria-label="Increase quantity">+</button>
+        </div>
+    );
+};
+
 const ExpandedPendingView: React.FC<{ order: Order, onProcess, onDelete, isProcessing, processingQty, onQtyChange, stockData, isMobile, onPrint, onAddTag, onRemoveTag, onOpenCustomTagModal, onOpenNoteModal, globalTags }> = ({ order, onProcess, onDelete, isProcessing, processingQty, onQtyChange, stockData, isMobile, onPrint, onAddTag, onRemoveTag, onOpenCustomTagModal, onOpenNoteModal, globalTags }) => {
     const [isHistoryCollapsed, setIsHistoryCollapsed] = useState(true);
     const isProcessable = Object.values(processingQty).some(qty => Number(qty) > 0);
@@ -446,7 +492,7 @@ const ExpandedPendingView: React.FC<{ order: Order, onProcess, onDelete, isProce
                     <th style={{...styles.th, textAlign: 'left'}}>Size</th>
                     <th style={{...styles.th, textAlign: 'center'}}>Stock</th>
                     <th style={{...styles.th, textAlign: 'right'}}>Ordered</th>
-                    <th style={{...styles.th, textAlign: 'right'}}>To Process</th>
+                    <th style={{...styles.th, textAlign: 'center'}}>To Process</th>
                 </tr></thead>
                 <tbody>
                     {order.items.map((item, index) => {
@@ -474,7 +520,11 @@ const ExpandedPendingView: React.FC<{ order: Order, onProcess, onDelete, isProce
                                 </td>
                                 <td style={{...styles.td, textAlign: 'right'}}>{item.quantity}</td>
                                 <td style={{...styles.td, ...styles.tdInput}}>
-                                    <input type="number" style={{...styles.qtyInput, textAlign: 'right'}} value={processingQty[item.id] || ''} onChange={(e) => onQtyChange(item.id, e.target.value, item.quantity)} placeholder="0" max={item.quantity} min="0" />
+                                    <ProcessQuantityControl
+                                        value={processingQty[item.id] || ''}
+                                        max={item.quantity}
+                                        onUpdate={(newValue) => onQtyChange(item.id, newValue, item.quantity)}
+                                    />
                                 </td>
                             </tr>
                         );
@@ -499,7 +549,12 @@ const ExpandedPendingView: React.FC<{ order: Order, onProcess, onDelete, isProce
                         </div>
                         <div style={styles.mobileItemQty}>
                             <div style={styles.mobileQtyLabel}>Ord: {item.quantity}</div>
-                             <input type="number" style={{...styles.qtyInput, width: '60px', padding: '6px'}} value={processingQty[item.id] || ''} onChange={(e) => onQtyChange(item.id, e.target.value, item.quantity)} placeholder="0" max={item.quantity} min="0" />
+                             <ProcessQuantityControl
+                                value={processingQty[item.id] || ''}
+                                max={item.quantity}
+                                onUpdate={(newValue) => onQtyChange(item.id, newValue, item.quantity)}
+                                size="small"
+                             />
                         </div>
                     </div>
                 )
@@ -2036,7 +2091,9 @@ const styles: { [key: string]: React.CSSProperties } = {
     deleteButton: { backgroundColor: 'transparent', color: 'var(--red)', border: '1px solid var(--skeleton-bg)' },
     processButton: { backgroundColor: 'var(--green)', boxShadow: '0 2px 8px rgba(46, 204, 113, 0.3)', minWidth: '120px' },
     processButtonDisabled: { backgroundColor: 'var(--gray-3)', boxShadow: 'none', cursor: 'not-allowed' },
-    
+    processQtyContainer: { display: 'flex', alignItems: 'center', justifyContent: 'flex-end', },
+    processQtyButton: { backgroundColor: 'var(--light-grey)', border: '1px solid var(--skeleton-bg)', color: 'var(--dark-grey)', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background-color 0.2s', lineHeight: 1, },
+    processQtyInput: { textAlign: 'center', border: '1px solid var(--skeleton-bg)', borderLeft: 'none', borderRight: 'none', fontSize: '0.9rem', backgroundColor: 'var(--card-bg)', color: 'var(--dark-grey)', appearance: 'textfield', MozAppearance: 'textfield', WebkitAppearance: 'none', margin: 0, },
     // --- Batch Action Toolbar ---
     batchActionToolbar: {
         backgroundColor: 'var(--glass-bg)',
