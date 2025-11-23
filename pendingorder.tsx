@@ -668,7 +668,7 @@ const DetailedOrderCard: React.FC<{
         if (!order.items) return [];
         return [...new Set(order.items.map(item => item.fullItemData.Style))];
     }, [order.items]);
-    const stylePreview = uniqueStyles.slice(0, 3).join(' / ');
+    const allStyles = uniqueStyles.join(' / ');
 
     const getCardStyle = () => {
         let baseStyle = isExpanded ? styles.detailedOrderCardActive : styles.detailedOrderCard;
@@ -706,7 +706,7 @@ const DetailedOrderCard: React.FC<{
             {/* Second Row: Style Preview Left | Order No & Time Right */}
              <div style={styles.cardSecondRow}>
                  <div style={styles.stylePreviewInline}>
-                     {stylePreview}{uniqueStyles.length > 3 ? '...' : ''}
+                     {allStyles}
                  </div>
                  <div style={styles.cardMetaRight}>
                      <span style={styles.cardOrderNumber}>#{order.orderNumber}</span>
@@ -726,9 +726,6 @@ const DetailedOrderCard: React.FC<{
                 <div style={styles.metricGroup}>
                     <div style={styles.iconMetric} title="Total Quantity">
                         <BoxIcon /> <span>{order.totalQuantity}</span>
-                    </div>
-                    <div style={styles.iconMetric} title="Total Value">
-                         <span style={{fontSize: '1.1em', fontWeight: 'bold', lineHeight: 1}}>₹</span> <span>{order.totalValue?.toLocaleString('en-IN')}</span>
                     </div>
                 </div>
                 
@@ -2170,13 +2167,13 @@ const styles: { [key: string]: React.CSSProperties } = {
     cardPartyName: { fontSize: '1.1rem', fontWeight: 700, color: 'var(--dark-grey)', margin: 0, lineHeight: 1.2, flex: 1, paddingRight: '0.5rem' },
     
     cardSecondRow: { display: 'grid', gridTemplateColumns: '1fr auto', gap: '1rem', alignItems: 'start' },
-    stylePreviewInline: { fontSize: '0.85rem', color: 'var(--text-color)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'left', fontWeight: 500 },
+    stylePreviewInline: { fontSize: '0.85rem', color: 'var(--text-color)', textAlign: 'left', fontWeight: 500, lineHeight: 1.4 },
     cardMetaRight: { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' },
     
     cardOrderNumber: { fontFamily: 'monospace', fontWeight: 700, color: 'var(--brand-color)', backgroundColor: 'var(--active-bg)', padding: '2px 6px', borderRadius: '4px', fontSize: '0.8rem' },
     cardTime: { fontSize: '0.75rem', color: 'var(--text-color)' },
     
-    cardFooterRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.75rem', paddingTop: '0.75rem' },
+    cardFooterRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem', paddingTop: '0.5rem' },
     metricGroup: { display: 'flex', gap: '1rem' },
     iconMetric: { display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.9rem', fontWeight: 600, color: 'var(--dark-grey)' },
     statusIconGroup: { display: 'flex', gap: '0.75rem' },
