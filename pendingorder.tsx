@@ -1,6 +1,7 @@
 
 
 
+
 import React, { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import firebase from 'firebase/compat/app';
@@ -1192,6 +1193,7 @@ const EditBottomSheet: React.FC<EditBottomSheetProps> = ({ order, onClose, allPa
                             }}
                         >
                             <input
+                                id="party-name-editor-input"
                                 ref={partyNameInputRef}
                                 type="text"
                                 value={editedPartyName}
@@ -1210,9 +1212,9 @@ const EditBottomSheet: React.FC<EditBottomSheetProps> = ({ order, onClose, allPa
                             )}
                         </div>
                     ) : (
-                        <h2 style={styles.editSheetPartyName} onClick={() => setIsEditingPartyName(true)}>
+                        <div style={styles.editSheetPartyName} onClick={() => setIsEditingPartyName(true)}>
                             {editedPartyName}
-                        </h2>
+                        </div>
                     )}
                     <div style={styles.editSheetInfoBubbles}>
                         <div style={{...styles.infoBubble, backgroundColor: 'var(--active-bg)', color: 'var(--brand-color)'}}>
@@ -1979,20 +1981,12 @@ export const PendingOrders = ({ onNavigate }) => {
     
     return (
         <div style={styles.container}>
-            {createPortal(<DeleteConfirmationModal
-                state={deleteModalState}
-                setState={setDeleteModalState}
-                onConfirm={handleConfirmDeletion}
-            />, document.body)}
-            {createPortal(<CustomTagModal isOpen={isCustomTagModalOpen} onClose={() => setIsCustomTagModalOpen(false)} onSave={handleSaveCustomTag} />, document.body)}
-            {createPortal(<AddNoteModal isOpen={isNoteModalOpen} onClose={() => setIsNoteModalOpen(false)} onSave={handleSaveNote} />, document.body)}
-            <EditBottomSheet 
-                order={editingOrder} 
-                onClose={() => setEditingOrder(null)} 
-                allParties={allParties}
-                onUpdateOrder={handleUpdateOrderDetails}
-            />
             <style>{`
+                #party-name-editor-input:focus {
+                    border: none !important;
+                    box-shadow: none !important;
+                    outline: none !important;
+                }
                 .fade-in-slide { animation: fadeInSlide 0.3s ease-out forwards; }
                 @keyframes fadeInSlide {
                     from { opacity: 0; transform: translateX(10px); }
@@ -2029,6 +2023,19 @@ export const PendingOrders = ({ onNavigate }) => {
                     to { transform: translateX(-50%); }
                 }
             `}</style>
+            {createPortal(<DeleteConfirmationModal
+                state={deleteModalState}
+                setState={setDeleteModalState}
+                onConfirm={handleConfirmDeletion}
+            />, document.body)}
+            {createPortal(<CustomTagModal isOpen={isCustomTagModalOpen} onClose={() => setIsCustomTagModalOpen(false)} onSave={handleSaveCustomTag} />, document.body)}
+            {createPortal(<AddNoteModal isOpen={isNoteModalOpen} onClose={() => setIsNoteModalOpen(false)} onSave={handleSaveNote} />, document.body)}
+            <EditBottomSheet 
+                order={editingOrder} 
+                onClose={() => setEditingOrder(null)} 
+                allParties={allParties}
+                onUpdateOrder={handleUpdateOrderDetails}
+            />
             <div style={isMobile ? styles.headerCardMobile : styles.headerCard}>
                 <div style={{...styles.headerTop, ...(isMobile && {justifyContent: 'space-between', padding: '0.75rem 0'})}}>
                      {isMobile ? (
@@ -2119,6 +2126,22 @@ export const PendingOrders = ({ onNavigate }) => {
             {isMobile ? renderMobileLayout() : renderDesktopLayout()}
         </div>
     );
+};
+
+const partyNameBaseStyle: React.CSSProperties = {
+    fontSize: '1.75rem',
+    fontWeight: 700,
+    lineHeight: 1.3,
+    fontFamily: "'Inter', sans-serif",
+    color: 'var(--dark-grey)',
+    margin: 0,
+    padding: '8px 0',
+    width: '100%',
+    boxSizing: 'border-box',
+    background: 'transparent',
+    border: 'none',
+    borderRadius: 0,
+    textAlign: 'left',
 };
 
 const styles: { [key: string]: React.CSSProperties } = {
@@ -2394,9 +2417,9 @@ const styles: { [key: string]: React.CSSProperties } = {
     bottomSheetBody: { flex: 1, overflowY: 'auto', padding: '0 16px 16px' },
 
     // Edit Bottom Sheet Content
-    editSheetPartyName: { fontSize: '1.75rem', fontWeight: 700, lineHeight: 1.3, color: 'var(--dark-grey)', margin: 0, padding: '8px 0', width: '100%', boxSizing: 'border-box', cursor: 'text', transition: 'none', borderRadius: 0, textAlign: 'left' },
+    editSheetPartyName: { ...partyNameBaseStyle, cursor: 'text' },
+    partyNameInput: { ...partyNameBaseStyle, outline: 'none' },
     partyNameInputWrapper: { position: 'relative', marginBottom: '0.5rem' },
-    partyNameInput: { fontSize: '1.75rem', fontWeight: 700, lineHeight: 1.3, fontFamily: 'inherit', color: 'var(--dark-grey)', margin: 0, padding: '8px 0', width: '100%', boxSizing: 'border-box', background: 'transparent', border: 'none', outline: 'none', boxShadow: 'none', borderRadius: 0 },
     partyNameSuggestions: { position: 'absolute', top: '100%', left: 0, right: 0, backgroundColor: 'var(--card-bg)', border: '1px solid var(--separator-color)', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', maxHeight: '150px', overflowY: 'auto', zIndex: 1200, marginTop: '4px' },
     suggestionItem: { padding: '10px 16px', cursor: 'pointer', fontSize: '1rem', fontWeight: 400, color: 'var(--dark-grey)' },
     editSheetInfoBubbles: { display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', flexWrap: 'wrap' },
