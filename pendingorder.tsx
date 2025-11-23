@@ -1,9 +1,6 @@
 
 
 
-
-
-
 import React, { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import firebase from 'firebase/compat/app';
@@ -21,7 +18,6 @@ const EditIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height
 const ProcessIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>;
 const NoteIcon = (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M15.5 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8.5L15.5 3z"></path><polyline points="14 3 14 9 20 9"></polyline></svg>;
 const BoxIcon = (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>;
-const BoxesIcon = (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" {...props}><path d="M16.2 7.8 22 4.9V14l-5.8 2.9L10.4 14l5.8-2.9zM5.8 16.2 11.6 19.1V9.2L5.8 6.3 0 9.2v9.8l5.8-2.9zM10.4 9.2 16.2 12l-5.8 2.9-5.8-2.9 5.8-2.9z"/></svg>;
 const PrintIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>;
 const FilterIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>;
 const CheckSquareIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>;
@@ -700,10 +696,7 @@ const DetailedOrderCard: React.FC<{
         <div style={getCardStyle()} onClick={handleCardClick} onContextMenu={(e) => e.preventDefault()}>
             {/* Top Row: Party Name & Chevron */}
             <div style={styles.cardTopRow}>
-                <h3 style={styles.cardPartyName}>
-                    <span style={styles.cardQtyPrefix}>{order.totalQuantity}</span>
-                    {order.partyName}
-                </h3>
+                <h3 style={styles.cardPartyName}>{order.partyName}</h3>
                 <div style={styles.checkboxContainer}>
                     <button style={styles.checkboxButton} onClick={(e) => { e.stopPropagation(); onSelectOrder(order.orderNumber); }}>
                         {isSelected ? <CheckSquareIcon /> : <SquareIcon />}
@@ -733,12 +726,15 @@ const DetailedOrderCard: React.FC<{
             {/* Footer: Icons/Metrics */}
             <div style={styles.cardFooterRow}>
                 <div style={styles.metricGroup}>
+                    <div style={styles.iconMetric} title="Total Quantity">
+                        <BoxIcon /> <span>{order.totalQuantity}</span>
+                    </div>
                 </div>
                 
                 {/* Status Icons Grouped at the end */}
                 <div style={styles.statusIconGroup}>
                     {order.orderNote && <NoteIcon style={{color: 'var(--orange)', fill: 'var(--orange)', fillOpacity: 0.2}} title="Has Note" />}
-                    {order.totalQuantity > 50 && <BoxesIcon style={{color: 'var(--blue)', fill: 'var(--blue)', fillOpacity: 0.2}} title="High Volume" />}
+                    {order.totalQuantity > 50 && <BoxIcon style={{color: 'var(--blue)', fill: 'var(--blue)', fillOpacity: 0.2}} title="High Volume" />}
                     {isOverdue && <AlertCircleIcon style={{color: 'var(--red)', fill: 'var(--red)', fillOpacity: 0.2}} title="Overdue" />}
                 </div>
             </div>
@@ -792,27 +788,9 @@ const PartyGroup: React.FC<{ partyName: string; data: any; onToggleExpand: (orde
     const totalQty = data.orders.reduce((sum, order) => sum + order.totalQuantity, 0);
     const firstLetter = partyName.charAt(0).toUpperCase();
 
-    const uniqueStyleColors = useMemo(() => {
-        const styleColorSet = new Set<string>();
-        data.orders.forEach(order => {
-            (order.items || []).forEach(item => {
-                const style = item.fullItemData.Style;
-                const color = item.fullItemData.Color;
-                if (style && color) {
-                    styleColorSet.add(`${style} - ${color}`);
-                }
-            });
-        });
-        return Array.from(styleColorSet).sort();
-    }, [data.orders]);
-
     const headerButtonStyle: React.CSSProperties = {
         ...styles.cardHeader,
         borderBottom: isCollapsed ? 'none' : '1px solid var(--skeleton-bg)',
-        height: 'auto',
-        alignItems: 'flex-start',
-        paddingTop: '1rem',
-        paddingBottom: '1rem',
     };
     
     const renderHeader = () => {
@@ -825,11 +803,6 @@ const PartyGroup: React.FC<{ partyName: string; data: any; onToggleExpand: (orde
                         <div style={styles.mobilePartyMeta}>
                             {data.orderCount} Orders • {totalQty} Qty
                         </div>
-                        {isCollapsed && uniqueStyleColors.length > 0 && (
-                            <div style={styles.styleColorTagsContainer}>
-                                {uniqueStyleColors.map(sc => <span key={sc} style={styles.styleColorTag}>{sc}</span>)}
-                            </div>
-                        )}
                     </div>
                     <div style={styles.mobileChevron}>
                          <ChevronIcon collapsed={isCollapsed} />
@@ -838,19 +811,11 @@ const PartyGroup: React.FC<{ partyName: string; data: any; onToggleExpand: (orde
             );
         }
         return (
-            <>
-                <div style={styles.cardInfo}>
-                    <span style={styles.cardTitle}>{partyName}</span>
-                    <span style={styles.cardSubTitle}>{data.orderCount} Orders | Total Qty: {totalQty}</span>
-                    {isCollapsed && uniqueStyleColors.length > 0 && (
-                        <div style={styles.styleColorTagsContainer}>
-                            {uniqueStyleColors.slice(0, 10).map(sc => <span key={sc} style={styles.styleColorTag}>{sc}</span>)}
-                            {uniqueStyleColors.length > 10 && <span style={styles.styleColorTag}>+{uniqueStyleColors.length - 10} more</span>}
-                        </div>
-                    )}
-                </div>
+            <div style={styles.cardInfo}>
+                <span style={styles.cardTitle}>{partyName}</span>
+                <span style={styles.cardSubTitle}>{data.orderCount} Orders | Total Qty: {totalQty}</span>
                 <ChevronIcon collapsed={isCollapsed} />
-            </>
+            </div>
         );
     };
 
@@ -1085,7 +1050,6 @@ const EditBottomSheet: React.FC<EditBottomSheetProps> = ({ order, onClose, allPa
     const sheetRef = useRef<HTMLDivElement>(null);
     const dragStartPos = useRef<number | null>(null);
     const initialSheetHeight = useRef<number>(0);
-
     const [isEditingPartyName, setIsEditingPartyName] = useState(false);
     const [editedPartyName, setEditedPartyName] = useState('');
     const [partyNameSuggestions, setPartyNameSuggestions] = useState<string[]>([]);
@@ -1117,8 +1081,13 @@ const EditBottomSheet: React.FC<EditBottomSheetProps> = ({ order, onClose, allPa
     }, [onClose]);
     
     const handleSaveChanges = () => {
-        if (order && order.partyName !== editedPartyName) {
-            onUpdateOrder(order.orderNumber, { partyName: editedPartyName });
+        const finalPartyName = editedPartyName.trim();
+        if (!finalPartyName) {
+            showToast('Party name cannot be empty.', 'error');
+            return;
+        }
+        if (order && order.partyName !== finalPartyName) {
+            onUpdateOrder(order.orderNumber, { partyName: finalPartyName });
         }
         handleClose();
     };
@@ -1126,8 +1095,12 @@ const EditBottomSheet: React.FC<EditBottomSheetProps> = ({ order, onClose, allPa
     const handlePartyNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
         setEditedPartyName(value);
-        const filtered = allParties.filter(p => p.toLowerCase().includes(value.toLowerCase()));
-        setPartyNameSuggestions(filtered);
+        if (value.trim()) {
+            const filtered = allParties.filter(p => p.toLowerCase().includes(value.toLowerCase()));
+            setPartyNameSuggestions(filtered);
+        } else {
+            setPartyNameSuggestions([]);
+        }
     };
     
     const handleSuggestionClick = (partyName: string) => {
@@ -1208,19 +1181,23 @@ const EditBottomSheet: React.FC<EditBottomSheetProps> = ({ order, onClose, allPa
                 </div>
                 <div style={styles.bottomSheetBody}>
                      {isEditingPartyName ? (
-                        <div style={styles.partyNameEditContainer} onBlur={(e) => {
-                            if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-                                setIsEditingPartyName(false);
-                                setPartyNameSuggestions([]);
-                            }
-                        }}>
+                        <div 
+                            style={styles.partyNameInputWrapper}
+                            onBlur={(e) => {
+                                // Only close if the related target is not inside the suggestions
+                                if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                                    setIsEditingPartyName(false);
+                                    setPartyNameSuggestions([]);
+                                }
+                            }}
+                        >
                             <input
                                 ref={partyNameInputRef}
                                 type="text"
                                 value={editedPartyName}
                                 onChange={handlePartyNameChange}
                                 style={styles.partyNameInput}
-                                placeholder="Enter party name"
+                                placeholder="Search or enter party..."
                             />
                             {partyNameSuggestions.length > 0 && (
                                 <div style={styles.partyNameSuggestions}>
@@ -1233,10 +1210,7 @@ const EditBottomSheet: React.FC<EditBottomSheetProps> = ({ order, onClose, allPa
                             )}
                         </div>
                     ) : (
-                        <h2 style={styles.editSheetPartyName} onClick={() => {
-                            setIsEditingPartyName(true);
-                            setPartyNameSuggestions(allParties);
-                        }}>
+                        <h2 style={styles.editSheetPartyName} onClick={() => setIsEditingPartyName(true)}>
                             {editedPartyName}
                         </h2>
                     )}
@@ -2206,7 +2180,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     mobilePartyName: { fontWeight: '600', fontSize: '1rem', color: 'var(--dark-grey)' },
     mobilePartyMeta: { fontSize: '0.8rem', color: 'var(--text-color)' },
     mobileChevron: { color: 'var(--text-color)' },
-    cardInfo: { display: 'flex', flexDirection: 'column', gap: '0.25rem', alignItems: 'flex-start', flex: 1 },
+    cardInfo: { display: 'flex', flexDirection: 'column', gap: '0.25rem', alignItems: 'flex-start' },
     cardTitle: { fontSize: '1.1rem', fontWeight: 600, color: 'var(--dark-grey)' },
     cardSubTitle: { fontSize: '0.85rem', color: 'var(--text-color)', fontWeight: 500 },
     cardDetails: { padding: '0 0 1rem', display: 'flex', flexDirection: 'column' },
@@ -2330,18 +2304,8 @@ const styles: { [key: string]: React.CSSProperties } = {
     
     // Refined Hierarchy Styles
     cardTopRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.25rem' },
-    cardPartyName: { fontSize: '1.1rem', fontWeight: 700, color: 'var(--dark-grey)', margin: 0, lineHeight: 1.2, flex: 1, paddingRight: '0.5rem', display: 'flex', alignItems: 'center' },
-    cardQtyPrefix: {
-        backgroundColor: 'var(--light-grey)',
-        color: 'var(--text-color)',
-        padding: '2px 8px',
-        borderRadius: '6px',
-        fontSize: '0.9rem',
-        fontWeight: 600,
-        marginRight: '0.75rem',
-        display: 'inline-block',
-        verticalAlign: 'middle',
-    },
+    cardPartyName: { fontSize: '1.1rem', fontWeight: 700, color: 'var(--dark-grey)', margin: 0, lineHeight: 1.2, flex: 1, paddingRight: '0.5rem' },
+    
     cardSecondRow: { display: 'grid', gridTemplateColumns: '1fr auto', gap: '1rem', alignItems: 'start' },
     stylePreviewInline: { fontSize: '0.85rem', color: 'var(--text-color)', textAlign: 'left', fontWeight: 500, lineHeight: 1.4 },
     cardMetaRight: { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' },
@@ -2430,11 +2394,11 @@ const styles: { [key: string]: React.CSSProperties } = {
     bottomSheetBody: { flex: 1, overflowY: 'auto', padding: '0 16px 16px' },
 
     // Edit Bottom Sheet Content
-    editSheetPartyName: { fontSize: '1.75rem', fontWeight: 700, color: 'var(--dark-grey)', marginBottom: '0.5rem', textAlign: 'left', padding: '8px 12px', margin: '0 -12px', borderRadius: '8px', cursor: 'text', transition: 'background-color 0.2s ease' },
-    partyNameEditContainer: { position: 'relative', fontSize: '1.75rem', fontWeight: 700, color: 'var(--dark-grey)', marginBottom: '0.5rem', textAlign: 'left', padding: '8px 12px', margin: '0 -12px', borderRadius: '8px', backgroundColor: 'var(--light-grey)', border: '1px solid var(--separator-color)' },
-    partyNameInput: { font: 'inherit', color: 'inherit', width: '100%', background: 'transparent', border: 'none', outline: 'none', padding: 0, margin: 0, caretColor: 'var(--brand-color)' },
+    editSheetPartyName: { fontSize: '1.75rem', fontWeight: 700, lineHeight: 1.3, color: 'var(--dark-grey)', margin: 0, padding: '8px 0', width: '100%', boxSizing: 'border-box', cursor: 'text', transition: 'none', borderRadius: 0, textAlign: 'left' },
+    partyNameInputWrapper: { position: 'relative', marginBottom: '0.5rem' },
+    partyNameInput: { fontSize: '1.75rem', fontWeight: 700, lineHeight: 1.3, fontFamily: 'inherit', color: 'var(--dark-grey)', margin: 0, padding: '8px 0', width: '100%', boxSizing: 'border-box', background: 'transparent', border: 'none', outline: 'none', boxShadow: 'none', borderRadius: 0 },
     partyNameSuggestions: { position: 'absolute', top: '100%', left: 0, right: 0, backgroundColor: 'var(--card-bg)', border: '1px solid var(--separator-color)', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', maxHeight: '150px', overflowY: 'auto', zIndex: 1200, marginTop: '4px' },
-    suggestionItem: { padding: '10px 16px', cursor: 'pointer', fontSize: '1rem', color: 'var(--dark-grey)' },
+    suggestionItem: { padding: '10px 16px', cursor: 'pointer', fontSize: '1rem', fontWeight: 400, color: 'var(--dark-grey)' },
     editSheetInfoBubbles: { display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', flexWrap: 'wrap' },
     infoBubble: { padding: '0.4rem 0.8rem', borderRadius: '16px', fontSize: '0.8rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.3rem' },
     editSheetSearchContainer: { display: 'flex', alignItems: 'center', gap: '0.75rem', backgroundColor: 'var(--light-grey)', padding: '0.75rem 1rem', borderRadius: '12px', border: '1px solid transparent', marginBottom: '1rem', transition: 'border-color 0.2s ease, box-shadow 0.2s ease' },
@@ -2443,20 +2407,4 @@ const styles: { [key: string]: React.CSSProperties } = {
     recommendationsContainer: { marginTop: '1rem', overflow: 'hidden', position: 'relative', width: '100%', maskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)', WebkitMaskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)', padding: '0.5rem 0', height: '54px' },
     scrollingTrack: { display: 'flex', animation: 'scrollLeft 30s linear infinite', },
     recommendationBubble: { padding: '0.5rem 1rem', border: 'none', borderRadius: '20px', fontSize: '0.9rem', fontWeight: 600, marginRight: '0.75rem', whiteSpace: 'nowrap', transition: 'transform 0.2s ease' },
-    styleColorTagsContainer: {
-        display: 'flex',
-        flexWrap: 'wrap',
-        gap: '4px',
-        paddingTop: '8px',
-        maxWidth: '100%',
-    },
-    styleColorTag: {
-        backgroundColor: 'var(--light-grey)',
-        color: 'var(--text-color)',
-        padding: '3px 8px',
-        borderRadius: '12px',
-        fontSize: '0.7rem',
-        fontWeight: 500,
-        whiteSpace: 'nowrap',
-    },
 };
