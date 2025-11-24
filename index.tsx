@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
 import { NewOrderEntry } from './neworderentry';
@@ -1155,7 +1156,7 @@ const KAOMSLogin = () => {
     };
     const titleStyles = { ...styles.title, fontSize: isMobile ? '1.5rem' : '1.75rem' };
     const subtitleStyles = { ...styles.subtitle, fontSize: isMobile ? '0.9rem' : '1rem', marginBottom: isMobile ? '1.5rem' : '2rem' };
-    const logoStyles = { ...styles.logo, opacity: areImagesReady ? 1 : 0, transition: 'opacity 0.3s ease-in' };
+    const logoStyles = { ...styles.logo, width: isMobile ? '120px' : '100px', height: isMobile ? '120px' : '100px', opacity: areImagesReady ? 1 : 0, transition: 'opacity 0.3s ease-in' };
 
     if (isLoggedIn && session) {
         return <HomePage session={session} onLogout={handleLogout} appLogoSrc={appLogoSrc} updateUserProfile={updateUserProfile} />;
@@ -1181,7 +1182,7 @@ const KAOMSLogin = () => {
                                     <form onSubmit={handleLogin} style={styles.form}>
                                         {isMobile ? (
                                             <div style={styles.mobileInputContainer}>
-                                                <div style={{...styles.inputGroup, borderBottom: '1px solid var(--separator-color)'}}>
+                                                <div style={{...styles.inputGroup, borderBottom: '1px solid var(--gray)'}}>
                                                     <label style={{ ...styles.label, ...(userId || userIdFocused ? styles.labelFocused : {}) }}>Email or Phone Number</label>
                                                     <input type="text" value={userId} onChange={(e) => setUserId(e.target.value)} onFocus={() => setUserIdFocused(true)} onBlur={() => setUserIdFocused(false)} style={{...styles.input, border: 'none', borderRadius: 0}} required />
                                                     {!isPasswordStep && (
@@ -1223,14 +1224,12 @@ const KAOMSLogin = () => {
                                         <p style={{...styles.subtitle, marginBottom: '1.5rem', fontSize: '0.9rem'}}>Enter your email to recover your password.</p>
                                         
                                         {isMobile ? (
-                                            <div style={styles.mobileInputContainer}>
-                                                <div style={styles.inputGroup}>
-                                                    <label style={{ ...styles.label, ...(forgotEmail || emailFocused ? styles.labelFocused : {}) }}>Email Address</label>
-                                                    <input type="email" value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} onFocus={() => setEmailFocused(true)} onBlur={() => setEmailFocused(false)} style={{...styles.input, border: 'none', borderRadius: 0}} required />
-                                                    <button type="submit" style={styles.mobileArrowButton} disabled={isLoading}>
-                                                        {isLoading ? <RadialSpinner /> : <ArrowRightIcon />}
-                                                    </button>
-                                                </div>
+                                            <div style={{ ...styles.mobileInputContainer, ...styles.inputGroup }}>
+                                                <label style={{ ...styles.label, ...(forgotEmail || emailFocused ? styles.labelFocused : {}) }}>Email Address</label>
+                                                <input type="email" value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} onFocus={() => setEmailFocused(true)} onBlur={() => setEmailFocused(false)} style={{...styles.input, border: 'none', borderRadius: 0}} required />
+                                                <button type="submit" style={styles.mobileArrowButton} disabled={isLoading}>
+                                                    {isLoading ? <RadialSpinner /> : <ArrowRightIcon />}
+                                                </button>
                                             </div>
                                         ) : (
                                             <>
@@ -1321,16 +1320,16 @@ const styles: { [key: string]: React.CSSProperties } = {
     subtitle: { color: 'var(--text-color)', marginBottom: '2rem', fontSize: '1rem' },
     form: { width: '100%', display: 'flex', flexDirection: 'column', gap: '1.25rem' },
     inputGroup: { position: 'relative' },
-    input: { width: '100%', padding: '14px 15px', paddingTop: '22px', fontSize: '1rem', border: '1px solid var(--separator-color)', borderRadius: '8px', backgroundColor: 'var(--card-bg)', color: 'var(--dark-grey)', transition: 'border-color 0.3s ease' },
+    input: { width: '100%', padding: '14px 15px', paddingTop: '22px', fontSize: '1rem', border: '1px solid var(--gray)', borderRadius: '8px', backgroundColor: 'var(--card-bg)', color: 'var(--dark-grey)', transition: 'border-color 0.3s ease' },
     label: { position: 'absolute', left: '15px', top: '18px', color: 'var(--gray)', pointerEvents: 'none', transition: 'all 0.2s ease-out' },
-    labelFocused: { top: '7px', fontSize: '0.8rem', color: 'var(--brand-color)' },
+    labelFocused: { top: '7px', fontSize: '0.8rem', color: 'var(--text-color)' },
     eyeIcon: { position: 'absolute', top: '50%', right: '15px', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-color)', padding: '0' },
     button: { padding: '15px', fontSize: '1rem', fontWeight: 500, color: '#fff', backgroundColor: 'var(--brand-color)', border: 'none', borderRadius: '8px', cursor: 'pointer', transition: 'background-color 0.3s ease, transform 0.1s ease', marginTop: '0.5rem' },
     link: { color: 'var(--brand-color)', textDecoration: 'none', fontSize: '0.9rem', marginTop: '0.5rem' },
     error: { color: 'var(--red)', fontSize: '0.85rem', textAlign: 'center', marginTop: '-0.5rem', marginBottom: '0.5rem' },
     success: { color: 'var(--green)', fontSize: '0.85rem', textAlign: 'center' },
     spinner: { border: '4px solid var(--light-grey)', borderRadius: '50%', borderTop: '4px solid var(--brand-color)', width: '40px', height: '40px', animation: 'spin 1s linear infinite', margin: 'auto' },
-    mobileInputContainer: { borderRadius: '12px', border: '1px solid var(--separator-color)', overflow: 'hidden', backgroundColor: 'var(--card-bg)' },
+    mobileInputContainer: { borderRadius: '12px', border: '1px solid var(--gray)', overflow: 'hidden', backgroundColor: 'var(--card-bg)' },
     mobileArrowButton: { position: 'absolute', top: '50%', right: '12px', transform: 'translateY(-50%)', background: 'transparent', border: '1px solid var(--separator-color)', cursor: 'pointer', color: 'var(--text-color)', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' },
     passwordContainerHidden: { maxHeight: 0, overflow: 'hidden', transition: 'max-height 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)' },
     passwordContainerVisible: { maxHeight: '80px', transition: 'max-height 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)' },
