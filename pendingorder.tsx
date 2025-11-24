@@ -30,6 +30,7 @@ const PlusIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height
 const CloseIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>;
 const CheckIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>;
 const CalendarIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>;
+const CartIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>;
 
 
 // --- TYPE & FIREBASE ---
@@ -1063,6 +1064,67 @@ const RecommendedProducts = () => {
     );
 };
 
+const OrderSummaryPopup: React.FC<{ order: Order; onClose: () => void; }> = ({ order, onClose }) => {
+    const { groupedItems, totalValue } = useMemo(() => {
+        if (!order || !order.items) return { totalValue: 0, groupedItems: [] };
+
+        let totalValue = 0;
+        const groups = order.items.reduce((acc, item) => {
+            const price = item.price || item.fullItemData?.MRP || 0;
+            totalValue += item.quantity * price;
+            const key = `${item.fullItemData.Style}-${item.fullItemData.Color}`;
+            if (!acc[key]) {
+                acc[key] = { style: item.fullItemData.Style, color: item.fullItemData.Color, totalQuantity: 0 };
+            }
+            acc[key].totalQuantity += item.quantity;
+            return acc;
+        }, {} as Record<string, { style: string; color: string; totalQuantity: number; }>);
+        
+        const sortedGroups = Object.values(groups).sort((a, b) => a.style.localeCompare(b.style) || a.color.localeCompare(b.color));
+        return { totalValue, groupedItems: sortedGroups };
+    }, [order]);
+
+    const formatCurrency = (value) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(value);
+
+    return createPortal(
+        <div style={styles.cartModalOverlay} onClick={onClose}>
+            <div style={styles.summaryModalContent} onClick={(e) => e.stopPropagation()}>
+                <div style={styles.cartHeader}>
+                    <h2 style={styles.cardTitleBare}>Order Summary</h2>
+                    <button onClick={onClose} style={styles.cartModalCloseButton}>&times;</button>
+                </div>
+                {order.items.length === 0 ? (
+                    <p style={styles.cartEmptyText}>This order is empty.</p>
+                ) : (
+                    <div style={styles.cartItemsList}>
+                        {groupedItems.map(group => (
+                            <div key={`${group.style}-${group.color}`} style={{ ...styles.cartGroupItem, cursor: 'default' }}>
+                                <div style={styles.cartItemInfo}>
+                                    <div style={styles.cartItemDetails}>{`${group.style} - ${group.color}`}</div>
+                                    <div style={styles.cartItemSubDetails}>{`Total Qty: ${group.totalQuantity}`}</div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+                <div style={styles.cartFooter}>
+                    <div style={styles.cartSummary}>
+                        <div>
+                            <div style={styles.summaryLabel}>Total Quantity</div>
+                            <div style={styles.summaryValue}>{order.totalQuantity} Items</div>
+                        </div>
+                        <div>
+                            <div style={styles.summaryLabel}>Total Value</div>
+                            <div style={styles.summaryValue}>{formatCurrency(totalValue)}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>,
+        document.body
+    );
+};
+
 interface EditBottomSheetProps {
     order: Order | null;
     onClose: () => void;
@@ -1080,6 +1142,7 @@ const EditBottomSheet: React.FC<EditBottomSheetProps> = ({ order, onClose, allPa
     const [editedPartyName, setEditedPartyName] = useState('');
     const [partyNameSuggestions, setPartyNameSuggestions] = useState<string[]>([]);
     const partyNameInputRef = useRef<HTMLInputElement>(null);
+    const [isCartPopupOpen, setIsCartPopupOpen] = useState(false);
 
     useEffect(() => {
         if (order) {
@@ -1178,89 +1241,99 @@ const EditBottomSheet: React.FC<EditBottomSheetProps> = ({ order, onClose, allPa
             : 'slideUpSheet 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards'
     };
 
-    return createPortal(
+    return (
         <>
-            <div 
-                style={{...styles.bottomSheetOverlay, animation: isClosing ? 'overlayOut 0.3s forwards' : 'overlayIn 0.3s forwards'}} 
-                onClick={handleClose} 
-            />
-            <div 
-                ref={sheetRef}
-                style={sheetStyle}
-            >
-                <div 
-                    style={styles.bottomSheetHandleContainer}
-                    onTouchStart={handleTouchStart}
-                    onTouchMove={handleTouchMove}
-                    onTouchEnd={handleTouchEnd}
-                >
-                    <div style={styles.bottomSheetHandle} />
-                </div>
-                <div style={styles.bottomSheetHeader}>
-                    <button style={styles.sheetCloseButton} onClick={handleClose} aria-label="Close">
-                        <CloseIcon />
-                    </button>
-                    <h3 style={styles.sheetTitle}>Editing Order #{order.orderNumber}</h3>
-                    <button style={styles.sheetConfirmButton} onClick={handleSaveChanges} aria-label="Confirm Edit">
-                        <CheckIcon />
-                    </button>
-                </div>
-                <div style={styles.bottomSheetBody}>
-                     {isEditingPartyName ? (
+            {createPortal(
+                <>
+                    <div 
+                        style={{...styles.bottomSheetOverlay, animation: isClosing ? 'overlayOut 0.3s forwards' : 'overlayIn 0.3s forwards'}} 
+                        onClick={handleClose} 
+                    />
+                    <div 
+                        ref={sheetRef}
+                        style={sheetStyle}
+                    >
                         <div 
-                            style={styles.partyNameInputWrapper}
-                            onBlur={(e) => {
-                                // Only close if the related target is not inside the suggestions
-                                if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-                                    setIsEditingPartyName(false);
-                                    setPartyNameSuggestions([]);
-                                }
-                            }}
+                            style={styles.bottomSheetHandleContainer}
+                            onTouchStart={handleTouchStart}
+                            onTouchMove={handleTouchMove}
+                            onTouchEnd={handleTouchEnd}
                         >
-                            <input
-                                id="party-name-editor-input"
-                                ref={partyNameInputRef}
-                                type="text"
-                                value={editedPartyName}
-                                onChange={handlePartyNameChange}
-                                style={styles.partyNameInput}
-                                placeholder="Search or enter party..."
-                            />
-                            {partyNameSuggestions.length > 0 && (
-                                <div style={styles.partyNameSuggestions}>
-                                    {partyNameSuggestions.map(p => (
-                                        <div key={p} onMouseDown={(e) => e.preventDefault()} onClick={() => handleSuggestionClick(p)} style={styles.suggestionItem}>
-                                            {p}
+                            <div style={styles.bottomSheetHandle} />
+                        </div>
+                        <div style={styles.bottomSheetHeader}>
+                            <button style={styles.sheetCloseButton} onClick={handleClose} aria-label="Close">
+                                <CloseIcon />
+                            </button>
+                            <h3 style={styles.sheetTitle}>Editing Order #{order.orderNumber}</h3>
+                            <button style={styles.sheetConfirmButton} onClick={handleSaveChanges} aria-label="Confirm Edit">
+                                <CheckIcon />
+                            </button>
+                        </div>
+                        <div style={styles.bottomSheetBody}>
+                            {isEditingPartyName ? (
+                                <div 
+                                    style={styles.partyNameInputWrapper}
+                                    onBlur={(e) => {
+                                        if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                                            setIsEditingPartyName(false);
+                                            setPartyNameSuggestions([]);
+                                        }
+                                    }}
+                                >
+                                    <input
+                                        id="party-name-editor-input"
+                                        ref={partyNameInputRef}
+                                        type="text"
+                                        value={editedPartyName}
+                                        onChange={handlePartyNameChange}
+                                        style={styles.partyNameInput}
+                                        placeholder="Search or enter party..."
+                                    />
+                                    {partyNameSuggestions.length > 0 && (
+                                        <div style={styles.partyNameSuggestions}>
+                                            {partyNameSuggestions.map(p => (
+                                                <div key={p} onMouseDown={(e) => e.preventDefault()} onClick={() => handleSuggestionClick(p)} style={styles.suggestionItem}>
+                                                    {p}
+                                                </div>
+                                            ))}
                                         </div>
-                                    ))}
+                                    )}
+                                </div>
+                            ) : (
+                                <div style={styles.editSheetPartyName} onClick={() => setIsEditingPartyName(true)}>
+                                    {editedPartyName}
                                 </div>
                             )}
+                            <div style={styles.editSheetInfoBubbles}>
+                                <div style={{...styles.infoBubble, backgroundColor: 'var(--active-bg)', color: 'var(--brand-color)'}}>
+                                    <CalendarIcon /> {formatDate(order.timestamp)}
+                                </div>
+                            </div>
+                            <div style={{...styles.editSheetSearchContainer, ...(isSearchFocused && styles.editSheetSearchContainerActive)}}>
+                                <SearchIcon />
+                                <input
+                                    type="text"
+                                    placeholder="Search to add new styles..."
+                                    style={styles.editSheetSearchInput}
+                                    onFocus={() => setIsSearchFocused(true)}
+                                    onBlur={() => setIsSearchFocused(false)}
+                                />
+                            </div>
+                            {isSearchFocused && <RecommendedProducts />}
                         </div>
-                    ) : (
-                        <div style={styles.editSheetPartyName} onClick={() => setIsEditingPartyName(true)}>
-                            {editedPartyName}
-                        </div>
-                    )}
-                    <div style={styles.editSheetInfoBubbles}>
-                        <div style={{...styles.infoBubble, backgroundColor: 'var(--active-bg)', color: 'var(--brand-color)'}}>
-                            <CalendarIcon /> {formatDate(order.timestamp)}
+                        <div style={styles.bottomSheetFooter}>
+                            <button style={styles.sheetCartButton} onClick={() => setIsCartPopupOpen(true)}>
+                                <CartIcon />
+                                {order.totalQuantity > 0 && <span style={styles.sheetCartBadge}>{order.totalQuantity}</span>}
+                            </button>
                         </div>
                     </div>
-                    <div style={{...styles.editSheetSearchContainer, ...(isSearchFocused && styles.editSheetSearchContainerActive)}}>
-                        <SearchIcon />
-                        <input
-                            type="text"
-                            placeholder="Search to add new styles..."
-                            style={styles.editSheetSearchInput}
-                            onFocus={() => setIsSearchFocused(true)}
-                            onBlur={() => setIsSearchFocused(false)}
-                        />
-                    </div>
-                    {isSearchFocused && <RecommendedProducts />}
-                </div>
-            </div>
-        </>,
-        document.body
+                </>,
+                document.body
+            )}
+            {isCartPopupOpen && <OrderSummaryPopup order={order} onClose={() => setIsCartPopupOpen(false)} />}
+        </>
     );
 };
 
@@ -2021,6 +2094,7 @@ export const PendingOrders = ({ onNavigate }) => {
                     from { transform: translateX(0); }
                     to { transform: translateX(-50%); }
                 }
+                 @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
             `}</style>
             {createPortal(<DeleteConfirmationModal
                 state={deleteModalState}
@@ -2403,11 +2477,19 @@ const styles: { [key: string]: React.CSSProperties } = {
     customDropdownItem: { display: 'block', width: '100%', padding: '0.5rem 0.75rem', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '0.85rem', borderRadius: '6px', color: 'var(--dark-grey)', },
     // Modal Styles
     modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.2)', backdropFilter: 'blur(7px)', WebkitBackdropFilter: 'blur(7px)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0 },
+    cartModalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 1102, display: 'flex', alignItems: 'center', justifyContent: 'center' },
     modalContent: { backgroundColor: 'var(--glass-bg)', padding: '1.5rem', borderRadius: '12px', width: '90%', boxShadow: '0 8px 32px rgba(0,0,0,0.1)', border: '1px solid var(--glass-border)', display: 'flex', flexDirection: 'column', gap: '1rem', transform: 'scale(0.95)', opacity: 0 },
+    summaryModalContent: { backgroundColor: 'var(--card-bg)', width: '90%', maxWidth: '420px', borderRadius: 'var(--border-radius)', display: 'flex', flexDirection: 'column', position: 'relative', animation: 'slideUp 0.3s ease-out forwards', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' },
+    cartModalContent: { maxWidth: '320px', animation: 'modalIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards', zIndex: 1103 },
     modalSubtitleText: { textAlign: 'center', color: 'var(--text-color)', marginBottom: '1rem', fontSize: '0.9rem', padding: '0 1rem' },
     modalInput: { width: '100%', padding: '10px 15px', fontSize: '1rem', border: '1px solid var(--separator-color)', borderRadius: '8px', backgroundColor: 'var(--card-bg)', color: 'var(--dark-grey)', fontFamily: "'Inter', sans-serif" },
     modalTextarea: { width: '100%', minHeight: '40px', padding: '0.75rem', fontSize: '0.9rem', border: '1px solid var(--separator-color)', borderRadius: '8px', resize: 'vertical', backgroundColor: 'var(--card-bg)', color: 'var(--dark-grey)', fontFamily: "'Inter', sans-serif" },
     modalTitle: { margin: 0, fontSize: '1.1rem', fontWeight: 600, color: 'var(--dark-grey)' },
+    cardTitleBare: { fontSize: '1.1rem', fontWeight: 600, color: 'var(--dark-grey)' },
+    cartModalCloseButton: { background: 'none', border: 'none', fontSize: '2.5rem', color: 'var(--text-color)', cursor: 'pointer', padding: 0, lineHeight: '1' },
+    cartEmptyText: { textAlign: 'center', color: 'var(--text-color)', padding: '3rem 1.25rem', flex: 1 },
+    cartGroupItem: { display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem 0', borderBottom: '1px solid var(--separator-color)', width: '100%', background: 'none', border: 'none', textAlign: 'left' },
+    cartItemSubDetails: { color: 'var(--text-color)', fontSize: '0.8rem' },
     iosModalActions: { display: 'flex', width: 'calc(100% + 3rem)', marginLeft: '-1.5rem', marginBottom: '-1.5rem', borderTop: '1px solid var(--glass-border)', marginTop: '1.5rem' },
     iosModalButtonSecondary: { background: 'transparent', border: 'none', padding: '1rem 0', cursor: 'pointer', fontSize: '1rem', textAlign: 'center', transition: 'background-color 0.2s ease', flex: 1, color: 'var(--dark-grey)', borderRight: '1px solid var(--glass-border)', fontWeight: 400 },
     iosModalButtonPrimary: { background: 'transparent', border: 'none', padding: '1rem 0', cursor: 'pointer', fontSize: '1rem', textAlign: 'center', transition: 'background-color 0.2s ease', flex: 1, color: 'var(--brand-color)', fontWeight: 600 },
@@ -2424,6 +2506,9 @@ const styles: { [key: string]: React.CSSProperties } = {
     sheetCloseButton: { gridColumn: '1', width: '32px', height: '32px', borderRadius: '50%', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backgroundColor: 'var(--gray-5)', color: 'var(--text-color)' },
     sheetConfirmButton: { gridColumn: '3', width: '32px', height: '32px', borderRadius: '50%', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backgroundColor: 'var(--brand-color)', color: '#fff' },
     bottomSheetBody: { flex: 1, overflowY: 'auto', padding: '0 16px 16px' },
+    bottomSheetFooter: { padding: '16px', borderTop: '1px solid var(--separator-color)', flexShrink: 0, backgroundColor: 'var(--card-bg)', },
+    sheetCartButton: { background: 'var(--light-grey)', border: '1px solid var(--separator-color)', color: 'var(--dark-grey)', borderRadius: '12px', padding: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative', width: '48px', height: '48px', },
+    sheetCartBadge: { position: 'absolute', top: '-5px', right: '-5px', backgroundColor: 'var(--red)', color: 'white', borderRadius: '50%', width: '22px', height: '22px', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '0.75rem', fontWeight: 600, border: '2px solid var(--card-bg)', },
 
     // Edit Bottom Sheet Content
     editSheetPartyName: { ...partyNameBaseStyle, cursor: 'text' },
@@ -2440,4 +2525,3 @@ const styles: { [key: string]: React.CSSProperties } = {
     scrollingTrack: { display: 'flex', animation: 'scrollLeft 30s linear infinite', },
     recommendationBubble: { padding: '0.5rem 1rem', border: 'none', borderRadius: '20px', fontSize: '0.9rem', fontWeight: 600, marginRight: '0.75rem', whiteSpace: 'nowrap', transition: 'transform 0.2s ease' },
 };
-
