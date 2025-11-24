@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import firebase from 'firebase/compat/app';
@@ -807,7 +808,7 @@ const PartyGroup: React.FC<{ partyName: string; data: { orderCount: number; orde
 
     const headerButtonStyle: React.CSSProperties = {
         ...styles.cardHeader,
-        borderBottom: isCollapsed ? 'none' : '1px solid var(--skeleton-bg)',
+        borderBottom: isCollapsed ? 'none' : '1px solid var(--separator-color)',
     };
     
     const renderHeader = () => {
@@ -1065,13 +1066,11 @@ const RecommendedProducts = () => {
 };
 
 const OrderSummaryPopup: React.FC<{ order: Order; onClose: () => void; }> = ({ order, onClose }) => {
-    const { groupedItems, totalValue } = useMemo(() => {
-        if (!order || !order.items) return { totalValue: 0, groupedItems: [] };
+    const groupedItems = useMemo(() => {
+        if (!order || !order.items) return [];
 
-        let totalValue = 0;
         const groups = order.items.reduce((acc, item) => {
-            const price = item.price || item.fullItemData?.MRP || 0;
-            totalValue += item.quantity * price;
+            if (!item.fullItemData) return acc;
             const key = `${item.fullItemData.Style}-${item.fullItemData.Color}`;
             if (!acc[key]) {
                 acc[key] = { style: item.fullItemData.Style, color: item.fullItemData.Color, totalQuantity: 0 };
@@ -1080,8 +1079,7 @@ const OrderSummaryPopup: React.FC<{ order: Order; onClose: () => void; }> = ({ o
             return acc;
         }, {} as Record<string, { style: string; color: string; totalQuantity: number; }>);
         
-        const sortedGroups = Object.values(groups).sort((a, b) => a.style.localeCompare(b.style) || a.color.localeCompare(b.color));
-        return { totalValue, groupedItems: sortedGroups };
+        return Object.values(groups).sort((a, b) => a.style.localeCompare(b.style) || a.color.localeCompare(b.color));
     }, [order]);
 
     const formatCurrency = (value) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(value);
@@ -1115,7 +1113,7 @@ const OrderSummaryPopup: React.FC<{ order: Order; onClose: () => void; }> = ({ o
                         </div>
                         <div>
                             <div style={styles.summaryLabel}>Total Value</div>
-                            <div style={styles.summaryValue}>{formatCurrency(totalValue)}</div>
+                            <div style={styles.summaryValue}>{formatCurrency(order.totalValue)}</div>
                         </div>
                     </div>
                 </div>
@@ -2277,7 +2275,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     centeredMessage: { flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'var(--text-color)', fontSize: '1.1rem' },
     spinner: { border: '4px solid var(--light-grey)', borderRadius: '50%', borderTop: '4px solid var(--brand-color)', width: '40px', height: '40px', animation: 'spin 1s linear infinite' },
     card: { backgroundColor: 'var(--card-bg)', borderRadius: 'var(--border-radius)', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)', border: 'none', overflow: 'hidden' },
-    cardHeader: { width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.5rem', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', borderBottom: '1px solid var(--skeleton-bg)' },
+    cardHeader: { width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.5rem', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', borderBottom: '1px solid var(--separator-color)' },
     mobileCardHeader: { width: '100%', display: 'flex', flexDirection: 'row', alignItems: 'center', padding: '1rem', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', transition: 'border-radius 0.3s ease' },
     mobilePartyHeaderContent: { display: 'flex', alignItems: 'center', width: '100%', gap: '1rem' },
     partyAvatar: { width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '600', fontSize: '1.1rem', flexShrink: 0, backgroundColor: 'var(--active-bg)', color: 'var(--brand-color)' },
@@ -2309,7 +2307,7 @@ const styles: { [key: string]: React.CSSProperties } = {
         backfaceVisibility: 'hidden',
     },
 
-    orderItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem 1.5rem', borderTop: '1px solid var(--skeleton-bg)' },
+    orderItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem 1.5rem', borderTop: '1px solid var(--separator-color)' },
     orderItemActive: { backgroundColor: 'var(--active-bg)'},
     orderInfo: { display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', color: 'var(--dark-grey)', flex: 1, minWidth: 0 },
     orderMeta: { display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-color)', fontSize: '0.85rem' },
@@ -2524,4 +2522,12 @@ const styles: { [key: string]: React.CSSProperties } = {
     recommendationsContainer: { marginTop: '1rem', overflow: 'hidden', position: 'relative', width: '100%', maskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)', WebkitMaskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)', padding: '0.5rem 0', height: '54px' },
     scrollingTrack: { display: 'flex', animation: 'scrollLeft 30s linear infinite', },
     recommendationBubble: { padding: '0.5rem 1rem', border: 'none', borderRadius: '20px', fontSize: '0.9rem', fontWeight: 600, marginRight: '0.75rem', whiteSpace: 'nowrap', transition: 'transform 0.2s ease' },
+    // From New Order Entry, for popup consistency
+    cartItemsList: { flex: 1, overflowY: 'auto', padding: '0.5rem 1.25rem' },
+    cartItemInfo: { flex: 1 },
+    cartItemDetails: { fontWeight: 600, color: 'var(--dark-grey)', fontSize: '0.9rem' },
+    cartFooter: { borderTop: '1px solid var(--separator-color)', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', flexShrink: 0 },
+    cartSummary: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+    summaryLabel: { fontSize: '0.85rem', color: 'var(--text-color)', marginBottom: '0.25rem' },
+    summaryValue: { fontSize: '1.1rem', fontWeight: 600, color: 'var(--dark-grey)' },
 };
