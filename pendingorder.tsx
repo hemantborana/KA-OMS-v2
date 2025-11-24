@@ -1,6 +1,8 @@
 
 
 
+
+
 import React, { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import firebase from 'firebase/compat/app';
@@ -27,7 +29,7 @@ const HistoryIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" hei
 const TagIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>;
 const XIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>;
 const AlertCircleIcon = (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>;
-const ShareIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>;
+const ShareIcon = (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>;
 const PlusIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>;
 const CloseIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>;
 const CheckIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>;
@@ -37,7 +39,9 @@ const CartIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height
 
 // --- TYPE & FIREBASE ---
 interface HistoryEvent { timestamp: string; event: string; details: string; }
-interface Order { orderNumber: string; partyName: string; timestamp: string; totalQuantity: number; totalValue: number; orderNote?: string; items: any[]; history?: HistoryEvent[]; tags?: string[]; }
+// FIX: Add OrderItem interface for type safety on order items.
+interface OrderItem { id: string; quantity: number; price: number; fullItemData: Record<string, any>; }
+interface Order { orderNumber: string; partyName: string; timestamp: string; totalQuantity: number; totalValue: number; orderNote?: string; items: OrderItem[]; history?: HistoryEvent[]; tags?: string[]; lastExported?: string; }
 // FIX: Added explicit types for summarized data and parties to prevent type inference issues with reduce.
 interface SummarizedData { [partyName: string]: { orderCount: number; orders: Order[]; } }
 interface Parties { [partyName: string]: number; }
@@ -74,6 +78,7 @@ const timeSince = (dateString) => {
 };
 
 const formatDate = (isoString) => isoString ? new Date(isoString).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A';
+const formatDateTime = (isoString) => isoString ? new Date(isoString).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : 'N/A';
 
 
 const normalizeKeyPart = (part: any): string => {
@@ -750,6 +755,7 @@ const DetailedOrderCard: React.FC<{
             <div style={styles.cardFooterRow}>
                 {/* Status Icons Grouped at the end */}
                 <div style={styles.statusIconGroup}>
+                    {order.lastExported && <ShareIcon style={{color: 'var(--green)'}} title={`Exported on ${formatDateTime(order.lastExported)}`} />}
                     {order.orderNote && <NoteIcon style={{color: 'var(--orange)', fill: 'var(--orange)', fillOpacity: 0.2}} title="Has Note" />}
                     {order.totalQuantity > 50 && <BoxIcon style={{color: 'var(--blue)', fill: 'var(--blue)', fillOpacity: 0.2}} title="High Volume" />}
                     {isOverdue && <AlertCircleIcon style={{color: 'var(--red)', fill: 'var(--red)', fillOpacity: 0.2}} title="Overdue" />}
@@ -1114,7 +1120,8 @@ const OrderSummaryPopup: React.FC<{ order: Order; onClose: () => void; }> = ({ o
             return acc;
         }, {} as Record<string, { style: string; color: string; totalQuantity: number; }>);
         
-        return Object.values(groups).sort((a, b) => a.style.localeCompare(b.style) || a.color.localeCompare(b.color));
+// FIX: Explicitly cast the result of Object.values to resolve type inference errors where array elements were treated as 'unknown'.
+        return (Object.values(groups) as { style: string, color: string, totalQuantity: number }[]).sort((a, b) => a.style.localeCompare(b.style) || a.color.localeCompare(b.color));
     }, [order]);
 
     const formatCurrency = (value) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(value);
@@ -1857,6 +1864,28 @@ export const PendingOrders = ({ onNavigate }) => {
         setIsExportModalOpen(true);
     };
 
+    const handleExportSuccess = async (orderNumbers: string[]) => {
+        const updates = {};
+        const timestamp = new Date().toISOString();
+        const eventMessage = `Order included in a batch export.`;
+        const newHistoryEvent = { timestamp, event: 'System', details: eventMessage };
+
+        orders.forEach(order => {
+            if (orderNumbers.includes(order.orderNumber)) {
+                const updatedHistory = [...(order.history || []), newHistoryEvent];
+                updates[`${PENDING_ORDERS_REF}/${order.orderNumber}/lastExported`] = timestamp;
+                updates[`${PENDING_ORDERS_REF}/${order.orderNumber}/history`] = updatedHistory;
+            }
+        });
+
+        try {
+            await firebase.database().ref().update(updates);
+        } catch (error) {
+            console.error("Failed to mark orders as exported:", error);
+            showToast('Failed to update export status on orders.', 'error');
+        }
+    };
+
     const filteredAndSortedOrders = useMemo(() => {
         let items = [...orders];
         
@@ -2164,6 +2193,7 @@ export const PendingOrders = ({ onNavigate }) => {
                     setSelectedOrders([]); // Clear selection after export
                 }}
                 ordersToExport={ordersToExport}
+                onExportSuccess={handleExportSuccess}
             />
             <EditBottomSheet 
                 order={editingOrder} 
