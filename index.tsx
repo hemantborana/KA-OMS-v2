@@ -73,8 +73,9 @@ const CloseSidebarIcon = () => <svg viewBox="0 0 24 24" xmlns="http://www.w3.org
 const LogoutIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>;
 const UserIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>;
 const ShieldIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>;
-const ChevronRightIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>;
+const ChevronRightIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>;
 const ChevronLeftIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>;
+const ArrowRightIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>;
 const NavIcon = ({ name, active = false }) => {
     const icons = {
         Dashboard: active ? 
@@ -101,6 +102,7 @@ const NavIcon = ({ name, active = false }) => {
     return icons[name] || null;
 };
 const Spinner = () => <div style={styles.spinner}></div>;
+const RadialSpinner = () => <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style={{color: 'var(--text-tertiary)'}}><style>{`.spinner_DupC{animation:spinner_sM3D 1.2s linear infinite}.spinner_GWtZ{animation-delay:-.1s}.spinner_dwN6{animation-delay:-.2s}.spinner_46_2{animation-delay:-.3s}.spinner_G24s{animation-delay:-.4s}.spinner_p24s{animation-delay:-.5s}.spinner_J3Y2{animation-delay:-.6s}.spinner_2eL5{animation-delay:-.7s}.spinner_R64v{animation-delay:-.8s}.spinner_sL4g{animation-delay:-.9s}.spinner_rC6k{animation-delay:-1s}.spinner_8i8F{animation-delay:-1.1s}@keyframes spinner_sM3D{0%{opacity:1}100%{opacity:.2}}`}</style><rect className="spinner_DupC" x="11" y="1" width="2" height="5" rx="1" fill="currentColor"/><rect className="spinner_DupC spinner_GWtZ" x="11" y="1" width="2" height="5" rx="1" fill="currentColor" transform="rotate(30 12 12)"/><rect className="spinner_DupC spinner_dwN6" x="11" y="1" width="2" height="5" rx="1" fill="currentColor" transform="rotate(60 12 12)"/><rect className="spinner_DupC spinner_46_2" x="11" y="1" width="2" height="5" rx="1" fill="currentColor" transform="rotate(90 12 12)"/><rect className="spinner_DupC spinner_G24s" x="11" y="1" width="2" height="5" rx="1" fill="currentColor" transform="rotate(120 12 12)"/><rect className="spinner_DupC spinner_p24s" x="11" y="1" width="2" height="5" rx="1" fill="currentColor" transform="rotate(150 12 12)"/><rect className="spinner_DupC spinner_J3Y2" x="11" y="1" width="2" height="5" rx="1" fill="currentColor" transform="rotate(180 12 12)"/><rect className="spinner_DupC spinner_2eL5" x="11" y="1" width="2" height="5" rx="1" fill="currentColor" transform="rotate(210 12 12)"/><rect className="spinner_DupC spinner_R64v" x="11" y="1" width="2" height="5" rx="1" fill="currentColor" transform="rotate(240 12 12)"/><rect className="spinner_DupC spinner_sL4g" x="11" y="1" width="2" height="5" rx="1" fill="currentColor" transform="rotate(270 12 12)"/><rect className="spinner_DupC spinner_rC6k" x="11" y="1" width="2" height="5" rx="1" fill="currentColor" transform="rotate(300 12 12)"/><rect className="spinner_DupC spinner_8i8F" x="11" y="1" width="2" height="5" rx="1" fill="currentColor" transform="rotate(330 12 12)"/></svg>;
 const CollapseIcon = ({ collapsed }) => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: collapsed ? 'rotate(180deg)' : 'none', transition: 'transform 0.3s ease' }}><path d="m15 18-6-6 6-6"/></svg>;
 const AlertTriangleIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.46 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>;
 const EditIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>;
@@ -1016,6 +1018,8 @@ const KAOMSLogin = () => {
     const [areImagesReady, setAreImagesReady] = useState(false);
     const [appLogoSrc, setAppLogoSrc] = useState('');
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+    const [isPasswordStep, setIsPasswordStep] = useState(false);
+    const [isShowingPassword, setIsShowingPassword] = useState(false);
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwrXxhHNWtz6a5bNCNNP2xvZorw6SC56neUCmsxVq54b4M8M7XvLUqL092zD054FW1w/exec';
 
     useEffect(() => {
@@ -1029,6 +1033,11 @@ const KAOMSLogin = () => {
                 if (new Date().getTime() < sessionData.expiry) { setSession(sessionData); setIsLoggedIn(true); } 
                 else { localStorage.removeItem('ka-oms-session'); }
             } catch (e) { console.error("Error parsing session data", e); localStorage.removeItem('ka-oms-session'); }
+        }
+
+        if (isMobile) {
+            const formPane = document.querySelector('.form-pane') as HTMLElement;
+            if (formPane) formPane.style.padding = '0';
         }
 
         const loadAndCacheImage = async (key: string, url: string): Promise<string> => {
@@ -1057,8 +1066,27 @@ const KAOMSLogin = () => {
         };
 
         initializeApp();
-        return () => window.removeEventListener('resize', handleResize);
-    }, []);
+        return () => {
+             window.removeEventListener('resize', handleResize);
+             if (isMobile) {
+                const formPane = document.querySelector('.form-pane') as HTMLElement;
+                if (formPane) formPane.style.padding = '1rem';
+            }
+        };
+    }, [isMobile]);
+    
+    const handleShowPasswordStep = (e) => {
+        e.preventDefault();
+        if (!userId) {
+            setError('User ID cannot be empty.');
+            return;
+        }
+        setError('');
+        setIsShowingPassword(true);
+        setTimeout(() => {
+            setIsPasswordStep(true);
+        }, 500);
+    };
 
     const handleLogin = async (e) => {
         e.preventDefault();
@@ -1114,7 +1142,17 @@ const KAOMSLogin = () => {
         localStorage.setItem('ka-oms-session', JSON.stringify(updatedSession));
     };
     
-    const cardStyles = { ...styles.card, padding: isMobile ? '2.5rem 1.5rem' : '2.5rem 2rem', boxShadow: isMobile ? '0 4px 15px rgba(0, 0, 0, 0.06)' : 'var(--box-shadow)', transform: isMounted ? 'translateY(0)' : 'translateY(20px)', opacity: isMounted ? 1 : 0 };
+    const cardStyles = { 
+        ...styles.card, 
+        padding: isMobile ? '2.5rem 1.5rem' : '2.5rem 2rem', 
+        boxShadow: isMobile ? 'none' : 'var(--box-shadow)', 
+        transform: isMounted ? 'translateY(0)' : 'translateY(20px)', 
+        opacity: isMounted ? 1 : 0,
+        borderRadius: isMobile ? 0 : 'var(--border-radius)',
+        minHeight: isMobile ? '100%' : '580px',
+        border: isMobile ? 'none' : '1px solid var(--border-color)',
+        backgroundColor: isMobile ? 'var(--card-bg)' : 'var(--card-bg)',
+    };
     const titleStyles = { ...styles.title, fontSize: isMobile ? '1.5rem' : '1.75rem' };
     const subtitleStyles = { ...styles.subtitle, fontSize: isMobile ? '0.9rem' : '1rem', marginBottom: isMobile ? '1.5rem' : '2rem' };
     const logoStyles = { ...styles.logo, opacity: areImagesReady ? 1 : 0, transition: 'opacity 0.3s ease-in' };
@@ -1124,31 +1162,94 @@ const KAOMSLogin = () => {
     }
 
     return (
-         <div style={styles.loginContainer}>
+         <div style={isMobile ? {...styles.loginContainer, backgroundColor: 'var(--card-bg)'} : styles.loginContainer}>
              <div style={cardStyles}>
                 {!areImagesReady ? <Spinner /> : (
                     <>
                         <img src={appLogoSrc} alt="KA-OMS Logo" style={logoStyles} />
                         <h1 style={titleStyles}>Kambeshwar Agencies</h1>
                         <p style={subtitleStyles}>Enamor Order Management</p>
-                        {isForgotPassword ? (
-                            <form onSubmit={handleForgotPassword} style={styles.form}>
-                                <p style={{...styles.subtitle, marginBottom: '1.5rem', fontSize: '0.9rem'}}>Enter your email to recover your password.</p>
-                                <div style={styles.inputGroup}><label style={{ ...styles.label, ...(forgotEmail || emailFocused ? styles.labelFocused : {}) }}>Email Address</label><input type="email" value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} onFocus={() => setEmailFocused(true)} onBlur={() => setEmailFocused(false)} style={styles.input} required /></div>
-                                {error && <p style={styles.error}>{error}</p>}
-                                {forgotMessage && <p style={styles.success}>{forgotMessage}</p>}
-                                <button type="submit" style={styles.button} disabled={isLoading}>{isLoading ? 'Sending...' : 'Send Recovery Email'}</button>
-                                <a href="#" onClick={(e) => { e.preventDefault(); setIsForgotPassword(false); setError(''); setForgotMessage(''); }} style={styles.link}>Back to Login</a>
-                            </form>
-                        ) : (
-                            <form onSubmit={handleLogin} style={styles.form}>
-                                <div style={styles.inputGroup}><label style={{ ...styles.label, ...(userId || userIdFocused ? styles.labelFocused : {}) }}>User ID (Mobile or Email)</label><input type="text" value={userId} onChange={(e) => setUserId(e.target.value)} onFocus={() => setUserIdFocused(true)} onBlur={() => setUserIdFocused(false)} style={styles.input} required /></div>
-                                <div style={styles.inputGroup}><label style={{ ...styles.label, ...(password || passwordFocused ? styles.labelFocused : {}) }}>Password</label><input type={isPasswordVisible ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} onFocus={() => setPasswordFocused(true)} onBlur={() => setPasswordFocused(false)} style={styles.input} required /><button type="button" onClick={() => setIsPasswordVisible(!isPasswordVisible)} style={styles.eyeIcon} aria-label={isPasswordVisible ? "Hide password" : "Show password"}><EyeIcon closed={!isPasswordVisible} /></button></div>
-                                {error && <p style={styles.error}>{error}</p>}
-                                <button type="submit" style={styles.button} disabled={isLoading}>{isLoading ? 'Logging in...' : 'Login'}</button>
-                                <a href="#" onClick={(e) => { e.preventDefault(); setIsForgotPassword(true); setError(''); }} style={styles.link}>Forgot Password?</a>
-                            </form>
-                        )}
+
+                        <div style={{width: '100%', overflow: 'hidden'}}>
+                            <div style={{
+                                display: 'flex',
+                                width: '200%',
+                                transform: isForgotPassword ? 'translateX(-50%)' : 'translateX(0)',
+                                transition: 'transform 0.5s cubic-bezier(0.77, 0, 0.175, 1)'
+                            }}>
+                                <div style={{width: '50%', flexShrink: 0}}>
+                                    <form onSubmit={handleLogin} style={styles.form}>
+                                        {isMobile ? (
+                                            <div style={styles.mobileInputContainer}>
+                                                <div style={{...styles.inputGroup, borderBottom: '1px solid var(--separator-color)'}}>
+                                                    <label style={{ ...styles.label, ...(userId || userIdFocused ? styles.labelFocused : {}) }}>Email or Phone Number</label>
+                                                    <input type="text" value={userId} onChange={(e) => setUserId(e.target.value)} onFocus={() => setUserIdFocused(true)} onBlur={() => setUserIdFocused(false)} style={{...styles.input, border: 'none', borderRadius: 0}} required />
+                                                    {!isPasswordStep && (
+                                                        <button type="button" onClick={handleShowPasswordStep} style={styles.mobileArrowButton}>
+                                                            {isShowingPassword ? <RadialSpinner /> : <ArrowRightIcon />}
+                                                        </button>
+                                                    )}
+                                                </div>
+                                                <div style={isPasswordStep ? styles.passwordContainerVisible : styles.passwordContainerHidden}>
+                                                    <div style={styles.inputGroup}>
+                                                        <label style={{ ...styles.label, ...(password || passwordFocused ? styles.labelFocused : {}) }}>Password</label>
+                                                        <input type={'password'} value={password} onChange={(e) => setPassword(e.target.value)} onFocus={() => setPasswordFocused(true)} onBlur={() => setPasswordFocused(false)} style={{...styles.input, border: 'none', borderRadius: 0}} required />
+                                                        <button type="submit" style={styles.mobileArrowButton} disabled={isLoading}>
+                                                            {isLoading ? <RadialSpinner /> : <ArrowRightIcon />}
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <div style={styles.inputGroup}>
+                                                    <label style={{ ...styles.label, ...(userId || userIdFocused ? styles.labelFocused : {}) }}>User ID (Mobile or Email)</label>
+                                                    <input type="text" value={userId} onChange={(e) => setUserId(e.target.value)} onFocus={() => setUserIdFocused(true)} onBlur={() => setUserIdFocused(false)} style={styles.input} required />
+                                                </div>
+                                                <div style={styles.inputGroup}>
+                                                    <label style={{ ...styles.label, ...(password || passwordFocused ? styles.labelFocused : {}) }}>Password</label>
+                                                    <input type={isPasswordVisible ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} onFocus={() => setPasswordFocused(true)} onBlur={() => setPasswordFocused(false)} style={styles.input} required />
+                                                    <button type="button" onClick={() => setIsPasswordVisible(!isPasswordVisible)} style={styles.eyeIcon} aria-label={isPasswordVisible ? "Hide password" : "Show password"}><EyeIcon closed={!isPasswordVisible} /></button>
+                                                </div>
+                                            </>
+                                        )}
+                                        {error && <p style={styles.error}>{error}</p>}
+                                        {!isMobile && <button type="submit" style={styles.button} disabled={isLoading}>{isLoading ? 'Logging in...' : 'Login'}</button>}
+                                        <a href="#" onClick={(e) => { e.preventDefault(); setIsForgotPassword(true); setError(''); }} style={styles.link}>Forgot Password?</a>
+                                    </form>
+                                </div>
+                                <div style={{width: '50%', flexShrink: 0}}>
+                                     <form onSubmit={handleForgotPassword} style={styles.form}>
+                                        <p style={{...styles.subtitle, marginBottom: '1.5rem', fontSize: '0.9rem'}}>Enter your email to recover your password.</p>
+                                        
+                                        {isMobile ? (
+                                            <div style={styles.mobileInputContainer}>
+                                                <div style={styles.inputGroup}>
+                                                    <label style={{ ...styles.label, ...(forgotEmail || emailFocused ? styles.labelFocused : {}) }}>Email Address</label>
+                                                    <input type="email" value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} onFocus={() => setEmailFocused(true)} onBlur={() => setEmailFocused(false)} style={{...styles.input, border: 'none', borderRadius: 0}} required />
+                                                    <button type="submit" style={styles.mobileArrowButton} disabled={isLoading}>
+                                                        {isLoading ? <RadialSpinner /> : <ArrowRightIcon />}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <div style={styles.inputGroup}>
+                                                    <label style={{ ...styles.label, ...(forgotEmail || emailFocused ? styles.labelFocused : {}) }}>Email Address</label>
+                                                    <input type="email" value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} onFocus={() => setEmailFocused(true)} onBlur={() => setEmailFocused(false)} style={styles.input} required />
+                                                </div>
+                                                <button type="submit" style={styles.button} disabled={isLoading}>{isLoading ? 'Sending...' : 'Send Recovery Email'}</button>
+                                            </>
+                                        )}
+            
+                                        {error && <p style={styles.error}>{error}</p>}
+                                        {forgotMessage && <p style={styles.success}>{forgotMessage}</p>}
+                                        
+                                        <a href="#" onClick={(e) => { e.preventDefault(); setIsForgotPassword(false); setError(''); setForgotMessage(''); }} style={styles.link}>Back to Login</a>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
                     </>
                 )}
              </div>
@@ -1215,20 +1316,24 @@ const styles: { [key: string]: React.CSSProperties } = {
     // --- Login Styles ---
     loginContainer: { display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' },
     card: { width: '100%', maxWidth: '420px', minHeight: '580px', padding: '2.5rem 2rem', backgroundColor: 'var(--card-bg)', backdropFilter: 'blur(10px)', borderRadius: 'var(--border-radius)', boxShadow: 'var(--box-shadow)', textAlign: 'center', border: '1px solid var(--border-color)', transition: 'transform 0.5s ease-out, opacity 0.5s ease-out, box-shadow 0.3s ease-out', display: 'flex', flexDirection: 'column', justifyContent: 'center' },
-    logo: { width: '80px', height: '80px', marginBottom: '0.5rem', margin: '0 auto 0.5rem', opacity: 0 },
+    logo: { width: '100px', height: '100px', marginBottom: '0.5rem', margin: '0 auto 0.5rem', opacity: 0 },
     title: { color: 'var(--dark-grey)', fontWeight: 600, marginBottom: '0.25rem' },
     subtitle: { color: 'var(--text-color)', marginBottom: '2rem', fontSize: '1rem' },
     form: { width: '100%', display: 'flex', flexDirection: 'column', gap: '1.25rem' },
     inputGroup: { position: 'relative' },
-    input: { width: '100%', padding: '12px 15px', paddingTop: '18px', fontSize: '1rem', border: '1px solid var(--separator-color)', borderRadius: '8px', backgroundColor: 'var(--card-bg)', color: 'var(--dark-grey)', transition: 'border-color 0.3s ease' },
-    label: { position: 'absolute', left: '15px', top: '15px', color: 'var(--text-tertiary)', pointerEvents: 'none', transition: 'all 0.2s ease-out' },
-    labelFocused: { top: '5px', fontSize: '0.75rem', color: 'var(--brand-color)' },
+    input: { width: '100%', padding: '14px 15px', paddingTop: '22px', fontSize: '1rem', border: '1px solid var(--separator-color)', borderRadius: '8px', backgroundColor: 'var(--card-bg)', color: 'var(--dark-grey)', transition: 'border-color 0.3s ease' },
+    label: { position: 'absolute', left: '15px', top: '18px', color: 'var(--gray)', pointerEvents: 'none', transition: 'all 0.2s ease-out' },
+    labelFocused: { top: '7px', fontSize: '0.8rem', color: 'var(--brand-color)' },
     eyeIcon: { position: 'absolute', top: '50%', right: '15px', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-color)', padding: '0' },
     button: { padding: '15px', fontSize: '1rem', fontWeight: 500, color: '#fff', backgroundColor: 'var(--brand-color)', border: 'none', borderRadius: '8px', cursor: 'pointer', transition: 'background-color 0.3s ease, transform 0.1s ease', marginTop: '0.5rem' },
     link: { color: 'var(--brand-color)', textDecoration: 'none', fontSize: '0.9rem', marginTop: '0.5rem' },
     error: { color: 'var(--red)', fontSize: '0.85rem', textAlign: 'center', marginTop: '-0.5rem', marginBottom: '0.5rem' },
     success: { color: 'var(--green)', fontSize: '0.85rem', textAlign: 'center' },
     spinner: { border: '4px solid var(--light-grey)', borderRadius: '50%', borderTop: '4px solid var(--brand-color)', width: '40px', height: '40px', animation: 'spin 1s linear infinite', margin: 'auto' },
+    mobileInputContainer: { borderRadius: '12px', border: '1px solid var(--separator-color)', overflow: 'hidden', backgroundColor: 'var(--card-bg)' },
+    mobileArrowButton: { position: 'absolute', top: '50%', right: '12px', transform: 'translateY(-50%)', background: 'transparent', border: '1px solid var(--separator-color)', cursor: 'pointer', color: 'var(--text-color)', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+    passwordContainerHidden: { maxHeight: 0, overflow: 'hidden', transition: 'max-height 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)' },
+    passwordContainerVisible: { maxHeight: '80px', transition: 'max-height 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)' },
     
     // --- Preferences Styles ---
     preferencesPageWrapper: { display: 'flex', flexDirection: 'column', gap: '2rem', maxWidth: '600px', margin: '0 auto', width: '100%', padding: '1rem' },
