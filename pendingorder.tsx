@@ -1,4 +1,6 @@
 
+
+
 import React, { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import firebase from 'firebase/compat/app';
@@ -154,7 +156,8 @@ const stockDb = {
             request.onerror = (event) => reject((event.target as IDBRequest).error);
         });
     },
-    setMetadata: async function(metadata: { id: string; timestamp: string }) {
+// FIX: Changed the type of 'metadata' from a specific object to 'any' to match its usage and prevent type errors during calls.
+    setMetadata: async function(metadata: any) {
         const db = await this.init();
         return new Promise((resolve, reject) => {
             const transaction = db.transaction(['metadata'], 'readwrite');
@@ -672,11 +675,20 @@ const DetailedOrderCard: React.FC<{
 }) => {
     const isOverdue = new Date().getTime() - new Date(order.timestamp).getTime() > 25 * 24 * 60 * 60 * 1000;
 
-    const uniqueStyles = useMemo(() => {
+    const uniqueStyleColorPairs = useMemo(() => {
         if (!order.items) return [];
-        return [...new Set(order.items.map(item => item.fullItemData.Style))];
+        const pairs = new Set<string>();
+        order.items.forEach(item => {
+            if (item.fullItemData) {
+                const style = item.fullItemData.Style;
+                const color = item.fullItemData.Color;
+                if (style && color) {
+                    pairs.add(`${style}-${color}`);
+                }
+            }
+        });
+        return Array.from(pairs).sort();
     }, [order.items]);
-    const allStyles = uniqueStyles.join(' / ');
 
     const getCardStyle = () => {
         let baseStyle = isExpanded ? styles.detailedOrderCardActive : styles.detailedOrderCard;
@@ -717,7 +729,9 @@ const DetailedOrderCard: React.FC<{
             {/* Second Row: Style Preview Left | Order No & Time Right */}
              <div style={styles.cardSecondRow}>
                  <div style={styles.stylePreviewInline}>
-                     {allStyles}
+                    {uniqueStyleColorPairs.map((pair) => (
+                        <span key={pair} className="style-chip">{pair}</span>
+                    ))}
                  </div>
                  <div style={styles.cardMetaRight}>
                      <span style={styles.cardOrderNumber}>#{order.orderNumber}</span>
@@ -825,7 +839,9 @@ const PartyGroup: React.FC<{ partyName: string; data: { orderCount: number; orde
                         </div>
                         {isCollapsed && uniqueStyleColorPairs.length > 0 && (
                             <div style={styles.stylePreview}>
-                                {uniqueStyleColorPairs.slice(0, 3).join(' / ')}{uniqueStyleColorPairs.length > 3 ? '...' : ''}
+                                {uniqueStyleColorPairs.map((pair) => (
+                                    <span key={pair} className="style-chip">{pair}</span>
+                                ))}
                             </div>
                         )}
                     </div>
@@ -841,7 +857,9 @@ const PartyGroup: React.FC<{ partyName: string; data: { orderCount: number; orde
                 <span style={styles.cardSubTitle}>{data.orderCount} Orders | Total Qty: {totalQty}</span>
                  {isCollapsed && uniqueStyleColorPairs.length > 0 && (
                     <div style={styles.stylePreview}>
-                        {uniqueStyleColorPairs.slice(0, 5).join(' / ')}{uniqueStyleColorPairs.length > 5 ? '...' : ''}
+                        {uniqueStyleColorPairs.map((pair) => (
+                            <span key={pair} className="style-chip">{pair}</span>
+                        ))}
                     </div>
                 )}
                 <ChevronIcon collapsed={isCollapsed} />
@@ -1437,7 +1455,8 @@ export const PendingOrders = ({ onNavigate }) => {
                 // FIX: Type assertion for localStock to StockItem[]
                 const localStock = await stockDb.getAllStock() as StockItem[];
                 if (localStock && localStock.length > 0) {
-                    const stockMap = localStock.reduce((acc, item) => {
+// FIX: Add explicit types for the accumulator (acc) and item to resolve type inference errors in the reduce function.
+                    const stockMap = localStock.reduce((acc: Record<string, number>, item: StockItem) => {
                         // FIX: Added null/undefined checks for item properties
                         if (item && item.style && item.color && item.size) {
                             const key = `${normalizeKeyPart(item.style)}-${normalizeKeyPart(item.color)}-${normalizeKeyPart(item.size)}`;
@@ -2110,6 +2129,12 @@ export const PendingOrders = ({ onNavigate }) => {
                 }
                 .custom-dropdown-item:hover { background-color: var(--active-bg); }
                 .suggestion-item:hover { background-color: var(--active-bg); }
+                .style-chip:not(:last-child)::after {
+                    content: '/';
+                    padding: 0 0.4em;
+                    color: var(--text-tertiary);
+                    font-weight: 400;
+                }
                 @keyframes dropdown-in {
                     from { transform: translateY(10px) scale(0.95); opacity: 0; }
                     to { transform: translateY(0) scale(1); opacity: 1; }
@@ -2317,7 +2342,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     cardTitle: { fontSize: '1.1rem', fontWeight: 600, color: 'var(--dark-grey)' },
     cardSubTitle: { fontSize: '0.85rem', color: 'var(--text-color)', fontWeight: 500 },
     cardDetails: { padding: '0 0 1rem', display: 'flex', flexDirection: 'column' },
-    stylePreview: { fontSize: '0.8rem', color: 'var(--text-color)', marginTop: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+    stylePreview: { fontSize: '0.8rem', color: 'var(--text-color)', marginTop: '4px', lineHeight: 1.4, display: 'flex', flexWrap: 'wrap', alignItems: 'center' },
     
     // Animation Wrappers - using grid for smoother animations
     collapsibleContainer: {
@@ -2441,7 +2466,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     cardTotalQuantityBadge: { fontSize: '0.9rem', fontWeight: 700, color: 'var(--brand-color)', backgroundColor: 'var(--active-bg)', padding: '3px 8px', borderRadius: '6px', marginRight: '0.75rem', minWidth: '30px', textAlign: 'center' },
     
     cardSecondRow: { display: 'grid', gridTemplateColumns: '1fr auto', gap: '1rem', alignItems: 'start' },
-    stylePreviewInline: { fontSize: '0.85rem', color: 'var(--text-color)', textAlign: 'left', fontWeight: 500, lineHeight: 1.4 },
+    stylePreviewInline: { fontSize: '0.85rem', color: 'var(--text-color)', textAlign: 'left', fontWeight: 500, lineHeight: 1.4, display: 'flex', flexWrap: 'wrap', alignItems: 'center' },
     cardMetaRight: { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' },
     
     cardOrderNumber: { fontFamily: 'monospace', fontWeight: 700, color: 'var(--brand-color)', backgroundColor: 'var(--active-bg)', padding: '2px 6px', borderRadius: '4px', fontSize: '0.8rem' },
