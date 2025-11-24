@@ -178,7 +178,6 @@
         textarea:focus {
             outline: none;
             border-color: var(--brand-color);
-            box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.15);
         }
 
         body.dark-mode input[type="text"]:focus,
@@ -186,7 +185,7 @@
         body.dark-mode input[type="password"]:focus,
         body.dark-mode input[type="number"]:focus,
         body.dark-mode textarea:focus {
-            box-shadow: 0 0 0 3px rgba(0, 145, 255, 0.25);
+            /* No box-shadow for a plain border */
         }
 
         .container {
