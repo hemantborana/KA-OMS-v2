@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import firebase from 'firebase/compat/app';
@@ -40,6 +39,9 @@ interface Order { orderNumber: string; partyName: string; timestamp: string; tot
 // FIX: Added explicit types for summarized data and parties to prevent type inference issues with reduce.
 interface SummarizedData { [partyName: string]: { orderCount: number; orders: Order[]; } }
 interface Parties { [partyName: string]: number; }
+// FIX: Define StockItem interface for clarity and type safety
+interface StockItem { id: number; style: string; color: string; size: string; stock: number; }
+
 const PENDING_ORDERS_REF = 'Pending_Order_V2';
 const BILLING_ORDERS_REF = 'Ready_For_Billing_V2';
 const DELETED_ORDERS_REF = 'Deleted_Orders_V2';
@@ -121,7 +123,7 @@ const stockDb = {
             request.onerror = (event) => reject((event.target as IDBRequest).error);
         });
     },
-    clearAndAddStock: async function(items) {
+    clearAndAddStock: async function(items: StockItem[]) {
         const db = await this.init();
         return new Promise((resolve, reject) => {
             const transaction = db.transaction(['stockItems'], 'readwrite');
@@ -132,7 +134,7 @@ const stockDb = {
             transaction.onerror = (event) => reject((event.target as IDBRequest).error);
         });
     },
-    getAllStock: async function() {
+    getAllStock: async function(): Promise<StockItem[]> {
         const db = await this.init();
         return new Promise((resolve, reject) => {
             const transaction = db.transaction(['stockItems'], 'readonly');
@@ -152,7 +154,7 @@ const stockDb = {
             request.onerror = (event) => reject((event.target as IDBRequest).error);
         });
     },
-    setMetadata: async function(metadata) {
+    setMetadata: async function(metadata: { id: string; timestamp: string }) {
         const db = await this.init();
         return new Promise((resolve, reject) => {
             const transaction = db.transaction(['metadata'], 'readwrite');
@@ -476,7 +478,7 @@ const ProcessQuantityControl: React.FC<{
     );
 };
 
-const ExpandedPendingView: React.FC<{ order: Order, onProcess, onDelete, isProcessing, processingQty, onQtyChange, stockData, isMobile, onPrint, onAddTag, onRemoveTag, onOpenCustomTagModal, onOpenNoteModal, globalTags }> = ({ order, onProcess, onDelete, isProcessing, processingQty, onQtyChange, stockData, isMobile, onPrint, onAddTag, onRemoveTag, onOpenCustomTagModal, onOpenNoteModal, globalTags }) => {
+const ExpandedPendingView: React.FC<{ order: Order, onProcess, onDelete, isProcessing, processingQty, onQtyChange, stockData: Record<string, number>, isMobile, onPrint, onAddTag, onRemoveTag, onOpenCustomTagModal, onOpenNoteModal, globalTags }> = ({ order, onProcess, onDelete, isProcessing, processingQty, onQtyChange, stockData, isMobile, onPrint, onAddTag, onRemoveTag, onOpenCustomTagModal, onOpenNoteModal, globalTags }) => {
     const [isHistoryCollapsed, setIsHistoryCollapsed] = useState(true);
     const isProcessable = Object.values(processingQty).some(qty => Number(qty) > 0);
 
@@ -904,6 +906,12 @@ const CustomTagModal: React.FC<{
         }
     };
     
+    useEffect(() => {
+        if (!isOpen) {
+            setTagName('');
+        }
+    }, [isOpen]);
+    
     if (!isOpen) return null;
 
     return (
@@ -1066,6 +1074,15 @@ const RecommendedProducts = () => {
 };
 
 const OrderSummaryPopup: React.FC<{ order: Order; onClose: () => void; }> = ({ order, onClose }) => {
+    const [isClosing, setIsClosing] = useState(false);
+
+    const handleClose = () => {
+        setIsClosing(true);
+        setTimeout(() => {
+            onClose();
+        }, 300); // Match animation duration
+    };
+    
     const groupedItems = useMemo(() => {
         if (!order || !order.items) return [];
 
@@ -1085,18 +1102,20 @@ const OrderSummaryPopup: React.FC<{ order: Order; onClose: () => void; }> = ({ o
     const formatCurrency = (value) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(value);
 
     return createPortal(
-        <div style={styles.cartModalOverlay} onClick={onClose}>
-            <div style={styles.summaryModalContent} onClick={(e) => e.stopPropagation()}>
-                <div style={styles.cartHeader}>
-                    <h2 style={styles.cardTitleBare}>Order Summary</h2>
-                    <button onClick={onClose} style={styles.cartModalCloseButton}>&times;</button>
+        <div style={{...styles.modalOverlay, animation: isClosing ? 'overlayOut 0.3s forwards' : 'overlayIn 0.3s forwards'}} onClick={handleClose}>
+            <div style={{...styles.modalContent, maxWidth: '420px', animation: isClosing ? 'modalOut 0.3s forwards' : 'modalIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards'}} onClick={(e) => e.stopPropagation()}>
+                <div style={{...styles.modalHeader, textAlign: 'center', justifyContent: 'center', position: 'relative'}}>
+                    <h3 style={styles.modalTitle}>Order Summary</h3>
+                    <p style={{...styles.modalSubtitleText, position: 'absolute', top: 'calc(100% - 8px)', left: 0, right: 0, marginBottom: 0}}>#{order.orderNumber}</p>
+                    <button style={styles.modalCloseButton} onClick={handleClose} aria-label="Close summary">&times;</button>
                 </div>
+
                 {order.items.length === 0 ? (
-                    <p style={styles.cartEmptyText}>This order is empty.</p>
+                    <p style={{...styles.cartEmptyText, padding: '1.5rem'}}>This order is empty.</p>
                 ) : (
-                    <div style={styles.cartItemsList}>
+                    <div style={{...styles.cartItemsList, padding: '0 1.5rem', flex: 1}}>
                         {groupedItems.map(group => (
-                            <div key={`${group.style}-${group.color}`} style={{ ...styles.cartGroupItem, cursor: 'default' }}>
+                            <div key={`${group.style}-${group.color}`} style={{ ...styles.cartGroupItem, cursor: 'default', padding: '0.75rem 0' }}>
                                 <div style={styles.cartItemInfo}>
                                     <div style={styles.cartItemDetails}>{`${group.style} - ${group.color}`}</div>
                                     <div style={styles.cartItemSubDetails}>{`Total Qty: ${group.totalQuantity}`}</div>
@@ -1105,7 +1124,7 @@ const OrderSummaryPopup: React.FC<{ order: Order; onClose: () => void; }> = ({ o
                         ))}
                     </div>
                 )}
-                <div style={styles.cartFooter}>
+                <div style={{...styles.cartFooter, borderTop: 'none', paddingBottom: '0'}}>
                     <div style={styles.cartSummary}>
                         <div>
                             <div style={styles.summaryLabel}>Total Quantity</div>
@@ -1115,6 +1134,9 @@ const OrderSummaryPopup: React.FC<{ order: Order; onClose: () => void; }> = ({ o
                             <div style={styles.summaryLabel}>Total Value</div>
                             <div style={styles.summaryValue}>{formatCurrency(order.totalValue)}</div>
                         </div>
+                    </div>
+                    <div style={{...styles.iosModalActions, marginTop: '1.5rem'}}>
+                        <button onClick={handleClose} style={styles.iosModalButtonPrimary}>Done</button>
                     </div>
                 </div>
             </div>
@@ -1338,7 +1360,8 @@ const EditBottomSheet: React.FC<EditBottomSheetProps> = ({ order, onClose, allPa
 
 export const PendingOrders = ({ onNavigate }) => {
     const [orders, setOrders] = useState<Order[]>([]);
-    const [stockData, setStockData] = useState({});
+    // FIX: Set initial state of stockData to an empty object of type Record<string, number>
+    const [stockData, setStockData] = useState<Record<string, number>>({});
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
@@ -1411,11 +1434,15 @@ export const PendingOrders = ({ onNavigate }) => {
         const loadStockData = async () => {
             let localDataLoaded = false;
             try {
-                const localStock = await stockDb.getAllStock() as any[];
+                // FIX: Type assertion for localStock to StockItem[]
+                const localStock = await stockDb.getAllStock() as StockItem[];
                 if (localStock && localStock.length > 0) {
                     const stockMap = localStock.reduce((acc, item) => {
-                        const key = `${normalizeKeyPart(item.style)}-${normalizeKeyPart(item.color)}-${normalizeKeyPart(item.size)}`;
-                        acc[key] = item.stock;
+                        // FIX: Added null/undefined checks for item properties
+                        if (item && item.style && item.color && item.size) {
+                            const key = `${normalizeKeyPart(item.style)}-${normalizeKeyPart(item.color)}-${normalizeKeyPart(item.size)}`;
+                            acc[key] = item.stock;
+                        }
                         return acc;
                     }, {});
                     setStockData(stockMap);
@@ -1437,9 +1464,12 @@ export const PendingOrders = ({ onNavigate }) => {
                         await stockDb.clearAndAddStock(result.data);
                         await stockDb.setMetadata({ timestamp: result.timestamp });
                         
-                        const stockMap = result.data.reduce((acc, item) => {
-                            const key = `${normalizeKeyPart(item.style)}-${normalizeKeyPart(item.color)}-${normalizeKeyPart(item.size)}`;
-                            acc[key] = item.stock;
+                        const stockMap = result.data.reduce((acc, item: StockItem) => {
+                            // FIX: Added null/undefined checks for item properties
+                            if (item && item.style && item.color && item.size) {
+                                const key = `${normalizeKeyPart(item.style)}-${normalizeKeyPart(item.color)}-${normalizeKeyPart(item.size)}`;
+                                acc[key] = item.stock;
+                            }
                             return acc;
                         }, {});
                         setStockData(stockMap);
@@ -2475,16 +2505,15 @@ const styles: { [key: string]: React.CSSProperties } = {
     customDropdownItem: { display: 'block', width: '100%', padding: '0.5rem 0.75rem', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '0.85rem', borderRadius: '6px', color: 'var(--dark-grey)', },
     // Modal Styles
     modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.2)', backdropFilter: 'blur(7px)', WebkitBackdropFilter: 'blur(7px)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0 },
-    cartModalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 1102, display: 'flex', alignItems: 'center', justifyContent: 'center' },
     modalContent: { backgroundColor: 'var(--glass-bg)', padding: '1.5rem', borderRadius: '12px', width: '90%', boxShadow: '0 8px 32px rgba(0,0,0,0.1)', border: '1px solid var(--glass-border)', display: 'flex', flexDirection: 'column', gap: '1rem', transform: 'scale(0.95)', opacity: 0 },
-    summaryModalContent: { backgroundColor: 'var(--card-bg)', width: '90%', maxWidth: '420px', borderRadius: 'var(--border-radius)', display: 'flex', flexDirection: 'column', position: 'relative', animation: 'slideUp 0.3s ease-out forwards', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' },
     cartModalContent: { maxWidth: '320px', animation: 'modalIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards', zIndex: 1103 },
     modalSubtitleText: { textAlign: 'center', color: 'var(--text-color)', marginBottom: '1rem', fontSize: '0.9rem', padding: '0 1rem' },
     modalInput: { width: '100%', padding: '10px 15px', fontSize: '1rem', border: '1px solid var(--separator-color)', borderRadius: '8px', backgroundColor: 'var(--card-bg)', color: 'var(--dark-grey)', fontFamily: "'Inter', sans-serif" },
     modalTextarea: { width: '100%', minHeight: '40px', padding: '0.75rem', fontSize: '0.9rem', border: '1px solid var(--separator-color)', borderRadius: '8px', resize: 'vertical', backgroundColor: 'var(--card-bg)', color: 'var(--dark-grey)', fontFamily: "'Inter', sans-serif" },
     modalTitle: { margin: 0, fontSize: '1.1rem', fontWeight: 600, color: 'var(--dark-grey)' },
+    modalHeader: { padding: '1rem 1.5rem 0.5rem', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 },
+    modalCloseButton: { background: 'none', border: 'none', fontSize: '2rem', color: 'var(--text-color)', cursor: 'pointer', padding: 0 },
     cardTitleBare: { fontSize: '1.1rem', fontWeight: 600, color: 'var(--dark-grey)' },
-    cartModalCloseButton: { background: 'none', border: 'none', fontSize: '2.5rem', color: 'var(--text-color)', cursor: 'pointer', padding: 0, lineHeight: '1' },
     cartEmptyText: { textAlign: 'center', color: 'var(--text-color)', padding: '3rem 1.25rem', flex: 1 },
     cartGroupItem: { display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem 0', borderBottom: '1px solid var(--separator-color)', width: '100%', background: 'none', border: 'none', textAlign: 'left' },
     cartItemSubDetails: { color: 'var(--text-color)', fontSize: '0.8rem' },
