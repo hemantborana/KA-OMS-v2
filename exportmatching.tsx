@@ -8,15 +8,35 @@ const CheckIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" heigh
 const ErrorIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{color: 'var(--red)'}}><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>;
 const TrashIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>;
 
+const normalizeKeyPart = (part: any): string => {
+    if (!part) return '';
+    return String(part).toUpperCase().trim().replace(/[^A-Z0-9]/g, '');
+};
+
+const StockIndicator: React.FC<{ stockLevel: number }> = ({ stockLevel }) => {
+    const isUnavailable = typeof stockLevel !== 'number' || stockLevel < 0;
+    let color = null;
+    let title = `Stock: ${stockLevel}`;
+    if (isUnavailable || stockLevel === 0) {
+        color = 'var(--red)';
+        if (isUnavailable) title = 'Stock: Unavailable';
+    } else if (stockLevel >= 1 && stockLevel <= 3) {
+        color = 'var(--yellow)';
+    } else if (stockLevel >= 4) {
+        color = 'var(--green)';
+    }
+    if (!color) return <div style={styles.stockIndicatorPlaceholder}></div>;
+    return <span style={{ ...styles.stockIndicator, backgroundColor: color }} title={title} />;
+};
+
 const ProcessQuantityControl: React.FC<{
     value: string | number;
-    max: number;
     onUpdate: (value: string) => void;
-}> = ({ value, max, onUpdate }) => {
+}> = ({ value, onUpdate }) => {
     const currentValue = Number(value) || 0;
 
     const handleStep = (step: number) => {
-        const newValue = Math.max(0, Math.min(max, currentValue + step));
+        const newValue = Math.max(0, currentValue + step);
         onUpdate(String(newValue));
     };
     
@@ -28,7 +48,6 @@ const ProcessQuantityControl: React.FC<{
                 value={value} 
                 onChange={(e) => onUpdate(e.target.value)} 
                 style={styles.processQtyInput} 
-                max={max}
                 min="0"
                 placeholder="0"
             />
@@ -63,9 +82,11 @@ interface ExportMatchingProps {
     onClose: () => void;
     ordersToExport: Order[];
     onExportSuccess: (orderNumbers: string[]) => void;
+    stockData: Record<string, number>;
+    isMobile: boolean;
 }
 
-export const ExportMatching: React.FC<ExportMatchingProps> = ({ isOpen, onClose, ordersToExport, onExportSuccess }) => {
+export const ExportMatching: React.FC<ExportMatchingProps> = ({ isOpen, onClose, ordersToExport, onExportSuccess, stockData, isMobile }) => {
     const [status, setStatus] = useState<BatchStatus>('pending');
     const [message, setMessage] = useState('');
     const [exportItems, setExportItems] = useState<ExportItem[]>([]);
@@ -121,7 +142,7 @@ export const ExportMatching: React.FC<ExportMatchingProps> = ({ isOpen, onClose,
     const handleQtyChange = (itemId: string, newValue: string) => {
         setExportItems(prev => prev.map(item => {
             if (item.id === itemId) {
-                const newQty = Math.max(0, Math.min(item.originalTotalQuantity, Number(newValue) || 0));
+                const newQty = Math.max(0, Number(newValue) || 0);
                 return { ...item, exportQuantity: newQty };
             }
             return item;
@@ -183,48 +204,102 @@ export const ExportMatching: React.FC<ExportMatchingProps> = ({ isOpen, onClose,
     if (!isOpen) return null;
 
     if (status === 'editing') {
-         return (
+         const modalContentStyle = isMobile 
+            ? {...styles.modalContent, maxWidth: '100%', height: '100%', borderRadius: 0}
+            : {...styles.modalContent, maxWidth: '700px'};
+
+        const modalBodyStyle = isMobile 
+            ? {...styles.modalBody, padding: '0.5rem' }
+            : styles.modalBody;
+            
+        return (
             <div style={styles.modalOverlay} onClick={handleClose}>
-                <div style={{...styles.modalContent, maxWidth: '700px'}} onClick={(e) => e.stopPropagation()}>
+                <div style={modalContentStyle} onClick={(e) => e.stopPropagation()}>
                     <div style={styles.modalHeader}>
                         <h2 style={styles.modalTitle}>Review and Adjust Export</h2>
                         <button style={styles.modalCloseButton} onClick={handleClose}>&times;</button>
                     </div>
-                    <div style={styles.modalBody}>
+                    <div style={modalBodyStyle}>
                         <p style={styles.statusSubMessage}>{message}</p>
-                        <div style={styles.tableContainer}>
-                            <table style={styles.table}>
-                                <thead>
-                                    <tr>
-                                        <th style={styles.th}>Item</th>
-                                        <th style={styles.th}>Original Qty</th>
-                                        <th style={styles.th}>Export Qty</th>
-                                        <th style={styles.th}></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {exportItems.map(item => (
-                                        <tr key={item.id}>
-                                            <td style={styles.td}>
-                                                <div>{item.data.Style} - {item.data.Color}</div>
-                                                <div style={{fontSize: '0.8rem', color: 'var(--text-color)'}}>{item.data.Size}</div>
-                                            </td>
-                                            <td style={{...styles.td, textAlign: 'center'}}>{item.originalTotalQuantity}</td>
-                                            <td style={styles.td}>
-                                                <ProcessQuantityControl 
+                        {isMobile ? (
+                             <div style={styles.mobileListContainer}>
+                                {exportItems.map(item => {
+                                    const stockKey = `${normalizeKeyPart(item.data.Style)}-${normalizeKeyPart(item.data.Color)}-${normalizeKeyPart(item.data.Size)}`;
+                                    const stockLevel = stockData[stockKey];
+                                    return (
+                                        <div key={item.id} style={styles.mobileItemCard}>
+                                            <div style={styles.mobileItemInfo}>
+                                                <div style={styles.mobileItemName}>{item.data.Style} - {item.data.Color} - <strong>{item.data.Size}</strong></div>
+                                                <div style={styles.mobileMetaGrid}>
+                                                    <div style={styles.mobileMetaItem}>
+                                                        <span>Stock</span>
+                                                        <div style={{display: 'flex', alignItems: 'center', gap: '4px'}}>
+                                                            <StockIndicator stockLevel={stockLevel} />
+                                                            <strong>{stockLevel ?? 'N/A'}</strong>
+                                                        </div>
+                                                    </div>
+                                                    <div style={styles.mobileMetaItem}>
+                                                        <span>Ordered</span>
+                                                        <strong>{item.originalTotalQuantity}</strong>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div style={styles.mobileItemActions}>
+                                                <ProcessQuantityControl
                                                     value={item.exportQuantity}
-                                                    max={item.originalTotalQuantity}
                                                     onUpdate={(newValue) => handleQtyChange(item.id, newValue)}
                                                 />
-                                            </td>
-                                            <td style={{...styles.td, textAlign: 'center'}}>
                                                 <button style={styles.deleteButton} onClick={() => handleRemoveItem(item.id)}><TrashIcon /></button>
-                                            </td>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            <div style={styles.tableContainer}>
+                                <table style={styles.table}>
+                                    <thead>
+                                        <tr>
+                                            <th style={styles.th}>Item</th>
+                                            <th style={styles.th}>Stock</th>
+                                            <th style={styles.th}>Original Qty</th>
+                                            <th style={styles.th}>Export Qty</th>
+                                            <th style={styles.th}></th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
+                                    </thead>
+                                    <tbody>
+                                        {exportItems.map(item => {
+                                            const stockKey = `${normalizeKeyPart(item.data.Style)}-${normalizeKeyPart(item.data.Color)}-${normalizeKeyPart(item.data.Size)}`;
+                                            const stockLevel = stockData[stockKey];
+                                            return (
+                                                <tr key={item.id}>
+                                                    <td style={styles.td}>
+                                                        <div>{item.data.Style} - {item.data.Color}</div>
+                                                        <div style={{fontSize: '0.8rem', color: 'var(--text-color)'}}>{item.data.Size}</div>
+                                                    </td>
+                                                    <td style={{...styles.td, textAlign: 'center'}}>
+                                                        <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px'}}>
+                                                            <StockIndicator stockLevel={stockLevel} />
+                                                            <span>{stockLevel ?? 'N/A'}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td style={{...styles.td, textAlign: 'center'}}>{item.originalTotalQuantity}</td>
+                                                    <td style={styles.td}>
+                                                        <ProcessQuantityControl 
+                                                            value={item.exportQuantity}
+                                                            onUpdate={(newValue) => handleQtyChange(item.id, newValue)}
+                                                        />
+                                                    </td>
+                                                    <td style={{...styles.td, textAlign: 'center'}}>
+                                                        <button style={styles.deleteButton} onClick={() => handleRemoveItem(item.id)}><TrashIcon /></button>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
                     </div>
                     <div style={styles.modalFooter}>
                         <button onClick={handleConfirmExport} style={styles.closeButton}>
@@ -310,6 +385,46 @@ const styles: { [key: string]: React.CSSProperties } = {
     processQtyContainer: { display: 'flex', alignItems: 'center', justifyContent: 'flex-end', },
     processQtyButton: { backgroundColor: 'var(--light-grey)', border: '1px solid var(--separator-color)', color: 'var(--dark-grey)', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background-color 0.2s', lineHeight: 1, width: '32px', height: '32px', fontSize: '1.2rem' },
     processQtyInput: { textAlign: 'center', border: '1px solid var(--separator-color)', borderLeft: 'none', borderRight: 'none', fontSize: '0.9rem', backgroundColor: 'var(--card-bg)', color: 'var(--dark-grey)', appearance: 'textfield', MozAppearance: 'textfield', WebkitAppearance: 'none', margin: 0, width: '50px', height: '32px' },
+    stockIndicator: { width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0 },
+    stockIndicatorPlaceholder: { width: '8px', height: '8px' },
+    mobileListContainer: { display: 'flex', flexDirection: 'column', gap: '0.5rem' },
+    mobileItemCard: {
+        backgroundColor: 'var(--light-grey)',
+        borderRadius: '8px',
+        padding: '0.75rem',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.75rem',
+    },
+    mobileItemInfo: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.5rem',
+    },
+    mobileItemName: {
+        fontWeight: 600,
+        color: 'var(--dark-grey)',
+        fontSize: '0.9rem',
+    },
+    mobileMetaGrid: {
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        gap: '0.5rem',
+    },
+    mobileMetaItem: {
+        fontSize: '0.8rem',
+        color: 'var(--text-color)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '2px',
+    },
+    mobileItemActions: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        borderTop: '1px solid var(--separator-color)',
+        paddingTop: '0.75rem'
+    }
 
 };
 

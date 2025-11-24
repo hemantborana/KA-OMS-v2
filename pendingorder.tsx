@@ -3,6 +3,7 @@
 
 
 
+
 import React, { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import firebase from 'firebase/compat/app';
@@ -39,13 +40,10 @@ const CartIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height
 
 // --- TYPE & FIREBASE ---
 interface HistoryEvent { timestamp: string; event: string; details: string; }
-// FIX: Add OrderItem interface for type safety on order items.
 interface OrderItem { id: string; quantity: number; price: number; fullItemData: Record<string, any>; }
 interface Order { orderNumber: string; partyName: string; timestamp: string; totalQuantity: number; totalValue: number; orderNote?: string; items: OrderItem[]; history?: HistoryEvent[]; tags?: string[]; lastExported?: string; }
-// FIX: Added explicit types for summarized data and parties to prevent type inference issues with reduce.
 interface SummarizedData { [partyName: string]: { orderCount: number; orders: Order[]; } }
 interface Parties { [partyName: string]: number; }
-// FIX: Define StockItem interface for clarity and type safety
 interface StockItem { id: number; style: string; color: string; size: string; stock: number; }
 
 const PENDING_ORDERS_REF = 'Pending_Order_V2';
@@ -161,7 +159,6 @@ const stockDb = {
             request.onerror = (event) => reject((event.target as IDBRequest).error);
         });
     },
-// FIX: Changed the type of 'metadata' from a specific object to 'any' to match its usage and prevent type errors during calls.
     setMetadata: async function(metadata: any) {
         const db = await this.init();
         return new Promise((resolve, reject) => {
@@ -1120,7 +1117,6 @@ const OrderSummaryPopup: React.FC<{ order: Order; onClose: () => void; }> = ({ o
             return acc;
         }, {} as Record<string, { style: string; color: string; totalQuantity: number; }>);
         
-// FIX: Explicitly cast the result of Object.values to resolve type inference errors where array elements were treated as 'unknown'.
         return (Object.values(groups) as { style: string, color: string, totalQuantity: number }[]).sort((a, b) => a.style.localeCompare(b.style) || a.color.localeCompare(b.color));
     }, [order]);
 
@@ -1385,7 +1381,6 @@ const EditBottomSheet: React.FC<EditBottomSheetProps> = ({ order, onClose, allPa
 
 export const PendingOrders = ({ onNavigate }) => {
     const [orders, setOrders] = useState<Order[]>([]);
-    // FIX: Set initial state of stockData to an empty object of type Record<string, number>
     const [stockData, setStockData] = useState<Record<string, number>>({});
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
@@ -1459,12 +1454,9 @@ export const PendingOrders = ({ onNavigate }) => {
         const loadStockData = async () => {
             let localDataLoaded = false;
             try {
-                // FIX: Type assertion for localStock to StockItem[]
                 const localStock = await stockDb.getAllStock() as StockItem[];
                 if (localStock && localStock.length > 0) {
-// FIX: Add explicit types for the accumulator (acc) and item to resolve type inference errors in the reduce function.
                     const stockMap = localStock.reduce((acc: Record<string, number>, item: StockItem) => {
-                        // FIX: Added null/undefined checks for item properties
                         if (item && item.style && item.color && item.size) {
                             const key = `${normalizeKeyPart(item.style)}-${normalizeKeyPart(item.color)}-${normalizeKeyPart(item.size)}`;
                             acc[key] = item.stock;
@@ -1491,7 +1483,6 @@ export const PendingOrders = ({ onNavigate }) => {
                         await stockDb.setMetadata({ timestamp: result.timestamp });
                         
                         const stockMap = result.data.reduce((acc, item: StockItem) => {
-                            // FIX: Added null/undefined checks for item properties
                             if (item && item.style && item.color && item.size) {
                                 const key = `${normalizeKeyPart(item.style)}-${normalizeKeyPart(item.color)}-${normalizeKeyPart(item.size)}`;
                                 acc[key] = item.stock;
@@ -2194,6 +2185,8 @@ export const PendingOrders = ({ onNavigate }) => {
                 }}
                 ordersToExport={ordersToExport}
                 onExportSuccess={handleExportSuccess}
+                isMobile={isMobile}
+                stockData={stockData}
             />
             <EditBottomSheet 
                 order={editingOrder} 
