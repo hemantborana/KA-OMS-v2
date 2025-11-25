@@ -4,6 +4,7 @@
 
 
 
+
 import React, { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import firebase from 'firebase/compat/app';
@@ -1056,329 +1057,6 @@ const DeleteConfirmationModal = ({ state, setState, onConfirm }) => {
     );
 };
 
-const RecommendedProducts = () => {
-    const recommendedStyles = [
-        'A039', 'A042', 'A072', 'A025', 'A066', 'A001', 'A011', 'A012', 'A045', 'A055', 'A077',
-        'EN-5901', 'PO-31', 'EN-2905', 'EN-3117'
-    ];
-    // Duplicate for seamless scroll
-    const scrollingItems = [...recommendedStyles, ...recommendedStyles];
-    const pastelColors = [
-        { bg: '#E6F7FF', text: '#0050B3' }, // Blue
-        { bg: '#F6FFED', text: '#389E0D' },  // Green
-        { bg: '#FFF7E6', text: '#D46B08' }, // Orange
-        { bg: '#FCF4FF', text: '#722ED1' }, // Purple
-        { bg: '#FFF1F0', text: '#CF1322' },  // Red
-        { bg: '#E6FFFB', text: '#08979C' }, // Cyan
-    ];
-
-    return (
-        <div style={styles.recommendationsContainer}>
-            <div style={styles.scrollingTrack}>
-                {scrollingItems.map((style, index) => {
-                    const colorScheme = pastelColors[index % pastelColors.length];
-                    const bubbleStyle: React.CSSProperties = {
-                        ...styles.recommendationBubble,
-                        backgroundColor: colorScheme.bg,
-                        color: colorScheme.text,
-                        border: `1px solid ${colorScheme.text}20`
-                    };
-                    return (
-                        <div key={index} style={bubbleStyle}>
-                            {style}
-                        </div>
-                    );
-                })}
-            </div>
-        </div>
-    );
-};
-
-const OrderSummaryPopup: React.FC<{ order: Order; onClose: () => void; }> = ({ order, onClose }) => {
-    const [isClosing, setIsClosing] = useState(false);
-
-    const handleClose = () => {
-        setIsClosing(true);
-        setTimeout(() => {
-            onClose();
-        }, 300); // Match animation duration
-    };
-    
-    const groupedItems = useMemo(() => {
-        if (!order || !order.items) return [];
-
-        const groups = order.items.reduce((acc, item) => {
-            if (!item.fullItemData) return acc;
-            const key = `${item.fullItemData.Style}-${item.fullItemData.Color}`;
-            if (!acc[key]) {
-                acc[key] = { style: item.fullItemData.Style, color: item.fullItemData.Color, totalQuantity: 0 };
-            }
-            acc[key].totalQuantity += item.quantity;
-            return acc;
-        }, {} as Record<string, { style: string; color: string; totalQuantity: number; }>);
-        
-        return (Object.values(groups) as { style: string, color: string, totalQuantity: number }[]).sort((a, b) => a.style.localeCompare(b.style) || a.color.localeCompare(b.color));
-    }, [order]);
-
-    const formatCurrency = (value) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(value);
-
-    return createPortal(
-        <div style={{...styles.modalOverlay, animation: isClosing ? 'overlayOut 0.3s forwards' : 'overlayIn 0.3s forwards'}} onClick={handleClose}>
-            <div style={{...styles.modalContent, maxWidth: '420px', animation: isClosing ? 'modalOut 0.3s forwards' : 'modalIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards'}} onClick={(e) => e.stopPropagation()}>
-                <div style={{...styles.modalHeader, textAlign: 'center', justifyContent: 'center', position: 'relative'}}>
-                    <h3 style={styles.modalTitle}>Order Summary</h3>
-                    <p style={{...styles.modalSubtitleText, position: 'absolute', top: 'calc(100% - 8px)', left: 0, right: 0, marginBottom: 0}}>#{order.orderNumber}</p>
-                    <button style={styles.modalCloseButton} onClick={handleClose} aria-label="Close summary">&times;</button>
-                </div>
-
-                {order.items.length === 0 ? (
-                    <p style={{...styles.cartEmptyText, padding: '1.5rem'}}>This order is empty.</p>
-                ) : (
-                    <div style={{...styles.cartItemsList, padding: '0 1.5rem', flex: 1}}>
-                        {groupedItems.map(group => (
-                            <div key={`${group.style}-${group.color}`} style={{ ...styles.cartGroupItem, cursor: 'default', padding: '0.75rem 0' }}>
-                                <div style={styles.cartItemInfo}>
-                                    <div style={styles.cartItemDetails}>{`${group.style} - ${group.color}`}</div>
-                                    <div style={styles.cartItemSubDetails}>{`Total Qty: ${group.totalQuantity}`}</div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
-                <div style={{...styles.cartFooter, borderTop: 'none', paddingBottom: '0'}}>
-                    <div style={styles.cartSummary}>
-                        <div>
-                            <div style={styles.summaryLabel}>Total Quantity</div>
-                            <div style={styles.summaryValue}>{order.totalQuantity} Items</div>
-                        </div>
-                        <div>
-                            <div style={styles.summaryLabel}>Total Value</div>
-                            <div style={styles.summaryValue}>{formatCurrency(order.totalValue)}</div>
-                        </div>
-                    </div>
-                    <div style={{...styles.iosModalActions, marginTop: '1.5rem'}}>
-                        <button onClick={handleClose} style={styles.iosModalButtonPrimary}>Done</button>
-                    </div>
-                </div>
-            </div>
-        </div>,
-        document.body
-    );
-};
-
-interface EditBottomSheetProps {
-    order: Order | null;
-    onClose: () => void;
-    allParties: string[];
-    onUpdateOrder: (orderNumber: string, updates: Partial<Order>) => void;
-}
-
-const EditBottomSheet: React.FC<EditBottomSheetProps> = ({ order, onClose, allParties, onUpdateOrder }) => {
-    const [isClosing, setIsClosing] = useState(false);
-    const [isSearchFocused, setIsSearchFocused] = useState(false);
-    const sheetRef = useRef<HTMLDivElement>(null);
-    const dragStartPos = useRef<number | null>(null);
-    const initialSheetHeight = useRef<number>(0);
-    const [isEditingPartyName, setIsEditingPartyName] = useState(false);
-    const [editedPartyName, setEditedPartyName] = useState('');
-    const [partyNameSuggestions, setPartyNameSuggestions] = useState<string[]>([]);
-    const partyNameInputRef = useRef<HTMLInputElement>(null);
-    const [isCartPopupOpen, setIsCartPopupOpen] = useState(false);
-
-    useEffect(() => {
-        if (order) {
-            setEditedPartyName(order.partyName);
-            setIsEditingPartyName(false);
-            setIsClosing(false); 
-            document.body.style.overflow = 'hidden';
-        }
-        return () => {
-            document.body.style.overflow = 'auto';
-        };
-    }, [order]);
-    
-    useEffect(() => {
-        if (isEditingPartyName && partyNameInputRef.current) {
-            partyNameInputRef.current.focus();
-        }
-    }, [isEditingPartyName]);
-
-    const handleClose = useCallback(() => {
-        setIsClosing(true);
-        setTimeout(() => {
-            onClose();
-        }, 300); // Animation duration
-    }, [onClose]);
-    
-    const handleSaveChanges = () => {
-        const finalPartyName = editedPartyName.trim();
-        if (!finalPartyName) {
-            showToast('Party name cannot be empty.', 'error');
-            return;
-        }
-        if (order && order.partyName !== finalPartyName) {
-            onUpdateOrder(order.orderNumber, { partyName: finalPartyName });
-        }
-        handleClose();
-    };
-
-    const handlePartyNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
-        setEditedPartyName(value);
-        if (value.trim()) {
-            const filtered = allParties.filter(p => p.toLowerCase().includes(value.toLowerCase()));
-            setPartyNameSuggestions(filtered);
-        } else {
-            setPartyNameSuggestions([]);
-        }
-    };
-    
-    const handleSuggestionClick = (partyName: string) => {
-        setEditedPartyName(partyName);
-        setPartyNameSuggestions([]);
-        setIsEditingPartyName(false);
-    };
-
-    const handleTouchStart = (e: React.TouchEvent) => {
-        if (!sheetRef.current) return;
-        dragStartPos.current = e.touches[0].clientY;
-        sheetRef.current.style.transition = 'none'; // Remove transition for smooth dragging
-        initialSheetHeight.current = sheetRef.current.offsetHeight;
-    };
-
-    const handleTouchMove = (e: React.TouchEvent) => {
-        if (dragStartPos.current === null || !sheetRef.current) return;
-        const currentY = e.touches[0].clientY;
-        const deltaY = currentY - dragStartPos.current;
-        if (deltaY > 0) { // Only allow dragging down
-            sheetRef.current.style.transform = `translateY(${deltaY}px)`;
-        }
-    };
-
-    const handleTouchEnd = (e: React.TouchEvent) => {
-        if (dragStartPos.current === null || !sheetRef.current) return;
-        const endY = e.changedTouches[0].clientY;
-        const deltaY = endY - dragStartPos.current;
-
-        // If dragged more than 1/3 of the way down, close it
-        if (deltaY > initialSheetHeight.current / 3) {
-            handleClose();
-        } else {
-            // Snap back to open position
-            if (sheetRef.current) {
-                sheetRef.current.style.transition = 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)';
-                sheetRef.current.style.transform = 'translateY(0px)';
-            }
-        }
-        dragStartPos.current = null;
-    };
-    
-    if (!order) return null;
-
-    const sheetStyle: React.CSSProperties = {
-        ...styles.bottomSheetContainer,
-        animation: isClosing 
-            ? 'slideDownSheet 0.3s cubic-bezier(0.4, 0, 0.6, 1) forwards' 
-            : 'slideUpSheet 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards'
-    };
-
-    return (
-        <>
-            {createPortal(
-                <>
-                    <div 
-                        style={{...styles.bottomSheetOverlay, animation: isClosing ? 'overlayOut 0.3s forwards' : 'overlayIn 0.3s forwards'}} 
-                        onClick={handleClose} 
-                    />
-                    <div 
-                        ref={sheetRef}
-                        style={sheetStyle}
-                    >
-                        <div 
-                            style={styles.bottomSheetHandleContainer}
-                            onTouchStart={handleTouchStart}
-                            onTouchMove={handleTouchMove}
-                            onTouchEnd={handleTouchEnd}
-                        >
-                            <div style={styles.bottomSheetHandle} />
-                        </div>
-                        <div style={styles.bottomSheetHeader}>
-                            <button style={styles.sheetCloseButton} onClick={handleClose} aria-label="Close">
-                                <CloseIcon />
-                            </button>
-                            <h3 style={styles.sheetTitle}>Editing Order #{order.orderNumber}</h3>
-                            <button style={styles.sheetConfirmButton} onClick={handleSaveChanges} aria-label="Confirm Edit">
-                                <CheckIcon />
-                            </button>
-                        </div>
-                        <div style={styles.bottomSheetBody}>
-                            {isEditingPartyName ? (
-                                <div 
-                                    style={styles.partyNameInputWrapper}
-                                    onBlur={(e) => {
-                                        if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-                                            setIsEditingPartyName(false);
-                                            setPartyNameSuggestions([]);
-                                        }
-                                    }}
-                                >
-                                    <input
-                                        id="party-name-editor-input"
-                                        ref={partyNameInputRef}
-                                        type="text"
-                                        value={editedPartyName}
-                                        onChange={handlePartyNameChange}
-                                        style={styles.partyNameInput}
-                                        placeholder="Search or enter party..."
-                                    />
-                                    {partyNameSuggestions.length > 0 && (
-                                        <div style={styles.partyNameSuggestions}>
-                                            {partyNameSuggestions.map(p => (
-                                                <div key={p} onMouseDown={(e) => e.preventDefault()} onClick={() => handleSuggestionClick(p)} style={styles.suggestionItem}>
-                                                    {p}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                            ) : (
-                                <div style={styles.editSheetPartyName} onClick={() => setIsEditingPartyName(true)}>
-                                    {editedPartyName}
-                                </div>
-                            )}
-                            <div style={styles.editSheetInfoBubbles}>
-                                <div style={{...styles.infoBubble, backgroundColor: 'var(--active-bg)', color: 'var(--brand-color)'}}>
-                                    <CalendarIcon /> {formatDate(order.timestamp)}
-                                </div>
-                            </div>
-                            <div style={{...styles.editSheetSearchContainer, ...(isSearchFocused && styles.editSheetSearchContainerActive)}}>
-                                <SearchIcon />
-                                <input
-                                    type="text"
-                                    placeholder="Search to add new styles..."
-                                    style={styles.editSheetSearchInput}
-                                    onFocus={() => setIsSearchFocused(true)}
-                                    onBlur={() => setIsSearchFocused(false)}
-                                />
-                            </div>
-                            {isSearchFocused && <RecommendedProducts />}
-                        </div>
-                        <div style={styles.bottomSheetFooter}>
-                            <button style={styles.sheetCartButton} onClick={() => setIsCartPopupOpen(true)}>
-                                <CartIcon />
-                                {order.totalQuantity > 0 && <span style={styles.sheetCartBadge}>{order.totalQuantity}</span>}
-                            </button>
-                        </div>
-                    </div>
-                </>,
-                document.body
-            )}
-            {isCartPopupOpen && <OrderSummaryPopup order={order} onClose={() => setIsCartPopupOpen(false)} />}
-        </>
-    );
-};
-
-
 export const PendingOrders = ({ onNavigate }) => {
     const [orders, setOrders] = useState<Order[]>([]);
     const [stockData, setStockData] = useState<Record<string, number>>({});
@@ -1410,8 +1088,6 @@ export const PendingOrders = ({ onNavigate }) => {
     
     const [globalTags, setGlobalTags] = useState<string[]>([]);
     const [deleteModalState, setDeleteModalState] = useState({ isOpen: false, isClosing: false, orders: [], reason: '', isLoading: false });
-    const [editingOrder, setEditingOrder] = useState<Order | null>(null);
-    const [allParties, setAllParties] = useState<string[]>([]);
 
     const [isExportModalOpen, setIsExportModalOpen] = useState(false);
     const [ordersToExport, setOrdersToExport] = useState<Order[]>([]);
@@ -1445,9 +1121,6 @@ export const PendingOrders = ({ onNavigate }) => {
             const data = snapshot.val();
             if (data) {
                 const partyList = Object.values(data).map((p: any) => p.name).filter(Boolean);
-                setAllParties([...new Set(partyList)]);
-            } else {
-                setAllParties([]);
             }
         });
 
@@ -1694,30 +1367,9 @@ export const PendingOrders = ({ onNavigate }) => {
     };
 
     const handleEditOrder = useCallback((order: Order) => {
-        setEditingOrder(order);
-    }, []);
-
-    const handleUpdateOrderDetails = async (orderNumber: string, updates: Partial<Order>) => {
-        const newEvent = {
-            timestamp: new Date().toISOString(),
-            event: 'System',
-            details: `Order details updated. Changed: ${Object.keys(updates).join(', ')}.`
-        };
-        
-        const orderRef = firebase.database().ref(`${PENDING_ORDERS_REF}/${orderNumber}`);
-        const snapshot = await orderRef.once('value');
-        const order = snapshot.val();
-        
-        const updatedHistory = [...(order.history || []), newEvent];
-        
-        try {
-            await orderRef.update({ ...updates, history: updatedHistory });
-            showToast('Order updated successfully!', 'success');
-        } catch (e) {
-            console.error('Failed to update order:', e);
-            showToast('Failed to update order.', 'error');
-        }
-    };
+        sessionStorage.setItem('orderToEdit', JSON.stringify(order));
+        onNavigate('Entry');
+    }, [onNavigate]);
     
     const handleProcessFullOrder = useCallback((order: Order) => {
         if (window.confirm(`Process all items for order ${order.orderNumber}?`)) {
@@ -2187,12 +1839,6 @@ export const PendingOrders = ({ onNavigate }) => {
                 onExportSuccess={handleExportSuccess}
                 isMobile={isMobile}
                 stockData={stockData}
-            />
-            <EditBottomSheet 
-                order={editingOrder} 
-                onClose={() => setEditingOrder(null)} 
-                allParties={allParties}
-                onUpdateOrder={handleUpdateOrderDetails}
             />
             <div style={isMobile ? styles.headerCardMobile : styles.headerCard}>
                 <div style={{...styles.headerTop, ...(isMobile && {justifyContent: 'space-between', padding: '0.75rem 0'})}}>

@@ -673,6 +673,16 @@ export const NewOrderEntry = ({ onNavigate }) => {
 
     const partyHasExistingDraft = useMemo(() => partyName && drafts[partyName], [partyName, drafts]);
 
+    const resetOrderState = () => {
+        setPartyName('');
+        setItems([]);
+        setOrderNote('');
+        setSelectedStyle('');
+        setStyleSearchTerm('');
+        setEditMode(false);
+        setOrderToEdit(null);
+    };
+
     useEffect(() => {
         const orderToEditJSON = sessionStorage.getItem('orderToEdit');
         if (orderToEditJSON) {
@@ -683,6 +693,9 @@ export const NewOrderEntry = ({ onNavigate }) => {
             setItems(order.items);
             setOrderNote(order.orderNote || '');
             sessionStorage.removeItem('orderToEdit');
+        } else {
+            // Ensure state is clean if not editing
+            resetOrderState();
         }
     }, []);
 
@@ -740,16 +753,6 @@ export const NewOrderEntry = ({ onNavigate }) => {
     };
     loadStockData(); return () => metadataRef.off('value', syncCheck); }, []);
     useEffect(() => { if (!editMode) { const draftsRef = database.ref(DRAFTS_REF); const listener = draftsRef.on('value', (snapshot) => { setDrafts(snapshot.val() || {}); }); return () => draftsRef.off('value', listener); } }, [editMode]);
-
-    const resetOrderState = () => {
-        setPartyName('');
-        setItems([]);
-        setOrderNote('');
-        setSelectedStyle('');
-        setStyleSearchTerm('');
-        setEditMode(false);
-        setOrderToEdit(null);
-    };
     
     const handleSubmit = () => {
         if (!partyName || items.length === 0) {
@@ -757,51 +760,6 @@ export const NewOrderEntry = ({ onNavigate }) => {
             return;
         }
         setIsConfirmationModalOpen(true);
-    };
-
-    const handleOrderSubmission = async () => {
-        setIsSubmitting(true);
-        try {
-            if (editMode && orderToEdit) {
-                await handleUpdateOrder();
-            } else {
-                await handlePlaceNewOrder();
-            }
-        } catch (error) {
-            console.error("Failed to submit order:", error);
-            showToast(`Error: ${error.message}`, 'error');
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
-    const handleUpdateOrder = async () => {
-        const { totalQuantity, totalValue } = items.reduce((acc, item) => {
-            acc.totalQuantity += item.quantity;
-            acc.totalValue += item.quantity * item.price;
-            return acc;
-        }, { totalQuantity: 0, totalValue: 0 });
-
-        const newHistoryEvent = {
-            timestamp: new Date().toISOString(),
-            event: 'System',
-            details: `Order Edited. New Qty: ${totalQuantity}.`
-        };
-
-        const updatedOrderPayload = {
-            ...orderToEdit,
-            partyName, items, orderNote,
-            totalQuantity, totalValue,
-            history: [...(orderToEdit.history || []), newHistoryEvent]
-        };
-
-        await database.ref(`${PENDING_ORDERS_REF}/${orderToEdit.orderNumber}`).set(updatedOrderPayload);
-
-        playSuccessSound();
-        setFinalizedOrder(updatedOrderPayload);
-        setIsConfirmationModalOpen(false);
-        setIsSuccessModalOpen(true);
-        // Do not reset state here, SuccessModal will handle navigation
     };
 
     const handlePlaceNewOrder = async () => {
@@ -857,6 +815,51 @@ export const NewOrderEntry = ({ onNavigate }) => {
         setIsConfirmationModalOpen(false);
         setIsSuccessModalOpen(true);
     };
+
+    const handleUpdateOrder = async () => {
+        const { totalQuantity, totalValue } = items.reduce((acc, item) => {
+            acc.totalQuantity += item.quantity;
+            acc.totalValue += item.quantity * item.price;
+            return acc;
+        }, { totalQuantity: 0, totalValue: 0 });
+
+        const newHistoryEvent = {
+            timestamp: new Date().toISOString(),
+            event: 'System',
+            details: `Order Edited. New Qty: ${totalQuantity}.`
+        };
+
+        const updatedOrderPayload = {
+            ...orderToEdit,
+            partyName, items, orderNote,
+            totalQuantity, totalValue,
+            history: [...(orderToEdit.history || []), newHistoryEvent]
+        };
+
+        await database.ref(`${PENDING_ORDERS_REF}/${orderToEdit.orderNumber}`).set(updatedOrderPayload);
+
+        playSuccessSound();
+        setFinalizedOrder(updatedOrderPayload);
+        setIsConfirmationModalOpen(false);
+        setIsSuccessModalOpen(true);
+    };
+
+    const handleOrderSubmission = async () => {
+        setIsSubmitting(true);
+        try {
+            if (editMode && orderToEdit) {
+                await handleUpdateOrder();
+            } else {
+                await handlePlaceNewOrder();
+            }
+        } catch (error) {
+            console.error("Failed to submit order:", error);
+            showToast(`Error: ${error.message}`, 'error');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
 
     const handleSaveDraft = () => {
         if (!partyName) { showToast('Please enter a party name to save a draft.', 'error'); return; }
