@@ -1,4 +1,7 @@
 
+
+
+
 import React, { useState, useEffect, useMemo } from 'react';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
@@ -113,8 +116,21 @@ export const ExpiredOrders = () => {
 
 const styles: { [key: string]: React.CSSProperties } = {
     container: { display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1 },
-    headerCard: { backgroundColor: 'var(--card-bg)', padding: '1rem 1.5rem', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', display: 'flex', flexDirection: 'column', gap: '1rem' },
-    pageTitle: { fontSize: '1.25rem', fontWeight: 600, color: 'var(--dark-grey)' },
+    headerCard: {
+        backgroundColor: 'transparent',
+        padding: '1rem 1.5rem',
+        borderRadius: 'var(--border-radius)',
+        border: 'none',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '1rem',
+    },
+    pageTitle: {
+        fontSize: '1.25rem',
+        fontWeight: 600,
+        display: 'none',
+        color: 'var(--dark-grey)',
+    },
     pageSubtitle: { fontSize: '0.9rem', color: 'var(--text-color)', marginTop: '-0.75rem' },
     searchContainer: { 
         display: 'flex', 
@@ -134,7 +150,15 @@ const styles: { [key: string]: React.CSSProperties } = {
     listContainer: { flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem', paddingBottom: '1rem' },
     centeredMessage: { flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'var(--text-color)', fontSize: '1.1rem' },
     spinner: { border: '4px solid var(--light-grey)', borderRadius: '50%', borderTop: '4px solid var(--brand-color)', width: '40px', height: '40px', animation: 'spin 1s linear infinite' },
-    card: { backgroundColor: 'var(--card-bg)', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', overflow: 'hidden' },
+    card: {
+        backgroundColor: 'var(--card-bg)',
+        borderRadius: 'var(--border-radius)',
+        border: 'none',
+        overflow: 'hidden',
+        marginLeft: '10px',
+        marginRight: '10px',
+        boxShadow: 'rgba(0, 0, 0, 0.04) 0px 2px 4px',
+    },
     cardHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.5rem', borderBottom: '1px solid var(--skeleton-bg)', flexWrap: 'wrap', gap: '0.5rem' },
     cardInfo: { display: 'flex', flexDirection: 'column', gap: '0.25rem' },
     cardTitle: { fontSize: '1.1rem', fontWeight: 600, color: 'var(--dark-grey)' },

@@ -1,4 +1,7 @@
 
+
+
+
 import React, { useState, useEffect, useMemo } from 'react';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
@@ -27,8 +30,14 @@ const formatDateTime = (isoString) => isoString ? new Date(isoString).toLocaleSt
 const DeletedOrderCard: React.FC<{ order: Order; onRevert: (order: Order) => void; }> = ({ order, onRevert }) => {
     const [isHistoryVisible, setIsHistoryVisible] = useState(false);
 
+    const cardStyle: React.CSSProperties = {
+        ...styles.card,
+        boxShadow: !isHistoryVisible ? 'rgba(0, 0, 0, 0.04) 0px 2px 4px' : 'rgba(0, 0, 0, 0.06) 0px 4px 8px',
+        transition: 'box-shadow 0.3s ease',
+    };
+
     return (
-        <div style={styles.card}>
+        <div style={cardStyle}>
             <div style={styles.cardHeader}>
                 <div style={styles.cardInfo}>
                     <span style={styles.cardTitle}>{order.partyName}</span>
@@ -175,8 +184,21 @@ export const DeletedOrders = () => {
 
 const styles: { [key: string]: React.CSSProperties } = {
     container: { display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1 },
-    headerCard: { backgroundColor: 'var(--card-bg)', padding: '1rem 1.5rem', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', display: 'flex', flexDirection: 'column', gap: '1rem' },
-    pageTitle: { fontSize: '1.25rem', fontWeight: 600, color: 'var(--dark-grey)' },
+    headerCard: {
+        backgroundColor: 'transparent',
+        padding: '1rem 1.5rem',
+        borderRadius: 'var(--border-radius)',
+        border: 'none',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '1rem',
+    },
+    pageTitle: {
+        fontSize: '1.25rem',
+        fontWeight: 600,
+        display: 'none',
+        color: 'var(--dark-grey)',
+    },
     searchContainer: { 
         display: 'flex', 
         alignItems: 'center', 
@@ -195,7 +217,14 @@ const styles: { [key: string]: React.CSSProperties } = {
     listContainer: { flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem', paddingBottom: '1rem' },
     centeredMessage: { flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'var(--text-color)', fontSize: '1.1rem' },
     spinner: { border: '4px solid var(--light-grey)', borderRadius: '50%', borderTop: '4px solid var(--brand-color)', width: '40px', height: '40px', animation: 'spin 1s linear infinite' },
-    card: { backgroundColor: 'var(--card-bg)', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', overflow: 'hidden' },
+    card: {
+        backgroundColor: 'var(--card-bg)',
+        borderRadius: 'var(--border-radius)',
+        border: 'none',
+        overflow: 'hidden',
+        marginLeft: '10px',
+        marginRight: '10px',
+    },
     cardHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.5rem', borderBottom: '1px solid var(--skeleton-bg)', flexWrap: 'wrap', gap: '0.5rem' },
     cardInfo: { display: 'flex', flexDirection: 'column', gap: '0.25rem' },
     cardTitle: { fontSize: '1.1rem', fontWeight: 600, color: 'var(--dark-grey)' },
