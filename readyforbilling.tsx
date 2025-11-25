@@ -1,4 +1,6 @@
 
+
+
 import React, { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect } from 'react';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
@@ -338,8 +340,6 @@ const PartyGroup: React.FC<{
         ...styles.card,
         boxShadow: isCollapsed ? 'rgba(0, 0, 0, 0.04) 0px 2px 4px' : 'rgba(0, 0, 0, 0.06) 0px 4px 8px',
         transition: 'box-shadow 0.3s ease',
-        marginLeft: isMobile ? '5px' : '10px',
-        marginRight: isMobile ? '5px' : '10px',
         borderRadius: 'var(--border-radius)',
     };
 
@@ -610,8 +610,8 @@ export const ReadyForBilling = () => {
                      <div style={{...styles.filterMarker, ...markerStyle}}></div>
                     {dateFilters.map(filter => (
                         <button 
-                          key={filter.key} 
-                          ref={el => { pillRefs.current[filter.key] = el; }}
+                          key={filter.key}
+                          ref={el => { pillRefs.current[filter.key] = el; }} 
                           onClick={() => setDateFilter(filter.key)} 
                           style={dateFilter === filter.key ? styles.filterButtonActive : styles.filterButton}
                         >{filter.label}</button>
@@ -624,15 +624,18 @@ export const ReadyForBilling = () => {
 };
 
 const styles: { [key: string]: React.CSSProperties } = {
-    container: { display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1 },
+    container: { display: 'flex', flexDirection: 'column', gap: '0', flex: 1, backgroundColor: 'var(--light-grey)' },
     headerCard: {
-        backgroundColor: 'transparent',
-        padding: '1rem 1.5rem',
-        borderRadius: 'var(--border-radius)',
+        background: 'linear-gradient(to bottom, var(--light-grey) 85%, transparent)',
+        padding: '1rem 1.5rem 1.5rem',
+        borderRadius: 0,
         border: 'none',
         display: 'flex',
         flexDirection: 'column',
         gap: '1rem',
+        position: 'sticky',
+        top: 0,
+        zIndex: 10,
     },
     pageTitle: {
         fontSize: '1.25rem',
@@ -659,7 +662,14 @@ const styles: { [key: string]: React.CSSProperties } = {
     filterMarker: { position: 'absolute', top: '4px', left: 0, height: 'calc(100% - 8px)', backgroundColor: 'var(--card-bg)', borderRadius: '14px', transition: 'all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)', zIndex: 0, boxShadow: 'rgba(0, 0, 0, 0.05) 0px 1px 3px, rgba(0, 0, 0, 0.05) 0px 1px 2px', opacity: 0 },
     filterButton: { background: 'transparent', border: 'none', color: 'var(--text-color)', padding: '0.4rem 0.8rem', borderRadius: '14px', cursor: 'pointer', fontSize: '0.85rem', position: 'relative', zIndex: 1, transition: 'color 0.3s ease' },
     filterButtonActive: { background: 'transparent', border: 'none', color: 'var(--brand-color)', padding: '0.4rem 0.8rem', borderRadius: '14px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600, position: 'relative', zIndex: 1, transition: 'color 0.3s ease' },
-    listContainer: { flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem', paddingBottom: '1rem' },
+    listContainer: {
+        flex: 1,
+        overflowY: 'auto',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '1rem',
+        padding: '0 1rem 1rem',
+    },
     centeredMessage: { flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'var(--text-color)', fontSize: '1.1rem' },
     spinner: { border: '4px solid var(--light-grey)', borderRadius: '50%', borderTop: '4px solid var(--brand-color)', width: '40px', height: '40px', animation: 'spin 1s linear infinite' },
     card: {
