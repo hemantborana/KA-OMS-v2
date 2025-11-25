@@ -199,8 +199,15 @@ const ExpandedBillingView = ({ order, billedQty, onQtyChange, onMarkBilled, isPr
     };
 
     return (
-        <div style={styles.expandedViewContainer}>
-            <div style={styles.tableContainer}>
+        <div style={styles.orderWrapper}>
+            <div style={styles.expandedSummary}>
+                <div><strong>Party:</strong> {order.partyName}</div>
+                <div><strong>Order #:</strong> {order.orderNumber}</div>
+                <div><strong>Order Date:</strong> {formatDate(order.timestamp)}</div>
+                <div><strong>Ready Qty:</strong> {order.totalQuantity}</div>
+            </div>
+            {order.orderNote && <div style={styles.expandedNote}><strong>Note:</strong> {order.orderNote}</div>}
+            <div style={{...styles.tableContainer, margin: '0 1rem'}}>
                 <table style={styles.table}>
                     <thead><tr><th style={styles.th}>Style</th><th style={styles.th}>Color</th><th style={styles.th}>Size</th><th style={styles.th}>Ready Qty</th><th style={styles.th}>Billed Qty</th></tr></thead>
                     <tbody>
@@ -226,8 +233,8 @@ const ExpandedBillingView = ({ order, billedQty, onQtyChange, onMarkBilled, isPr
                     </tbody>
                 </table>
             </div>
-            <div style={styles.modalFooter}>
-                 <button onClick={onMatchAll} style={styles.matchAllButton} disabled={isProcessing}>
+            <div style={{...styles.modalFooter, padding: '1rem'}}>
+                 <button onClick={() => onMatchAll(order)} style={styles.matchAllButton} disabled={isProcessing}>
                     <CheckSquareIcon /> Match Ready Qty
                 </button>
                  <div style={styles.footerActions}>
@@ -243,10 +250,25 @@ const ExpandedBillingView = ({ order, billedQty, onQtyChange, onMarkBilled, isPr
     );
 };
 
-// FIX: Explicitly type component props to resolve issues with 'key' prop and 'children' type inference by using React.FC.
-const PartyGroup: React.FC<{ partyName: string; data: any; onToggleExpand: (order: Order) => void; expandedOrderNumber: string | null; children: React.ReactNode; }> = ({ partyName, data, onToggleExpand, expandedOrderNumber, children }) => {
+const PartyGroup: React.FC<{ 
+    partyName: string; 
+    data: any; 
+    billedQtys: Record<string, Record<string, number>>;
+    processingOrders: string[];
+    onQtyChange: (orderNumber: string, itemId: string, value: string, maxQty: number) => void;
+    onMarkBilled: (order: Order, billedQuantities: Record<string, number>) => void;
+    onMatchAll: (order: Order) => void;
+    onPartyExpand: (orders: Order[]) => void;
+}> = ({ partyName, data, billedQtys, processingOrders, onQtyChange, onMarkBilled, onMatchAll, onPartyExpand }) => {
     const [isCollapsed, setIsCollapsed] = useState(true);
     const totalQty = data.orders.reduce((sum, order) => sum + order.totalQuantity, 0);
+
+    const handleToggleCollapse = () => {
+        if (isCollapsed) { // expanding
+            onPartyExpand(data.orders);
+        }
+        setIsCollapsed(!isCollapsed);
+    };
 
     const cardStyle: React.CSSProperties = {
         ...styles.card,
@@ -256,7 +278,7 @@ const PartyGroup: React.FC<{ partyName: string; data: any; onToggleExpand: (orde
 
     return (
         <div style={cardStyle}>
-            <button style={styles.cardHeader} onClick={() => setIsCollapsed(!isCollapsed)}>
+            <button style={styles.cardHeader} onClick={handleToggleCollapse}>
                 <div style={styles.cardInfo}>
                     <span style={styles.cardTitle}>{partyName}</span>
                     <span style={styles.cardSubTitle}>
@@ -269,21 +291,15 @@ const PartyGroup: React.FC<{ partyName: string; data: any; onToggleExpand: (orde
                 <div style={styles.collapsibleContentWrapper}>
                     <div style={styles.cardDetails}>
                         {data.orders.map(order => (
-                            <React.Fragment key={order.orderNumber}>
-                                 <Swipeable onAction={() => onToggleExpand(order)} actionText="Process">
-                                    <div style={expandedOrderNumber === order.orderNumber ? {...styles.orderItem, ...styles.orderItemActive} : styles.orderItem} onClick={() => onToggleExpand(order)}>
-                                        <div style={styles.orderInfo}>
-                                            <strong>{order.orderNumber}</strong>
-                                            <span style={styles.orderMeta}><CalendarIcon /> {formatDate(order.timestamp)}</span>
-                                            <span>Qty: {order.totalQuantity}</span>
-                                        </div>
-                                        <button style={styles.detailsButton} onClick={(e) => { e.stopPropagation(); onToggleExpand(order); }}>
-                                            {expandedOrderNumber === order.orderNumber ? 'Close' : 'Process'}
-                                        </button>
-                                    </div>
-                                </Swipeable>
-                                {expandedOrderNumber === order.orderNumber && children}
-                            </React.Fragment>
+                            <ExpandedBillingView
+                                key={order.orderNumber}
+                                order={order}
+                                billedQty={billedQtys[order.orderNumber] || {}}
+                                onQtyChange={(itemId, value, maxQty) => onQtyChange(order.orderNumber, itemId, value, maxQty)}
+                                onMarkBilled={onMarkBilled}
+                                isProcessing={processingOrders.includes(order.orderNumber)}
+                                onMatchAll={onMatchAll}
+                            />
                         ))}
                     </div>
                 </div>
@@ -298,9 +314,8 @@ export const ReadyForBilling = () => {
     const [error, setError] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
     const [dateFilter, setDateFilter] = useState('all');
-    const [expandedOrderNumber, setExpandedOrderNumber] = useState<string | null>(null);
-    const [billedQty, setBilledQty] = useState<Record<string, number>>({});
-    const [processingOrder, setProcessingOrder] = useState<string | null>(null);
+    const [billedQtys, setBilledQtys] = useState<Record<string, Record<string, number>>>({});
+    const [processingOrders, setProcessingOrders] = useState<string[]>([]);
     const [isSearchFocused, setIsSearchFocused] = useState(false);
     
     const filterPillsRef = useRef(null);
@@ -350,34 +365,47 @@ export const ReadyForBilling = () => {
     }, [dateFilter]);
 
 
-    const handleQtyChange = (itemId, value, maxQty) => {
+    const handleQtyChange = (orderNumber: string, itemId: string, value: string, maxQty: number) => {
         const numValue = Math.max(0, Math.min(maxQty, Number(value) || 0));
-        setBilledQty(prev => ({ ...prev, [itemId]: numValue }));
-    };
-
-    const handleToggleExpand = (order: Order) => {
-        const orderNumber = order.orderNumber;
-        if (expandedOrderNumber === orderNumber) {
-            setExpandedOrderNumber(null);
-        } else {
-            const initialQtys: Record<string, number> = {};
-            order.items.forEach(item => { initialQtys[item.id] = item.quantity; });
-            setBilledQty(initialQtys);
-            setExpandedOrderNumber(orderNumber);
-        }
+        setBilledQtys(prev => ({
+            ...prev,
+            [orderNumber]: {
+                ...(prev[orderNumber] || {}),
+                [itemId]: numValue,
+            },
+        }));
     };
     
-    const handleMatchAll = useCallback((order) => {
+    const handlePartyExpand = (ordersInParty: Order[]) => {
+        setBilledQtys(prevQtys => {
+            const newQtys = { ...prevQtys };
+            let updated = false;
+            ordersInParty.forEach(order => {
+                if (!newQtys[order.orderNumber]) { // Only initialize if not already there
+                    const initialQtys = {};
+                    order.items.forEach(item => { initialQtys[item.id] = item.quantity; });
+                    newQtys[order.orderNumber] = initialQtys;
+                    updated = true;
+                }
+            });
+            return updated ? newQtys : prevQtys;
+        });
+    };
+    
+    const handleMatchAll = useCallback((order: Order) => {
         const allQuantities = order.items.reduce((acc, item) => {
             acc[item.id] = item.quantity;
             return acc;
         }, {});
-        setBilledQty(allQuantities);
+        setBilledQtys(prev => ({
+            ...prev,
+            [order.orderNumber]: allQuantities,
+        }));
         showToast('All quantities matched!', 'info');
     }, []);
 
-    const handleMarkBilled = async (order, billedQuantities) => {
-        setProcessingOrder(order.orderNumber);
+    const handleMarkBilled = async (order: Order, billedQuantities: Record<string, number>) => {
+        setProcessingOrders(prev => [...prev, order.orderNumber]);
         try {
             const updates = {};
             const itemsForBilled = [];
@@ -417,16 +445,20 @@ export const ReadyForBilling = () => {
                 updates[billingOrderRefPath] = { ...order, items: itemsRemainingInBilling, totalQuantity: itemsRemainingInBilling.reduce((sum, i) => sum + i.quantity, 0), totalValue: itemsRemainingInBilling.reduce((sum, i) => sum + (i.quantity * i.price), 0), history: updatedHistory };
             } else {
                 updates[billingOrderRefPath] = null;
+                 setBilledQtys(prev => {
+                    const newQtys = { ...prev };
+                    delete newQtys[order.orderNumber];
+                    return newQtys;
+                });
             }
             await firebase.database().ref().update(updates);
             showToast("Order marked as billed!", 'success');
-            setExpandedOrderNumber(null);
-            setBilledQty({});
+
         } catch(e) {
             console.error("Failed to mark as billed", e);
             showToast("Error marking order as billed.", 'error');
         } finally {
-            setProcessingOrder(null);
+            setProcessingOrders(prev => prev.filter(num => num !== order.orderNumber));
         }
     };
 
@@ -460,11 +492,6 @@ export const ReadyForBilling = () => {
         }, {});
     }, [filteredOrders]);
 
-     const expandedOrder = useMemo(() => {
-        if (!expandedOrderNumber) return null;
-        return orders.find(o => o.orderNumber === expandedOrderNumber);
-    }, [expandedOrderNumber, orders]);
-
     const renderContent = () => {
         if (isLoading) return <div style={styles.centeredMessage}><Spinner /></div>;
         if (error) return <div style={styles.centeredMessage}>{error}</div>;
@@ -472,25 +499,23 @@ export const ReadyForBilling = () => {
         if (filteredOrders.length === 0) return <div style={styles.centeredMessage}>No orders match your search or filter.</div>;
         
         const partyNames = Object.keys(summarizedData).sort();
-        const expandedView = expandedOrder ? (
-            <ExpandedBillingView
-                order={expandedOrder}
-                billedQty={billedQty}
-                onQtyChange={handleQtyChange}
-                onMarkBilled={handleMarkBilled}
-                isProcessing={processingOrder === expandedOrder.orderNumber}
-                onMatchAll={() => handleMatchAll(expandedOrder)}
-            />
-        ) : null;
 
         const animationKey = `${dateFilter}-${searchTerm}`;
 
         return (
             <div style={styles.listContainer} key={animationKey} className="fade-in-slide">
                 {partyNames.map(partyName => (
-                    <PartyGroup key={partyName} partyName={partyName} data={summarizedData[partyName]} onToggleExpand={handleToggleExpand} expandedOrderNumber={expandedOrderNumber}>
-                        {expandedView}
-                    </PartyGroup>
+                     <PartyGroup
+                        key={partyName}
+                        partyName={partyName}
+                        data={summarizedData[partyName]}
+                        billedQtys={billedQtys}
+                        processingOrders={processingOrders}
+                        onQtyChange={handleQtyChange}
+                        onMarkBilled={handleMarkBilled}
+                        onMatchAll={handleMatchAll}
+                        onPartyExpand={handlePartyExpand}
+                    />
                 ))}
             </div>
         );
@@ -510,7 +535,6 @@ export const ReadyForBilling = () => {
                     {dateFilters.map(filter => (
                         <button 
                           key={filter.key} 
-                          // FIX: Correctly type the ref callback to not return a value, resolving a TypeScript error.
                           ref={el => { pillRefs.current[filter.key] = el; }}
                           onClick={() => setDateFilter(filter.key)} 
                           style={dateFilter === filter.key ? styles.filterButtonActive : styles.filterButton}
@@ -574,7 +598,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     cardInfo: { display: 'flex', flexDirection: 'column', gap: '0.25rem', alignItems: 'flex-start' },
     cardTitle: { fontSize: '1.1rem', fontWeight: 600, color: 'var(--dark-grey)' },
     cardSubTitle: { fontSize: '0.85rem', color: 'var(--text-color)', fontWeight: 400 },
-    cardDetails: { padding: '0 1.5rem 1.5rem', display: 'flex', flexDirection: 'column' },
+    cardDetails: { padding: '0 1.5rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' },
     collapsibleContainer: {
         display: 'grid',
         gridTemplateRows: '0fr',
@@ -591,7 +615,25 @@ const styles: { [key: string]: React.CSSProperties } = {
     orderInfo: { display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', color: 'var(--dark-grey)' },
     orderMeta: { display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--text-color)', fontSize: '0.85rem' },
     detailsButton: { display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#eef2f7', border: '1px solid var(--skeleton-bg)', color: 'var(--brand-color)', padding: '0.5rem 1rem', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 },
-    expandedViewContainer: { padding: '0.5rem 1.5rem 1.5rem', borderTop: '1px solid var(--brand-color)', margin: '0 -1.5rem -1rem', backgroundColor: '#fafbff' },
+    orderWrapper: { border: '1px solid var(--separator-color)', borderRadius: 'var(--border-radius)', backgroundColor: 'var(--card-bg-secondary)', overflow: 'hidden' },
+    expandedSummary: {
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+        gap: '0.75rem',
+        backgroundColor: 'var(--light-grey)',
+        padding: '1rem',
+        fontSize: '0.9rem',
+        color: 'var(--text-color)',
+    },
+    expandedNote: {
+        backgroundColor: 'rgba(255, 149, 0, 0.1)',
+        borderLeft: '3px solid var(--orange)',
+        padding: '1rem',
+        margin: '1rem',
+        borderRadius: '4px',
+        fontSize: '0.9rem',
+        color: 'var(--dark-grey)',
+    },
     tableContainer: { overflowX: 'auto', backgroundColor: 'var(--card-bg)', borderRadius: '8px', border: '1px solid var(--skeleton-bg)' },
     table: { width: '100%', borderCollapse: 'collapse' },
     th: { backgroundColor: '#f8f9fa', padding: '10px 12px', textAlign: 'center', fontWeight: 600, color: 'var(--dark-grey)', borderBottom: '2px solid var(--skeleton-bg)', whiteSpace: 'nowrap' },

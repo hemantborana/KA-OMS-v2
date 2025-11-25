@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useMemo, useRef, useLayoutEffect } from 'react';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
@@ -109,7 +110,7 @@ const BilledDetailModal = ({ order, onClose }) => {
                     background-color: rgba(255, 255, 255, 0.05);
                 }
                 body.dark-mode .modal-note {
-                    background-color: rgba(255, 255, 255, 0.05);
+                    background-color: var(--gray-4);
                     border-color: var(--separator-color);
                     color: var(--yellow);
                 }
