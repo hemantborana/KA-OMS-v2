@@ -69,6 +69,7 @@ const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 const EyeIcon = ({ closed }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"> {closed ? (<><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"></path><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"></path><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"></path><line x1="2" y1="2" x2="22" y2="22"></line></>) : (<><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></>)} </svg>);
 const MenuIcon = () => <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" width="24" height="24"><path d="M4 18H10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/><path d="M4 12H16" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/><path d="M4 6H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>;
 const CloseSidebarIcon = () => <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" width="24" height="24"><path fillRule="evenodd" clipRule="evenodd" d="M4 5C3.44772 5 3 5.44772 3 6C3 6.55228 3.44772 7 4 7H20C20.5523 7 21 6.55228 21 6C21 5.44772 20.5523 5 20 5H4ZM7 12C7 11.4477 7.44772 11 8 11H20C20.5523 11 21 11.4477 21 12C21 12.5523 20.5523 13 20 13H8C7.44772 13 7 12.5523 7 12ZM13 18C13 17.4477 13.4477 17 14 17H20C20.5523 17 21 17.4477 21 18C21 18.5523 20.5523 19 20 19H14C13.4477 19 13 18.5523 13 18Z" fill="currentColor"/></svg>;
+const DesktopSidebarToggleIcon = () => (<svg viewBox="0 0 56 56" xmlns="http://www.w3.org/2000/svg" width="24" height="24"><path fill="currentColor" d="M7.7148 49.5742H48.2852c4.8984 0 7.3594-2.4375 7.3594-7.2656V13.6914c0-4.8281-2.461-7.2656-7.3594-7.2656H7.7148C2.8398 6.4258.3554 8.8398.3554 13.6914v28.6172c0 4.8516 2.4844 7.2656 7.3594 7.2656zm.0703-3.7734c-2.3438 0-3.6563-1.2422-3.6563-3.6797V13.8789c0-2.4375 1.3125-3.6797 3.6563-3.6797H18.2148v35.6016H7.7851zm40.4296-35.6016c2.3203 0 3.6561 1.2422 3.6561 3.6797v28.2422c0 2.4375-1.3358 3.6797-3.6561 3.6797H21.8944V10.1992h26.3203zM13.7148 18.8945c.7031 0 1.3359-.6328 1.3359-1.3125 0-.7031-.6328-1.3125-1.3359-1.3125H8.6757c-.7031 0-1.3125.6094-1.3125 1.3125 0 .6797.6094 1.3125 1.3125 1.3125zm0 6.0704c.7031 0 1.3359-.6329 1.3359-1.336 0-.7031-.6328-1.2891-1.3359-1.2891H8.6757c-.7031 0-1.3125.5859-1.3125 1.2891 0 .7031.6094 1.336 1.3125 1.336zm0 6.0469c.7031 0 1.3359-.586 1.3359-1.2891 0-.7031-.6328-1.3125-1.3359-1.3125H8.6757c-.7031 0-1.3125.6094-1.3125 1.3125 0 .7031.6094 1.2891 1.3125 1.2891z"/></svg>);
 const LogoutIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>;
 const UserIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>;
 const ShieldIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>;
@@ -612,10 +613,7 @@ const Header = ({ onToggleSidebar, appLogoSrc, isMobile, title }) => {
                         <img src={appLogoSrc} alt="Logo" style={styles.headerLogo} />
                     </>
                 ) : (
-                    <>
-                        <img src={appLogoSrc} alt="Logo" style={styles.headerLogo} />
-                        <span style={styles.headerTitle}>Kambeshwar Agencies</span>
-                    </>
+                    <div style={{width: '48px'}}></div> // Placeholder for balance
                 )}
             </div>
             <div style={styles.headerCenter}>
@@ -629,7 +627,7 @@ const Header = ({ onToggleSidebar, appLogoSrc, isMobile, title }) => {
 };
 
 
-const Sidebar = ({ activeView, onNavigate, isMobile, isOpen, onClose, session, onLogout, isCollapsed, onToggleCollapse, sidebarRef }) => {
+const Sidebar = ({ activeView, onNavigate, isMobile, isOpen, onClose, session, onLogout, isCollapsed, onToggleCollapse, sidebarRef, appLogoSrc }) => {
     const primaryItems = [
         { id: 'Dashboard', label: 'Dashboard' },
         { id: 'Entry', label: 'New Order Entry' },
@@ -662,21 +660,51 @@ const Sidebar = ({ activeView, onNavigate, isMobile, isOpen, onClose, session, o
         }
         return baseStyle;
     };
+    
+    const navLabelDynamicStyle = isActuallyCollapsed
+        ? { opacity: 0, maxWidth: '0px', marginLeft: '0', visibility: 'hidden', transition: 'opacity 0.1s, max-width 0.2s, margin-left 0.2s, visibility 0s 0.2s' }
+        : { opacity: 1, maxWidth: '150px', marginLeft: '1rem', visibility: 'visible', transition: 'opacity 0.2s 0.1s, max-width 0.2s 0.1s, margin-left 0.2s 0.1s' };
 
     return (
         <>
             {isMobile && isOpen && <div style={styles.overlay} onClick={onClose}></div>}
             <nav style={sidebarStyle} ref={sidebarRef}>
                 <div style={styles.sidebarHeader}>
-                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                     {!isMobile && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem', minHeight: '36px' }}>
+                            <button onClick={onToggleCollapse} style={styles.desktopCollapseButton}>
+                               <DesktopSidebarToggleIcon />
+                            </button>
+                            <div style={{
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                gap: '0.75rem',
+                                overflow: 'hidden',
+                                whiteSpace: 'nowrap',
+                                transition: 'opacity 0.2s 0.1s, max-width 0.3s 0.1s',
+                                opacity: isActuallyCollapsed ? 0 : 1,
+                                maxWidth: isActuallyCollapsed ? '0px' : '200px',
+                            }}>
+                                <img src={appLogoSrc} alt="Logo" style={{ height: '36px', width: '36px', flexShrink: 0 }} />
+                                <span style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--dark-grey)' }}>KA OMS</span>
+                            </div>
+                        </div>
+                     )}
+                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', width: isActuallyCollapsed ? '100%' : 'auto', justifyContent: isActuallyCollapsed ? 'center' : 'flex-start' }}>
                              <UserAvatar name={session.userName} avatarId={session.avatarId} size="small" />
-                             {!isActuallyCollapsed && (
-                                <div style={styles.sidebarUserInfo}>
-                                   <div style={styles.sidebarUserName}>{session.userName}</div>
-                                   <div style={styles.sidebarUserRole}>{session.role}</div>
-                                </div>
-                             )}
+                             <div style={{
+                                ...styles.sidebarUserInfo,
+                                transition: 'opacity 0.2s 0.1s, max-width 0.3s 0.1s, visibility 0s ' + (isActuallyCollapsed ? '0.3s' : '0s'),
+                                opacity: isActuallyCollapsed ? 0 : 1,
+                                maxWidth: isActuallyCollapsed ? '0px' : '200px',
+                                visibility: isActuallyCollapsed ? 'hidden' : 'visible',
+                                overflow: 'hidden',
+                                whiteSpace: 'nowrap',
+                             }}>
+                               <div style={styles.sidebarUserName}>{session.userName}</div>
+                               <div style={styles.sidebarUserRole}>{session.role}</div>
+                            </div>
                          </div>
                          {isMobile && (
                             <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--dark-grey)', padding: '4px' }}>
@@ -688,24 +716,18 @@ const Sidebar = ({ activeView, onNavigate, isMobile, isOpen, onClose, session, o
                 <div style={styles.sidebarNav}>
                     {primaryItems.map(item => (
                         <a key={item.id} href="#" onClick={(e) => { e.preventDefault(); onNavigate(item.id); }} style={navItemStyle(item.id)} title={isActuallyCollapsed ? item.label : ''}>
-                            <NavIcon name={item.id} active={activeView === item.id} />{!isActuallyCollapsed && <span style={styles.navLabel}>{item.label}</span>}
+                            <NavIcon name={item.id} active={activeView === item.id} />
+                            <span style={{...styles.navLabel, ...navLabelDynamicStyle}}>{item.label}</span>
                         </a>
                     ))}
                     <hr style={styles.sidebarSeparator} />
                     {secondaryItems.map(item => (
                         <a key={item.id} href="#" onClick={(e) => { e.preventDefault(); onNavigate(item.id); }} style={navItemStyle(item.id)} title={isActuallyCollapsed ? item.label : ''}>
-                            <NavIcon name={item.id} active={activeView === item.id} />{!isActuallyCollapsed && <span style={styles.navLabel}>{item.label}</span>}
+                            <NavIcon name={item.id} active={activeView === item.id} />
+                            <span style={{...styles.navLabel, ...navLabelDynamicStyle}}>{item.label}</span>
                         </a>
                     ))}
                 </div>
-                {!isMobile && (
-                    <div style={styles.sidebarFooter}>
-                        <button onClick={onToggleCollapse} style={isActuallyCollapsed ? {...styles.collapseButtonSidebar, justifyContent: 'center'} : styles.collapseButtonSidebar}>
-                            <CollapseIcon collapsed={isActuallyCollapsed} />
-                            {!isActuallyCollapsed && <span style={styles.navLabel}>Collapse</span>}
-                        </button>
-                    </div>
-                )}
             </nav>
         </>
     );
@@ -788,7 +810,7 @@ const MainContent = React.forwardRef<HTMLElement, MainContentProps>(
 const HomePage = ({ session, onLogout, appLogoSrc, updateUserProfile }) => {
     const [activeView, setActiveView] = useState('Dashboard');
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
     const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
 
@@ -966,21 +988,22 @@ const HomePage = ({ session, onLogout, appLogoSrc, updateUserProfile }) => {
     };
 
     return (
-        <div style={styles.appContainer} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
-            <Header onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} appLogoSrc={appLogoSrc} isMobile={isMobile} title={pages[activeView] || 'Dashboard'} />
-            <div style={styles.appBody}>
-                <Sidebar 
-                    activeView={activeView} 
-                    onNavigate={handleNavigate} 
-                    isMobile={isMobile} 
-                    isOpen={isSidebarOpen} 
-                    onClose={() => setIsSidebarOpen(false)} 
-                    session={session} 
-                    onLogout={onLogout} 
-                    isCollapsed={isSidebarCollapsed}
-                    onToggleCollapse={handleToggleSidebarCollapse}
-                    sidebarRef={sidebarRef}
-                />
+        <div style={isMobile ? {...styles.appContainer, flexDirection: 'column'} : styles.appContainer} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+            <Sidebar 
+                activeView={activeView} 
+                onNavigate={handleNavigate} 
+                isMobile={isMobile} 
+                isOpen={isSidebarOpen} 
+                onClose={() => setIsSidebarOpen(false)} 
+                session={session} 
+                onLogout={onLogout} 
+                isCollapsed={isSidebarCollapsed}
+                onToggleCollapse={handleToggleSidebarCollapse}
+                sidebarRef={sidebarRef}
+                appLogoSrc={appLogoSrc}
+            />
+            <div style={styles.mainWrapper}>
+                <Header onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} appLogoSrc={appLogoSrc} isMobile={isMobile} title={pages[activeView] || 'Dashboard'} />
                 <MainContent 
                     ref={mainContentRef} 
                     activeView={activeView} 
@@ -1175,7 +1198,7 @@ const KAOMSLogin = () => {
                 {!areImagesReady ? <Spinner /> : (
                     <>
                         <img src={appLogoSrc} alt="KA-OMS Logo" style={logoStyles} />
-                        <h1 style={titleStyles}>Kambeshwar Agencies</h1>
+                        <h1 style={titleStyles}>KA OMS</h1>
                         <p style={subtitleStyles}>Enamor Order Management</p>
 
                         <div style={{width: '100%', overflow: 'hidden'}}>
@@ -1267,7 +1290,8 @@ const KAOMSLogin = () => {
 
 const styles: { [key: string]: React.CSSProperties } = {
     // --- App Layout ---
-    appContainer: { display: 'flex', flexDirection: 'column', height: '100vh', backgroundColor: 'var(--light-grey)' },
+    appContainer: { display: 'flex', height: '100vh', backgroundColor: 'var(--light-grey)' },
+    mainWrapper: { display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0, height: '100vh', overflow: 'hidden' },
     appHeader: { display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', padding: '0.75rem 1.5rem', backgroundColor: 'var(--light-grey)', flexShrink: 0, zIndex: 10 },
     headerLeft: { gridColumn: '1', display: 'flex', alignItems: 'center', gap: '1rem', justifySelf: 'start' },
     headerCenter: { gridColumn: '2', textAlign: 'center', minWidth: 0 },
@@ -1276,12 +1300,12 @@ const styles: { [key: string]: React.CSSProperties } = {
     headerTitle: { fontSize: '1.25rem', fontWeight: 600, color: 'var(--dark-grey)' },
     headerPageTitle: { fontFamily: "'Inter Tight', sans-serif", fontSize: '1.2rem', fontWeight: 500, color: 'var(--dark-grey)', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
     menuButton: { background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', color: 'var(--dark-grey)' },
-    appBody: { display: 'flex', flex: 1, overflow: 'hidden' },
-    sidebar: { width: '250px', backgroundColor: 'var(--card-bg)', borderRight: '1px solid var(--separator-color)', flexShrink: 0, transition: 'width 0.3s ease, transform 0.3s ease', display: 'flex', flexDirection: 'column' },
-    sidebarCollapsed: { width: '80px' },
+    sidebar: { width: '250px', backgroundColor: 'var(--card-bg)', borderRight: 'none', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.07)', flexShrink: 0, transition: 'width 0.3s ease, transform 0.3s ease', display: 'flex', flexDirection: 'column' },
+    sidebarCollapsed: { width: '72px' },
     sidebarMobile: { position: 'fixed', top: 0, left: 0, height: '100%', zIndex: 200 },
     overlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.05)', backdropFilter: 'blur(1.5px)', WebkitBackdropFilter: 'blur(1.5px)', zIndex: 199 },
     sidebarHeader: { padding: '1.5rem', borderBottom: '1px solid var(--separator-color)' },
+    desktopCollapseButton: { background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-color)', padding: '4px', display: 'flex', alignItems: 'center' },
     sidebarUser: { display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' },
     sidebarUserInfo: { transition: 'opacity 0.2s ease' },
     sidebarUserName: { fontWeight: 600, color: 'var(--dark-grey)', whiteSpace: 'nowrap' },
@@ -1290,11 +1314,9 @@ const styles: { [key: string]: React.CSSProperties } = {
     sidebarLogoutButtonCollapsed: { padding: '0.6rem', width: '44px', height: '44px' },
     sidebarNav: { display: 'flex', flexDirection: 'column', padding: '1rem 0.5rem', flex: 1, overflowY: 'auto' },
     sidebarSeparator: { margin: '0.75rem 1rem', border: 'none', borderTop: '1px solid var(--separator-color)' },
-    sidebarFooter: { marginTop: 'auto', padding: '1rem 0.5rem' },
-    collapseButtonSidebar: { background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem 1rem', width: '100%', color: 'var(--text-color)', fontSize: '0.9rem', borderRadius: '8px', transition: 'background-color 0.2s ease, color 0.2s ease', justifyContent: 'flex-start' },
-    navItem: { display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem 1rem', textDecoration: 'none', color: 'var(--text-color)', borderRadius: '8px', marginBottom: '0.25rem', fontWeight: 500, whiteSpace: 'nowrap', transition: 'background-color 0.2s, color 0.2s' },
+    navItem: { display: 'flex', alignItems: 'center', padding: '0.75rem 1rem', textDecoration: 'none', color: 'var(--text-color)', borderRadius: '8px', marginBottom: '0.25rem', fontWeight: 500, whiteSpace: 'nowrap', transition: 'background-color 0.2s, color 0.2s' },
     navItemActive: { backgroundColor: 'var(--active-bg)', color: 'var(--brand-color)' },
-    navLabel: { fontSize: '0.9rem', transition: 'opacity 0.2s ease-out' },
+    navLabel: { fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden' },
     mainContent: { flex: 1, overflowY: 'auto', padding: '1.5rem 1rem', display: 'flex', flexDirection: 'column' },
     bottomNav: { display: 'flex', justifyContent: 'space-around', background: 'linear-gradient(to top, var(--card-bg) 70%, transparent)', borderTop: 'none', position: 'fixed', bottom: 0, left: 0, right: 0, height: '70px', zIndex: 100 },
     bottomNavItem: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, textDecoration: 'none', color: 'var(--text-color)' },
