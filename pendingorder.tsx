@@ -1,10 +1,4 @@
 
-
-
-
-
-
-
 import React, { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import firebase from 'firebase/compat/app';
@@ -1064,7 +1058,7 @@ export const PendingOrders = ({ onNavigate }) => {
     const [error, setError] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
     const [view, setView] = useState('summarized');
-    const [sortConfig, setSortConfig] = useState({ key: 'timestamp', direction: 'ascending' });
+    const [sortConfig, setSortConfig] = useState({ key: 'timestamp', direction: 'descending' });
     const [expandedOrderNumber, setExpandedOrderNumber] = useState<string | null>(null);
     const [processingOrder, setProcessingOrder] = useState<string | null>(null);
     const [processingQty, setProcessingQty] = useState<Record<string, number>>({});
@@ -1091,6 +1085,7 @@ export const PendingOrders = ({ onNavigate }) => {
 
     const [isExportModalOpen, setIsExportModalOpen] = useState(false);
     const [ordersToExport, setOrdersToExport] = useState<Order[]>([]);
+    const [isSearchFocused, setIsSearchFocused] = useState(false);
 
 
     const isSelectionMode = selectedOrders.length > 0;
@@ -1422,7 +1417,7 @@ export const PendingOrders = ({ onNavigate }) => {
                     updates[billingOrderRefPath] = { ...order, history: updatedHistory };
                     updates[pendingOrderRefPath] = null; 
                 }
-            });
+             });
              selectedOrders.forEach(orderNum => {
                 const order = orders.find(o => o.orderNumber === orderNum);
                 if(order) {
@@ -1765,8 +1760,8 @@ export const PendingOrders = ({ onNavigate }) => {
     };
 
     const sortOptions = [
-        { key: 'timestamp', direction: 'ascending', label: 'Oldest' },
         { key: 'timestamp', direction: 'descending', label: 'Newest' },
+        { key: 'timestamp', direction: 'ascending', label: 'Oldest' },
         { key: 'partyName', direction: 'ascending', label: 'Party Name' },
     ];
     
@@ -1877,9 +1872,18 @@ export const PendingOrders = ({ onNavigate }) => {
                     </div>
                 </div>
                 <div style={isFilterVisible ? styles.filtersVisible : styles.filtersCollapsed}>
-                    <div style={styles.searchContainer}>
+                    <div style={isSearchFocused ? {...styles.searchContainer, ...styles.searchContainerActive} : styles.searchContainer}>
                         <SearchIcon />
-                        <input type="text" style={styles.searchInput} className="global-search-input" placeholder="Search by party or order number..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                        <input 
+                            type="text" 
+                            style={styles.searchInput} 
+                            className="global-search-input" 
+                            placeholder="Search by party or order number..." 
+                            value={searchTerm} 
+                            onChange={(e) => setSearchTerm(e.target.value)} 
+                            onFocus={() => setIsSearchFocused(true)}
+                            onBlur={() => setIsSearchFocused(false)}
+                        />
                     </div>
                     
                     {/* Tag Filters */}
@@ -1987,7 +1991,20 @@ const styles: { [key: string]: React.CSSProperties } = {
     
     filtersCollapsed: { maxHeight: 0, opacity: 0, overflow: 'hidden', transition: 'max-height 0.4s ease-out, opacity 0.4s ease-out, margin-top 0.4s ease-out', marginTop: 0 },
     filtersVisible: { maxHeight: '300px', opacity: 1, overflow: 'visible', transition: 'max-height 0.4s ease-in, opacity 0.4s ease-in, margin-top 0.4s ease-in', marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' },
-    searchContainer: { display: 'flex', alignItems: 'center', gap: '0.75rem', backgroundColor: 'var(--card-bg-secondary)', padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--separator-color)' },
+    searchContainer: { 
+        display: 'flex', 
+        alignItems: 'center', 
+        gap: '0.75rem', 
+        boxShadow: 'rgba(0, 0, 0, 0.06) 0px 4px 12px',
+        backgroundColor: 'var(--card-bg)', 
+        padding: '11px', 
+        borderRadius: '20px',
+        border: '1px solid transparent',
+        transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
+    },
+    searchContainerActive: {
+        borderColor: 'var(--brand-color)',
+    },
     searchInput: { flex: 1, border: 'none', background: 'none', outline: 'none', fontSize: '1rem', color: 'var(--dark-grey)' },
     filterContainer: { display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center', position: 'relative', zIndex: 101 },
     filterButton: { background: 'var(--light-grey)', border: '1px solid var(--skeleton-bg)', color: 'var(--text-color)', padding: '0.4rem 0.8rem', borderRadius: '16px', cursor: 'pointer', fontSize: '0.85rem' },

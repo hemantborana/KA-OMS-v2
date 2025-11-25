@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 
 // --- ICONS ---
@@ -205,6 +206,7 @@ export const StockOverview = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [view, setView] = useState('card');
     const [sortConfig, setSortConfig] = useState({ key: 'style', direction: 'ascending' });
+    const [isSearchFocused, setIsSearchFocused] = useState(false);
 
     const processAndSetData = useCallback((items, timestamp) => {
         setAllStock(items);
@@ -346,7 +348,7 @@ export const StockOverview = () => {
                         <button onClick={() => setView('table')} style={view === 'table' ? styles.toggleButtonActive : styles.toggleButton}><TableViewIcon /></button>
                     </div>
                 </div>
-                <div style={styles.searchContainer}>
+                <div style={isSearchFocused ? {...styles.searchContainer, ...styles.searchContainerActive} : styles.searchContainer}>
                     <SearchIcon />
                     <input
                         type="text"
@@ -355,6 +357,8 @@ export const StockOverview = () => {
                         placeholder="Search by style or color..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
+                        onFocus={() => setIsSearchFocused(true)}
+                        onBlur={() => setIsSearchFocused(false)}
                     />
                 </div>
             </div>
@@ -372,7 +376,20 @@ const styles: { [key: string]: React.CSSProperties } = {
     viewToggle: { display: 'flex', backgroundColor: 'var(--light-grey)', borderRadius: '8px', padding: '4px' },
     toggleButton: { background: 'none', border: 'none', padding: '6px 10px', cursor: 'pointer', color: 'var(--text-color)', borderRadius: '6px' },
     toggleButtonActive: { background: 'var(--card-bg)', border: 'none', padding: '6px 10px', cursor: 'pointer', color: 'var(--brand-color)', borderRadius: '6px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' },
-    searchContainer: { display: 'flex', alignItems: 'center', gap: '0.75rem', backgroundColor: 'var(--light-grey)', padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--skeleton-bg)' },
+    searchContainer: { 
+        display: 'flex', 
+        alignItems: 'center', 
+        gap: '0.75rem', 
+        boxShadow: 'rgba(0, 0, 0, 0.06) 0px 4px 12px',
+        backgroundColor: 'var(--card-bg)', 
+        padding: '11px', 
+        borderRadius: '20px',
+        border: '1px solid transparent',
+        transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
+    },
+    searchContainerActive: {
+        borderColor: 'var(--brand-color)',
+    },
     searchInput: { flex: 1, border: 'none', background: 'none', outline: 'none', fontSize: '1rem', color: 'var(--dark-grey)' },
     listContainer: { flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem', paddingBottom: '1rem' },
     centeredMessage: { flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'var(--text-color)', fontSize: '1.1rem' },
