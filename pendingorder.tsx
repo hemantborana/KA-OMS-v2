@@ -1086,6 +1086,10 @@ export const PendingOrders = ({ onNavigate }) => {
     const [isExportModalOpen, setIsExportModalOpen] = useState(false);
     const [ordersToExport, setOrdersToExport] = useState<Order[]>([]);
     const [isSearchFocused, setIsSearchFocused] = useState(false);
+    
+    const sortPillsRef = useRef(null);
+    const pillRefs = useRef({});
+    const [markerStyle, setMarkerStyle] = useState({});
 
 
     const isSelectionMode = selectedOrders.length > 0;
@@ -1178,6 +1182,30 @@ export const PendingOrders = ({ onNavigate }) => {
             partyRef.off('value', partyListener);
         }
     }, []);
+
+    const sortOptions = [
+        { key: 'timestamp', direction: 'descending', label: 'Newest' },
+        { key: 'timestamp', direction: 'ascending', label: 'Oldest' },
+        { key: 'partyName', direction: 'ascending', label: 'Party Name' },
+    ];
+    
+    useLayoutEffect(() => {
+        const activePill = pillRefs.current[`${sortConfig.key}-${sortConfig.direction}`];
+        const container = sortPillsRef.current;
+    
+        if (activePill && container) {
+            const containerRect = container.getBoundingClientRect();
+            const pillRect = activePill.getBoundingClientRect();
+    
+            setMarkerStyle({
+                left: pillRect.left - containerRect.left,
+                width: pillRect.width,
+                height: pillRect.height,
+                opacity: 1,
+            });
+        }
+    }, [sortConfig, isMobile]);
+
 
     useEffect(() => {
         setExpandedDetailed(null);
@@ -1656,8 +1684,10 @@ export const PendingOrders = ({ onNavigate }) => {
             isSelectionMode: isSelectionMode
         };
 
+        const animationKey = `${view}-${sortConfig.key}-${sortConfig.direction}-${activeTagFilter}-${searchTerm}`;
+
         const content = view === 'summarized' ? (
-             <div key="summarized" style={styles.listContainer} className="fade-in-slide">
+             <div key={`summarized-${animationKey}`} style={styles.listContainer} className="fade-in-slide">
                 {partyNamesInOrder.map((partyName) => (
                     <PartyGroup 
                         key={partyName} 
@@ -1672,7 +1702,7 @@ export const PendingOrders = ({ onNavigate }) => {
                 ))}
             </div>
         ) : (
-            <div key="detailed" style={styles.listContainer} className="fade-in-slide">
+            <div key={`detailed-${animationKey}`} style={styles.listContainer} className="fade-in-slide">
                 <DetailedList orders={filteredAndSortedOrders} {...commonProps}>
                     {expandedView}
                 </DetailedList>
@@ -1685,9 +1715,11 @@ export const PendingOrders = ({ onNavigate }) => {
     const renderDesktopLayout = () => {
          if (isLoading) return <div style={styles.centeredMessage}><Spinner /></div>;
         if (error) return <div style={styles.centeredMessage}>{error}</div>;
+        
+        const animationKey = `${sortConfig.key}-${sortConfig.direction}-${activeTagFilter}-${searchTerm}`;
 
         return (
-            <div style={styles.commandCenterLayout}>
+            <div style={styles.commandCenterLayout} key={`desktop-${animationKey}`} className="fade-in-slide">
                 {/* Left Panel: Party List */}
                 <div style={styles.leftPanel}>
                     <div style={styles.panelHeader}>Parties ({Object.keys(parties).length})</div>
@@ -1758,12 +1790,6 @@ export const PendingOrders = ({ onNavigate }) => {
             </div>
         );
     };
-
-    const sortOptions = [
-        { key: 'timestamp', direction: 'descending', label: 'Newest' },
-        { key: 'timestamp', direction: 'ascending', label: 'Oldest' },
-        { key: 'partyName', direction: 'ascending', label: 'Party Name' },
-    ];
     
     return (
         <div style={styles.container}>
@@ -1773,10 +1799,10 @@ export const PendingOrders = ({ onNavigate }) => {
                     box-shadow: none !important;
                     outline: none !important;
                 }
-                .fade-in-slide { animation: fadeInSlide 0.3s ease-out forwards; }
+                .fade-in-slide { animation: fadeInSlide 0.4s ease-out forwards; }
                 @keyframes fadeInSlide {
-                    from { opacity: 0; transform: translateX(10px); }
-                    to { opacity: 1; transform: translateX(0); }
+                    from { opacity: 0; transform: translateY(10px); }
+                    to { opacity: 1; transform: translateY(0); }
                 }
                 .batch-toolbar-enter { 
                     animation: slideUpBatch 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
@@ -1909,15 +1935,21 @@ export const PendingOrders = ({ onNavigate }) => {
                         </div>
                     )}
 
-                    <div style={styles.filterContainer}>
-                        <span style={{fontWeight: 500, color: 'var(--text-color)', fontSize: '0.9rem'}}>Sort by:</span>
-                        {sortOptions.map(opt => (
-                            <button 
-                              key={opt.label} 
-                              onClick={() => setSortConfig({key: opt.key, direction: opt.direction})} 
-                              style={sortConfig.key === opt.key && sortConfig.direction === opt.direction ? styles.filterButtonActive : styles.filterButton}
-                            >{opt.label}</button>
-                        ))}
+                    <div style={styles.filterContainer} ref={sortPillsRef}>
+                        <div style={{...styles.filterMarker, ...markerStyle}}></div>
+                        <span style={{fontWeight: 500, color: 'var(--text-color)', fontSize: '0.9rem', padding: '0.4rem 0.2rem', position: 'relative', zIndex: 1}}>Sort by:</span>
+                        {sortOptions.map(opt => {
+                            const isActive = sortConfig.key === opt.key && sortConfig.direction === opt.direction;
+                            return (
+                                <button 
+                                    key={opt.label}
+                                    // FIX: Correctly type the ref callback to not return a value, resolving a TypeScript error.
+                                    ref={el => { pillRefs.current[`${opt.key}-${opt.direction}`] = el; }} 
+                                    onClick={() => setSortConfig({key: opt.key, direction: opt.direction})} 
+                                    style={isActive ? styles.filterButtonActive : styles.filterButton}
+                                >{opt.label}</button>
+                            );
+                        })}
                     </div>
                 </div>
             </div>
@@ -2006,27 +2038,10 @@ const styles: { [key: string]: React.CSSProperties } = {
         borderColor: 'var(--brand-color)',
     },
     searchInput: { flex: 1, border: 'none', background: 'none', outline: 'none', fontSize: '1rem', color: 'var(--dark-grey)' },
-    filterContainer: { display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center', position: 'relative', zIndex: 101 },
-    filterButton: { 
-        background: 'var(--gray-5)', 
-        border: 'none', 
-        color: 'var(--text-color)', 
-        padding: '0.4rem 0.8rem', 
-        borderRadius: '16px', 
-        cursor: 'pointer', 
-        fontSize: '0.85rem' 
-    },
-    filterButtonActive: { 
-        background: 'var(--card-bg)', 
-        border: 'none', 
-        color: 'var(--brand-color)', 
-        padding: '0.4rem 0.8rem', 
-        borderRadius: '16px', 
-        cursor: 'pointer', 
-        fontSize: '0.85rem', 
-        fontWeight: 500,
-        boxShadow: 'rgba(0, 0, 0, 0.05) 0px 1px 3px, rgba(0, 0, 0, 0.05) 0px 1px 2px'
-    },
+    filterContainer: { display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center', position: 'relative', backgroundColor: 'var(--gray-5)', borderRadius: '18px', padding: '4px' },
+    filterMarker: { position: 'absolute', top: '4px', left: 0, height: 'calc(100% - 8px)', backgroundColor: 'var(--card-bg)', borderRadius: '14px', transition: 'all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)', zIndex: 0, boxShadow: 'rgba(0, 0, 0, 0.05) 0px 1px 3px, rgba(0, 0, 0, 0.05) 0px 1px 2px', opacity: 0 },
+    filterButton: { background: 'transparent', border: 'none', color: 'var(--text-color)', padding: '0.4rem 0.8rem', borderRadius: '14px', cursor: 'pointer', fontSize: '0.85rem', position: 'relative', zIndex: 1, transition: 'color 0.3s ease' },
+    filterButtonActive: { background: 'transparent', border: 'none', color: 'var(--brand-color)', padding: '0.4rem 0.8rem', borderRadius: '14px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600, position: 'relative', zIndex: 1, transition: 'color 0.3s ease' },
     tagFilterContainer: { display: 'flex', flexDirection: 'column', gap: '0.5rem', position: 'relative', zIndex: 101 },
     tagScrollContainer: { display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.5rem', scrollbarWidth: 'none' },
     tagFilterButton: { background: 'var(--card-bg)', border: '1px solid var(--skeleton-bg)', padding: '0.3rem 0.8rem', borderRadius: '14px', cursor: 'pointer', fontSize: '0.8rem', whiteSpace: 'nowrap' },

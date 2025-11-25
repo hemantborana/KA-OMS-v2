@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect } from 'react';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
 
@@ -137,11 +137,6 @@ const ExpandedBillingView = ({ order, billedQty, onQtyChange, onMarkBilled, isPr
         doc.setFontSize(20);
         doc.setFont('helvetica', 'bold');
         doc.text('Kambeshwar Agencies', 105, 20, { align: 'center' });
-    
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'normal');
-        doc.text('123 Business Road, Commerce City, 12345', 105, 27, { align: 'center' });
-        doc.text('Email: contact@kambeshwar.com | Phone: +91 98765 43210', 105, 32, { align: 'center' });
     
         // 2. Document Title
         doc.setFontSize(16);
@@ -307,6 +302,10 @@ export const ReadyForBilling = () => {
     const [billedQty, setBilledQty] = useState<Record<string, number>>({});
     const [processingOrder, setProcessingOrder] = useState<string | null>(null);
     const [isSearchFocused, setIsSearchFocused] = useState(false);
+    
+    const filterPillsRef = useRef(null);
+    const pillRefs = useRef({});
+    const [markerStyle, setMarkerStyle] = useState({});
 
     useEffect(() => {
         const ordersRef = firebase.database().ref(BILLING_ORDERS_REF);
@@ -325,6 +324,31 @@ export const ReadyForBilling = () => {
         });
         return () => ordersRef.off('value', listener);
     }, []);
+
+    const dateFilters = [
+        { key: 'all', label: 'All' },
+        { key: 'today', label: 'Today' },
+        { key: '7days', label: 'Last 7 Days' },
+        { key: '30days', label: 'Last 30 Days' },
+    ];
+
+    useLayoutEffect(() => {
+        const activePill = pillRefs.current[dateFilter];
+        const container = filterPillsRef.current;
+    
+        if (activePill && container) {
+            const containerRect = container.getBoundingClientRect();
+            const pillRect = activePill.getBoundingClientRect();
+    
+            setMarkerStyle({
+                left: pillRect.left - containerRect.left,
+                width: pillRect.width,
+                height: pillRect.height,
+                opacity: 1,
+            });
+        }
+    }, [dateFilter]);
+
 
     const handleQtyChange = (itemId, value, maxQty) => {
         const numValue = Math.max(0, Math.min(maxQty, Number(value) || 0));
@@ -459,8 +483,10 @@ export const ReadyForBilling = () => {
             />
         ) : null;
 
+        const animationKey = `${dateFilter}-${searchTerm}`;
+
         return (
-            <div style={styles.listContainer}>
+            <div style={styles.listContainer} key={animationKey} className="fade-in-slide">
                 {partyNames.map(partyName => (
                     <PartyGroup key={partyName} partyName={partyName} data={summarizedData[partyName]} onToggleExpand={handleToggleExpand} expandedOrderNumber={expandedOrderNumber}>
                         {expandedView}
@@ -470,25 +496,22 @@ export const ReadyForBilling = () => {
         );
     };
 
-    const dateFilters = [
-        { key: 'all', label: 'All' },
-        { key: 'today', label: 'Today' },
-        { key: '7days', label: 'Last 7 Days' },
-        { key: '30days', label: 'Last 30 Days' },
-    ];
-
     return (
         <div style={styles.container}>
+             <style>{`.fade-in-slide { animation: fadeInSlide 0.4s ease-out forwards; } @keyframes fadeInSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }`}</style>
             <div style={styles.headerCard}>
                 <h2 style={styles.pageTitle}>Ready for Billing</h2>
                 <div style={isSearchFocused ? {...styles.searchContainer, ...styles.searchContainerActive} : styles.searchContainer}>
                     <SearchIcon />
                     <input type="text" style={styles.searchInput} className="global-search-input" placeholder="Search by party or order number..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onFocus={() => setIsSearchFocused(true)} onBlur={() => setIsSearchFocused(false)} />
                 </div>
-                 <div style={styles.filterContainer}>
+                 <div style={styles.filterContainer} ref={filterPillsRef}>
+                     <div style={{...styles.filterMarker, ...markerStyle}}></div>
                     {dateFilters.map(filter => (
                         <button 
                           key={filter.key} 
+                          // FIX: Correctly type the ref callback to not return a value, resolving a TypeScript error.
+                          ref={el => { pillRefs.current[filter.key] = el; }}
                           onClick={() => setDateFilter(filter.key)} 
                           style={dateFilter === filter.key ? styles.filterButtonActive : styles.filterButton}
                         >{filter.label}</button>
@@ -532,27 +555,10 @@ const styles: { [key: string]: React.CSSProperties } = {
         borderColor: 'var(--brand-color)',
     },
     searchInput: { flex: 1, border: 'none', background: 'none', outline: 'none', fontSize: '1rem', color: 'var(--dark-grey)' },
-    filterContainer: { display: 'flex', gap: '0.5rem', flexWrap: 'wrap' },
-    filterButton: { 
-        background: 'var(--gray-5)', 
-        border: 'none', 
-        color: 'var(--text-color)', 
-        padding: '0.4rem 0.8rem', 
-        borderRadius: '16px', 
-        cursor: 'pointer', 
-        fontSize: '0.85rem' 
-    },
-    filterButtonActive: { 
-        background: 'var(--card-bg)', 
-        border: 'none', 
-        color: 'var(--brand-color)', 
-        padding: '0.4rem 0.8rem', 
-        borderRadius: '16px', 
-        cursor: 'pointer', 
-        fontSize: '0.85rem', 
-        fontWeight: 500,
-        boxShadow: 'rgba(0, 0, 0, 0.05) 0px 1px 3px, rgba(0, 0, 0, 0.05) 0px 1px 2px'
-    },
+    filterContainer: { display: 'flex', gap: '0.5rem', flexWrap: 'wrap', position: 'relative', backgroundColor: 'var(--gray-5)', borderRadius: '18px', padding: '4px' },
+    filterMarker: { position: 'absolute', top: '4px', left: 0, height: 'calc(100% - 8px)', backgroundColor: 'var(--card-bg)', borderRadius: '14px', transition: 'all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)', zIndex: 0, boxShadow: 'rgba(0, 0, 0, 0.05) 0px 1px 3px, rgba(0, 0, 0, 0.05) 0px 1px 2px', opacity: 0 },
+    filterButton: { background: 'transparent', border: 'none', color: 'var(--text-color)', padding: '0.4rem 0.8rem', borderRadius: '14px', cursor: 'pointer', fontSize: '0.85rem', position: 'relative', zIndex: 1, transition: 'color 0.3s ease' },
+    filterButtonActive: { background: 'transparent', border: 'none', color: 'var(--brand-color)', padding: '0.4rem 0.8rem', borderRadius: '14px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600, position: 'relative', zIndex: 1, transition: 'color 0.3s ease' },
     listContainer: { flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem', paddingBottom: '1rem' },
     centeredMessage: { flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'var(--text-color)', fontSize: '1.1rem' },
     spinner: { border: '4px solid var(--light-grey)', borderRadius: '50%', borderTop: '4px solid var(--brand-color)', width: '40px', height: '40px', animation: 'spin 1s linear infinite' },
