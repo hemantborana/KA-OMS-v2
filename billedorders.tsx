@@ -99,16 +99,22 @@ const BilledDetailModal = ({ order, onClose }) => {
     return (
         <>
             <style>{`
+                :root {
+                    --stripe-light-bg: rgba(0, 122, 255, 0.05);
+                }
+                body.dark-mode {
+                    --stripe-bg: rgba(255, 255, 255, 0.04);
+                }
                 body.dark-mode .modal-summary {
-                    background-color: var(--gray-6);
+                    background-color: rgba(255, 255, 255, 0.05);
                 }
                 body.dark-mode .modal-note {
-                    background-color: rgba(255, 146, 48, 0.15);
-                    border-color: rgba(255, 146, 48, 0.4);
-                    color: #FFD68A;
+                    background-color: rgba(255, 255, 255, 0.05);
+                    border-color: var(--separator-color);
+                    color: var(--yellow);
                 }
                 body.dark-mode .modal-note strong {
-                    color: #FFEDB3;
+                    color: var(--yellow);
                 }
             `}</style>
             <div style={{...styles.modalOverlay, animation: isClosing ? 'overlayOut 0.3s forwards' : 'overlayIn 0.3s forwards'}} onClick={handleClose}>
@@ -124,10 +130,10 @@ const BilledDetailModal = ({ order, onClose }) => {
                         {order.orderNote && <div style={styles.modalNote} className="modal-note"><strong>Note:</strong> {order.orderNote}</div>}
                         <div style={styles.tableContainer}>
                             <table style={styles.table}>
-                                <thead><tr><th style={styles.th}>Style</th><th style={styles.th}>Color</th><th style={styles.th}>Size</th><th style={styles.th}>Billed Qty</th></tr></thead>
+                                <thead><tr><th style={{...styles.th, fontSize: '0.9rem'}}>Style</th><th style={{...styles.th, fontSize: '0.9rem'}}>Color</th><th style={{...styles.th, fontSize: '0.9rem'}}>Size</th><th style={{...styles.th, fontSize: '0.9rem'}}>Billed Qty</th></tr></thead>
                                 <tbody>
                                     {order.items.map((item, index) => (
-                                        <tr key={item.id} style={index % 2 !== 0 ? { ...styles.tr, backgroundColor: 'var(--light-grey)' } : styles.tr}>
+                                        <tr key={item.id} style={index % 2 !== 0 ? { ...styles.tr, backgroundColor: 'var(--stripe-bg, var(--stripe-light-bg))' } : styles.tr}>
                                             <td style={styles.td}>{item.fullItemData.Style}</td>
                                             <td style={styles.td}>{item.fullItemData.Color}</td>
                                             <td style={styles.td}>{item.fullItemData.Size}</td>
@@ -151,7 +157,6 @@ const BilledDetailModal = ({ order, onClose }) => {
     );
 };
 
-// FIX: Explicitly type component props to resolve issues with 'key' prop type inference by using React.FC.
 const PartyGroup: React.FC<{ partyName: string; data: any; onViewOrder: (order: Order) => void; }> = ({ partyName, data, onViewOrder }) => {
     const [isCollapsed, setIsCollapsed] = useState(true);
     const totalQty = data.orders.reduce((sum, order) => sum + order.totalQuantity, 0);
@@ -324,7 +329,6 @@ export const BilledOrders = () => {
                     {dateFilters.map(filter => (
                         <button 
                           key={filter.key}
-                          // FIX: Correctly type the ref callback to not return a value, resolving a TypeScript error.
                           ref={el => { pillRefs.current[filter.key] = el; }} 
                           onClick={() => setDateFilter(filter.key)} 
                           style={dateFilter === filter.key ? styles.filterButtonActive : styles.filterButton}
@@ -406,16 +410,16 @@ const styles: { [key: string]: React.CSSProperties } = {
     orderMeta: { display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--text-color)', fontSize: '0.85rem' },
     detailsButton: { display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--light-grey)', border: '1px solid var(--skeleton-bg)', color: 'var(--dark-grey)', padding: '0.5rem 1rem', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500 },
     modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.2)', backdropFilter: 'blur(7px)', WebkitBackdropFilter: 'blur(7px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', opacity: 0 },
-    modalContent: { backgroundColor: 'var(--glass-bg)', width: '100%', borderRadius: 'var(--border-radius)', display: 'flex', flexDirection: 'column', maxHeight: '90vh', boxShadow: '0 8px 32px rgba(0,0,0,0.1)', border: '1px solid var(--glass-border)', padding: '1.5rem', transform: 'scale(0.95)', opacity: 0 },
+    modalContent: { backgroundColor: 'var(--glass-bg)', width: '100%', borderRadius: 'var(--border-radius)', display: 'flex', flexDirection: 'column', maxHeight: 'calc(100vh - 2rem)', boxShadow: '0 8px 32px rgba(0,0,0,0.1)', border: '1px solid var(--glass-border)', padding: '1.5rem', transform: 'scale(0.95)', opacity: 0 },
     modalTitle: { fontSize: '1.25rem', fontWeight: 600, color: 'var(--dark-grey)', textAlign: 'center', marginBottom: '1.5rem' },
     modalBody: { padding: '0', display: 'flex', flexDirection: 'column', gap: '1rem', overflow: 'hidden', flex: 1 },
-    modalSummary: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', backgroundColor: 'var(--light-grey)', padding: '1rem', borderRadius: '8px', color: 'var(--dark-grey)' },
+    modalSummary: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', backgroundColor: 'rgba(0,0,0,0.03)', padding: '1rem', borderRadius: '8px', color: 'var(--dark-grey)' },
     modalNote: { backgroundColor: '#fffbe6', border: '1px solid #ffe58f', padding: '1rem', borderRadius: '8px', fontSize: '0.9rem' },
-    tableContainer: { overflowY: 'auto', borderRadius: '8px', backgroundColor: 'var(--card-bg)', flex: 1, minHeight: 0 },
-    table: { width: '100%', borderCollapse: 'separate', borderSpacing: 0 },
-    th: { backgroundColor: 'var(--light-grey)', padding: '10px 12px', textAlign: 'center', fontWeight: 600, color: 'var(--text-color)', borderBottom: '1px solid var(--separator-color)', whiteSpace: 'nowrap', fontSize: '0.8rem', position: 'sticky', top: 0, zIndex: 1 },
-    tr: { borderBottom: '1px solid var(--separator-color)' },
-    td: { padding: '10px 12px', color: 'var(--text-color)', fontSize: '0.9rem', textAlign: 'center' },
+    tableContainer: { overflowY: 'auto', borderRadius: '8px', backgroundColor: 'var(--card-bg-secondary)', flex: 1, maxHeight: 'calc(100vh - 30rem)', minHeight: '150px' },
+    table: { width: '100%', borderCollapse: 'collapse' },
+    th: { backgroundColor: 'var(--light-grey)', padding: '10px 12px', textAlign: 'center', fontWeight: 600, color: 'var(--text-color)', borderBottom: '1px solid var(--separator-color)', whiteSpace: 'nowrap', fontSize: '0.85rem', position: 'sticky', top: 0, zIndex: 1 },
+    tr: {},
+    td: { padding: '10px 12px', color: 'var(--text-color)', fontSize: '0.9rem', textAlign: 'center', borderBottom: '1px solid var(--separator-color)' },
     iosModalActions: { display: 'flex', width: 'calc(100% + 3rem)', marginLeft: '-1.5rem', marginBottom: '-1.5rem', borderTop: '1px solid var(--glass-border)', marginTop: '1.5rem' },
     iosModalButtonSecondary: { background: 'transparent', border: 'none', padding: '1rem 0', cursor: 'pointer', fontSize: '1rem', textAlign: 'center', transition: 'background-color 0.2s ease', flex: 1, color: 'var(--dark-grey)', borderRight: '1px solid var(--glass-border)', fontWeight: 400 },
     iosModalButtonPrimary: { background: 'transparent', border: 'none', padding: '1rem 0', cursor: 'pointer', fontSize: '1rem', textAlign: 'center', transition: 'background-color 0.2s ease', flex: 1, color: 'var(--brand-color)', fontWeight: 600 },
