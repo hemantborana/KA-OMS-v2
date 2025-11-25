@@ -661,9 +661,10 @@ const Sidebar = ({ activeView, onNavigate, isMobile, isOpen, onClose, session, o
         return baseStyle;
     };
     
+    // FIX: Add explicit `as 'hidden'` and `as 'visible'` to satisfy the `CSSProperties` type for `visibility`.
     const navLabelDynamicStyle = isActuallyCollapsed
-        ? { opacity: 0, maxWidth: '0px', marginLeft: '0', visibility: 'hidden', transition: 'opacity 0.1s, max-width 0.2s, margin-left 0.2s, visibility 0s 0.2s' }
-        : { opacity: 1, maxWidth: '150px', marginLeft: '1rem', visibility: 'visible', transition: 'opacity 0.2s 0.1s, max-width 0.2s 0.1s, margin-left 0.2s 0.1s' };
+        ? { opacity: 0, maxWidth: '0px', marginLeft: '0', visibility: 'hidden' as 'hidden', transition: 'opacity 0.1s, max-width 0.2s, margin-left 0.2s, visibility 0s 0.2s' }
+        : { opacity: 1, maxWidth: '150px', marginLeft: '1rem', visibility: 'visible' as 'visible', transition: 'opacity 0.2s 0.1s, max-width 0.2s 0.1s, margin-left 0.2s 0.1s' };
 
     return (
         <>
@@ -698,7 +699,7 @@ const Sidebar = ({ activeView, onNavigate, isMobile, isOpen, onClose, session, o
                                 transition: 'opacity 0.2s 0.1s, max-width 0.3s 0.1s, visibility 0s ' + (isActuallyCollapsed ? '0.3s' : '0s'),
                                 opacity: isActuallyCollapsed ? 0 : 1,
                                 maxWidth: isActuallyCollapsed ? '0px' : '200px',
-                                visibility: isActuallyCollapsed ? 'hidden' : 'visible',
+                                visibility: isActuallyCollapsed ? 'hidden' as 'hidden' : 'visible' as 'visible',
                                 overflow: 'hidden',
                                 whiteSpace: 'nowrap',
                              }}>

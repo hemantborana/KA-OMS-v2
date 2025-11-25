@@ -1,6 +1,3 @@
-
-
-
 import React, { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect } from 'react';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
@@ -128,11 +125,16 @@ interface ExpandedBillingViewProps {
     onQtyChange: (itemId: string, value: string, maxQty: number) => void;
     onMarkBilled: (order: Order, billedQuantities: Record<string, number>) => void;
     isProcessing: boolean;
-    onMatchAll: (order: Order) => void;
+    onMatchAll: (order: Order, clear?: boolean) => void;
     isMobile: boolean;
 }
 
 const ExpandedBillingView: React.FC<ExpandedBillingViewProps> = ({ order, billedQty, onQtyChange, onMarkBilled, isProcessing, onMatchAll, isMobile }) => {
+    const isFullyMatched = useMemo(() => {
+        if (!billedQty) return false;
+        return order.items.every(item => (billedQty[item.id] ?? 0) === item.quantity);
+    }, [order, billedQty]);
+
     const handleMarkBilledClick = () => {
         const totalBilled = Object.values(billedQty).reduce((sum: number, qty: number) => sum + qty, 0);
         if (totalBilled === 0) {
@@ -144,6 +146,7 @@ const ExpandedBillingView: React.FC<ExpandedBillingViewProps> = ({ order, billed
     
     const handleDownloadPdf = async () => {
         const { jsPDF } = (window as any).jspdf;
+        // FIX: Initialize the jsPDF instance into a 'doc' constant.
         const doc = new jsPDF();
     
         // 1. Header
@@ -214,6 +217,11 @@ const ExpandedBillingView: React.FC<ExpandedBillingViewProps> = ({ order, billed
     const renderFooter = () => {
         const isButtonDisabled = isProcessing;
 
+        const matchButtonClickAction = () => {
+            onMatchAll(order, isFullyMatched); // pass true to clear if fully matched
+        };
+        const matchButtonTitle = isFullyMatched ? "Make Billed Qty Zero" : "Match Ready Qty";
+
         const getMarkBilledButtonStyle = () => {
             let style = { ...styles.modalActionButton };
             if (isMobile) {
@@ -229,7 +237,7 @@ const ExpandedBillingView: React.FC<ExpandedBillingViewProps> = ({ order, billed
         if (isMobile) {
             return (
                 <div style={styles.mobileFooterContainer}>
-                    <button onClick={() => onMatchAll(order)} style={styles.iconButton} disabled={isProcessing} title="Match Ready Quantity">
+                    <button onClick={matchButtonClickAction} style={styles.iconButton} disabled={isProcessing} title={matchButtonTitle}>
                         <CheckSquareIcon color="var(--brand-color)" />
                     </button>
                     <button onClick={handleDownloadPdf} style={styles.iconButton} disabled={isProcessing} title="Download Packing Slip">
@@ -247,7 +255,7 @@ const ExpandedBillingView: React.FC<ExpandedBillingViewProps> = ({ order, billed
         }
         return (
             <div style={{...styles.modalFooter, padding: '1rem'}}>
-                <button onClick={() => onMatchAll(order)} style={styles.matchAllButton} disabled={isProcessing} title="Match Ready Quantity">
+                <button onClick={matchButtonClickAction} style={styles.matchAllButton} disabled={isProcessing} title={matchButtonTitle}>
                     <CheckSquareIcon />
                 </button>
                 <div style={styles.footerActions}>
@@ -322,7 +330,7 @@ const PartyGroup: React.FC<{
     processingOrders: string[];
     onQtyChange: (orderNumber: string, itemId: string, value: string, maxQty: number) => void;
     onMarkBilled: (order: Order, billedQuantities: Record<string, number>) => void;
-    onMatchAll: (order: Order) => void;
+    onMatchAll: (order: Order, clear?: boolean) => void;
     onPartyExpand: (orders: Order[]) => void;
     isMobile: boolean;
 }> = ({ partyName, data, billedQtys, processingOrders, onQtyChange, onMarkBilled, onMatchAll, onPartyExpand, isMobile }) => {
@@ -467,16 +475,16 @@ export const ReadyForBilling = () => {
         });
     };
     
-    const handleMatchAll = useCallback((order: Order) => {
-        const allQuantities = order.items.reduce((acc, item) => {
-            acc[item.id] = item.quantity;
+    const handleMatchAll = useCallback((order: Order, clear = false) => {
+        const quantities = order.items.reduce((acc, item) => {
+            acc[item.id] = clear ? 0 : item.quantity;
             return acc;
         }, {});
         setBilledQtys(prev => ({
             ...prev,
-            [order.orderNumber]: allQuantities,
+            [order.orderNumber]: quantities,
         }));
-        showToast('All quantities matched!', 'info');
+        showToast(clear ? 'Quantities cleared for this order.' : 'All quantities matched!', 'info');
     }, []);
 
     const handleMarkBilled = async (order: Order, billedQuantities: Record<string, number>) => {
@@ -722,55 +730,32 @@ const styles: { [key: string]: React.CSSProperties } = {
     mobileTableWrapper: { overflow: 'hidden', borderRadius: '8px', margin: '1rem', border: '1px solid var(--separator-color)' },
     tableContainer: { overflowX: 'auto', backgroundColor: 'var(--card-bg)', borderRadius: '8px', border: '1px solid var(--skeleton-bg)' },
     table: { width: '100%', borderCollapse: 'collapse' },
-    th: { backgroundColor: 'var(--light-grey)', padding: '8px 10px', textAlign: 'center', fontWeight: 600, color: 'var(--text-color)', borderBottom: '1px solid var(--separator-color)', whiteSpace: 'nowrap', fontSize: '0.8rem' },
-    tr: { borderBottom: '1px solid var(--separator-color)' },
-    td: { padding: '8px 10px', color: 'var(--text-color)', fontSize: '0.9rem', textAlign: 'center' },
+    th: { backgroundColor: 'var(--light-grey)', padding: '10px 12px', textAlign: 'center', fontWeight: 600, color: 'var(--dark-grey)', borderBottom: '2px solid var(--skeleton-bg)', whiteSpace: 'nowrap' },
+    tr: { backgroundColor: 'var(--card-bg)', borderBottom: 'none' },
+    td: { padding: '10px 12px', color: 'var(--text-color)', fontSize: '0.9rem', textAlign: 'center' },
+    qtyInput: { width: '70px', padding: '8px', textAlign: 'center', border: '1px solid var(--skeleton-bg)', borderRadius: '6px', fontSize: '0.9rem', backgroundColor: 'var(--card-bg)', color: 'var(--dark-grey)' },
     tdInput: { padding: '4px' },
-    billingQtyInput: { width: '60px', height: '32px', textAlign: 'center', border: '1px solid var(--separator-color)', borderRadius: '6px', fontSize: '0.9rem', color: 'var(--dark-grey)', backgroundColor: 'var(--card-bg)', appearance: 'textfield', MozAppearance: 'textfield' },
-    modalFooter: { padding: '1.5rem 0 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' },
-    footerActions: { display: 'flex', gap: '0.75rem', alignItems: 'center' },
-    modalActionButton: { padding: '0.75rem 1.5rem', fontSize: '0.9rem', fontWeight: 500, color: '#fff', backgroundColor: '#27ae60', border: 'none', borderRadius: '25px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: '150px', height: '40px', transition: 'background-color 0.2s ease', boxShadow: '0 2px 8px rgba(39, 174, 96, 0.3)' },
-    modalActionButtonDisabled: { backgroundColor: 'var(--gray-3)', boxShadow: 'none', cursor: 'not-allowed' },
-    matchAllButton: {
-        padding: '0px',
-        border: '1px solid var(--skeleton-bg)',
-        color: 'var(--dark-grey)',
-        borderRadius: '50%',
-        cursor: 'pointer',
-        boxShadow: 'rgba(0, 0, 0, 0.09) 0px 3px 13px',
-        display: 'flex',
-        alignItems: 'center',
-        fontWeight: 500,
-        height: '41px',
+    billingQtyInput: { 
+        width: '60px', 
+        padding: '8px', 
+        textAlign: 'center', 
+        border: '1px solid var(--skeleton-bg)', 
+        borderRadius: '6px', 
+        fontSize: '0.9rem', 
         backgroundColor: 'var(--card-bg)',
-        justifyContent: 'center',
-        width: '41px',
+        color: 'var(--dark-grey)', 
+        appearance: 'textfield', 
+        MozAppearance: 'textfield' 
     },
-    secondaryButton: { backgroundColor: 'var(--light-grey)', color: 'var(--dark-grey)', border: '1px solid var(--skeleton-bg)', padding: '0.7rem 1.2rem', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 500 },
-    iconButton: {
-        padding: '0px',
-        border: '1px solid var(--skeleton-bg)',
-        color: 'var(--dark-grey)',
-        borderRadius: '50%',
-        cursor: 'pointer',
-        boxShadow: 'rgba(0, 0, 0, 0.09) 0px 3px 13px',
-        display: 'flex',
-        alignItems: 'center',
-        fontWeight: 500,
-        height: '41px',
-        backgroundColor: 'var(--card-bg)',
-        justifyContent: 'center',
-        width: '41px',
-    },
-    // Swipeable styles
+    modalFooter: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--skeleton-bg)', padding: '1rem' },
+    matchAllButton: { background: 'none', border: '1px solid var(--brand-color)', color: 'var(--brand-color)', padding: '0.75rem', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+    footerActions: { display: 'flex', gap: '0.75rem' },
+    iconButton: { background: 'var(--light-grey)', border: '1px solid var(--skeleton-bg)', color: 'var(--dark-grey)', padding: '0.75rem', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+    modalActionButton: { padding: '0.75rem 1.5rem', fontSize: '0.9rem', fontWeight: 600, color: '#fff', backgroundColor: 'var(--green)', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', transition: 'all 0.2s ease', minWidth: '150px' },
+    modalActionButtonDisabled: { backgroundColor: 'var(--gray-3)', cursor: 'not-allowed' },
     swipeableContainer: { position: 'relative', overflow: 'hidden' },
-    swipeableActions: { position: 'absolute', top: 0, right: 0, height: '100%', display: 'flex', alignItems: 'center' },
-    swipeableActionButton: { height: '100%', width: '80px', background: 'var(--brand-color)', color: 'white', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '0.9rem', fontWeight: 600 },
+    swipeableActions: { position: 'absolute', top: 0, right: 0, height: '100%', display: 'flex', alignItems: 'center', zIndex: 0 },
+    swipeableActionButton: { height: '100%', background: 'var(--green)', color: 'white', border: 'none', padding: '0 2rem', cursor: 'pointer', fontSize: '1rem', fontWeight: 600 },
     swipeableContent: { position: 'relative', backgroundColor: 'var(--card-bg)', zIndex: 1 },
-    mobileFooterContainer: {
-        padding: '0.5rem 1rem 1rem',
-        display: 'flex',
-        gap: '0.75rem',
-        alignItems: 'center',
-    },
+    mobileFooterContainer: { display: 'flex', gap: '0.75rem', padding: '0.75rem', borderTop: '1px solid var(--separator-color)' },
 };
