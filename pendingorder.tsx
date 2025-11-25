@@ -1915,7 +1915,7 @@ export const PendingOrders = ({ onNavigate }) => {
                             <button 
                               key={opt.label} 
                               onClick={() => setSortConfig({key: opt.key, direction: opt.direction})} 
-                              style={sortConfig.key === opt.key && sortConfig.direction === opt.direction ? styles.filterButtonActive : (isMobile ? {...styles.filterButton, background: 'transparent', border: '1px solid var(--skeleton-bg)'} : styles.filterButton)}
+                              style={sortConfig.key === opt.key && sortConfig.direction === opt.direction ? styles.filterButtonActive : styles.filterButton}
                             >{opt.label}</button>
                         ))}
                     </div>
@@ -2007,8 +2007,26 @@ const styles: { [key: string]: React.CSSProperties } = {
     },
     searchInput: { flex: 1, border: 'none', background: 'none', outline: 'none', fontSize: '1rem', color: 'var(--dark-grey)' },
     filterContainer: { display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center', position: 'relative', zIndex: 101 },
-    filterButton: { background: 'var(--light-grey)', border: '1px solid var(--skeleton-bg)', color: 'var(--text-color)', padding: '0.4rem 0.8rem', borderRadius: '16px', cursor: 'pointer', fontSize: '0.85rem' },
-    filterButtonActive: { background: 'var(--active-bg)', border: '1px solid var(--brand-color)', color: 'var(--brand-color)', padding: '0.4rem 0.8rem', borderRadius: '16px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500 },
+    filterButton: { 
+        background: 'var(--gray-5)', 
+        border: 'none', 
+        color: 'var(--text-color)', 
+        padding: '0.4rem 0.8rem', 
+        borderRadius: '16px', 
+        cursor: 'pointer', 
+        fontSize: '0.85rem' 
+    },
+    filterButtonActive: { 
+        background: 'var(--card-bg)', 
+        border: 'none', 
+        color: 'var(--brand-color)', 
+        padding: '0.4rem 0.8rem', 
+        borderRadius: '16px', 
+        cursor: 'pointer', 
+        fontSize: '0.85rem', 
+        fontWeight: 500,
+        boxShadow: 'rgba(0, 0, 0, 0.05) 0px 1px 3px, rgba(0, 0, 0, 0.05) 0px 1px 2px'
+    },
     tagFilterContainer: { display: 'flex', flexDirection: 'column', gap: '0.5rem', position: 'relative', zIndex: 101 },
     tagScrollContainer: { display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.5rem', scrollbarWidth: 'none' },
     tagFilterButton: { background: 'var(--card-bg)', border: '1px solid var(--skeleton-bg)', padding: '0.3rem 0.8rem', borderRadius: '14px', cursor: 'pointer', fontSize: '0.8rem', whiteSpace: 'nowrap' },

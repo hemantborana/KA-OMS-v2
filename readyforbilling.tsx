@@ -1,6 +1,4 @@
 
-
-
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
@@ -535,8 +533,26 @@ const styles: { [key: string]: React.CSSProperties } = {
     },
     searchInput: { flex: 1, border: 'none', background: 'none', outline: 'none', fontSize: '1rem', color: 'var(--dark-grey)' },
     filterContainer: { display: 'flex', gap: '0.5rem', flexWrap: 'wrap' },
-    filterButton: { background: 'var(--light-grey)', border: '1px solid var(--skeleton-bg)', color: 'var(--text-color)', padding: '0.4rem 0.8rem', borderRadius: '16px', cursor: 'pointer', fontSize: '0.85rem' },
-    filterButtonActive: { background: 'var(--active-bg)', border: '1px solid var(--brand-color)', color: 'var(--brand-color)', padding: '0.4rem 0.8rem', borderRadius: '16px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500 },
+    filterButton: { 
+        background: 'var(--gray-5)', 
+        border: 'none', 
+        color: 'var(--text-color)', 
+        padding: '0.4rem 0.8rem', 
+        borderRadius: '16px', 
+        cursor: 'pointer', 
+        fontSize: '0.85rem' 
+    },
+    filterButtonActive: { 
+        background: 'var(--card-bg)', 
+        border: 'none', 
+        color: 'var(--brand-color)', 
+        padding: '0.4rem 0.8rem', 
+        borderRadius: '16px', 
+        cursor: 'pointer', 
+        fontSize: '0.85rem', 
+        fontWeight: 500,
+        boxShadow: 'rgba(0, 0, 0, 0.05) 0px 1px 3px, rgba(0, 0, 0, 0.05) 0px 1px 2px'
+    },
     listContainer: { flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem', paddingBottom: '1rem' },
     centeredMessage: { flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'var(--text-color)', fontSize: '1.1rem' },
     spinner: { border: '4px solid var(--light-grey)', borderRadius: '50%', borderTop: '4px solid var(--brand-color)', width: '40px', height: '40px', animation: 'spin 1s linear infinite' },
@@ -552,7 +568,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     cardInfo: { display: 'flex', flexDirection: 'column', gap: '0.25rem', alignItems: 'flex-start' },
     cardTitle: { fontSize: '1.1rem', fontWeight: 600, color: 'var(--dark-grey)' },
     cardSubTitle: { fontSize: '0.85rem', color: 'var(--text-color)', fontWeight: 400 },
-    cardDetails: { padding: '0 1.5rem 1rem', display: 'flex', flexDirection: 'column' },
+    cardDetails: { padding: '0 1.5rem 1.5rem', display: 'flex', flexDirection: 'column' },
     collapsibleContainer: {
         display: 'grid',
         gridTemplateRows: '0fr',
