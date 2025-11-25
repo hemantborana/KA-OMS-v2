@@ -112,10 +112,10 @@ const BilledDetailModal = ({ order, onClose }) => {
                 body.dark-mode .modal-note {
                     background-color: var(--gray-4);
                     border-color: var(--separator-color);
-                    color: var(--yellow);
+                    color: var(--dark-grey);
                 }
                 body.dark-mode .modal-note strong {
-                    color: var(--yellow);
+                    color: var(--dark-grey);
                 }
             `}</style>
             <div style={{...styles.modalOverlay, animation: isClosing ? 'overlayOut 0.3s forwards' : 'overlayIn 0.3s forwards'}} onClick={handleClose}>
@@ -415,7 +415,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     modalTitle: { fontSize: '1.25rem', fontWeight: 600, color: 'var(--dark-grey)', textAlign: 'center', marginBottom: '1.5rem' },
     modalBody: { padding: '0', display: 'flex', flexDirection: 'column', gap: '1rem', overflow: 'hidden', flex: 1 },
     modalSummary: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', backgroundColor: 'rgba(0,0,0,0.03)', padding: '1rem', borderRadius: '8px', color: 'var(--dark-grey)' },
-    modalNote: { backgroundColor: '#fffbe6', border: '1px solid #ffe58f', padding: '1rem', borderRadius: '8px', fontSize: '0.9rem' },
+    modalNote: { backgroundColor: 'rgb(255 244 0 / 10%)', borderLeft: '3px solid #ffe58f', padding: '1rem', borderRadius: '8px', fontSize: '0.9rem' },
     tableContainer: { overflowY: 'auto', borderRadius: '8px', backgroundColor: 'var(--card-bg-secondary)', flex: 1, maxHeight: 'calc(100vh - 30rem)', minHeight: '150px' },
     table: { width: '100%', borderCollapse: 'collapse' },
     th: { backgroundColor: 'var(--light-grey)', padding: '10px 12px', textAlign: 'center', fontWeight: 600, color: 'var(--text-color)', borderBottom: '1px solid var(--separator-color)', whiteSpace: 'nowrap', fontSize: '0.85rem', position: 'sticky', top: 0, zIndex: 1 },

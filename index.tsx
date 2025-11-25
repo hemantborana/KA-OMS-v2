@@ -752,7 +752,7 @@ const MainContent = React.forwardRef<HTMLElement, MainContentProps>(
             if (activeView === 'Entry' || activeView === 'Pending') {
                 mobilePadding = { padding: 0 };
             } else {
-                mobilePadding = { padding: '0.5rem 0.25rem', paddingBottom: '70px' };
+                mobilePadding = { padding: '0rem 0.25rem', paddingBottom: '70px' };
             }
             mainStyle = {
                 ...styles.mainContent,

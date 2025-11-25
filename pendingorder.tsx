@@ -1937,7 +1937,7 @@ export const PendingOrders = ({ onNavigate }) => {
 
                     <div style={styles.filterContainer} ref={sortPillsRef}>
                         <div style={{...styles.filterMarker, ...markerStyle}}></div>
-                        <span style={{fontWeight: 500, color: 'var(--text-color)', fontSize: '0.9rem', padding: '0.4rem 0.2rem', position: 'relative', zIndex: 1}}>Sort by:</span>
+                        <span style={{fontWeight: 500, color: 'var(--text-color)', fontSize: '0.9rem', padding: '0.4rem 0.2rem', display: 'none', position: 'relative', zIndex: 1}}>Sort by:</span>
                         {sortOptions.map(opt => {
                             const isActive = sortConfig.key === opt.key && sortConfig.direction === opt.direction;
                             return (
