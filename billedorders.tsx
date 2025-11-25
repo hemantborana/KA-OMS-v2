@@ -97,42 +97,57 @@ const BilledDetailModal = ({ order, onClose }) => {
     };
 
     return (
-        <div style={{...styles.modalOverlay, animation: isClosing ? 'overlayOut 0.3s forwards' : 'overlayIn 0.3s forwards'}} onClick={handleClose}>
-            <div style={{...styles.modalContent, maxWidth: '800px', animation: isClosing ? 'modalOut 0.3s forwards' : 'modalIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards'}} onClick={(e) => e.stopPropagation()}>
-                <h2 style={styles.modalTitle}>{order.orderNumber} - {order.partyName}</h2>
-                
-                <div style={styles.modalBody}>
-                    <div style={styles.modalSummary}>
-                        <div><strong>Order Date:</strong> {formatDateTime(order.timestamp)}</div>
-                        <div><strong>Billed Date:</strong> {formatDateTime(order.billedTimestamp)}</div>
-                        <div><strong>Total Qty:</strong> {order.totalQuantity}</div>
+        <>
+            <style>{`
+                body.dark-mode .modal-summary {
+                    background-color: var(--gray-6);
+                }
+                body.dark-mode .modal-note {
+                    background-color: rgba(255, 146, 48, 0.15);
+                    border-color: rgba(255, 146, 48, 0.4);
+                    color: #FFD68A;
+                }
+                body.dark-mode .modal-note strong {
+                    color: #FFEDB3;
+                }
+            `}</style>
+            <div style={{...styles.modalOverlay, animation: isClosing ? 'overlayOut 0.3s forwards' : 'overlayIn 0.3s forwards'}} onClick={handleClose}>
+                <div style={{...styles.modalContent, maxWidth: '800px', animation: isClosing ? 'modalOut 0.3s forwards' : 'modalIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards'}} onClick={(e) => e.stopPropagation()}>
+                    <h2 style={styles.modalTitle}>{order.orderNumber} - {order.partyName}</h2>
+                    
+                    <div style={styles.modalBody}>
+                        <div style={styles.modalSummary} className="modal-summary">
+                            <div><strong>Order Date:</strong> {formatDateTime(order.timestamp)}</div>
+                            <div><strong>Billed Date:</strong> {formatDateTime(order.billedTimestamp)}</div>
+                            <div><strong>Total Qty:</strong> {order.totalQuantity}</div>
+                        </div>
+                        {order.orderNote && <div style={styles.modalNote} className="modal-note"><strong>Note:</strong> {order.orderNote}</div>}
+                        <div style={styles.tableContainer}>
+                            <table style={styles.table}>
+                                <thead><tr><th style={styles.th}>Style</th><th style={styles.th}>Color</th><th style={styles.th}>Size</th><th style={styles.th}>Billed Qty</th></tr></thead>
+                                <tbody>
+                                    {order.items.map((item, index) => (
+                                        <tr key={item.id} style={index % 2 !== 0 ? { ...styles.tr, backgroundColor: 'var(--light-grey)' } : styles.tr}>
+                                            <td style={styles.td}>{item.fullItemData.Style}</td>
+                                            <td style={styles.td}>{item.fullItemData.Color}</td>
+                                            <td style={styles.td}>{item.fullItemData.Size}</td>
+                                            <td style={styles.td}>{item.quantity}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                     {order.orderNote && <div style={styles.modalNote}><strong>Note:</strong> {order.orderNote}</div>}
-                    <div style={styles.tableContainer}>
-                        <table style={styles.table}>
-                            <thead><tr><th style={styles.th}>Style</th><th style={styles.th}>Color</th><th style={styles.th}>Size</th><th style={styles.th}>Billed Qty</th></tr></thead>
-                            <tbody>
-                                {order.items.map(item => (
-                                    <tr key={item.id} style={styles.tr}>
-                                        <td style={styles.td}>{item.fullItemData.Style}</td>
-                                        <td style={styles.td}>{item.fullItemData.Color}</td>
-                                        <td style={styles.td}>{item.fullItemData.Size}</td>
-                                        <td style={styles.td}>{item.quantity}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
 
-                <div style={styles.iosModalActions}>
-                    <button onClick={handleClose} style={styles.iosModalButtonSecondary}>Close</button>
-                    <button onClick={handleDownloadPdf} style={{...styles.iosModalButtonPrimary, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'}}>
-                        <DownloadIcon /> Download PDF
-                    </button>
+                    <div style={styles.iosModalActions}>
+                        <button onClick={handleClose} style={styles.iosModalButtonSecondary}>Close</button>
+                        <button onClick={handleDownloadPdf} style={{...styles.iosModalButtonPrimary, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'}}>
+                            <DownloadIcon /> Download PDF
+                        </button>
+                    </div>
                 </div>
             </div>
-        </div>
+        </>
     );
 };
 
@@ -393,12 +408,12 @@ const styles: { [key: string]: React.CSSProperties } = {
     modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.2)', backdropFilter: 'blur(7px)', WebkitBackdropFilter: 'blur(7px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', opacity: 0 },
     modalContent: { backgroundColor: 'var(--glass-bg)', width: '100%', borderRadius: 'var(--border-radius)', display: 'flex', flexDirection: 'column', maxHeight: '90vh', boxShadow: '0 8px 32px rgba(0,0,0,0.1)', border: '1px solid var(--glass-border)', padding: '1.5rem', transform: 'scale(0.95)', opacity: 0 },
     modalTitle: { fontSize: '1.25rem', fontWeight: 600, color: 'var(--dark-grey)', textAlign: 'center', marginBottom: '1.5rem' },
-    modalBody: { padding: '0', overflowY: 'auto', flex: 1 },
-    modalSummary: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', backgroundColor: 'var(--light-grey)', padding: '1rem', borderRadius: '8px', color: 'var(--dark-grey)', marginBottom: '1rem' },
-    modalNote: { backgroundColor: '#fffbe6', border: '1px solid #ffe58f', padding: '1rem', borderRadius: '8px', fontSize: '0.9rem', marginBottom: '1rem' },
-    tableContainer: { overflow: 'hidden', borderRadius: '8px', backgroundColor: 'var(--card-bg)' },
+    modalBody: { padding: '0', display: 'flex', flexDirection: 'column', gap: '1rem', overflow: 'hidden', flex: 1 },
+    modalSummary: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', backgroundColor: 'var(--light-grey)', padding: '1rem', borderRadius: '8px', color: 'var(--dark-grey)' },
+    modalNote: { backgroundColor: '#fffbe6', border: '1px solid #ffe58f', padding: '1rem', borderRadius: '8px', fontSize: '0.9rem' },
+    tableContainer: { overflowY: 'auto', borderRadius: '8px', backgroundColor: 'var(--card-bg)', flex: 1, minHeight: 0 },
     table: { width: '100%', borderCollapse: 'separate', borderSpacing: 0 },
-    th: { backgroundColor: 'var(--light-grey)', padding: '10px 12px', textAlign: 'center', fontWeight: 600, color: 'var(--text-color)', borderBottom: '1px solid var(--separator-color)', whiteSpace: 'nowrap' },
+    th: { backgroundColor: 'var(--light-grey)', padding: '10px 12px', textAlign: 'center', fontWeight: 600, color: 'var(--text-color)', borderBottom: '1px solid var(--separator-color)', whiteSpace: 'nowrap', fontSize: '0.8rem', position: 'sticky', top: 0, zIndex: 1 },
     tr: { borderBottom: '1px solid var(--separator-color)' },
     td: { padding: '10px 12px', color: 'var(--text-color)', fontSize: '0.9rem', textAlign: 'center' },
     iosModalActions: { display: 'flex', width: 'calc(100% + 3rem)', marginLeft: '-1.5rem', marginBottom: '-1.5rem', borderTop: '1px solid var(--glass-border)', marginTop: '1.5rem' },
