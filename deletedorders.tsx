@@ -2,6 +2,7 @@
 
 
 
+
 import React, { useState, useEffect, useMemo } from 'react';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
@@ -62,19 +63,21 @@ const DeletedOrderCard: React.FC<{ order: Order; onRevert: (order: Order) => voi
                              <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}><HistoryIcon /><span>Full Order History</span></div>
                              <ChevronIcon collapsed={isHistoryVisible} />
                         </button>
-                        {isHistoryVisible && (
-                            <div style={styles.historyContent}>
-                                {order.history.map((event, index) => (
-                                     <div key={index} style={styles.historyItem}>
-                                        <div style={styles.historyMeta}>
-                                            <span style={{...styles.historyEventType, backgroundColor: event.event === 'System' ? '#eef2f7' : '#fffbe6', color: event.event === 'System' ? 'var(--brand-color)' : '#d48806'}}>{event.event}</span>
-                                            <span>{new Date(event.timestamp).toLocaleString()}</span>
+                        <div style={!isHistoryVisible ? styles.collapsibleContainer : {...styles.collapsibleContainer, ...styles.collapsibleContainerExpanded}}>
+                            <div style={styles.collapsibleContentWrapper}>
+                                <div style={styles.historyContent}>
+                                    {order.history.map((event, index) => (
+                                         <div key={index} style={styles.historyItem}>
+                                            <div style={styles.historyMeta}>
+                                                <span style={{...styles.historyEventType, backgroundColor: event.event === 'System' ? '#eef2f7' : '#fffbe6', color: event.event === 'System' ? 'var(--brand-color)' : '#d48806'}}>{event.event}</span>
+                                                <span>{new Date(event.timestamp).toLocaleString()}</span>
+                                            </div>
+                                            <p style={styles.historyDetails}>{event.details}</p>
                                         </div>
-                                        <p style={styles.historyDetails}>{event.details}</p>
-                                    </div>
-                                ))}
+                                    ))}
+                                </div>
                             </div>
-                        )}
+                        </div>
                     </div>
                 )}
             </div>
@@ -238,6 +241,17 @@ const styles: { [key: string]: React.CSSProperties } = {
     historySection: { marginTop: '1rem', borderTop: '1px solid var(--skeleton-bg)', paddingTop: '1rem' },
     historyHeader: { width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer', padding: '0.25rem 0', fontSize: '0.9rem', fontWeight: 600, color: 'var(--dark-grey)' },
     historyContent: { padding: '1rem 0 0', display: 'flex', flexDirection: 'column', gap: '1rem' },
+    collapsibleContainer: {
+        display: 'grid',
+        gridTemplateRows: '0fr',
+        transition: 'grid-template-rows 0.35s ease',
+    },
+    collapsibleContainerExpanded: {
+        gridTemplateRows: '1fr',
+    },
+    collapsibleContentWrapper: {
+        overflow: 'hidden',
+    },
     historyItem: { display: 'flex', flexDirection: 'column', gap: '0.25rem', borderLeft: '3px solid var(--skeleton-bg)', paddingLeft: '1rem' },
     historyMeta: { display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.8rem', color: 'var(--text-color)' },
     historyEventType: { fontWeight: 600, padding: '2px 8px', borderRadius: '12px', fontSize: '0.75rem' },

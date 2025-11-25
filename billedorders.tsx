@@ -2,6 +2,7 @@
 
 
 
+
 import React, { useState, useEffect, useMemo } from 'react';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
@@ -155,22 +156,24 @@ const PartyGroup: React.FC<{ partyName: string; data: any; onViewOrder: (order: 
                 </div>
                 <ChevronIcon collapsed={isCollapsed} />
             </button>
-            {!isCollapsed && (
-                <div style={styles.cardDetails}>
-                    {data.orders.map(order => (
-                        <div key={order.orderNumber} style={styles.orderItem}>
-                            <div style={styles.orderInfo}>
-                                <strong>{order.orderNumber}</strong>
-                                <span style={styles.orderMeta}><CalendarIcon /> {formatDate(order.billedTimestamp || order.timestamp)}</span>
-                                <span>Qty: {order.totalQuantity}</span>
+            <div style={isCollapsed ? styles.collapsibleContainer : {...styles.collapsibleContainer, ...styles.collapsibleContainerExpanded}}>
+                <div style={styles.collapsibleContentWrapper}>
+                    <div style={styles.cardDetails}>
+                        {data.orders.map(order => (
+                            <div key={order.orderNumber} style={styles.orderItem}>
+                                <div style={styles.orderInfo}>
+                                    <strong>{order.orderNumber}</strong>
+                                    <span style={styles.orderMeta}><CalendarIcon /> {formatDate(order.billedTimestamp || order.timestamp)}</span>
+                                    <span>Qty: {order.totalQuantity}</span>
+                                </div>
+                                <button style={styles.detailsButton} onClick={() => onViewOrder(order)}>
+                                    <InfoIcon /> View
+                                </button>
                             </div>
-                            <button style={styles.detailsButton} onClick={() => onViewOrder(order)}>
-                                <InfoIcon /> View
-                            </button>
-                        </div>
-                    ))}
+                        ))}
+                    </div>
                 </div>
-            )}
+            </div>
         </div>
     );
 };
@@ -341,8 +344,19 @@ const styles: { [key: string]: React.CSSProperties } = {
     cardHeader: { width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.5rem', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' },
     cardInfo: { display: 'flex', flexDirection: 'column', gap: '0.25rem', alignItems: 'flex-start' },
     cardTitle: { fontSize: '1.1rem', fontWeight: 600, color: 'var(--dark-grey)' },
-    cardSubTitle: { fontSize: '0.85rem', color: 'var(--text-color)', fontWeight: 500 },
-    cardDetails: { padding: '0 1.5rem 1.5rem', borderTop: '1px solid var(--skeleton-bg)', display: 'flex', flexDirection: 'column', gap: '0.75rem' },
+    cardSubTitle: { fontSize: '0.85rem', color: 'var(--text-color)', fontWeight: 400 },
+    cardDetails: { padding: '0 1.5rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' },
+    collapsibleContainer: {
+        display: 'grid',
+        gridTemplateRows: '0fr',
+        transition: 'grid-template-rows 0.35s ease',
+    },
+    collapsibleContainerExpanded: {
+        gridTemplateRows: '1fr',
+    },
+    collapsibleContentWrapper: {
+        overflow: 'hidden',
+    },
     orderItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem 0', borderBottom: '1px solid var(--light-grey)' },
     orderInfo: { display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', color: 'var(--dark-grey)' },
     orderMeta: { display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--text-color)', fontSize: '0.85rem' },

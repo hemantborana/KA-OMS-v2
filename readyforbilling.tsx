@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
@@ -271,27 +272,29 @@ const PartyGroup: React.FC<{ partyName: string; data: any; onToggleExpand: (orde
                 </div>
                 <ChevronIcon collapsed={isCollapsed} />
             </button>
-            {!isCollapsed && (
-                <div style={styles.cardDetails}>
-                    {data.orders.map(order => (
-                        <React.Fragment key={order.orderNumber}>
-                             <Swipeable onAction={() => onToggleExpand(order)} actionText="Process">
-                                <div style={expandedOrderNumber === order.orderNumber ? {...styles.orderItem, ...styles.orderItemActive} : styles.orderItem} onClick={() => onToggleExpand(order)}>
-                                    <div style={styles.orderInfo}>
-                                        <strong>{order.orderNumber}</strong>
-                                        <span style={styles.orderMeta}><CalendarIcon /> {formatDate(order.timestamp)}</span>
-                                        <span>Qty: {order.totalQuantity}</span>
+            <div style={isCollapsed ? styles.collapsibleContainer : {...styles.collapsibleContainer, ...styles.collapsibleContainerExpanded}}>
+                <div style={styles.collapsibleContentWrapper}>
+                    <div style={styles.cardDetails}>
+                        {data.orders.map(order => (
+                            <React.Fragment key={order.orderNumber}>
+                                 <Swipeable onAction={() => onToggleExpand(order)} actionText="Process">
+                                    <div style={expandedOrderNumber === order.orderNumber ? {...styles.orderItem, ...styles.orderItemActive} : styles.orderItem} onClick={() => onToggleExpand(order)}>
+                                        <div style={styles.orderInfo}>
+                                            <strong>{order.orderNumber}</strong>
+                                            <span style={styles.orderMeta}><CalendarIcon /> {formatDate(order.timestamp)}</span>
+                                            <span>Qty: {order.totalQuantity}</span>
+                                        </div>
+                                        <button style={styles.detailsButton} onClick={(e) => { e.stopPropagation(); onToggleExpand(order); }}>
+                                            {expandedOrderNumber === order.orderNumber ? 'Close' : 'Process'}
+                                        </button>
                                     </div>
-                                    <button style={styles.detailsButton} onClick={(e) => { e.stopPropagation(); onToggleExpand(order); }}>
-                                        {expandedOrderNumber === order.orderNumber ? 'Close' : 'Process'}
-                                    </button>
-                                </div>
-                            </Swipeable>
-                            {expandedOrderNumber === order.orderNumber && children}
-                        </React.Fragment>
-                    ))}
+                                </Swipeable>
+                                {expandedOrderNumber === order.orderNumber && children}
+                            </React.Fragment>
+                        ))}
+                    </div>
                 </div>
-            )}
+            </div>
         </div>
     );
 };
@@ -548,8 +551,19 @@ const styles: { [key: string]: React.CSSProperties } = {
     cardHeader: { width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.5rem', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' },
     cardInfo: { display: 'flex', flexDirection: 'column', gap: '0.25rem', alignItems: 'flex-start' },
     cardTitle: { fontSize: '1.1rem', fontWeight: 600, color: 'var(--dark-grey)' },
-    cardSubTitle: { fontSize: '0.85rem', color: 'var(--text-color)', fontWeight: 500 },
-    cardDetails: { padding: '0 1.5rem 1rem', borderTop: '1px solid var(--skeleton-bg)', display: 'flex', flexDirection: 'column' },
+    cardSubTitle: { fontSize: '0.85rem', color: 'var(--text-color)', fontWeight: 400 },
+    cardDetails: { padding: '0 1.5rem 1rem', display: 'flex', flexDirection: 'column' },
+    collapsibleContainer: {
+        display: 'grid',
+        gridTemplateRows: '0fr',
+        transition: 'grid-template-rows 0.35s ease',
+    },
+    collapsibleContainerExpanded: {
+        gridTemplateRows: '1fr',
+    },
+    collapsibleContentWrapper: {
+        overflow: 'hidden',
+    },
     orderItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem 0', borderBottom: '1px solid var(--light-grey)' },
     orderItemActive: { backgroundColor: 'var(--active-bg)', margin: '0 -1.5rem', padding: '0.75rem 1.5rem' },
     orderInfo: { display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', color: 'var(--dark-grey)' },
