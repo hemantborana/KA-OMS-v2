@@ -119,7 +119,18 @@ const showToast = (message: string, type: 'info' | 'success' | 'error' = 'info')
 const formatDate = (isoString) => isoString ? new Date(isoString).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A';
 
 // --- COMPONENTS ---
-const ExpandedBillingView = ({ order, billedQty, onQtyChange, onMarkBilled, isProcessing, onMatchAll, isMobile }) => {
+// FIX: Explicitly type props with React.FC to allow the 'key' prop used in lists.
+interface ExpandedBillingViewProps {
+    order: Order;
+    billedQty: Record<string, number>;
+    onQtyChange: (itemId: string, value: string, maxQty: number) => void;
+    onMarkBilled: (order: Order, billedQuantities: Record<string, number>) => void;
+    isProcessing: boolean;
+    onMatchAll: (order: Order) => void;
+    isMobile: boolean;
+}
+
+const ExpandedBillingView: React.FC<ExpandedBillingViewProps> = ({ order, billedQty, onQtyChange, onMarkBilled, isProcessing, onMatchAll, isMobile }) => {
     const handleMarkBilledClick = () => {
         const totalBilled = Object.values(billedQty).reduce((sum: number, qty: number) => sum + qty, 0);
         if (totalBilled === 0) {
@@ -234,8 +245,8 @@ const ExpandedBillingView = ({ order, billedQty, onQtyChange, onMarkBilled, isPr
         }
         return (
             <div style={{...styles.modalFooter, padding: '1rem'}}>
-                <button onClick={() => onMatchAll(order)} style={styles.matchAllButton} disabled={isProcessing}>
-                    <CheckSquareIcon /> Match Ready Qty
+                <button onClick={() => onMatchAll(order)} style={styles.matchAllButton} disabled={isProcessing} title="Match Ready Quantity">
+                    <CheckSquareIcon />
                 </button>
                 <div style={styles.footerActions}>
                     <button onClick={handleDownloadPdf} style={styles.iconButton} disabled={isProcessing} title="Download Packing Slip">
@@ -680,7 +691,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     orderInfo: { display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', color: 'var(--dark-grey)' },
     orderMeta: { display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--text-color)', fontSize: '0.85rem' },
     detailsButton: { display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#eef2f7', border: '1px solid var(--skeleton-bg)', color: 'var(--brand-color)', padding: '0.5rem 1rem', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 },
-    orderWrapper: { border: '1px solid var(--separator-color)', borderRadius: 'var(--border-radius)', backgroundColor: 'var(--billing-inner-card-bg, var(--card-bg-secondary))', overflow: 'hidden' },
+    orderWrapper: { border: '1px solid var(--separator-color)', borderRadius: 'var(--border-radius)', backgroundColor: 'var(--billing-card)', overflow: 'hidden' },
     expandedSummary: {
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
@@ -709,23 +720,38 @@ const styles: { [key: string]: React.CSSProperties } = {
     billingQtyInput: { width: '60px', height: '32px', textAlign: 'center', border: '1px solid var(--separator-color)', borderRadius: '6px', fontSize: '0.9rem', color: 'var(--dark-grey)', backgroundColor: 'var(--card-bg)', appearance: 'textfield', MozAppearance: 'textfield' },
     modalFooter: { padding: '1.5rem 0 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' },
     footerActions: { display: 'flex', gap: '0.75rem', alignItems: 'center' },
-    modalActionButton: { padding: '0.75rem 1.5rem', fontSize: '0.9rem', fontWeight: 500, color: '#fff', backgroundColor: '#27ae60', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: '150px', height: '40px', transition: 'background-color 0.2s ease', boxShadow: '0 2px 8px rgba(39, 174, 96, 0.3)' },
+    modalActionButton: { padding: '0.75rem 1.5rem', fontSize: '0.9rem', fontWeight: 500, color: '#fff', backgroundColor: '#27ae60', border: 'none', borderRadius: '25px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: '150px', height: '40px', transition: 'background-color 0.2s ease', boxShadow: '0 2px 8px rgba(39, 174, 96, 0.3)' },
     modalActionButtonDisabled: { backgroundColor: 'var(--gray-3)', boxShadow: 'none', cursor: 'not-allowed' },
-    matchAllButton: { padding: '0.7rem 1.2rem', background: 'none', border: '1px solid var(--brand-color)', color: 'var(--brand-color)', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 500, height: '40px' },
-    secondaryButton: { backgroundColor: 'var(--light-grey)', color: 'var(--dark-grey)', border: '1px solid var(--skeleton-bg)', padding: '0.7rem 1.2rem', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 500 },
-    iconButton: {
-        backgroundColor: 'var(--light-grey)',
-        color: 'var(--dark-grey)',
+    matchAllButton: {
+        padding: '0px',
         border: '1px solid var(--skeleton-bg)',
-        padding: '0',
-        borderRadius: '8px',
+        color: 'var(--dark-grey)',
+        borderRadius: '50%',
         cursor: 'pointer',
+        boxShadow: 'rgba(0, 0, 0, 0.09) 0px 3px 13px',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center',
         fontWeight: 500,
-        width: '40px',
-        height: '40px',
+        height: '41px',
+        backgroundColor: 'var(--card-bg)',
+        justifyContent: 'center',
+        width: '41px',
+    },
+    secondaryButton: { backgroundColor: 'var(--light-grey)', color: 'var(--dark-grey)', border: '1px solid var(--skeleton-bg)', padding: '0.7rem 1.2rem', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 500 },
+    iconButton: {
+        padding: '0px',
+        border: '1px solid var(--skeleton-bg)',
+        color: 'var(--dark-grey)',
+        borderRadius: '50%',
+        cursor: 'pointer',
+        boxShadow: 'rgba(0, 0, 0, 0.09) 0px 3px 13px',
+        display: 'flex',
+        alignItems: 'center',
+        fontWeight: 500,
+        height: '41px',
+        backgroundColor: 'var(--card-bg)',
+        justifyContent: 'center',
+        width: '41px',
     },
     // Swipeable styles
     swipeableContainer: { position: 'relative', overflow: 'hidden' },
