@@ -21,6 +21,15 @@ const formatDateTime = (isoString) => isoString ? new Date(isoString).toLocaleSt
 
 // --- COMPONENTS ---
 const BilledDetailModal = ({ order, onClose }) => {
+    const [isClosing, setIsClosing] = useState(false);
+
+    const handleClose = () => {
+        setIsClosing(true);
+        setTimeout(() => {
+            onClose();
+        }, 300);
+    };
+    
     if (!order) return null;
 
     const handleDownloadPdf = async () => {
@@ -88,15 +97,11 @@ const BilledDetailModal = ({ order, onClose }) => {
     };
 
     return (
-        <div style={styles.modalOverlay} onClick={onClose}>
-            <div style={{...styles.modalContent, maxWidth: '800px'}} onClick={(e) => e.stopPropagation()}>
-                <div style={styles.modalHeader}>
-                    <div>
-                        <h2 style={styles.modalTitle}>Billed Order Details</h2>
-                        <p style={styles.modalSubtitle}>{order.orderNumber} - {order.partyName}</p>
-                    </div>
-                    <button style={styles.modalCloseButton} onClick={onClose}>&times;</button>
-                </div>
+        <div style={{...styles.modalOverlay, animation: isClosing ? 'overlayOut 0.3s forwards' : 'overlayIn 0.3s forwards'}} onClick={handleClose}>
+            <div style={{...styles.modalContent, maxWidth: '800px', animation: isClosing ? 'modalOut 0.3s forwards' : 'modalIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards'}} onClick={(e) => e.stopPropagation()}>
+                <h3 style={{...styles.modalTitle, textAlign: 'center', marginBottom: '0.5rem'}}>Billed Order Details</h3>
+                <p style={{...styles.modalSubtitle, textAlign: 'center', marginTop: '-0.5rem', marginBottom: '1.5rem'}}>{order.orderNumber} - {order.partyName}</p>
+                
                 <div style={styles.modalBody}>
                     <div style={styles.modalSummary}>
                         <div><strong>Order Date:</strong> {formatDateTime(order.timestamp)}</div>
@@ -120,9 +125,11 @@ const BilledDetailModal = ({ order, onClose }) => {
                         </table>
                     </div>
                 </div>
-                 <div style={styles.modalFooter}>
-                    <button onClick={handleDownloadPdf} style={{...styles.button, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'}}>
-                       <DownloadIcon /> Download PDF
+
+                <div style={styles.iosModalActions}>
+                    <button onClick={handleClose} style={styles.iosModalButtonSecondary}>Close</button>
+                    <button onClick={handleDownloadPdf} style={{...styles.iosModalButtonPrimary, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'}}>
+                        <DownloadIcon /> Download PDF
                     </button>
                 </div>
             </div>
@@ -384,13 +391,11 @@ const styles: { [key: string]: React.CSSProperties } = {
     orderInfo: { display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', color: 'var(--dark-grey)' },
     orderMeta: { display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--text-color)', fontSize: '0.85rem' },
     detailsButton: { display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--light-grey)', border: '1px solid var(--skeleton-bg)', color: 'var(--dark-grey)', padding: '0.5rem 1rem', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500 },
-    modalOverlay: { position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '1rem' },
-    modalContent: { backgroundColor: 'var(--card-bg)', width: '100%', borderRadius: 'var(--border-radius)', display: 'flex', flexDirection: 'column', maxHeight: '90vh', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' },
-    modalHeader: { padding: '1.5rem', borderBottom: '1px solid var(--skeleton-bg)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+    modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.2)', backdropFilter: 'blur(7px)', WebkitBackdropFilter: 'blur(7px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', opacity: 0 },
+    modalContent: { backgroundColor: 'var(--glass-bg)', width: '100%', borderRadius: 'var(--border-radius)', display: 'flex', flexDirection: 'column', maxHeight: '90vh', boxShadow: '0 8px 32px rgba(0,0,0,0.1)', border: '1px solid var(--glass-border)', padding: '1.5rem', transform: 'scale(0.95)', opacity: 0 },
     modalTitle: { fontSize: '1.25rem', fontWeight: 600, color: 'var(--dark-grey)' },
     modalSubtitle: { fontSize: '0.9rem', color: 'var(--text-color)', marginTop: '0.25rem' },
-    modalCloseButton: { background: 'none', border: 'none', fontSize: '2rem', color: 'var(--text-color)', cursor: 'pointer' },
-    modalBody: { padding: '1.5rem', overflowY: 'auto', flex: 1 },
+    modalBody: { padding: '0', overflowY: 'auto', flex: 1 },
     modalSummary: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', backgroundColor: 'var(--light-grey)', padding: '1rem', borderRadius: '8px', color: 'var(--dark-grey)', marginBottom: '1rem' },
     modalNote: { backgroundColor: '#fffbe6', border: '1px solid #ffe58f', padding: '1rem', borderRadius: '8px', fontSize: '0.9rem', marginBottom: '1rem' },
     tableContainer: { overflowX: 'auto' },
@@ -398,6 +403,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     th: { backgroundColor: '#f8f9fa', padding: '10px 12px', textAlign: 'center', fontWeight: 600, color: 'var(--dark-grey)', borderBottom: '2px solid var(--skeleton-bg)', whiteSpace: 'nowrap' },
     tr: { borderBottom: '1px solid var(--skeleton-bg)' },
     td: { padding: '10px 12px', color: 'var(--text-color)', fontSize: '0.9rem', textAlign: 'center' },
-    modalFooter: { borderTop: '1px solid var(--skeleton-bg)', padding: '1.5rem', flexShrink: 0 },
-    button: { padding: '0.75rem 1.5rem', fontSize: '1rem', fontWeight: 500, color: '#fff', backgroundColor: 'var(--brand-color)', border: 'none', borderRadius: '8px', cursor: 'pointer' },
+    iosModalActions: { display: 'flex', width: 'calc(100% + 3rem)', marginLeft: '-1.5rem', marginBottom: '-1.5rem', borderTop: '1px solid var(--glass-border)', marginTop: '1.5rem' },
+    iosModalButtonSecondary: { background: 'transparent', border: 'none', padding: '1rem 0', cursor: 'pointer', fontSize: '1rem', textAlign: 'center', transition: 'background-color 0.2s ease', flex: 1, color: 'var(--dark-grey)', borderRight: '1px solid var(--glass-border)', fontWeight: 400 },
+    iosModalButtonPrimary: { background: 'transparent', border: 'none', padding: '1rem 0', cursor: 'pointer', fontSize: '1rem', textAlign: 'center', transition: 'background-color 0.2s ease', flex: 1, color: 'var(--brand-color)', fontWeight: 600 },
 };
