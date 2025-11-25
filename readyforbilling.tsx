@@ -9,7 +9,7 @@ const ChevronIcon = ({ collapsed }) => <svg style={{ transform: collapsed ? 'rot
 const Spinner = () => <div style={styles.spinner}></div>;
 const SmallSpinner = () => <div style={{...styles.spinner, width: '20px', height: '20px', borderTop: '3px solid white', borderRight: '3px solid transparent' }}></div>;
 const CalendarIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>;
-const CheckSquareIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>;
+const CheckSquareIcon = (props) => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>;
 const DownloadIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>;
 
 const Swipeable: React.FC<{ onAction: () => void; children: React.ReactNode; actionText: string; }> = ({ onAction, children, actionText }) => {
@@ -119,7 +119,7 @@ const showToast = (message: string, type: 'info' | 'success' | 'error' = 'info')
 const formatDate = (isoString) => isoString ? new Date(isoString).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A';
 
 // --- COMPONENTS ---
-const ExpandedBillingView = ({ order, billedQty, onQtyChange, onMarkBilled, isProcessing, onMatchAll }) => {
+const ExpandedBillingView = ({ order, billedQty, onQtyChange, onMarkBilled, isProcessing, onMatchAll, isMobile }) => {
     const handleMarkBilledClick = () => {
         const totalBilled = Object.values(billedQty).reduce((sum: number, qty: number) => sum + qty, 0);
         if (totalBilled === 0) {
@@ -198,34 +198,98 @@ const ExpandedBillingView = ({ order, billedQty, onQtyChange, onMarkBilled, isPr
         doc.save(`Packing_Slip_${order.orderNumber}.pdf`);
     };
 
+    const renderFooter = () => {
+        const isButtonDisabled = isProcessing;
+
+        const getMarkBilledButtonStyle = () => {
+            let style = { ...styles.modalActionButton };
+            if (isMobile) {
+                style.flexGrow = 1;
+            }
+
+            if (isProcessing) {
+                style = {...style, ...styles.modalActionButtonDisabled};
+            }
+            return style;
+        };
+
+        if (isMobile) {
+            return (
+                <div style={styles.mobileFooterContainer}>
+                    <button onClick={() => onMatchAll(order)} style={styles.iconButton} disabled={isProcessing} title="Match Ready Quantity">
+                        <CheckSquareIcon color="var(--brand-color)" />
+                    </button>
+                    <button onClick={handleDownloadPdf} style={styles.iconButton} disabled={isProcessing} title="Download Packing Slip">
+                        <DownloadIcon />
+                    </button>
+                    <button 
+                        onClick={handleMarkBilledClick} 
+                        style={getMarkBilledButtonStyle()}
+                        disabled={isButtonDisabled}
+                    >
+                        {isProcessing ? <SmallSpinner /> : 'Mark as Billed'}
+                    </button>
+                </div>
+            );
+        }
+        return (
+            <div style={{...styles.modalFooter, padding: '1rem'}}>
+                <button onClick={() => onMatchAll(order)} style={styles.matchAllButton} disabled={isProcessing}>
+                    <CheckSquareIcon /> Match Ready Qty
+                </button>
+                <div style={styles.footerActions}>
+                    <button onClick={handleDownloadPdf} style={styles.iconButton} disabled={isProcessing} title="Download Packing Slip">
+                        <DownloadIcon />
+                    </button>
+                    <button 
+                        onClick={handleMarkBilledClick} 
+                        style={getMarkBilledButtonStyle()}
+                        disabled={isButtonDisabled}
+                    >
+                        {isProcessing ? <SmallSpinner /> : 'Mark as Billed'}
+                    </button>
+                </div>
+            </div>
+        );
+    };
+
+
     return (
         <div style={styles.orderWrapper}>
-            <div style={styles.expandedSummary}>
-                <div><strong>Party:</strong> {order.partyName}</div>
+            <div style={{ ...styles.expandedSummary, padding: isMobile ? '0.75rem' : '1rem' }}>
+                <div style={{display: 'none'}}><strong>Party:</strong> {order.partyName}</div>
                 <div><strong>Order #:</strong> {order.orderNumber}</div>
                 <div><strong>Order Date:</strong> {formatDate(order.timestamp)}</div>
                 <div><strong>Ready Qty:</strong> {order.totalQuantity}</div>
             </div>
             {order.orderNote && <div style={styles.expandedNote}><strong>Note:</strong> {order.orderNote}</div>}
-            <div style={{...styles.tableContainer, margin: '0 1rem'}}>
+            <div style={isMobile ? styles.mobileTableWrapper : {}}>
                 <table style={styles.table}>
-                    <thead><tr><th style={styles.th}>Style</th><th style={styles.th}>Color</th><th style={styles.th}>Size</th><th style={styles.th}>Ready Qty</th><th style={styles.th}>Billed Qty</th></tr></thead>
+                    <thead>
+                        <tr>
+                            <th style={{...styles.th, textAlign: 'left'}}>Style</th>
+                            <th style={{...styles.th, textAlign: 'left'}}>Color</th>
+                            <th style={{...styles.th, textAlign: 'left'}}>Size</th>
+                            <th style={styles.th}>{isMobile ? 'Qty' : 'Ready Qty'}</th>
+                            <th style={styles.th}>{isMobile ? 'Billed' : 'Billed Qty'}</th>
+                        </tr>
+                    </thead>
                     <tbody>
-                        {order.items.map(item => (
-                            <tr key={item.id} style={styles.tr}>
-                                <td style={styles.td}>{item.fullItemData.Style}</td>
-                                <td style={styles.td}>{item.fullItemData.Color}</td>
-                                <td style={styles.td}>{item.fullItemData.Size}</td>
+                        {order.items.map((item, index) => (
+                            <tr key={item.id} style={index % 2 !== 0 ? { ...styles.tr, backgroundColor: 'var(--stripe-bg)' } : styles.tr}>
+                                <td style={{...styles.td, textAlign: 'left'}}>{item.fullItemData.Style}</td>
+                                <td style={{...styles.td, textAlign: 'left'}}>{item.fullItemData.Color}</td>
+                                <td style={{...styles.td, textAlign: 'left'}}>{item.fullItemData.Size}</td>
                                 <td style={styles.td}>{item.quantity}</td>
                                 <td style={{...styles.td, ...styles.tdInput}}>
-                                    <input
-                                      type="number"
-                                      style={styles.qtyInput}
-                                      value={billedQty[item.id] || ''}
-                                      onChange={(e) => onQtyChange(item.id, e.target.value, item.quantity)}
-                                      placeholder="0"
-                                      max={item.quantity}
-                                      min="0"
+                                     <input
+                                        type="number"
+                                        value={billedQty[item.id] || ''}
+                                        onChange={(e) => onQtyChange(item.id, e.target.value, item.quantity)}
+                                        style={styles.billingQtyInput}
+                                        max={item.quantity}
+                                        min="0"
+                                        placeholder="0"
                                     />
                                 </td>
                             </tr>
@@ -233,19 +297,7 @@ const ExpandedBillingView = ({ order, billedQty, onQtyChange, onMarkBilled, isPr
                     </tbody>
                 </table>
             </div>
-            <div style={{...styles.modalFooter, padding: '1rem'}}>
-                 <button onClick={() => onMatchAll(order)} style={styles.matchAllButton} disabled={isProcessing}>
-                    <CheckSquareIcon /> Match Ready Qty
-                </button>
-                 <div style={styles.footerActions}>
-                    <button onClick={handleDownloadPdf} style={styles.secondaryButton} disabled={isProcessing}>
-                        <DownloadIcon /> Download Slip
-                    </button>
-                    <button onClick={handleMarkBilledClick} style={styles.modalActionButton} disabled={isProcessing}>
-                        {isProcessing ? <SmallSpinner /> : 'Mark as Billed'}
-                    </button>
-                </div>
-            </div>
+            {renderFooter()}
         </div>
     );
 };
@@ -259,7 +311,8 @@ const PartyGroup: React.FC<{
     onMarkBilled: (order: Order, billedQuantities: Record<string, number>) => void;
     onMatchAll: (order: Order) => void;
     onPartyExpand: (orders: Order[]) => void;
-}> = ({ partyName, data, billedQtys, processingOrders, onQtyChange, onMarkBilled, onMatchAll, onPartyExpand }) => {
+    isMobile: boolean;
+}> = ({ partyName, data, billedQtys, processingOrders, onQtyChange, onMarkBilled, onMatchAll, onPartyExpand, isMobile }) => {
     const [isCollapsed, setIsCollapsed] = useState(true);
     const totalQty = data.orders.reduce((sum, order) => sum + order.totalQuantity, 0);
 
@@ -274,6 +327,9 @@ const PartyGroup: React.FC<{
         ...styles.card,
         boxShadow: isCollapsed ? 'rgba(0, 0, 0, 0.04) 0px 2px 4px' : 'rgba(0, 0, 0, 0.06) 0px 4px 8px',
         transition: 'box-shadow 0.3s ease',
+        marginLeft: isMobile ? '5px' : '10px',
+        marginRight: isMobile ? '5px' : '10px',
+        borderRadius: 'var(--border-radius)',
     };
 
     return (
@@ -289,7 +345,7 @@ const PartyGroup: React.FC<{
             </button>
             <div style={isCollapsed ? styles.collapsibleContainer : {...styles.collapsibleContainer, ...styles.collapsibleContainerExpanded}}>
                 <div style={styles.collapsibleContentWrapper}>
-                    <div style={styles.cardDetails}>
+                    <div style={{...styles.cardDetails, padding: isMobile ? '0 0.5rem 1rem' : '0 1.5rem 1.5rem'}}>
                         {data.orders.map(order => (
                             <ExpandedBillingView
                                 key={order.orderNumber}
@@ -299,6 +355,7 @@ const PartyGroup: React.FC<{
                                 onMarkBilled={onMarkBilled}
                                 isProcessing={processingOrders.includes(order.orderNumber)}
                                 onMatchAll={onMatchAll}
+                                isMobile={isMobile}
                             />
                         ))}
                     </div>
@@ -316,6 +373,7 @@ export const ReadyForBilling = () => {
     const [dateFilter, setDateFilter] = useState('all');
     const [billedQtys, setBilledQtys] = useState<Record<string, Record<string, number>>>({});
     const [processingOrders, setProcessingOrders] = useState<string[]>([]);
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
     const [isSearchFocused, setIsSearchFocused] = useState(false);
     
     const filterPillsRef = useRef(null);
@@ -323,6 +381,9 @@ export const ReadyForBilling = () => {
     const [markerStyle, setMarkerStyle] = useState({});
 
     useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth <= 768);
+        window.addEventListener('resize', handleResize);
+
         const ordersRef = firebase.database().ref(BILLING_ORDERS_REF);
         const listener = ordersRef.on('value', (snapshot) => {
             const data = snapshot.val();
@@ -337,7 +398,10 @@ export const ReadyForBilling = () => {
             setError('Failed to fetch orders. Please check your connection.');
             setIsLoading(false);
         });
-        return () => ordersRef.off('value', listener);
+        return () => {
+            ordersRef.off('value', listener);
+            window.removeEventListener('resize', handleResize);
+        }
     }, []);
 
     const dateFilters = [
@@ -515,6 +579,7 @@ export const ReadyForBilling = () => {
                         onMarkBilled={handleMarkBilled}
                         onMatchAll={handleMatchAll}
                         onPartyExpand={handlePartyExpand}
+                        isMobile={isMobile}
                     />
                 ))}
             </div>
@@ -587,7 +652,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     centeredMessage: { flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'var(--text-color)', fontSize: '1.1rem' },
     spinner: { border: '4px solid var(--light-grey)', borderRadius: '50%', borderTop: '4px solid var(--brand-color)', width: '40px', height: '40px', animation: 'spin 1s linear infinite' },
     card: {
-        backgroundColor: 'var(--card-bg)',
+        backgroundColor: 'var(--billing-party-card-bg, var(--card-bg))',
         borderRadius: 'var(--border-radius)',
         border: 'none',
         overflow: 'hidden',
@@ -615,10 +680,10 @@ const styles: { [key: string]: React.CSSProperties } = {
     orderInfo: { display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', color: 'var(--dark-grey)' },
     orderMeta: { display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--text-color)', fontSize: '0.85rem' },
     detailsButton: { display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#eef2f7', border: '1px solid var(--skeleton-bg)', color: 'var(--brand-color)', padding: '0.5rem 1rem', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 },
-    orderWrapper: { border: '1px solid var(--separator-color)', borderRadius: 'var(--border-radius)', backgroundColor: 'var(--card-bg-secondary)', overflow: 'hidden' },
+    orderWrapper: { border: '1px solid var(--separator-color)', borderRadius: 'var(--border-radius)', backgroundColor: 'var(--billing-inner-card-bg, var(--card-bg-secondary))', overflow: 'hidden' },
     expandedSummary: {
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
         gap: '0.75rem',
         backgroundColor: 'var(--light-grey)',
         padding: '1rem',
@@ -634,21 +699,43 @@ const styles: { [key: string]: React.CSSProperties } = {
         fontSize: '0.9rem',
         color: 'var(--dark-grey)',
     },
+    mobileTableWrapper: { overflow: 'hidden', borderRadius: '8px', margin: '1rem', border: '1px solid var(--separator-color)' },
     tableContainer: { overflowX: 'auto', backgroundColor: 'var(--card-bg)', borderRadius: '8px', border: '1px solid var(--skeleton-bg)' },
     table: { width: '100%', borderCollapse: 'collapse' },
-    th: { backgroundColor: '#f8f9fa', padding: '10px 12px', textAlign: 'center', fontWeight: 600, color: 'var(--dark-grey)', borderBottom: '2px solid var(--skeleton-bg)', whiteSpace: 'nowrap' },
-    tr: { borderBottom: '1px solid var(--skeleton-bg)' },
-    td: { padding: '10px 12px', color: 'var(--text-color)', fontSize: '0.9rem', textAlign: 'center' },
+    th: { backgroundColor: 'var(--light-grey)', padding: '8px 10px', textAlign: 'center', fontWeight: 600, color: 'var(--text-color)', borderBottom: '1px solid var(--separator-color)', whiteSpace: 'nowrap', fontSize: '0.8rem' },
+    tr: { borderBottom: '1px solid var(--separator-color)' },
+    td: { padding: '8px 10px', color: 'var(--text-color)', fontSize: '0.9rem', textAlign: 'center' },
     tdInput: { padding: '4px' },
-    qtyInput: { width: '70px', padding: '8px', textAlign: 'center', border: '1px solid var(--skeleton-bg)', borderRadius: '6px', fontSize: '0.9rem' },
+    billingQtyInput: { width: '60px', height: '32px', textAlign: 'center', border: '1px solid var(--separator-color)', borderRadius: '6px', fontSize: '0.9rem', color: 'var(--dark-grey)', backgroundColor: 'var(--card-bg)', appearance: 'textfield', MozAppearance: 'textfield' },
     modalFooter: { padding: '1.5rem 0 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' },
     footerActions: { display: 'flex', gap: '0.75rem', alignItems: 'center' },
-    modalActionButton: { padding: '0.75rem 1.5rem', fontSize: '1rem', fontWeight: 500, color: '#fff', backgroundColor: '#27ae60', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: '150px' },
-    matchAllButton: { padding: '0.7rem 1.2rem', background: 'none', border: '1px solid var(--brand-color)', color: 'var(--brand-color)', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 500 },
+    modalActionButton: { padding: '0.75rem 1.5rem', fontSize: '0.9rem', fontWeight: 500, color: '#fff', backgroundColor: '#27ae60', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: '150px', height: '40px', transition: 'background-color 0.2s ease', boxShadow: '0 2px 8px rgba(39, 174, 96, 0.3)' },
+    modalActionButtonDisabled: { backgroundColor: 'var(--gray-3)', boxShadow: 'none', cursor: 'not-allowed' },
+    matchAllButton: { padding: '0.7rem 1.2rem', background: 'none', border: '1px solid var(--brand-color)', color: 'var(--brand-color)', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 500, height: '40px' },
     secondaryButton: { backgroundColor: 'var(--light-grey)', color: 'var(--dark-grey)', border: '1px solid var(--skeleton-bg)', padding: '0.7rem 1.2rem', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 500 },
+    iconButton: {
+        backgroundColor: 'var(--light-grey)',
+        color: 'var(--dark-grey)',
+        border: '1px solid var(--skeleton-bg)',
+        padding: '0',
+        borderRadius: '8px',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontWeight: 500,
+        width: '40px',
+        height: '40px',
+    },
     // Swipeable styles
     swipeableContainer: { position: 'relative', overflow: 'hidden' },
     swipeableActions: { position: 'absolute', top: 0, right: 0, height: '100%', display: 'flex', alignItems: 'center' },
     swipeableActionButton: { height: '100%', width: '80px', background: 'var(--brand-color)', color: 'white', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '0.9rem', fontWeight: 600 },
     swipeableContent: { position: 'relative', backgroundColor: 'var(--card-bg)', zIndex: 1 },
+    mobileFooterContainer: {
+        padding: '0.5rem 1rem 1rem',
+        display: 'flex',
+        gap: '0.75rem',
+        alignItems: 'center',
+    },
 };
