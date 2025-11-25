@@ -375,7 +375,7 @@ const styles: { [key: string]: React.CSSProperties } = {
         borderColor: 'var(--brand-color)',
     },
     searchInput: { flex: 1, border: 'none', background: 'none', outline: 'none', fontSize: '1rem', color: 'var(--dark-grey)' },
-    filterContainer: { display: 'flex', gap: '0.5rem', flexWrap: 'wrap', position: 'relative', backgroundColor: 'var(--gray-5)', borderRadius: '18px', padding: '4px' },
+    filterContainer: { display: 'flex', gap: '0.5rem', flexWrap: 'wrap', height: '37px', position: 'relative', backgroundColor: 'var(--gray-5)', borderRadius: '18px', padding: '4px' },
     filterMarker: { position: 'absolute', top: '4px', left: 0, height: 'calc(100% - 8px)', backgroundColor: 'var(--card-bg)', borderRadius: '14px', transition: 'all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)', zIndex: 0, boxShadow: 'rgba(0, 0, 0, 0.05) 0px 1px 3px, rgba(0, 0, 0, 0.05) 0px 1px 2px', opacity: 0 },
     filterButton: { background: 'transparent', border: 'none', color: 'var(--text-color)', padding: '0.4rem 0.8rem', borderRadius: '14px', cursor: 'pointer', fontSize: '0.85rem', position: 'relative', zIndex: 1, transition: 'color 0.3s ease' },
     filterButtonActive: { background: 'transparent', border: 'none', color: 'var(--brand-color)', padding: '0.4rem 0.8rem', borderRadius: '14px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600, position: 'relative', zIndex: 1, transition: 'color 0.3s ease' },
