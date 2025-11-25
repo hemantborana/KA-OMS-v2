@@ -1,6 +1,4 @@
 
-
-
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
@@ -496,8 +494,21 @@ export const ReadyForBilling = () => {
 
 const styles: { [key: string]: React.CSSProperties } = {
     container: { display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1 },
-    headerCard: { backgroundColor: 'var(--card-bg)', padding: '1rem 1.5rem', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', display: 'flex', flexDirection: 'column', gap: '1rem' },
-    pageTitle: { fontSize: '1.25rem', fontWeight: 600, color: 'var(--dark-grey)' },
+    headerCard: {
+        backgroundColor: 'transparent',
+        padding: '1rem 1.5rem',
+        borderRadius: 'var(--border-radius)',
+        border: 'none',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '1rem',
+    },
+    pageTitle: {
+        fontSize: '1.25rem',
+        fontWeight: 600,
+        display: 'none',
+        color: 'var(--dark-grey)',
+    },
     searchContainer: { 
         display: 'flex', 
         alignItems: 'center', 

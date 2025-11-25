@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect, useMemo } from 'react';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
@@ -79,6 +78,7 @@ export const DeletedOrders = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
+    const [isSearchFocused, setIsSearchFocused] = useState(false);
 
     useEffect(() => {
         const ordersRef = firebase.database().ref(DELETED_ORDERS_REF);
@@ -154,9 +154,18 @@ export const DeletedOrders = () => {
         <div style={styles.container}>
             <div style={styles.headerCard}>
                 <h2 style={styles.pageTitle}>Deleted Orders (Last 20 Days)</h2>
-                <div style={styles.searchContainer}>
+                <div style={isSearchFocused ? {...styles.searchContainer, ...styles.searchContainerActive} : styles.searchContainer}>
                     <SearchIcon />
-                    <input type="text" style={styles.searchInput} className="global-search-input" placeholder="Search by party or order number..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                    <input 
+                        type="text" 
+                        style={styles.searchInput} 
+                        className="global-search-input" 
+                        placeholder="Search by party or order number..." 
+                        value={searchTerm} 
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        onFocus={() => setIsSearchFocused(true)}
+                        onBlur={() => setIsSearchFocused(false)}
+                    />
                 </div>
             </div>
             {renderContent()}
@@ -168,7 +177,20 @@ const styles: { [key: string]: React.CSSProperties } = {
     container: { display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1 },
     headerCard: { backgroundColor: 'var(--card-bg)', padding: '1rem 1.5rem', borderRadius: 'var(--border-radius)', border: '1px solid var(--skeleton-bg)', display: 'flex', flexDirection: 'column', gap: '1rem' },
     pageTitle: { fontSize: '1.25rem', fontWeight: 600, color: 'var(--dark-grey)' },
-    searchContainer: { display: 'flex', alignItems: 'center', gap: '0.75rem', backgroundColor: 'var(--light-grey)', padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--skeleton-bg)' },
+    searchContainer: { 
+        display: 'flex', 
+        alignItems: 'center', 
+        gap: '0.75rem', 
+        boxShadow: 'rgba(0, 0, 0, 0.06) 0px 4px 12px',
+        backgroundColor: 'var(--card-bg)', 
+        padding: '11px', 
+        borderRadius: '20px',
+        border: '1px solid transparent',
+        transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
+    },
+    searchContainerActive: {
+        borderColor: 'var(--brand-color)',
+    },
     searchInput: { flex: 1, border: 'none', background: 'none', outline: 'none', fontSize: '1rem', color: 'var(--dark-grey)' },
     listContainer: { flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem', paddingBottom: '1rem' },
     centeredMessage: { flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'var(--text-color)', fontSize: '1.1rem' },
