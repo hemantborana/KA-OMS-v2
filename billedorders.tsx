@@ -40,12 +40,11 @@ const getColorForString = (str: string) => {
 const formatDate = (isoString) => isoString ? new Date(isoString).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A';
 
 // --- COMPONENTS ---
-const BilledOrderCard: React.FC<{ order: Order, showPartyName?: boolean }> = ({ order, showPartyName = false }) => {
-    const [isCollapsed, setIsCollapsed] = useState(true);
+const BilledOrderCard: React.FC<{ order: Order, showPartyName?: boolean, isExpanded: boolean, onToggle: () => void }> = ({ order, showPartyName = false, isExpanded, onToggle }) => {
     const avatarColorStyle = useMemo(() => getColorForString(order.partyName), [order.partyName]);
 
-
-    const handleDownloadPdf = async () => {
+    const handleDownloadPdf = async (e) => {
+        e.stopPropagation();
         const { jsPDF } = (window as any).jspdf;
         const doc = new jsPDF();
     
@@ -111,7 +110,7 @@ const BilledOrderCard: React.FC<{ order: Order, showPartyName?: boolean }> = ({ 
 
     return (
         <div style={styles.billedOrderContainer}>
-            <button style={styles.billedOrderHeader} onClick={() => setIsCollapsed(!isCollapsed)}>
+            <button style={styles.billedOrderHeader} onClick={onToggle}>
                 <div style={styles.billedOrderInfo}>
                      {showPartyName && (
                         <div style={{display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1, minWidth: 0}}>
@@ -124,11 +123,11 @@ const BilledOrderCard: React.FC<{ order: Order, showPartyName?: boolean }> = ({ 
                 </div>
                 <div style={styles.billedOrderStats}>
                     <span>Qty: {order.totalQuantity}</span>
-                    <ChevronIcon collapsed={isCollapsed} />
+                    <ChevronIcon collapsed={!isExpanded} />
                 </div>
             </button>
 
-            <div style={isCollapsed ? styles.collapsibleContainer : {...styles.collapsibleContainer, ...styles.collapsibleContainerExpanded}}>
+            <div style={!isExpanded ? styles.collapsibleContainer : {...styles.collapsibleContainer, ...styles.collapsibleContainerExpanded}}>
                 <div style={styles.collapsibleContentWrapper}>
                     <div style={styles.billedOrderDetails}>
                         {order.orderNote && <div style={styles.orderNoteBox}><strong>Note:</strong> {order.orderNote}</div>}
@@ -166,7 +165,12 @@ const BilledOrderCard: React.FC<{ order: Order, showPartyName?: boolean }> = ({ 
     );
 };
 
-const PartyGroup: React.FC<{ partyName: string; data: any; }> = ({ partyName, data }) => {
+const PartyGroup: React.FC<{ 
+    partyName: string; 
+    data: any;
+    expandedOrders: Set<string>;
+    onToggleOrderExpand: (orderNumber: string) => void;
+}> = ({ partyName, data, expandedOrders, onToggleOrderExpand }) => {
     const [isCollapsed, setIsCollapsed] = useState(true);
     const totalQty = data.orders.reduce((sum, order) => sum + order.totalQuantity, 0);
 
@@ -201,7 +205,13 @@ const PartyGroup: React.FC<{ partyName: string; data: any; }> = ({ partyName, da
                 <div style={styles.collapsibleContentWrapper}>
                     <div style={styles.cardDetails}>
                         {data.orders.map(order => (
-                            <BilledOrderCard key={order.orderNumber} order={order} showPartyName={false} />
+                            <BilledOrderCard 
+                                key={order.orderNumber} 
+                                order={order} 
+                                showPartyName={false} 
+                                isExpanded={expandedOrders.has(order.orderNumber)}
+                                onToggle={() => onToggleOrderExpand(order.orderNumber)}
+                            />
                         ))}
                     </div>
                 </div>
@@ -218,6 +228,7 @@ export const BilledOrders = () => {
     const [dateFilter, setDateFilter] = useState('all');
     const [view, setView] = useState('order'); // Default to order view
     const [isSearchFocused, setIsSearchFocused] = useState(false);
+    const [expandedOrders, setExpandedOrders] = useState(new Set<string>());
     
     const filterPillsRef = useRef(null);
     const pillRefs = useRef({});
@@ -297,6 +308,27 @@ export const BilledOrders = () => {
         return filtered;
     }, [orders, searchTerm, dateFilter]);
 
+    useEffect(() => {
+        if (view === 'order' && filteredOrders.length > 0) {
+            const recentOrderNumbers = filteredOrders.slice(0, 10).map(order => order.orderNumber);
+            setExpandedOrders(new Set(recentOrderNumbers));
+        } else {
+            setExpandedOrders(new Set());
+        }
+    }, [view, filteredOrders]);
+
+    const handleToggleOrderExpand = (orderNumber: string) => {
+        setExpandedOrders(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(orderNumber)) {
+                newSet.delete(orderNumber);
+            } else {
+                newSet.add(orderNumber);
+            }
+            return newSet;
+        });
+    };
+
     const summarizedData = useMemo(() => {
         return filteredOrders.reduce((acc, order) => {
             if (!acc[order.partyName]) {
@@ -321,7 +353,13 @@ export const BilledOrders = () => {
             return (
                 <div style={styles.listContainer} key={`party-${animationKey}`} className="fade-in-slide">
                     {partyNames.map(partyName => (
-                        <PartyGroup key={partyName} partyName={partyName} data={summarizedData[partyName]} />
+                        <PartyGroup 
+                            key={partyName} 
+                            partyName={partyName} 
+                            data={summarizedData[partyName]}
+                            expandedOrders={expandedOrders}
+                            onToggleOrderExpand={handleToggleOrderExpand}
+                        />
                     ))}
                 </div>
             );
@@ -331,7 +369,12 @@ export const BilledOrders = () => {
             <div style={{...styles.listContainer, gap: '0.75rem'}} key={`order-${animationKey}`} className="fade-in-slide">
                 {filteredOrders.map(order => (
                     <div style={styles.card} key={order.orderNumber}>
-                        <BilledOrderCard order={order} showPartyName={true} />
+                        <BilledOrderCard 
+                            order={order} 
+                            showPartyName={true} 
+                            isExpanded={expandedOrders.has(order.orderNumber)}
+                            onToggle={() => handleToggleOrderExpand(order.orderNumber)}
+                        />
                     </div>
                 ))}
             </div>
@@ -523,7 +566,12 @@ const styles: { [key: string]: React.CSSProperties } = {
     billedOrderActions: { display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' },
 
     // Shared table styles
-    tableContainer: { overflowY: 'auto', borderRadius: '8px', backgroundColor: 'var(--card-bg-secondary)', flex: 1, maxHeight: 'calc(100vh - 30rem)', border: '1px solid var(--separator-color)' },
+    tableContainer: { 
+        overflow: 'hidden',
+        borderRadius: '8px', 
+        backgroundColor: 'var(--card-bg-secondary)', 
+        border: '1px solid var(--separator-color)' 
+    },
     table: { width: '100%', borderCollapse: 'collapse' },
     th: { backgroundColor: 'var(--light-grey)', padding: '10px 12px', textAlign: 'left', fontWeight: 600, color: 'var(--text-color)', borderBottom: '1px solid var(--separator-color)', whiteSpace: 'nowrap', fontSize: '0.85rem', position: 'sticky', top: 0, zIndex: 1 },
     tr: {},
