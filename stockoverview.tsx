@@ -206,7 +206,7 @@ const StockTable = ({ items, onHeaderClick, sortConfigs, isMobile }) => {
     ];
     
     const thStyle = isMobile ? { ...styles.th, ...styles.thMobile } : styles.th;
-    const tdStyle = isMobile ? { ...styles.td, ...styles.tdMobile, textAlign: 'center' as const } : { ...styles.td, textAlign: 'center' as const };
+    const tdStyle = isMobile ? { ...styles.td, ...styles.tdMobile } : styles.td;
 
     return (
         <table style={styles.table}>
@@ -230,8 +230,8 @@ const StockTable = ({ items, onHeaderClick, sortConfigs, isMobile }) => {
             <tbody>
                 {items.map((item, index) => (
                     <tr key={index} style={index % 2 !== 0 ? { ...styles.tr, backgroundColor: 'var(--stripe-bg)' } : styles.tr}>
-                        <td style={{...tdStyle, textAlign: 'left'}}>{item.style}</td>
-                        <td style={{...tdStyle, textAlign: 'left'}}>{item.color}</td>
+                        <td style={tdStyle}>{item.style}</td>
+                        <td style={tdStyle}>{item.color}</td>
                         <td style={tdStyle}>{item.size}</td>
                         <td style={tdStyle}>{item.stock}</td>
                     </tr>
@@ -241,7 +241,7 @@ const StockTable = ({ items, onHeaderClick, sortConfigs, isMobile }) => {
     );
 };
 
-const SortPopover = ({ target, sortKey, currentSorts, onSortChange, onClose, isClosing }) => {
+const SortPopover = ({ target, sortKey, currentSorts, onSortChange, onClose, isClosing, containerRef }) => {
     const popoverRef = useRef<HTMLDivElement>(null);
     const [style, setStyle] = useState({});
 
@@ -259,30 +259,36 @@ const SortPopover = ({ target, sortKey, currentSorts, onSortChange, onClose, isC
     }, [onClose]);
     
     useLayoutEffect(() => {
-        if (target && popoverRef.current) {
+        if (target && popoverRef.current && containerRef.current) {
+            const targetRect = target.getBoundingClientRect();
+            const containerRect = containerRef.current.getBoundingClientRect();
+
+            // Position relative to the container, including scroll offsets
+            const top = (targetRect.bottom - containerRect.top) + containerRef.current.scrollTop;
+            let left = (targetRect.left - containerRect.left) + containerRef.current.scrollLeft + (targetRect.width / 2);
+            
             const popoverWidth = popoverRef.current.offsetWidth || 150;
-            const offsetParent = target.offsetParent as HTMLElement | null;
+            
+            // Center the popover under the header's center
+            left -= popoverWidth / 2;
 
-            if (offsetParent) {
-                let top = target.offsetTop + target.offsetHeight + 8;
-                let left = target.offsetLeft + target.offsetWidth / 2;
-                
-                const parentWidth = offsetParent.clientWidth;
+            // Boundary check relative to the container's visible scroll area
+            const scrollLeft = containerRef.current.scrollLeft;
+            const visibleWidth = containerRect.width;
 
-                if ((left - popoverWidth / 2) < 8) {
-                   left = (popoverWidth / 2) + 8;
-                }
-                if ((left + popoverWidth / 2) > (parentWidth - 8)) {
-                   left = parentWidth - (popoverWidth / 2) - 8;
-                }
-
-                setStyle({
-                    top: `${top}px`,
-                    left: `${left}px`,
-                });
+            if (left < scrollLeft + 8) {
+                left = scrollLeft + 8;
             }
+            if (left + popoverWidth > scrollLeft + visibleWidth - 8) {
+                left = scrollLeft + visibleWidth - popoverWidth - 8;
+            }
+            
+            setStyle({
+                top: `${top}px`,
+                left: `${left}px`,
+            });
         }
-    }, [target]);
+    }, [target, containerRef]);
     
     const animationStyle: React.CSSProperties = {
         animation: `${isClosing ? 'popover-out' : 'popover-in'} 0.2s ease-out forwards`,
@@ -327,6 +333,7 @@ export const StockOverview = () => {
     const [popoverState, setPopoverState] = useState({ visible: false, target: null, sortKey: null, isClosing: false });
     const [isSearchFocused, setIsSearchFocused] = useState(false);
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+    const tableContainerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const handleResize = () => setIsMobile(window.innerWidth <= 768);
@@ -484,9 +491,14 @@ export const StockOverview = () => {
             
             if (view === 'table') {
                 return (
-                    <div style={{...styles.tableContainer, position: 'relative'}}>
+                    <div ref={tableContainerRef} style={{
+                        ...styles.tableContainer, 
+                        position: 'relative',
+                        margin: isMobile ? '0 10px' : undefined
+                    }}>
                         {popoverState.visible && (
                             <SortPopover
+                                containerRef={tableContainerRef}
                                 target={popoverState.target}
                                 sortKey={popoverState.sortKey}
                                 currentSorts={sortConfigs}
@@ -563,10 +575,10 @@ export const StockOverview = () => {
                 </div>
                  <div style={styles.marqueeWrapper}>
                     <Marquee>
-                        <p style={styles.lastUpdated}>
+                         <span style={styles.lastUpdated}>
                             Last Updated: {formatTimestamp(lastUpdate)}
                             {isSyncing && <span style={styles.syncingIndicator}> (Syncing...)</span>}
-                        </p>
+                        </span>
                     </Marquee>
                  </div>
             </div>
@@ -631,7 +643,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     th: { backgroundColor: 'var(--card-bg-tertiary)', padding: '16px 20px', textAlign: 'center', fontWeight: 600, color: 'var(--dark-grey)', borderBottom: '1px solid var(--separator-color)', cursor: 'pointer', userSelect: 'none', fontSize: '0.8rem' },
     thContent: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' },
     tr: { borderBottom: '1px solid var(--separator-color)' },
-    td: { padding: '16px 20px', color: 'var(--text-color)', fontSize: '0.9rem' },
+    td: { padding: '16px 20px', color: 'var(--text-color)', fontSize: '0.9rem', textAlign: 'center' },
     tdStock: { fontWeight: 600, color: 'var(--dark-grey)' },
     thMobile: { padding: '12px 8px', fontSize: '0.8rem' },
     tdMobile: { padding: '12px 8px', fontSize: '0.85rem' },
@@ -639,7 +651,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     marqueeWrapper: {
         backgroundColor: 'var(--card-bg-tertiary)',
         borderRadius: '12px',
-        padding: '0.25rem 0',
+        padding: '0.5rem 0',
     },
     marqueeContainer: { 
         width: '100%', 
@@ -651,10 +663,11 @@ const styles: { [key: string]: React.CSSProperties } = {
     },
     marqueeContent: { 
         display: 'flex',
-        width: 'fit-content',
+        width: 'max-content',
         animation: 'marquee 25s linear infinite',
     },
     marqueeItem: {
+        display: 'block',
         whiteSpace: 'nowrap',
         padding: '0 2rem',
     },
@@ -675,8 +688,8 @@ const styles: { [key: string]: React.CSSProperties } = {
         borderRadius: '10px',
         border: '1px solid var(--glass-border)',
         boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
-        transform: 'translateX(-50%)',
         zIndex: 1000,
+        willChange: 'transform, opacity',
     },
     popoverButton: {
         background: 'transparent',
