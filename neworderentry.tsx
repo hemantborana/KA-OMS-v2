@@ -471,9 +471,9 @@ interface DraftsModalProps { isOpen: boolean; onClose: () => void; drafts: Recor
 const DraftsModal: React.FC<DraftsModalProps> = ({ isOpen, onClose, drafts, onRestore, onDelete }) => {
     const [expandedDraft, setExpandedDraft] = useState<string | null>(null);
     if (!isOpen) return null;
-    const sortedDrafts = (Object.entries(drafts) as [string, Draft][]).sort(([, a], [, b]) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    const sortedDrafts = !drafts ? [] : (Object.entries(drafts) as [string, Draft][]).sort(([, a], [, b]) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
     const formatTimestamp = (isoString: string) => !isoString ? 'Unknown time' : new Date(isoString).toLocaleString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
-    const totalQuantity = (items: OrderItem[]) => items.reduce((sum, item) => sum + item.quantity, 0);
+    const totalQuantity = (items: OrderItem[]) => !items ? 0 : items.reduce((sum, item) => sum + item.quantity, 0);
 
     return (
         <div style={styles.modalOverlay} onClick={onClose}>
@@ -484,13 +484,13 @@ const DraftsModal: React.FC<DraftsModalProps> = ({ isOpen, onClose, drafts, onRe
                         sortedDrafts.map(([partyName, draft]) => (
                             <div key={partyName} style={styles.draftItem}>
                                 <div style={styles.draftHeader} onClick={() => setExpandedDraft(expandedDraft === partyName ? null : partyName)}>
-                                    <div style={styles.draftInfo}> <p style={styles.draftPartyName}>{partyName}</p> <div style={styles.draftMeta}> <span style={styles.draftTimestamp}><ClockIcon /> {formatTimestamp(draft.timestamp)}</span> <span>|</span> <span>{totalQuantity(draft.items)} items</span> </div> </div>
+                                    <div style={styles.draftInfo}> <p style={styles.draftPartyName}>{partyName}</p> <div style={styles.draftMeta}> <span style={styles.draftTimestamp}><ClockIcon /> {formatTimestamp(draft.timestamp)}</span> <span>|</span> <span>{totalQuantity(draft.items || [])} items</span> </div> </div>
                                     <div style={styles.draftActions}> <button onClick={(e) => { e.stopPropagation(); onDelete(partyName); }} style={styles.draftActionButton} aria-label={`Delete draft for ${partyName}`}> <TrashIcon /> </button> <button onClick={(e) => { e.stopPropagation(); onRestore(partyName); }} style={{...styles.draftActionButton, ...styles.draftRestoreButton}} aria-label={`Restore draft for ${partyName}`}> <HistoryIcon /> </button> <ChevronIcon collapsed={expandedDraft !== partyName} /> </div>
                                 </div>
                                 {expandedDraft === partyName && (
                                     <div style={styles.draftItemsDetails}>
                                         <div style={styles.draftItemsHeader}> <span>Style</span> <span>Color</span> <span>Size</span> <span>Qty</span> </div>
-                                        <ul> {draft.items.map(item => ( <li key={item.id} style={styles.draftItemRow}> <span>{item.fullItemData.Style}</span> <span>{item.fullItemData.Color}</span> <span>{item.fullItemData.Size}</span> <span>{item.quantity}</span> </li> ))} </ul>
+                                        <ul> {(draft.items || []).map(item => ( <li key={item.id} style={styles.draftItemRow}> <span>{item.fullItemData.Style}</span> <span>{item.fullItemData.Color}</span> <span>{item.fullItemData.Size}</span> <span>{item.quantity}</span> </li> ))} </ul>
                                     </div>
                                 )}
                             </div>
@@ -944,15 +944,30 @@ export const NewOrderEntry = ({ onNavigate }) => {
     const totalQuantity = useMemo(() => items.reduce((sum, item) => sum + item.quantity, 0), [items]);
 
     const renderDraftButton = (isMobileButton = false) => {
-        const buttonStyle = isMobileButton ? { ...styles.button, ...styles.stickyButton, flex: 1 } : { ...styles.button };
-        if (editMode) return null; // Don't show draft buttons in edit mode
-        if (partyName && partyHasExistingDraft) { return <button onClick={() => setIsDraftModalOpen(true)} style={{ ...buttonStyle, backgroundColor: '#c0392b', color: '#fff', border: 'none' }}>Draft Exists</button>; }
-        if (!partyName) { return <button onClick={() => setIsDraftModalOpen(true)} style={{ ...buttonStyle, ...styles.secondaryButton }} disabled={Object.keys(drafts).length === 0}>Open Drafts</button>; }
-        return <button onClick={handleSaveDraft} style={{ ...buttonStyle, ...styles.secondaryButton }} disabled={items.length === 0}>Save Draft</button>;
+        const buttonStyle = isMobileButton ? { ...styles.button, ...styles.stickyButton } : { ...styles.button };
+    
+        const secondaryStyle = isMobileButton
+            ? { ...styles.secondaryButton, boxShadow: 'rgba(0, 0, 0, 0.09) 0px 4px 18px' }
+            : styles.secondaryButton;
+    
+        if (editMode) return null;
+    
+        if (partyName && partyHasExistingDraft) {
+            const draftExistsStyle = { ...buttonStyle, backgroundColor: '#c0392b', color: '#fff', border: 'none' };
+            if (isMobileButton) {
+                draftExistsStyle.boxShadow = 'rgba(0, 0, 0, 0.09) 0px 4px 18px';
+            }
+            return <button onClick={() => setIsDraftModalOpen(true)} style={draftExistsStyle}>Draft Exists</button>;
+        }
+    
+        if (!partyName) {
+            return <button onClick={() => setIsDraftModalOpen(true)} style={{ ...buttonStyle, ...secondaryStyle }} disabled={Object.keys(drafts).length === 0}>Open Drafts</button>;
+        }
+        return <button onClick={handleSaveDraft} style={{ ...buttonStyle, ...secondaryStyle }} disabled={items.length === 0}>Save Draft</button>;
     };
     
     const submitButtonText = editMode ? 'Update Order' : 'Submit Order';
-    const pageTitle = editMode ? `Editing Order ${orderToEdit?.orderNumber}` : 'New Order Entry';
+    const pageTitle = editMode ? `Editing Order ${orderToEdit?.orderNumber}` : '';
 
     return (
         <div style={isMobile ? { ...styles.container, padding: '0', paddingBottom: '80px' } : styles.container}>
@@ -1022,8 +1037,16 @@ export const NewOrderEntry = ({ onNavigate }) => {
 
             {isMobile && (
                 <div style={styles.stickyActionBar}>
-                    <button style={styles.stickyCartButton} onClick={() => setIsCartModalOpen(true)}> <CartIcon /> {totalQuantity > 0 && <span style={styles.cartCountBadge}>{totalQuantity}</span>} </button>
-                    <div style={styles.stickyActionButtons}> {renderDraftButton(true)} <button onClick={handleSubmit} style={{ ...styles.button, ...styles.stickyButton }} disabled={items.length === 0 || !partyName}>{submitButtonText}</button> </div>
+                    <button style={styles.stickyCartButton} onClick={() => setIsCartModalOpen(true)}>
+                        <CartIcon />
+                        {totalQuantity > 0 && <span style={styles.cartCountBadge}>{totalQuantity}</span>}
+                    </button>
+                    <div style={styles.stickyActionButtons}>
+                        {renderDraftButton(true)}
+                        <button onClick={handleSubmit} style={{ ...styles.button, ...styles.stickyButton }} disabled={items.length === 0 || !partyName}>
+                            {submitButtonText}
+                        </button>
+                    </div>
                 </div>
             )}
             
@@ -1042,8 +1065,8 @@ export const NewOrderEntry = ({ onNavigate }) => {
 
 const styles: { [key: string]: React.CSSProperties } = {
     container: { display: 'flex', flexDirection: 'column', flex: 1 },
-    header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', flexShrink: 0, marginBottom: '1rem' },
-    pageTitle: { fontSize: '1.25rem', fontWeight: 600, color: 'var(--dark-grey)' },
+    header: { display: 'flex', justifyContent: 'flex-end', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', flexShrink: 0, marginBottom: '1rem' },
+    pageTitle: { fontSize: '1.25rem', fontWeight: 600, color: 'var(--dark-grey)', marginRight: 'auto' },
     actions: { display: 'flex', gap: '0.75rem' },
     button: { padding: '0.6rem 1.2rem', fontSize: '0.9rem', fontWeight: 500, color: '#fff', backgroundColor: 'var(--brand-color)', border: 'none', borderRadius: '8px', cursor: 'pointer', transition: 'all 0.3s ease', boxShadow: 'rgba(0, 0, 0, 0.09) 0px 5px 17px' },
     secondaryButton: { backgroundColor: 'var(--card-bg)', color: 'var(--dark-grey)', border: 'none', boxShadow: 'rgba(0, 0, 0, 0.06) 0px 4px 10px' },
@@ -1105,11 +1128,11 @@ const styles: { [key: string]: React.CSSProperties } = {
     modalContent: { backgroundColor: 'var(--card-bg)', width: '100%', maxWidth: '500px', borderRadius: 'var(--border-radius)', display: 'flex', flexDirection: 'column', position: 'relative', animation: 'slideUp 0.3s ease-out', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' },
     modalCloseButton: { position: 'absolute', top: '10px', right: '15px', background: 'none', border: 'none', fontSize: '2rem', color: 'var(--text-color)', cursor: 'pointer', zIndex: 1, padding: '0.5rem' },
     cartModalCloseButton: { background: 'none', border: 'none', fontSize: '2.5rem', color: 'var(--text-color)', cursor: 'pointer', padding: 0, lineHeight: '1' },
-    stickyActionBar: { position: 'fixed', bottom: '0', left: 0, right: 0, backgroundColor: 'var(--card-bg)', padding: '0.75rem 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--skeleton-bg)', boxShadow: '0 -2px 10px rgba(0,0,0,0.05)', zIndex: 90 },
-    stickyCartButton: { background: 'none', border: 'none', cursor: 'pointer', color: 'var(--dark-grey)', display: 'flex', alignItems: 'center', gap: '0.5rem', position: 'relative', padding: '0.5rem' },
+    stickyActionBar: { position: 'fixed', bottom: 0, left: 0, right: 0, backgroundColor: 'transparent', padding: '0.75rem 1rem', display: 'flex', alignItems: 'center', borderTop: 'none', boxShadow: 'none', zIndex: 90 },
+    stickyCartButton: { background: 'var(--card-bg)', border: 'none', cursor: 'pointer', color: 'var(--dark-grey)', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', boxShadow: 'rgba(0, 0, 0, 0.09) 0px 4px 18px', marginRight: '10px', position: 'relative', width: '48px', height: '48px', marginBottom: '4px', flexShrink: 0 },
     cartCountBadge: { position: 'absolute', top: '-2px', right: '-5px', backgroundColor: '#e74c3c', color: 'white', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '0.75rem', fontWeight: 600, border: '2px solid var(--card-bg)' },
     stickyActionButtons: { display: 'flex', gap: '0.75rem', flex: 1, justifyContent: 'flex-end' },
-    stickyButton: { padding: '0.75rem 1rem', fontSize: '0.9rem' },
+    stickyButton: { padding: '0.85rem 1.1rem', fontSize: '0.9rem', fontWeight: 500, borderRadius: '25px', flex: 'auto' },
     draftsList: { flex: 1, overflowY: 'auto', padding: '0.5rem 1.25rem' },
     draftItem: { borderBottom: '1px solid var(--skeleton-bg)', padding: '0.75rem 0' },
     draftHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', padding: '0.5rem 0' },
@@ -1140,8 +1163,8 @@ const styleSheet = document.createElement("style");
 styleSheet.type = "text/css";
 styleSheet.innerText = `
     .styled-input:focus {
-        border-color: #3b82f6;
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+        border-color: var(--brand-color);
+        box-shadow: 0 0 0 2px var(--active-bg);
     }
     .suggestion-item:hover { 
         background-color: var(--active-bg); 
