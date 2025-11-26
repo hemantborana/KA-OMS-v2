@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, useMemo, useRef, useLayoutEffect } from 'react';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
@@ -17,6 +15,25 @@ interface Order { orderNumber: string; partyName: string; timestamp: string; bil
 const BILLED_ORDERS_REF = 'Billed_Orders_V2';
 
 // --- HELPERS ---
+const colorPalette = [
+    { bg: 'rgba(255, 56, 60, 0.1)', text: 'var(--red)' }, // red
+    { bg: 'rgba(255, 149, 0, 0.1)', text: 'var(--orange)' }, // orange
+    { bg: 'rgba(52, 199, 89, 0.1)', text: 'var(--green)' }, // green
+    { bg: 'rgba(0, 195, 208, 0.1)', text: 'var(--teal)' }, // teal
+    { bg: 'rgba(0, 122, 255, 0.1)', text: 'var(--blue)' }, // blue
+    { bg: 'rgba(88, 86, 214, 0.1)', text: 'var(--indigo)' }, // indigo
+    { bg: 'rgba(175, 82, 222, 0.1)', text: 'var(--purple)' }, // purple
+];
+
+const getColorForString = (str: string) => {
+    if (!str) return colorPalette[0];
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const index = Math.abs(hash % colorPalette.length);
+    return colorPalette[index];
+};
 const formatDate = (isoString) => isoString ? new Date(isoString).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A';
 const formatDateTime = (isoString) => isoString ? new Date(isoString).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : 'N/A';
 
@@ -168,14 +185,24 @@ const PartyGroup: React.FC<{ partyName: string; data: any; onViewOrder: (order: 
         transition: 'box-shadow 0.3s ease',
     };
 
+    const avatarColorStyle = useMemo(() => {
+        const colors = getColorForString(partyName);
+        return { backgroundColor: colors.bg, color: colors.text };
+    }, [partyName]);
+
     return (
         <div style={cardStyle}>
-            <button style={styles.cardHeader} onClick={() => setIsCollapsed(!isCollapsed)}>
-                <div style={styles.cardInfo}>
-                    <span style={styles.cardTitle}>{partyName}</span>
-                    <span style={styles.cardSubTitle}>
-                        {data.orderCount} Orders | Total Qty: {totalQty}
-                    </span>
+            <button style={{...styles.cardHeader, alignItems: 'center'}} onClick={() => setIsCollapsed(!isCollapsed)}>
+                 <div style={{display: 'flex', alignItems: 'center', gap: '1rem', flex: 1, overflow: 'hidden'}}>
+                    <div style={{...styles.partyAvatar, ...avatarColorStyle}}>
+                        {partyName.charAt(0).toUpperCase()}
+                    </div>
+                    <div style={styles.cardInfo}>
+                        <span style={styles.cardTitle}>{partyName}</span>
+                        <span style={styles.cardSubTitle}>
+                            {data.orderCount} Orders | Total Qty: {totalQty}
+                        </span>
+                    </div>
                 </div>
                 <ChevronIcon collapsed={isCollapsed} />
             </button>
@@ -346,13 +373,15 @@ export const BilledOrders = () => {
 const styles: { [key: string]: React.CSSProperties } = {
     container: { display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1 },
     headerCard: {
-        backgroundColor: 'transparent',
-        padding: '1rem 1.5rem',
-        borderRadius: 'var(--border-radius)',
+        background: 'linear-gradient(to bottom, var(--light-grey) 85%, transparent)',
+        padding: '1rem 1.5rem 1.5rem',
         border: 'none',
         display: 'flex',
         flexDirection: 'column',
         gap: '1rem',
+        position: 'sticky',
+        top: 0,
+        zIndex: 10,
     },
     pageTitle: {
         fontSize: '1.25rem',
@@ -375,10 +404,53 @@ const styles: { [key: string]: React.CSSProperties } = {
         borderColor: 'var(--brand-color)',
     },
     searchInput: { flex: 1, border: 'none', background: 'none', outline: 'none', fontSize: '1rem', color: 'var(--dark-grey)' },
-    filterContainer: { display: 'flex', gap: '0.5rem', flexWrap: 'wrap', height: '37px', position: 'relative', backgroundColor: 'var(--gray-5)', borderRadius: '18px', padding: '4px' },
-    filterMarker: { position: 'absolute', top: '4px', left: 0, height: 'calc(100% - 8px)', backgroundColor: 'var(--card-bg)', borderRadius: '14px', transition: 'all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)', zIndex: 0, boxShadow: 'rgba(0, 0, 0, 0.05) 0px 1px 3px, rgba(0, 0, 0, 0.05) 0px 1px 2px', opacity: 0 },
-    filterButton: { background: 'transparent', border: 'none', color: 'var(--text-color)', padding: '0.4rem 0.8rem', borderRadius: '14px', cursor: 'pointer', fontSize: '0.85rem', position: 'relative', zIndex: 1, transition: 'color 0.3s ease' },
-    filterButtonActive: { background: 'transparent', border: 'none', color: 'var(--brand-color)', padding: '0.4rem 0.8rem', borderRadius: '14px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600, position: 'relative', zIndex: 1, transition: 'color 0.3s ease' },
+    filterContainer: { 
+        display: 'flex', 
+        gap: '0.5rem', 
+        flexWrap: 'wrap', 
+        height: '37px', 
+        position: 'relative', 
+        backgroundColor: 'var(--gray-5)', 
+        borderRadius: '18px', 
+        padding: '4px' 
+    },
+    filterMarker: { 
+        position: 'absolute', 
+        top: '4px', 
+        left: 0, 
+        height: 'calc(100% - 8px)', 
+        backgroundColor: 'var(--card-bg)', 
+        borderRadius: '14px', 
+        transition: 'all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)', 
+        zIndex: 0, 
+        boxShadow: 'rgba(0, 0, 0, 0.05) 0px 1px 3px, rgba(0, 0, 0, 0.05) 0px 1px 2px', 
+        opacity: 0 
+    },
+    filterButton: { 
+        background: 'transparent', 
+        border: 'none', 
+        color: 'var(--text-color)', 
+        padding: '0.4rem 0.8rem', 
+        borderRadius: '14px', 
+        cursor: 'pointer', 
+        fontSize: '0.85rem', 
+        position: 'relative', 
+        zIndex: 1, 
+        transition: 'color 0.3s ease' 
+    },
+    filterButtonActive: { 
+        background: 'transparent', 
+        border: 'none', 
+        color: 'var(--brand-color)', 
+        padding: '0.4rem 0.8rem', 
+        borderRadius: '14px', 
+        cursor: 'pointer', 
+        fontSize: '0.85rem', 
+        fontWeight: 600, 
+        position: 'relative', 
+        zIndex: 1, 
+        transition: 'color 0.3s ease' 
+    },
     listContainer: { flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem', paddingBottom: '1rem' },
     centeredMessage: { flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'var(--text-color)', fontSize: '1.1rem' },
     spinner: { border: '4px solid var(--light-grey)', borderRadius: '50%', borderTop: '4px solid var(--brand-color)', width: '40px', height: '40px', animation: 'spin 1s linear infinite' },
@@ -408,7 +480,17 @@ const styles: { [key: string]: React.CSSProperties } = {
     },
     orderItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem 0', borderBottom: '1px solid var(--light-grey)' },
     orderInfo: { display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', color: 'var(--dark-grey)' },
-    orderMeta: { display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--text-color)', fontSize: '0.85rem' },
+    orderMeta: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.4rem',
+        color: 'var(--brand-color)',
+        backgroundColor: 'var(--active-bg)',
+        fontSize: '0.85rem',
+        fontWeight: 500,
+        padding: '4px 10px',
+        borderRadius: '16px',
+    },
     detailsButton: { display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--light-grey)', border: '1px solid var(--skeleton-bg)', color: 'var(--dark-grey)', padding: '0.5rem 1rem', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500 },
     modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.2)', backdropFilter: 'blur(7px)', WebkitBackdropFilter: 'blur(7px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', opacity: 0 },
     modalContent: { backgroundColor: 'var(--glass-bg)', width: '100%', borderRadius: 'var(--border-radius)', display: 'flex', flexDirection: 'column', maxHeight: 'calc(100vh - 2rem)', boxShadow: '0 8px 32px rgba(0,0,0,0.1)', border: '1px solid var(--glass-border)', padding: '1.5rem', transform: 'scale(0.95)', opacity: 0 },
@@ -424,4 +506,5 @@ const styles: { [key: string]: React.CSSProperties } = {
     iosModalActions: { display: 'flex', width: 'calc(100% + 3rem)', marginLeft: '-1.5rem', marginBottom: '-1.5rem', borderTop: '1px solid var(--glass-border)', marginTop: '1.5rem' },
     iosModalButtonSecondary: { background: 'transparent', border: 'none', padding: '1rem 0', cursor: 'pointer', fontSize: '1rem', textAlign: 'center', transition: 'background-color 0.2s ease', flex: 1, color: 'var(--dark-grey)', borderRight: '1px solid var(--glass-border)', fontWeight: 400 },
     iosModalButtonPrimary: { background: 'transparent', border: 'none', padding: '1rem 0', cursor: 'pointer', fontSize: '1rem', textAlign: 'center', transition: 'background-color 0.2s ease', flex: 1, color: 'var(--brand-color)', fontWeight: 600 },
+    partyAvatar: { width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '600', fontSize: '1rem', flexShrink: 0 },
 };

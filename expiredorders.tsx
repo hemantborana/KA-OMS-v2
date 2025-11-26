@@ -1,7 +1,4 @@
 
-
-
-
 import React, { useState, useEffect, useMemo } from 'react';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
@@ -17,6 +14,16 @@ const EXPIRED_ORDERS_REF = 'Expired_Orders_V2';
 
 // --- HELPERS ---
 const formatDateTime = (isoString) => isoString ? new Date(isoString).toLocaleString('en-IN', { day: 'numeric', month: 'short', year:'2-digit', hour: 'numeric', minute: '2-digit' }) : 'N/A';
+
+// Marquee component for scrolling text
+const Marquee: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+    <div style={styles.marqueeContainer}>
+        <div style={styles.marqueeContent}>
+            <span style={styles.marqueeItem}>{children}</span>
+            <span style={styles.marqueeItem} aria-hidden="true">{children}</span>
+        </div>
+    </div>
+);
 
 export const ExpiredOrders = () => {
     const [orders, setOrders] = useState<Order[]>([]);
@@ -92,9 +99,14 @@ export const ExpiredOrders = () => {
     
     return (
         <div style={styles.container}>
+             <style>{`
+                @keyframes marquee {
+                    from { transform: translateX(0); }
+                    to { transform: translateX(-50%); }
+                }
+            `}</style>
             <div style={styles.headerCard}>
                 <h2 style={styles.pageTitle}>Expired Orders</h2>
-                 <p style={styles.pageSubtitle}>Orders are moved here after 40 days in pending. They are permanently deleted after 30 more days.</p>
                 <div style={isSearchFocused ? {...styles.searchContainer, ...styles.searchContainerActive} : styles.searchContainer}>
                     <SearchIcon />
                     <input 
@@ -108,6 +120,13 @@ export const ExpiredOrders = () => {
                         onBlur={() => setIsSearchFocused(false)}
                     />
                 </div>
+                 <div style={styles.marqueeWrapper}>
+                    <Marquee>
+                        <span style={styles.lastUpdated}>
+                            Orders are moved here after 40 days in pending. They are permanently deleted after 30 more days.
+                        </span>
+                    </Marquee>
+                 </div>
             </div>
             {renderContent()}
         </div>
@@ -115,15 +134,17 @@ export const ExpiredOrders = () => {
 };
 
 const styles: { [key: string]: React.CSSProperties } = {
-    container: { display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1 },
+    container: { display: 'flex', flexDirection: 'column', gap: '0rem', flex: 1 },
     headerCard: {
-        backgroundColor: 'transparent',
         padding: '1rem 1.5rem',
-        borderRadius: 'var(--border-radius)',
-        border: 'none',
         display: 'flex',
         flexDirection: 'column',
         gap: '1rem',
+        border: 'none',
+        position: 'sticky',
+        top: 0,
+        zIndex: 10,
+        background: 'linear-gradient(to bottom, var(--light-grey) 90%, transparent)',
     },
     pageTitle: {
         fontSize: '1.25rem',
@@ -131,7 +152,6 @@ const styles: { [key: string]: React.CSSProperties } = {
         display: 'none',
         color: 'var(--dark-grey)',
     },
-    pageSubtitle: { fontSize: '0.9rem', color: 'var(--text-color)', marginTop: '-0.75rem' },
     searchContainer: { 
         display: 'flex', 
         alignItems: 'center', 
@@ -147,7 +167,7 @@ const styles: { [key: string]: React.CSSProperties } = {
         borderColor: 'var(--brand-color)',
     },
     searchInput: { flex: 1, border: 'none', background: 'none', outline: 'none', fontSize: '1rem', color: 'var(--dark-grey)' },
-    listContainer: { flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem', paddingBottom: '1rem' },
+    listContainer: { flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem', padding: '0 1rem 1rem' },
     centeredMessage: { flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'var(--text-color)', fontSize: '1.1rem' },
     spinner: { border: '4px solid var(--light-grey)', borderRadius: '50%', borderTop: '4px solid var(--brand-color)', width: '40px', height: '40px', animation: 'spin 1s linear infinite' },
     card: {
@@ -167,4 +187,29 @@ const styles: { [key: string]: React.CSSProperties } = {
     detailItem: { display: 'flex', flexDirection: 'column', gap: '0.25rem' },
     detailLabel: { fontSize: '0.8rem', color: 'var(--text-color)', fontWeight: 500 },
     detailValue: { display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.95rem', color: 'var(--dark-grey)' },
+    lastUpdated: { fontSize: '0.9rem', color: 'var(--text-color)', fontWeight: 500, whiteSpace: 'nowrap' },
+    marqueeWrapper: {
+        backgroundColor: 'var(--card-bg-tertiary)',
+        borderRadius: '12px',
+        padding: '0.6rem 0',
+        height: '38px',
+    },
+    marqueeContainer: { 
+        width: '100%', 
+        overflow: 'hidden', 
+        position: 'relative', 
+        display: 'flex',
+        maskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)',
+        WebkitMaskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)' 
+    },
+    marqueeContent: { 
+        display: 'flex',
+        width: 'max-content',
+        animation: 'marquee 25s linear infinite',
+    },
+    marqueeItem: {
+        display: 'block',
+        whiteSpace: 'nowrap',
+        padding: '0 2rem',
+    },
 };

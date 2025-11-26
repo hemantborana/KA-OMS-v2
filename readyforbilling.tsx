@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect } from 'react';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
@@ -9,9 +8,8 @@ const ChevronIcon = ({ collapsed }) => <svg style={{ transform: collapsed ? 'rot
 const Spinner = () => <div style={styles.spinner}></div>;
 const SmallSpinner = () => <div style={{...styles.spinner, width: '20px', height: '20px', borderTop: '3px solid white', borderRight: '3px solid transparent' }}></div>;
 const CalendarIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>;
-const CheckSquareIcon = (props) => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>;
-const TrashIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>;
-const DownloadIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>;
+const TrashIcon = (props) => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--red)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>;
+const DownloadIcon = (props) => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--brand-color)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>;
 const HistoryIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>;
 const PlusIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>;
 
@@ -117,6 +115,26 @@ const BILLING_ORDERS_REF = 'Ready_For_Billing_V2';
 const BILLED_ORDERS_REF = 'Billed_Orders_V2';
 
 // --- HELPERS ---
+const colorPalette = [
+    { bg: 'rgba(255, 56, 60, 0.1)', text: 'var(--red)' }, // red
+    { bg: 'rgba(255, 149, 0, 0.1)', text: 'var(--orange)' }, // orange
+    { bg: 'rgba(52, 199, 89, 0.1)', text: 'var(--green)' }, // green
+    { bg: 'rgba(0, 195, 208, 0.1)', text: 'var(--teal)' }, // teal
+    { bg: 'rgba(0, 122, 255, 0.1)', text: 'var(--blue)' }, // blue
+    { bg: 'rgba(88, 86, 214, 0.1)', text: 'var(--indigo)' }, // indigo
+    { bg: 'rgba(175, 82, 222, 0.1)', text: 'var(--purple)' }, // purple
+];
+
+const getColorForString = (str: string) => {
+    if (!str) return colorPalette[0];
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const index = Math.abs(hash % colorPalette.length);
+    return colorPalette[index];
+};
+
 const showToast = (message: string, type: 'info' | 'success' | 'error' = 'info') => {
     window.dispatchEvent(new CustomEvent('show-toast', { detail: { message, type } }));
 };
@@ -284,7 +302,7 @@ const ExpandedBillingView: React.FC<ExpandedBillingViewProps> = ({ order, billed
         const matchButtonTitle = isFullyMatched ? "Clear Billed Quantities" : "Match All Ready Quantities";
 
         const getMarkBilledButtonStyle = () => {
-            let style = { ...styles.modalActionButton };
+            let style: React.CSSProperties = { ...styles.modalActionButton };
             if (isMobile) {
                 style.flexGrow = 1;
             }
@@ -443,15 +461,25 @@ const PartyGroup: React.FC<{
         transition: 'box-shadow 0.3s ease',
         borderRadius: 'var(--border-radius)',
     };
+    
+    const avatarColorStyle = useMemo(() => {
+        const colors = getColorForString(partyName);
+        return { backgroundColor: colors.bg, color: colors.text };
+    }, [partyName]);
 
     return (
         <div style={cardStyle}>
-            <button style={styles.cardHeader} onClick={handleToggleCollapse}>
-                <div style={styles.cardInfo}>
-                    <span style={styles.cardTitle}>{partyName}</span>
-                    <span style={styles.cardSubTitle}>
-                        {data.orderCount} Orders | Total Qty: {totalQty}
-                    </span>
+            <button style={{...styles.cardHeader, alignItems: 'center'}} onClick={handleToggleCollapse}>
+                <div style={{display: 'flex', alignItems: 'center', gap: '1rem', flex: 1, overflow: 'hidden'}}>
+                    <div style={{...styles.partyAvatar, ...avatarColorStyle}}>
+                        {partyName.charAt(0).toUpperCase()}
+                    </div>
+                    <div style={styles.cardInfo}>
+                        <span style={styles.cardTitle}>{partyName}</span>
+                        <span style={styles.cardSubTitle}>
+                            {data.orderCount} Orders | Total Qty: {totalQty}
+                        </span>
+                    </div>
                 </div>
                 <ChevronIcon collapsed={isCollapsed} />
             </button>
@@ -878,7 +906,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     matchAllButton: {
         background: 'var(--card-bg)',
         border: '1px solid var(--skeleton-bg)',
-        color: 'var(--red)',
+        color: 'var(--dark-grey)',
         padding: '0.75rem',
         borderRadius: '50%',
         height: '41px',
@@ -894,7 +922,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     downloadButton: {
         background: 'var(--card-bg)',
         border: '1px solid var(--skeleton-bg)',
-        color: 'var(--brand-color)',
+        color: 'var(--dark-grey)',
         padding: '0.75rem',
         borderRadius: '50%',
         height: '41px',
@@ -910,7 +938,7 @@ const styles: { [key: string]: React.CSSProperties } = {
         fontSize: '0.9rem',
         fontWeight: 600,
         color: '#fff',
-        background: 'linear-gradient(145deg, var(--green), #29b851)',
+        background: 'linear-gradient(145deg, var(--green), #2fb751)',
         border: 'none',
         borderRadius: '25px',
         cursor: 'pointer',
@@ -948,4 +976,5 @@ const styles: { [key: string]: React.CSSProperties } = {
     iosModalActions: { display: 'flex', width: 'calc(100% + 3rem)', marginLeft: '-1.5rem', marginBottom: '-1.5rem', borderTop: '1px solid var(--glass-border)', marginTop: '1.5rem' },
     iosModalButtonSecondary: { background: 'transparent', border: 'none', padding: '1rem 0', cursor: 'pointer', fontSize: '1rem', textAlign: 'center', transition: 'background-color 0.2s ease', flex: 1, color: 'var(--dark-grey)', borderRight: '1px solid var(--glass-border)', fontWeight: 400 },
     iosModalButtonPrimary: { background: 'transparent', border: 'none', padding: '1rem 0', cursor: 'pointer', fontSize: '1rem', textAlign: 'center', transition: 'background-color 0.2s ease', flex: 1, color: 'var(--brand-color)', fontWeight: 600 },
+    partyAvatar: { width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '600', fontSize: '1rem', flexShrink: 0 },
 };

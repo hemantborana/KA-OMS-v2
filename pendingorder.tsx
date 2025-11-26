@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import firebase from 'firebase/compat/app';
@@ -17,7 +16,7 @@ const EditIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height
 const ProcessIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>;
 const NoteIcon = (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M15.5 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8.5L15.5 3z"></path><polyline points="14 3 14 9 20 9"></polyline></svg>;
 const BoxIcon = (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>;
-const PrintIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>;
+const DownloadIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>;
 const FilterIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>;
 const CheckSquareIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>;
 const SquareIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg>;
@@ -50,6 +49,26 @@ const STOCK_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyY4ys2Vzcsmsl
 
 
 // --- HELPERS ---
+const colorPalette = [
+    { bg: 'rgba(255, 56, 60, 0.1)', text: 'var(--red)' }, // red
+    { bg: 'rgba(255, 149, 0, 0.1)', text: 'var(--orange)' }, // orange
+    { bg: 'rgba(52, 199, 89, 0.1)', text: 'var(--green)' }, // green
+    { bg: 'rgba(0, 195, 208, 0.1)', text: 'var(--teal)' }, // teal
+    { bg: 'rgba(0, 122, 255, 0.1)', text: 'var(--blue)' }, // blue
+    { bg: 'rgba(88, 86, 214, 0.1)', text: 'var(--indigo)' }, // indigo
+    { bg: 'rgba(175, 82, 222, 0.1)', text: 'var(--purple)' }, // purple
+];
+
+const getColorForString = (str: string) => {
+    if (!str) return colorPalette[0];
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const index = Math.abs(hash % colorPalette.length);
+    return colorPalette[index];
+};
+
 const showToast = (message: string, type: 'info' | 'success' | 'error' = 'info') => {
     window.dispatchEvent(new CustomEvent('show-toast', { detail: { message, type } }));
 };
@@ -478,9 +497,9 @@ const ProcessQuantityControl: React.FC<{
     );
 };
 
-const ExpandedPendingView: React.FC<{ order: Order, onProcess, onDelete, isProcessing, processingQty, onQtyChange, stockData: Record<string, number>, isMobile, onPrint, onAddTag, onRemoveTag, onOpenCustomTagModal, onOpenNoteModal, globalTags }> = ({ order, onProcess, onDelete, isProcessing, processingQty, onQtyChange, stockData, isMobile, onPrint, onAddTag, onRemoveTag, onOpenCustomTagModal, onOpenNoteModal, globalTags }) => {
+const ExpandedPendingView: React.FC<{ order: Order, onProcess, onDelete, isProcessing, processingQty, onQtyChange, stockData: Record<string, number>, isMobile, onAddTag, onRemoveTag, onOpenCustomTagModal, onOpenNoteModal, globalTags }> = ({ order, onProcess, onDelete, isProcessing, processingQty, onQtyChange, stockData, isMobile, onAddTag, onRemoveTag, onOpenCustomTagModal, onOpenNoteModal, globalTags }) => {
     const [isHistoryCollapsed, setIsHistoryCollapsed] = useState(true);
-    const isProcessable = Object.values(processingQty).some(qty => Number(qty) > 0);
+    const isProcessable = useMemo(() => Object.values(processingQty).some(qty => Number(qty) > 0), [processingQty]);
 
     const handleProcessClick = () => {
         const totalToProcess = Object.values(processingQty).reduce((sum: number, qty: number) => sum + qty, 0);
@@ -632,13 +651,13 @@ const ExpandedPendingView: React.FC<{ order: Order, onProcess, onDelete, isProce
 
             <div style={styles.modalFooter}>
                 <div style={styles.footerActions}>
-                     <button onClick={() => onPrint([order])} style={{...styles.footerIconButton, ...styles.printButton}} disabled={isProcessing} title="Print">
-                        <PrintIcon />
+                     <button style={{...styles.downloadButton, ...(isProcessing && {opacity: 0.6, cursor: 'not-allowed'})}} disabled={isProcessing} title="Download Picking List">
+                        <DownloadIcon />
                     </button>
-                    <button onClick={() => onDelete(order)} style={{...styles.footerIconButton, ...styles.deleteButton}} disabled={isProcessing} title="Delete">
+                    <button onClick={() => onDelete(order)} style={{...styles.deleteButton, ...(isProcessing && {opacity: 0.6, cursor: 'not-allowed'})}} disabled={isProcessing} title="Delete">
                        <TrashIcon />
                     </button>
-                    <button onClick={handleProcessClick} style={{...styles.footerButton, ...styles.processButton, ...((isProcessing || !isProcessable) && styles.processButtonDisabled)}} disabled={isProcessing || !isProcessable}>
+                    <button onClick={handleProcessClick} style={{...styles.processButton, ...((isProcessing || !isProcessable) && styles.processButtonDisabled)}} disabled={isProcessing || !isProcessable}>
                         {isProcessing ? <SmallSpinner /> : <><ProcessIcon/> Process</>}
                     </button>
                 </div>
@@ -771,8 +790,13 @@ const DetailedOrderCard: React.FC<{
 };
 
 const DetailedList: React.FC<{ orders: Order[]; onToggleExpand: (order: Order) => void; expandedOrderNumber: string | null; children: React.ReactNode; onProcessOrder: (order: Order) => void; onDeleteOrder: (order: Order) => void; onEditOrder: (order: Order) => void; isMobile: boolean; selectedOrders: string[]; onSelectOrder: (orderNumber: string) => void; isSelectionMode: boolean; }> = ({ orders, onToggleExpand, expandedOrderNumber, children, onProcessOrder, onDeleteOrder, onEditOrder, isMobile, selectedOrders, onSelectOrder, isSelectionMode }) => {
+    // FIX: Explicitly cast 'column' to satisfy the CSSProperties type for flexDirection.
+    const listStyle = isMobile 
+        ? {...styles.card, padding: 0, backgroundColor: 'transparent', border: 'none', overflow: 'visible', display: 'flex', flexDirection: 'column' as 'column', gap: '0.75rem'} 
+        : {...styles.card, padding: 0};
+        
     return (
-        <div style={isMobile ? {...styles.card, padding: 0, backgroundColor: 'transparent', border: 'none', overflow: 'visible'} : {...styles.card, padding: 0}}>
+        <div style={listStyle}>
             {orders.map(order => (
                  <React.Fragment key={order.orderNumber}>
                     <DetailedOrderCard
@@ -825,11 +849,19 @@ const PartyGroup: React.FC<{ partyName: string; data: { orderCount: number; orde
         borderBottom: isCollapsed ? 'none' : '1px solid var(--separator-color)',
     };
     
+    const avatarColorStyle = useMemo(() => {
+        const colors = getColorForString(partyName);
+        return {
+            backgroundColor: colors.bg,
+            color: colors.text
+        };
+    }, [partyName]);
+
     const renderHeader = () => {
         if (isMobile) {
             return (
                 <div style={styles.mobilePartyHeaderContent}>
-                    <div style={styles.partyAvatar}>{firstLetter}</div>
+                    <div style={{...styles.partyAvatar, ...avatarColorStyle}}>{firstLetter}</div>
                     <div style={styles.mobilePartyInfo}>
                         <div style={styles.mobilePartyName}>{partyName}</div>
                         <div style={styles.mobilePartyMeta}>
@@ -873,7 +905,7 @@ const PartyGroup: React.FC<{ partyName: string; data: { orderCount: number; orde
             
             {/* Smooth expansion container */}
             <div style={isCollapsed ? styles.collapsibleContainer : {...styles.collapsibleContainer, ...styles.collapsibleContainerExpanded}}>
-                <div style={styles.collapsibleContentWrapper}>
+                <div style={{...styles.collapsibleContentWrapper, opacity: isCollapsed ? 0 : 1 }}>
                      <div style={{...styles.cardDetails}}>
                         <DetailedList 
                             orders={data.orders} 
@@ -1663,7 +1695,6 @@ export const PendingOrders = ({ onNavigate }) => {
                 onQtyChange={handleProcessingQtyChange}
                 stockData={stockData}
                 isMobile={isMobile}
-                onPrint={handlePrintPickingList}
                 onAddTag={handleAddTag}
                 onRemoveTag={handleRemoveTag}
                 onOpenCustomTagModal={handleOpenCustomTagModal}
@@ -1774,7 +1805,6 @@ export const PendingOrders = ({ onNavigate }) => {
                             onQtyChange={handleProcessingQtyChange}
                             stockData={stockData}
                             isMobile={false}
-                            onPrint={handlePrintPickingList}
                             onAddTag={handleAddTag}
                             onRemoveTag={handleRemoveTag}
                             onOpenCustomTagModal={handleOpenCustomTagModal}
@@ -1835,7 +1865,7 @@ export const PendingOrders = ({ onNavigate }) => {
                  @keyframes overlayIn { from { opacity: 0; } to { opacity: 1; } }
                 @keyframes overlayOut { from { opacity: 1; } to { opacity: 0; } }
                 @keyframes slideUpSheet { from { transform: translateY(100%); } to { transform: translateY(0); } }
-                @keyframes slideDownSheet { from { transform: translateY(0); } to { transform: translateY(100%); } }
+                @keyframes slideDownSheet { from { transform: translateY(0); } to { translateY(100%); } }
                 @keyframes scrollLeft {
                     from { transform: translateX(0); }
                     to { transform: translateX(-50%); }
@@ -1958,7 +1988,7 @@ export const PendingOrders = ({ onNavigate }) => {
                     <div style={styles.batchIconGroup}>
                         <button style={{...styles.batchIconBtn, color: 'var(--green)'}} onClick={handleBatchProcess} title="Forward for Process"><ProcessIcon/></button>
                         <button style={{...styles.batchIconBtn, color: 'var(--orange)'}} onClick={handleBatchExport} title="Export"><ShareIcon/></button>
-                        <button style={{...styles.batchIconBtn, color: 'var(--blue)'}} onClick={handleBatchPrint} title="Print Picking List"><PrintIcon/></button>
+                        <button style={{...styles.batchIconBtn, color: 'var(--blue)'}} onClick={handleBatchPrint} title="Print Picking List"><DownloadIcon/></button>
                         <button style={{...styles.batchIconBtn, ...styles.batchIconBtnDanger}} onClick={handleBatchDelete} title="Delete"><TrashIcon/></button>
                     </div>
                 </div>
@@ -2052,7 +2082,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     cardHeader: { width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.5rem', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', borderBottom: '1px solid var(--separator-color)' },
     mobileCardHeader: { width: '100%', display: 'flex', flexDirection: 'row', alignItems: 'center', padding: '1rem', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', transition: 'border-radius 0.3s ease' },
     mobilePartyHeaderContent: { display: 'flex', alignItems: 'center', width: '100%', gap: '1rem' },
-    partyAvatar: { width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '600', fontSize: '1.1rem', flexShrink: 0, backgroundColor: 'var(--active-bg)', color: 'var(--brand-color)' },
+    partyAvatar: { width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '600', fontSize: '1.1rem', flexShrink: 0 },
     mobilePartyInfo: { display: 'flex', flexDirection: 'column', flex: 1, gap: '2px', overflow: 'hidden' },
     mobilePartyName: { fontWeight: '600', fontSize: '1rem', color: 'var(--dark-grey)' },
     mobilePartyMeta: { fontSize: '0.8rem', color: 'var(--text-color)' },
@@ -2076,6 +2106,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     collapsibleContentWrapper: {
         overflow: 'hidden',
         minHeight: 0,
+        transition: 'opacity 0.3s ease',
         // Promote to own layer to prevent text blur during animation
         transform: 'translateZ(0)',
         backfaceVisibility: 'hidden',
@@ -2099,12 +2130,53 @@ const styles: { [key: string]: React.CSSProperties } = {
     noteBox: { backgroundColor: 'var(--card-bg)', border: '1px solid var(--yellow)', padding: '0.75rem 1rem', borderRadius: '8px', fontSize: '0.9rem', marginTop: '1rem' },
     modalFooter: { padding: '1rem 0 0', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', borderTop: 'none' },
     footerActions: { display: 'flex', gap: '0.75rem', alignItems: 'center', justifyContent: 'flex-end', flex: 1 },
-    footerButton: { padding: '0.75rem 1.2rem', fontSize: '0.9rem', fontWeight: 600, color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', transition: 'all 0.2s ease', height: '44px' },
-    footerIconButton: { padding: '0', fontSize: '0.9rem', fontWeight: 600, color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s ease', width: '44px', height: '44px' },
-    printButton: { backgroundColor: 'transparent', color: 'var(--dark-grey)', border: '1px solid var(--skeleton-bg)' },
-    deleteButton: { backgroundColor: 'transparent', color: 'var(--red)', border: '1px solid var(--skeleton-bg)' },
-    processButton: { backgroundColor: 'var(--green)', boxShadow: '0 2px 8px rgba(46, 204, 113, 0.3)', minWidth: '120px' },
-    processButtonDisabled: { backgroundColor: 'var(--gray-3)', boxShadow: 'none', cursor: 'not-allowed' },
+    downloadButton: {
+        background: 'var(--card-bg)',
+        border: '1px solid var(--skeleton-bg)',
+        color: 'var(--brand-color)',
+        padding: '0.75rem',
+        borderRadius: '50%',
+        height: '41px',
+        cursor: 'pointer',
+        width: '41px',
+        boxShadow: 'rgba(0, 0, 0, 0.06) 0px 4px 12px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+    },
+    deleteButton: {
+        background: 'var(--card-bg)',
+        border: '1px solid var(--skeleton-bg)',
+        color: 'var(--red)',
+        padding: '0.75rem',
+        borderRadius: '50%',
+        height: '41px',
+        cursor: 'pointer',
+        width: '41px',
+        boxShadow: 'rgba(0, 0, 0, 0.06) 0px 4px 12px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+    },
+    processButton: {
+        padding: '0.75rem 1.5rem',
+        fontSize: '0.9rem',
+        fontWeight: 600,
+        color: '#fff',
+        background: 'linear-gradient(145deg, var(--green), #29b851)',
+        border: 'none',
+        borderRadius: '25px',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '0.5rem',
+        transition: 'all 0.3s ease',
+        minWidth: '150px',
+        boxShadow: 'rgba(0, 0, 0, 0.06) 0px 4px 12px',
+        height: '44px'
+    },
+    processButtonDisabled: { background: 'rgba(52, 199, 89, 0.4)', color: 'rgba(255, 255, 255, 0.9)', boxShadow: 'none', cursor: 'not-allowed' },
     processQtyContainer: { display: 'flex', alignItems: 'center', justifyContent: 'flex-end', },
     processQtyButton: { backgroundColor: 'var(--light-grey)', border: '1px solid var(--skeleton-bg)', color: 'var(--dark-grey)', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background-color 0.2s', lineHeight: 1, },
     processQtyInput: { textAlign: 'center', border: '1px solid var(--skeleton-bg)', borderLeft: 'none', borderRight: 'none', fontSize: '0.9rem', backgroundColor: 'var(--card-bg)', color: 'var(--dark-grey)', appearance: 'textfield', MozAppearance: 'textfield', WebkitAppearance: 'none', margin: 0, },
@@ -2157,7 +2229,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     mobileItemQty: { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.25rem' },
     mobileQtyLabel: { fontSize: '0.8rem', color: 'var(--text-color)' },
     // --- Swipeable styles ---
-    swipeableContainer: { position: 'relative', overflow: 'hidden', width: '100%' },
+    swipeableContainer: { position: 'relative', overflow: 'hidden', width: '100%', borderRadius: '10px' },
     swipeableLeftActions: { position: 'absolute', top: '10%', left: 0, height: '80%', display: 'flex', alignItems: 'center', paddingLeft: '10px', gap: '10px', zIndex: 0 },
     swipeableRightActions: { position: 'absolute', top: '10%', right: 0, height: '80%', display: 'flex', alignItems: 'center', paddingRight: '10px', gap: '10px', zIndex: 0 },
     swipeAction: { width: '40px', height: '40px', borderRadius: '20px', color: '#fff', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '0.8rem', boxShadow: '0 2px 5px rgba(0,0,0,0.1)', margin: 'auto' },
@@ -2200,7 +2272,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     historySection: { marginTop: '1rem', paddingTop: '1rem' },
     historyHeader: { width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer', padding: '0.25rem 0', fontSize: '1rem', fontWeight: 600, color: 'var(--dark-grey)' },
     notesAndHistoryContainer: { border: '1px solid var(--separator-color)', borderRadius: '8px', overflow: 'hidden', backgroundColor: 'transparent' },
-    historyList: { maxHeight: '300px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem', padding: '0.75rem', backgroundColor: 'transparent' },
+    historyList: { maxHeight: '300px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem', padding: '0.75rem' },
     historyItem: { display: 'flex', flexDirection: 'column', gap: '0.25rem', borderLeft: '3px solid var(--separator-color)', paddingLeft: '1rem' },
     historyMeta: { display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.8rem', color: 'var(--text-color)' },
     historyEventType: { fontWeight: 600, padding: '2px 8px', borderRadius: '12px', fontSize: '0.75rem' },
