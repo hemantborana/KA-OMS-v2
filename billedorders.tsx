@@ -42,6 +42,7 @@ const formatDate = (isoString) => isoString ? new Date(isoString).toLocaleDateSt
 // --- COMPONENTS ---
 const BilledOrderCard: React.FC<{ order: Order, showPartyName?: boolean, isExpanded: boolean, onToggle: () => void }> = ({ order, showPartyName = false, isExpanded, onToggle }) => {
     const avatarColorStyle = useMemo(() => getColorForString(order.partyName), [order.partyName]);
+    const formatCurrency = (value) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(value);
 
     const handleDownloadPdf = async (e) => {
         e.stopPropagation();
@@ -130,7 +131,27 @@ const BilledOrderCard: React.FC<{ order: Order, showPartyName?: boolean, isExpan
             <div style={!isExpanded ? styles.collapsibleContainer : {...styles.collapsibleContainer, ...styles.collapsibleContainerExpanded}}>
                 <div style={styles.collapsibleContentWrapper}>
                     <div style={styles.billedOrderDetails}>
+                        <div style={styles.summaryGrid}>
+                            <div style={styles.summaryItem}>
+                                <span style={styles.summaryLabel}>Order Date</span>
+                                <span style={styles.summaryValue}>{formatDate(order.timestamp)}</span>
+                            </div>
+                            <div style={styles.summaryItem}>
+                                <span style={styles.summaryLabel}>Billed Date</span>
+                                <span style={styles.summaryValue}>{formatDate(order.billedTimestamp || order.timestamp)}</span>
+                            </div>
+                            <div style={styles.summaryItem}>
+                                <span style={styles.summaryLabel}>Total Qty</span>
+                                <span style={styles.summaryValue}>{order.totalQuantity}</span>
+                            </div>
+                            <div style={styles.summaryItem}>
+                                <span style={styles.summaryLabel}>Total Value</span>
+                                <span style={styles.summaryValue}>{formatCurrency(order.totalValue)}</span>
+                            </div>
+                        </div>
+
                         {order.orderNote && <div style={styles.orderNoteBox}><strong>Note:</strong> {order.orderNote}</div>}
+                        
                         <div style={styles.tableContainer}>
                             <table style={styles.table}>
                                 <thead>
@@ -564,6 +585,32 @@ const styles: { [key: string]: React.CSSProperties } = {
     billedOrderDetails: { padding: '0.5rem 0 1rem', display: 'flex', flexDirection: 'column', gap: '1rem' },
     orderNoteBox: { backgroundColor: 'var(--card-bg-tertiary)', borderLeft: '3px solid var(--orange)', padding: '1rem', borderRadius: '4px', fontSize: '0.9rem' },
     billedOrderActions: { display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' },
+
+    // Summary Grid
+    summaryGrid: {
+        display: 'grid',
+        gridTemplateColumns: 'repeat(2, 1fr)',
+        gap: '1rem',
+        padding: '1rem',
+        backgroundColor: 'var(--card-bg-tertiary)',
+        borderRadius: '8px',
+        marginBottom: '0rem',
+    },
+    summaryItem: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.25rem',
+    },
+    summaryLabel: {
+        fontSize: '0.8rem',
+        color: 'var(--text-color)',
+        fontWeight: 500,
+    },
+    summaryValue: {
+        fontSize: '1rem',
+        fontWeight: 600,
+        color: 'var(--dark-grey)',
+    },
 
     // Shared table styles
     tableContainer: { 
