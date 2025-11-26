@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useRef, useLayoutEffect } from 'react';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
@@ -6,7 +7,6 @@ import 'firebase/compat/database';
 const SearchIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>;
 const ChevronIcon = ({ collapsed }) => <svg style={{ transform: collapsed ? 'rotate(0deg)' : 'rotate(180deg)', transition: 'transform 0.3s ease' }} xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>;
 const Spinner = () => <div style={styles.spinner}></div>;
-const InfoIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>;
 const CalendarIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>;
 const DownloadIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>;
 
@@ -35,20 +35,10 @@ const getColorForString = (str: string) => {
     return colorPalette[index];
 };
 const formatDate = (isoString) => isoString ? new Date(isoString).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A';
-const formatDateTime = (isoString) => isoString ? new Date(isoString).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : 'N/A';
 
 // --- COMPONENTS ---
-const BilledDetailModal = ({ order, onClose }) => {
-    const [isClosing, setIsClosing] = useState(false);
-
-    const handleClose = () => {
-        setIsClosing(true);
-        setTimeout(() => {
-            onClose();
-        }, 300);
-    };
-    
-    if (!order) return null;
+const BilledOrderCard: React.FC<{ order: Order }> = ({ order }) => {
+    const [isCollapsed, setIsCollapsed] = useState(true);
 
     const handleDownloadPdf = async () => {
         const { jsPDF } = (window as any).jspdf;
@@ -115,40 +105,32 @@ const BilledDetailModal = ({ order, onClose }) => {
     };
 
     return (
-        <>
-            <style>{`
-                :root {
-                    --stripe-light-bg: rgba(0, 122, 255, 0.05);
-                }
-                body.dark-mode {
-                    --stripe-bg: rgba(255, 255, 255, 0.04);
-                }
-                body.dark-mode .modal-summary {
-                    background-color: rgba(255, 255, 255, 0.05);
-                }
-                body.dark-mode .modal-note {
-                    background-color: var(--gray-4);
-                    border-color: var(--separator-color);
-                    color: var(--dark-grey);
-                }
-                body.dark-mode .modal-note strong {
-                    color: var(--dark-grey);
-                }
-            `}</style>
-            <div style={{...styles.modalOverlay, animation: isClosing ? 'overlayOut 0.3s forwards' : 'overlayIn 0.3s forwards'}} onClick={handleClose}>
-                <div style={{...styles.modalContent, maxWidth: '800px', animation: isClosing ? 'modalOut 0.3s forwards' : 'modalIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards'}} onClick={(e) => e.stopPropagation()}>
-                    <h2 style={styles.modalTitle}>{order.orderNumber} - {order.partyName}</h2>
-                    
-                    <div style={styles.modalBody}>
-                        <div style={styles.modalSummary} className="modal-summary">
-                            <div><strong>Order Date:</strong> {formatDateTime(order.timestamp)}</div>
-                            <div><strong>Billed Date:</strong> {formatDateTime(order.billedTimestamp)}</div>
-                            <div><strong>Total Qty:</strong> {order.totalQuantity}</div>
-                        </div>
-                        {order.orderNote && <div style={styles.modalNote} className="modal-note"><strong>Note:</strong> {order.orderNote}</div>}
+        <div style={styles.billedOrderContainer}>
+            <button style={styles.billedOrderHeader} onClick={() => setIsCollapsed(!isCollapsed)}>
+                <div style={styles.billedOrderInfo}>
+                    <strong style={{fontFamily: 'monospace'}}>{order.orderNumber}</strong>
+                    <span style={styles.billedOrderMeta}><CalendarIcon /> {formatDate(order.billedTimestamp || order.timestamp)}</span>
+                </div>
+                <div style={styles.billedOrderStats}>
+                    <span>Qty: {order.totalQuantity}</span>
+                    <ChevronIcon collapsed={isCollapsed} />
+                </div>
+            </button>
+
+            <div style={isCollapsed ? styles.collapsibleContainer : {...styles.collapsibleContainer, ...styles.collapsibleContainerExpanded}}>
+                <div style={styles.collapsibleContentWrapper}>
+                    <div style={styles.billedOrderDetails}>
+                        {order.orderNote && <div style={styles.orderNoteBox}><strong>Note:</strong> {order.orderNote}</div>}
                         <div style={styles.tableContainer}>
                             <table style={styles.table}>
-                                <thead><tr><th style={{...styles.th, fontSize: '0.9rem'}}>Style</th><th style={{...styles.th, fontSize: '0.9rem'}}>Color</th><th style={{...styles.th, fontSize: '0.9rem'}}>Size</th><th style={{...styles.th, fontSize: '0.9rem'}}>Billed Qty</th></tr></thead>
+                                <thead>
+                                    <tr>
+                                        <th style={{...styles.th, fontSize: '0.9rem'}}>Style</th>
+                                        <th style={{...styles.th, fontSize: '0.9rem'}}>Color</th>
+                                        <th style={{...styles.th, fontSize: '0.9rem'}}>Size</th>
+                                        <th style={{...styles.th, fontSize: '0.9rem'}}>Billed Qty</th>
+                                    </tr>
+                                </thead>
                                 <tbody>
                                     {order.items.map((item, index) => (
                                         <tr key={item.id} style={index % 2 !== 0 ? { ...styles.tr, backgroundColor: 'var(--stripe-bg, var(--stripe-light-bg))' } : styles.tr}>
@@ -161,21 +143,19 @@ const BilledDetailModal = ({ order, onClose }) => {
                                 </tbody>
                             </table>
                         </div>
-                    </div>
-
-                    <div style={styles.iosModalActions}>
-                        <button onClick={handleClose} style={styles.iosModalButtonSecondary}>Close</button>
-                        <button onClick={handleDownloadPdf} style={{...styles.iosModalButtonPrimary, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'}}>
-                            <DownloadIcon /> Download PDF
-                        </button>
+                        <div style={styles.billedOrderActions}>
+                            <button onClick={handleDownloadPdf} style={{...styles.detailsButton, gap: '0.5rem'}}>
+                                <DownloadIcon /> Download PDF
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
-        </>
+        </div>
     );
 };
 
-const PartyGroup: React.FC<{ partyName: string; data: any; onViewOrder: (order: Order) => void; }> = ({ partyName, data, onViewOrder }) => {
+const PartyGroup: React.FC<{ partyName: string; data: any; }> = ({ partyName, data }) => {
     const [isCollapsed, setIsCollapsed] = useState(true);
     const totalQty = data.orders.reduce((sum, order) => sum + order.totalQuantity, 0);
 
@@ -210,16 +190,7 @@ const PartyGroup: React.FC<{ partyName: string; data: any; onViewOrder: (order: 
                 <div style={styles.collapsibleContentWrapper}>
                     <div style={styles.cardDetails}>
                         {data.orders.map(order => (
-                            <div key={order.orderNumber} style={styles.orderItem}>
-                                <div style={styles.orderInfo}>
-                                    <strong>{order.orderNumber}</strong>
-                                    <span style={styles.orderMeta}><CalendarIcon /> {formatDate(order.billedTimestamp || order.timestamp)}</span>
-                                    <span>Qty: {order.totalQuantity}</span>
-                                </div>
-                                <button style={styles.detailsButton} onClick={() => onViewOrder(order)}>
-                                    <InfoIcon /> View
-                                </button>
-                            </div>
+                            <BilledOrderCard key={order.orderNumber} order={order} />
                         ))}
                     </div>
                 </div>
@@ -234,7 +205,6 @@ export const BilledOrders = () => {
     const [error, setError] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
     const [dateFilter, setDateFilter] = useState('all');
-    const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
     const [isSearchFocused, setIsSearchFocused] = useState(false);
     
     const filterPillsRef = useRef(null);
@@ -337,7 +307,7 @@ export const BilledOrders = () => {
         return (
             <div style={styles.listContainer} key={animationKey} className="fade-in-slide">
                 {partyNames.map(partyName => (
-                    <PartyGroup key={partyName} partyName={partyName} data={summarizedData[partyName]} onViewOrder={setSelectedOrder} />
+                    <PartyGroup key={partyName} partyName={partyName} data={summarizedData[partyName]} />
                 ))}
             </div>
         );
@@ -365,7 +335,6 @@ export const BilledOrders = () => {
                 </div>
             </div>
             {renderContent()}
-            {selectedOrder && <BilledDetailModal order={selectedOrder} onClose={() => setSelectedOrder(null)} />}
         </div>
     );
 };
@@ -373,15 +342,13 @@ export const BilledOrders = () => {
 const styles: { [key: string]: React.CSSProperties } = {
     container: { display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1 },
     headerCard: {
-        background: 'linear-gradient(to bottom, var(--light-grey) 85%, transparent)',
-        padding: '1rem 1.5rem 1.5rem',
+        backgroundColor: 'transparent',
+        padding: '1rem 1.5rem',
+        borderRadius: 'var(--border-radius)',
         border: 'none',
         display: 'flex',
         flexDirection: 'column',
         gap: '1rem',
-        position: 'sticky',
-        top: 0,
-        zIndex: 10,
     },
     pageTitle: {
         fontSize: '1.25rem',
@@ -492,19 +459,22 @@ const styles: { [key: string]: React.CSSProperties } = {
         borderRadius: '16px',
     },
     detailsButton: { display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--light-grey)', border: '1px solid var(--skeleton-bg)', color: 'var(--dark-grey)', padding: '0.5rem 1rem', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500 },
-    modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.2)', backdropFilter: 'blur(7px)', WebkitBackdropFilter: 'blur(7px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', opacity: 0 },
-    modalContent: { backgroundColor: 'var(--glass-bg)', width: '100%', borderRadius: 'var(--border-radius)', display: 'flex', flexDirection: 'column', maxHeight: 'calc(100vh - 2rem)', boxShadow: '0 8px 32px rgba(0,0,0,0.1)', border: '1px solid var(--glass-border)', padding: '1.5rem', transform: 'scale(0.95)', opacity: 0 },
-    modalTitle: { fontSize: '1.25rem', fontWeight: 600, color: 'var(--dark-grey)', textAlign: 'center', marginBottom: '1.5rem' },
-    modalBody: { padding: '0', display: 'flex', flexDirection: 'column', gap: '1rem', overflow: 'hidden', flex: 1 },
-    modalSummary: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', backgroundColor: 'rgba(0,0,0,0.03)', padding: '1rem', borderRadius: '8px', color: 'var(--dark-grey)' },
-    modalNote: { backgroundColor: 'rgb(255 244 0 / 10%)', borderLeft: '3px solid #ffe58f', padding: '1rem', borderRadius: '8px', fontSize: '0.9rem' },
-    tableContainer: { overflowY: 'auto', borderRadius: '8px', backgroundColor: 'var(--card-bg-secondary)', flex: 1, maxHeight: 'calc(100vh - 30rem)' },
-    table: { width: '100%', borderCollapse: 'collapse' },
-    th: { backgroundColor: 'var(--light-grey)', padding: '10px 12px', textAlign: 'center', fontWeight: 600, color: 'var(--text-color)', borderBottom: '1px solid var(--separator-color)', whiteSpace: 'nowrap', fontSize: '0.85rem', position: 'sticky', top: 0, zIndex: 1 },
-    tr: {},
-    td: { padding: '10px 12px', color: 'var(--text-color)', fontSize: '0.9rem', textAlign: 'center', borderBottom: '1px solid var(--separator-color)' },
-    iosModalActions: { display: 'flex', width: 'calc(100% + 3rem)', marginLeft: '-1.5rem', marginBottom: '-1.5rem', borderTop: '1px solid var(--glass-border)', marginTop: '1.5rem' },
-    iosModalButtonSecondary: { background: 'transparent', border: 'none', padding: '1rem 0', cursor: 'pointer', fontSize: '1rem', textAlign: 'center', transition: 'background-color 0.2s ease', flex: 1, color: 'var(--dark-grey)', borderRight: '1px solid var(--glass-border)', fontWeight: 400 },
-    iosModalButtonPrimary: { background: 'transparent', border: 'none', padding: '1rem 0', cursor: 'pointer', fontSize: '1rem', textAlign: 'center', transition: 'background-color 0.2s ease', flex: 1, color: 'var(--brand-color)', fontWeight: 600 },
     partyAvatar: { width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '600', fontSize: '1rem', flexShrink: 0 },
+    
+    // Billed Order Card
+    billedOrderContainer: { borderTop: '1px solid var(--separator-color)', padding: '0.5rem 0' },
+    billedOrderHeader: { width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem 0' },
+    billedOrderInfo: { display: 'flex', alignItems: 'center', gap: '1rem', color: 'var(--dark-grey)', fontWeight: 500 },
+    billedOrderMeta: { display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--text-color)', fontSize: '0.8rem' },
+    billedOrderStats: { display: 'flex', alignItems: 'center', gap: '1rem', color: 'var(--text-color)', fontSize: '0.9rem' },
+    billedOrderDetails: { padding: '0.5rem 0 1rem', display: 'flex', flexDirection: 'column', gap: '1rem' },
+    orderNoteBox: { backgroundColor: 'var(--card-bg-tertiary)', borderLeft: '3px solid var(--orange)', padding: '1rem', borderRadius: '4px', fontSize: '0.9rem' },
+    billedOrderActions: { display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' },
+
+    // Shared table styles
+    tableContainer: { overflowY: 'auto', borderRadius: '8px', backgroundColor: 'var(--card-bg-secondary)', flex: 1, maxHeight: 'calc(100vh - 30rem)', border: '1px solid var(--separator-color)' },
+    table: { width: '100%', borderCollapse: 'collapse' },
+    th: { backgroundColor: 'var(--light-grey)', padding: '10px 12px', textAlign: 'left', fontWeight: 600, color: 'var(--text-color)', borderBottom: '1px solid var(--separator-color)', whiteSpace: 'nowrap', fontSize: '0.85rem', position: 'sticky', top: 0, zIndex: 1 },
+    tr: {},
+    td: { padding: '10px 12px', color: 'var(--text-color)', fontSize: '0.9rem', textAlign: 'left', borderBottom: '1px solid var(--separator-color)' },
 };
