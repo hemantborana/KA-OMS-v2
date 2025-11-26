@@ -9,6 +9,9 @@ const ChevronIcon = ({ collapsed }) => <svg style={{ transform: collapsed ? 'rot
 const Spinner = () => <div style={styles.spinner}></div>;
 const CalendarIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>;
 const DownloadIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>;
+const OrderViewIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>;
+const PartyViewIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>;
+
 
 // --- TYPE & FIREBASE ---
 interface Order { orderNumber: string; partyName: string; timestamp: string; billedTimestamp?: string; totalQuantity: number; totalValue: number; orderNote?: string; items: any[]; }
@@ -37,8 +40,10 @@ const getColorForString = (str: string) => {
 const formatDate = (isoString) => isoString ? new Date(isoString).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A';
 
 // --- COMPONENTS ---
-const BilledOrderCard: React.FC<{ order: Order }> = ({ order }) => {
+const BilledOrderCard: React.FC<{ order: Order, showPartyName?: boolean }> = ({ order, showPartyName = false }) => {
     const [isCollapsed, setIsCollapsed] = useState(true);
+    const avatarColorStyle = useMemo(() => getColorForString(order.partyName), [order.partyName]);
+
 
     const handleDownloadPdf = async () => {
         const { jsPDF } = (window as any).jspdf;
@@ -108,6 +113,12 @@ const BilledOrderCard: React.FC<{ order: Order }> = ({ order }) => {
         <div style={styles.billedOrderContainer}>
             <button style={styles.billedOrderHeader} onClick={() => setIsCollapsed(!isCollapsed)}>
                 <div style={styles.billedOrderInfo}>
+                     {showPartyName && (
+                        <div style={{display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1, minWidth: 0}}>
+                           <div style={{...styles.partyAvatar, ...avatarColorStyle, width: '32px', height: '32px', fontSize: '0.9rem'}}>{order.partyName.charAt(0).toUpperCase()}</div>
+                           <span style={styles.standalonePartyName}>{order.partyName}</span>
+                        </div>
+                     )}
                     <strong style={{fontFamily: 'monospace'}}>{order.orderNumber}</strong>
                     <span style={styles.billedOrderMeta}><CalendarIcon /> {formatDate(order.billedTimestamp || order.timestamp)}</span>
                 </div>
@@ -190,7 +201,7 @@ const PartyGroup: React.FC<{ partyName: string; data: any; }> = ({ partyName, da
                 <div style={styles.collapsibleContentWrapper}>
                     <div style={styles.cardDetails}>
                         {data.orders.map(order => (
-                            <BilledOrderCard key={order.orderNumber} order={order} />
+                            <BilledOrderCard key={order.orderNumber} order={order} showPartyName={false} />
                         ))}
                     </div>
                 </div>
@@ -205,6 +216,7 @@ export const BilledOrders = () => {
     const [error, setError] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
     const [dateFilter, setDateFilter] = useState('all');
+    const [view, setView] = useState('order'); // Default to order view
     const [isSearchFocused, setIsSearchFocused] = useState(false);
     
     const filterPillsRef = useRef(null);
@@ -302,12 +314,25 @@ export const BilledOrders = () => {
         if (orders.length === 0) return <div style={styles.centeredMessage}>No billed orders found in the archive.</div>;
         if (filteredOrders.length === 0) return <div style={styles.centeredMessage}>No billed orders match your search or filter.</div>;
         
-        const partyNames = Object.keys(summarizedData).sort();
-        const animationKey = `${dateFilter}-${searchTerm}`;
+        const animationKey = `${view}-${dateFilter}-${searchTerm}`;
+
+        if (view === 'party') {
+            const partyNames = Object.keys(summarizedData).sort();
+            return (
+                <div style={styles.listContainer} key={`party-${animationKey}`} className="fade-in-slide">
+                    {partyNames.map(partyName => (
+                        <PartyGroup key={partyName} partyName={partyName} data={summarizedData[partyName]} />
+                    ))}
+                </div>
+            );
+        }
+
         return (
-            <div style={styles.listContainer} key={animationKey} className="fade-in-slide">
-                {partyNames.map(partyName => (
-                    <PartyGroup key={partyName} partyName={partyName} data={summarizedData[partyName]} />
+            <div style={{...styles.listContainer, gap: '0.75rem'}} key={`order-${animationKey}`} className="fade-in-slide">
+                {filteredOrders.map(order => (
+                    <div style={styles.card} key={order.orderNumber}>
+                        <BilledOrderCard order={order} showPartyName={true} />
+                    </div>
                 ))}
             </div>
         );
@@ -317,7 +342,13 @@ export const BilledOrders = () => {
         <div style={styles.container}>
              <style>{`.fade-in-slide { animation: fadeInSlide 0.4s ease-out forwards; } @keyframes fadeInSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }`}</style>
             <div style={styles.headerCard}>
-                <h2 style={styles.pageTitle}>Billed Orders (Archive)</h2>
+                <div style={styles.headerTop}>
+                    <h2 style={styles.pageTitle}>Billed Orders (Archive)</h2>
+                     <div style={styles.viewToggle}>
+                        <button onClick={() => setView('order')} style={view === 'order' ? styles.toggleButtonActive : styles.toggleButton}><OrderViewIcon/></button>
+                        <button onClick={() => setView('party')} style={view === 'party' ? styles.toggleButtonActive : styles.toggleButton}><PartyViewIcon/></button>
+                    </div>
+                </div>
                 <div style={isSearchFocused ? {...styles.searchContainer, ...styles.searchContainerActive} : styles.searchContainer}>
                     <SearchIcon />
                     <input type="text" style={styles.searchInput} className="global-search-input" placeholder="Search by party or order number..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onFocus={() => setIsSearchFocused(true)} onBlur={() => setIsSearchFocused(false)} />
@@ -349,6 +380,38 @@ const styles: { [key: string]: React.CSSProperties } = {
         display: 'flex',
         flexDirection: 'column',
         gap: '1rem',
+    },
+    headerTop: {
+        display: 'flex',
+        justifyContent: 'flex-end',
+        alignItems: 'center',
+    },
+    viewToggle: { 
+        display: 'flex', 
+        backgroundColor: 'var(--gray-5)', 
+        borderRadius: '18px', 
+        padding: '4px' 
+    },
+    toggleButton: { 
+        background: 'none', 
+        border: 'none', 
+        padding: '6px 10px', 
+        cursor: 'pointer', 
+        color: 'var(--text-color)', 
+        borderRadius: '14px',
+        display: 'flex',
+        alignItems: 'center'
+    },
+    toggleButtonActive: { 
+        background: 'var(--card-bg)', 
+        border: 'none', 
+        padding: '6px 10px', 
+        cursor: 'pointer', 
+        color: 'var(--brand-color)', 
+        borderRadius: '14px', 
+        boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+        display: 'flex',
+        alignItems: 'center'
     },
     pageTitle: {
         fontSize: '1.25rem',
@@ -445,28 +508,16 @@ const styles: { [key: string]: React.CSSProperties } = {
     collapsibleContentWrapper: {
         overflow: 'hidden',
     },
-    orderItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem 0', borderBottom: '1px solid var(--light-grey)' },
-    orderInfo: { display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', color: 'var(--dark-grey)' },
-    orderMeta: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '0.4rem',
-        color: 'var(--brand-color)',
-        backgroundColor: 'var(--active-bg)',
-        fontSize: '0.85rem',
-        fontWeight: 500,
-        padding: '4px 10px',
-        borderRadius: '16px',
-    },
     detailsButton: { display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--light-grey)', border: '1px solid var(--skeleton-bg)', color: 'var(--dark-grey)', padding: '0.5rem 1rem', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500 },
     partyAvatar: { width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '600', fontSize: '1rem', flexShrink: 0 },
     
     // Billed Order Card
-    billedOrderContainer: { borderTop: '1px solid var(--separator-color)', padding: '0.5rem 0' },
+    billedOrderContainer: { padding: '0.5rem 0' },
     billedOrderHeader: { width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem 0' },
-    billedOrderInfo: { display: 'flex', alignItems: 'center', gap: '1rem', color: 'var(--dark-grey)', fontWeight: 500 },
-    billedOrderMeta: { display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--text-color)', fontSize: '0.8rem' },
-    billedOrderStats: { display: 'flex', alignItems: 'center', gap: '1rem', color: 'var(--text-color)', fontSize: '0.9rem' },
+    billedOrderInfo: { display: 'flex', alignItems: 'center', gap: '1rem', color: 'var(--dark-grey)', fontWeight: 500, flex: 1, minWidth: 0 },
+    standalonePartyName: { fontWeight: 600, color: 'var(--dark-grey)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+    billedOrderMeta: { display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--text-color)', fontSize: '0.8rem', marginLeft: 'auto' },
+    billedOrderStats: { display: 'flex', alignItems: 'center', gap: '1rem', color: 'var(--text-color)', fontSize: '0.9rem', paddingLeft: '1rem' },
     billedOrderDetails: { padding: '0.5rem 0 1rem', display: 'flex', flexDirection: 'column', gap: '1rem' },
     orderNoteBox: { backgroundColor: 'var(--card-bg-tertiary)', borderLeft: '3px solid var(--orange)', padding: '1rem', borderRadius: '4px', fontSize: '0.9rem' },
     billedOrderActions: { display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' },
