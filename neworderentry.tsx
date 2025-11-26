@@ -405,7 +405,7 @@ const StyleMatrix = ({ style, catalogData, orderItems, onQuantityChange, isMobil
     
     return (
         <div style={styles.matrixContainer}>
-            <h3 style={isMobile ? { ...styles.matrixStyleTitle, marginBottom: '0.25rem' } : styles.matrixStyleTitle}>{style}</h3>
+            <h3 style={isMobile ? { ...styles.matrixStyleTitle, marginBottom: '0.75rem' } : styles.matrixStyleTitle}>{style}</h3>
             <div style={isMobile ? { ...styles.matrixGrid, gap: '0.5rem' } : { ...styles.matrixGrid, justifyContent: 'flex-start' }}>
                 {colors.map(color => ( <CollapsibleColorCard key={color} color={color} itemsInColor={styleData[color]} allSizesForStyle={allSizesForStyle} itemsByBarcode={itemsByBarcode} onQuantityChange={onQuantityChange} isMobile={isMobile} stockData={stockData} /> ))}
             </div>
@@ -1257,7 +1257,7 @@ export const NewOrderEntry = ({ onNavigate }) => {
                         </div>
                     )}
 
-                    <div style={isMobile ? { ...styles.card, flex: 1, padding: '0.5rem', gap: '1rem', margin: '0 1rem' } : { ...styles.card, flex: 1 }}>
+                    <div style={isMobile ? { ...styles.card, flex: 1, padding: '1.3rem 1rem 1rem 1.2rem', gap: '1rem', margin: '0 0.5rem' } : { ...styles.card, flex: 1 }}>
                          {isMobile && (
                             <>
                                 <div style={styles.cardHeader}> <h2 style={styles.cardTitleBare}>{partyName ? `Party: ${partyName}` : 'Order Details'}</h2> {partyName && (<button style={styles.collapseButton} onClick={() => setIsOrderDetailsCollapsed(!isOrderDetailsCollapsed)}> <ChevronIcon collapsed={isOrderDetailsCollapsed} /> </button>)} </div>
