@@ -69,7 +69,9 @@ const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 const EyeIcon = ({ closed }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"> {closed ? (<><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"></path><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"></path><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"></path><line x1="2" y1="2" x2="22" y2="22"></line></>) : (<><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></>)} </svg>);
 const MenuIcon = () => <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" width="24" height="24"><path d="M4 18H10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/><path d="M4 12H16" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/><path d="M4 6H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>;
 const CloseSidebarIcon = () => <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" width="24" height="24"><path fillRule="evenodd" clipRule="evenodd" d="M4 5C3.44772 5 3 5.44772 3 6C3 6.55228 3.44772 7 4 7H20C20.5523 7 21 6.55228 21 6C21 5.44772 20.5523 5 20 5H4ZM7 12C7 11.4477 7.44772 11 8 11H20C20.5523 11 21 11.4477 21 12C21 12.5523 20.5523 13 20 13H8C7.44772 13 7 12.5523 7 12ZM13 18C13 17.4477 13.4477 17 14 17H20C20.5523 17 21 17.4477 21 18C21 18.5523 20.5523 19 20 19H14C13.4477 19 13 18.5523 13 18Z" fill="currentColor"/></svg>;
-const DesktopSidebarToggleIcon = () => (<svg viewBox="0 0 56 56" xmlns="http://www.w3.org/2000/svg" width="30" height="30"><path fill="currentColor" d="M7.7148 49.5742H48.2852c4.8984 0 7.3594-2.4375 7.3594-7.2656V13.6914c0-4.8281-2.461-7.2656-7.3594-7.2656H7.7148C2.8398 6.4258.3554 8.8398.3554 13.6914v28.6172c0 4.8516 2.4844 7.2656 7.3594 7.2656zm.0703-3.7734c-2.3438 0-3.6563-1.2422-3.6563-3.6797V13.8789c0-2.4375 1.3125-3.6797 3.6563-3.6797H18.2148v35.6016H7.7851zm40.4296-35.6016c2.3203 0 3.6561 1.2422 3.6561 3.6797v28.2422c0 2.4375-1.3358 3.6797-3.6561 3.6797H21.8944V10.1992h26.3203zM13.7148 18.8945c.7031 0 1.3359-.6328 1.3359-1.3125 0-.7031-.6328-1.3125-1.3359-1.3125H8.6757c-.7031 0-1.3125.6094-1.3125 1.3125 0 .6797.6094 1.3125 1.3125 1.3125zm0 6.0704c.7031 0 1.3359-.6329 1.3359-1.336 0-.7031-.6328-1.2891-1.3359-1.2891H8.6757c-.7031 0-1.3125.5859-1.3125 1.2891 0 .7031.6094 1.336 1.3125 1.336zm0 6.0469c.7031 0 1.3359-.586 1.3359-1.2891 0-.7031-.6328-1.3125-1.3359-1.3125H8.6757c-.7031 0-1.3125.6094-1.3125 1.3125 0 .7031.6094 1.2891 1.3125 1.2891z"/></svg>);
+const DesktopSidebarToggleIcon = () => (<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="currentColor">
+  <path d="M50.01,56.074l-35.989,0c-3.309,0 -5.995,-2.686 -5.995,-5.995l0,-36.011c0,-3.308 2.686,-5.994 5.995,-5.994l35.989,0c3.309,0 5.995,2.686 5.995,5.994l0,36.011c0,3.309 -2.686,5.995 -5.995,5.995Zm-25.984,-4l0,-40l-9.012,0c-1.65,0.001 -2.989,1.34 -2.989,2.989l0,34.022c0,1.649 1.339,2.989 2.989,2.989l9.012,0Zm24.991,-40l-20.991,0l0,40l20.991,0c1.65,0 2.989,-1.34 2.989,-2.989l0,-34.022c0,-1.649 -1.339,-2.988 -2.989,-2.989Z"/>
+</svg>);
 const LogoutIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>;
 const UserIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>;
 const ShieldIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>;
@@ -667,16 +669,31 @@ const Sidebar = ({ activeView, onNavigate, isMobile, isOpen, onClose, session, o
         ? { opacity: 0, maxWidth: '0px', marginLeft: '0', visibility: 'hidden' as 'hidden', transition: 'opacity 0.1s, max-width 0.2s, margin-left 0.2s, visibility 0s 0.2s' }
         : { opacity: 1, maxWidth: '150px', marginLeft: '1rem', visibility: 'visible' as 'visible', transition: 'opacity 0.2s 0.1s, max-width 0.2s 0.1s, margin-left 0.2s 0.1s' };
 
+    const sidebarClassName = isActuallyCollapsed ? 'sidebar-collapsed' : '';
+
+    const userContainerStyle = {
+        ...styles.sidebarUserContainer,
+        ...(isActuallyCollapsed && {
+            width: '100%',
+            justifyContent: 'center',
+        })
+    };
+
     return (
         <>
             {isMobile && isOpen && <div style={styles.overlay} onClick={onClose}></div>}
-            <nav style={sidebarStyle} ref={sidebarRef}>
+            <nav style={sidebarStyle} ref={sidebarRef} className={sidebarClassName}>
                 <div style={styles.sidebarHeader}>
                      {!isMobile && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem', minHeight: '36px' }}>
-                            <button onClick={onToggleCollapse} className="desktop-collapse-button" style={styles.desktopCollapseButton}>
-                               <DesktopSidebarToggleIcon />
-                            </button>
+                            <div className="desktop-collapse-button-wrapper">
+                                <button onClick={onToggleCollapse} className="desktop-collapse-button" style={styles.desktopCollapseButton}>
+                                   <DesktopSidebarToggleIcon />
+                                </button>
+                                <span className="nav-tooltip" style={{...styles.navTooltip}}>
+                                    {isCollapsed ? 'Expand' : 'Collapse'}
+                                </span>
+                            </div>
                             <div style={{
                                 display: 'flex', 
                                 alignItems: 'center', 
@@ -692,10 +709,10 @@ const Sidebar = ({ activeView, onNavigate, isMobile, isOpen, onClose, session, o
                             </div>
                         </div>
                      )}
-                     <div style={{ display: 'flex', justifyContent: isActuallyCollapsed ? 'center' : 'space-between', alignItems: 'center' }}>
+                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                          <div
                             className="sidebar-user-container"
-                            style={styles.sidebarUserContainer}
+                            style={userContainerStyle}
                             onClick={() => onNavigate('Preferences')}
                          >
                              <UserAvatar name={session.userName} avatarId={session.avatarId} size={isActuallyCollapsed ? 'medium' : 'small'} />
@@ -1325,14 +1342,14 @@ const styles: { [key: string]: React.CSSProperties } = {
     sidebarMobile: { position: 'fixed', top: 0, left: 0, height: '100%', zIndex: 200 },
     overlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.05)', backdropFilter: 'blur(1.5px)', WebkitBackdropFilter: 'blur(1.5px)', zIndex: 199 },
     sidebarHeader: { padding: '1.5rem', borderBottom: '1px solid var(--separator-color)' },
-    desktopCollapseButton: { background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-color)', padding: '8px', display: 'flex', alignItems: 'center', borderRadius: '12px', transition: 'background-color 0.2s ease' },
+    desktopCollapseButton: { background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-color)', padding: '8px', display: 'flex', alignItems: 'center', borderRadius: '12px', transition: 'background-color 0.2s ease, color 0.2s ease' },
     sidebarUserContainer: {
-        display: 'inline-flex',
+        display: 'flex',
         alignItems: 'center',
         gap: '0.75rem',
         padding: '8px',
         borderRadius: '12px',
-        transition: 'background-color 0.2s ease',
+        transition: 'background-color 0.2s ease, color 0.2s ease',
         cursor: 'pointer'
     },
     sidebarUserInfo: { transition: 'opacity 0.2s ease' },
@@ -1362,7 +1379,7 @@ const styles: { [key: string]: React.CSSProperties } = {
         opacity: 0,
         visibility: 'hidden',
         pointerEvents: 'none',
-        zIndex: 100,
+        zIndex: 1001,
         transition: 'opacity 0.2s ease, transform 0.2s ease, visibility 0s 0.2s'
     },
     mainContent: { flex: 1, overflowY: 'auto', padding: '0rem 1rem', display: 'flex', flexDirection: 'column' },
@@ -1512,24 +1529,31 @@ styleSheet.innerText = `
         to { transform: translateX(100%); }
     }
 
-    /* --- HOVER EFFECTS --- */
+    /* --- HOVER EFFECTS & TOOLTIPS --- */
     
     /* General nav item hover for all views */
     .nav-item:hover {
         background-color: var(--active-bg);
+        color: var(--brand-color);
     }
 
     /* Hover for desktop sidebar controls */
+    .desktop-collapse-button-wrapper {
+        position: relative;
+    }
     .desktop-collapse-button:hover, .sidebar-user-container:hover {
         background-color: var(--light-grey);
+        color: var(--brand-color);
     }
     body.dark-mode .desktop-collapse-button:hover,
     body.dark-mode .sidebar-user-container:hover {
         background-color: var(--gray-5);
+        color: var(--brand-color);
     }
     
     /* Tooltip for collapsed desktop sidebar */
-    .nav-item-desktop-collapsed:hover .nav-tooltip {
+    .nav-item-desktop-collapsed:hover .nav-tooltip,
+    .sidebar-collapsed .desktop-collapse-button-wrapper:hover .nav-tooltip {
         opacity: 1;
         visibility: visible;
         transform: translateY(-50%) translateX(10px);
