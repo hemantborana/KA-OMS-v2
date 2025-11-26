@@ -966,17 +966,17 @@ export const NewOrderEntry = ({ onNavigate }) => {
             </div>
             
             <div style={isMobile ? { ...styles.mainLayout, gridTemplateColumns: '1fr' } : styles.mainLayout}>
-                <div style={isMobile ? { ...styles.mainPanel, gap: '1rem' } : styles.mainPanel}>
+                <div style={isMobile ? { ...styles.mainPanel, gap: '1rem', height: '100%' } : styles.mainPanel}>
                     {!isMobile && (
                         <div style={{ ...styles.card, gap: 0 }}>
                             <div style={styles.cardHeader}> <h2 style={styles.cardTitleBare}>Order Details</h2> </div>
                              <div style={styles.collapsibleContent}>
                                 <div style={{...styles.inputGroup, position: 'relative'}} ref={suggestionBoxRef}>
                                     <label htmlFor="partyName" style={styles.label}>Party Name</label>
-                                    <input type="text" id="partyName" style={styles.input} value={partyName} onChange={handlePartyNameChange} onFocus={() => partyName && suggestions.length > 0 && setIsSuggestionsVisible(true)} placeholder="Enter or select a customer" autoComplete="off" disabled={editMode} />
+                                    <input type="text" id="partyName" className="styled-input" style={styles.input} value={partyName} onChange={handlePartyNameChange} onFocus={() => partyName && suggestions.length > 0 && setIsSuggestionsVisible(true)} placeholder="Enter or select a customer" autoComplete="off" disabled={editMode} />
                                      {isSuggestionsVisible && suggestions.length > 0 && (
                                         <ul style={styles.suggestionsList}>
-                                            {suggestions.map((s, i) => ( <li key={i} style={{...styles.suggestionItem, ...(s.startsWith('Add: ') ? styles.addSuggestionItem : {})}} onClick={() => handleSuggestionClick(s)} onMouseDown={(e) => e.preventDefault()}> {s.startsWith('Add: ') ? `+ Add "${s.substring(5)}"` : s} </li> ))}
+                                            {suggestions.map((s, i) => ( <li key={i} className="suggestion-item" style={{...styles.suggestionItem, ...(s.startsWith('Add: ') ? styles.addSuggestionItem : {})}} onClick={() => handleSuggestionClick(s)} onMouseDown={(e) => e.preventDefault()}> {s.startsWith('Add: ') ? `+ Add "${s.substring(5)}"` : s} </li> ))}
                                         </ul>
                                      )}
                                 </div>
@@ -984,17 +984,17 @@ export const NewOrderEntry = ({ onNavigate }) => {
                         </div>
                     )}
 
-                    <div style={isMobile ? { ...styles.card, flex: 1, padding: '0.5rem', gap: '1rem' } : { ...styles.card, flex: 1 }}>
+                    <div style={isMobile ? { ...styles.card, flex: 1, padding: '0.5rem', gap: '1rem', margin: '0 0.5rem' } : { ...styles.card, flex: 1 }}>
                          {isMobile && (
                             <>
                                 <div style={styles.cardHeader}> <h2 style={styles.cardTitleBare}>{partyName ? `Party: ${partyName}` : 'Order Details'}</h2> {partyName && (<button style={styles.collapseButton} onClick={() => setIsOrderDetailsCollapsed(!isOrderDetailsCollapsed)}> <ChevronIcon collapsed={isOrderDetailsCollapsed} /> </button>)} </div>
                                  <div style={{...styles.collapsibleContent, ...(isOrderDetailsCollapsed ? styles.collapsibleContentCollapsed : {})}}>
                                     <div style={{...styles.inputGroup, position: 'relative'}} ref={suggestionBoxRef}>
                                         <label htmlFor="partyName" style={styles.label}>Party Name</label>
-                                        <input type="text" id="partyName" style={styles.input} value={partyName} onChange={handlePartyNameChange} onFocus={() => partyName && suggestions.length > 0 && setIsSuggestionsVisible(true)} placeholder="Enter or select a customer" autoComplete="off" disabled={editMode} />
+                                        <input type="text" id="partyName" className="styled-input" style={styles.input} value={partyName} onChange={handlePartyNameChange} onFocus={() => partyName && suggestions.length > 0 && setIsSuggestionsVisible(true)} placeholder="Enter or select a customer" autoComplete="off" disabled={editMode} />
                                          {isSuggestionsVisible && suggestions.length > 0 && (
                                             <ul style={styles.suggestionsList}>
-                                                {suggestions.map((s, i) => ( <li key={i} style={{...styles.suggestionItem, ...(s.startsWith('Add: ') ? styles.addSuggestionItem : {})}} onClick={() => handleSuggestionClick(s)} onMouseDown={(e) => e.preventDefault()}> {s.startsWith('Add: ') ? `+ Add "${s.substring(5)}"` : s} </li> ))}
+                                                {suggestions.map((s, i) => ( <li key={i} className="suggestion-item" style={{...styles.suggestionItem, ...(s.startsWith('Add: ') ? styles.addSuggestionItem : {})}} onClick={() => handleSuggestionClick(s)} onMouseDown={(e) => e.preventDefault()}> {s.startsWith('Add: ') ? `+ Add "${s.substring(5)}"` : s} </li> ))}
                                             </ul>
                                          )}
                                     </div>
@@ -1005,10 +1005,10 @@ export const NewOrderEntry = ({ onNavigate }) => {
                         {!isMobile && ( <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}> <h2 style={{...styles.cardTitle, marginBottom: '0', paddingBottom: '0', borderBottom: 'none'}}>Search Item</h2> {isSyncing && <div style={styles.syncingText}>Syncing item catalog...</div>} </div> )}
                         
                         <div style={styles.styleSelectorContainer} ref={styleSearchRef}>
-                             <input type="text" id="styleSearch" className="global-search-input" style={styles.input} placeholder="Type to search for a style..." value={styleSearchTerm} onChange={e => setStyleSearchTerm(e.target.value)} onFocus={() => setIsStyleSearchFocused(true)} disabled={isSyncing} autoComplete="off" />
+                             <input type="text" id="styleSearch" className="global-search-input styled-input" style={styles.input} placeholder="Type to search for a style..." value={styleSearchTerm} onChange={e => setStyleSearchTerm(e.target.value)} onFocus={() => setIsStyleSearchFocused(true)} disabled={isSyncing} autoComplete="off" />
                              {isStyleSearchFocused && filteredStyles.length > 0 && (
                                  <div style={styles.styleResultsContainer}>
-                                     {filteredStyles.slice(0, 100).map(style => ( <button key={style} style={selectedStyle === style ? {...styles.styleResultItem, ...styles.styleResultItemActive} : styles.styleResultItem} onClick={() => { setSelectedStyle(style); setStyleSearchTerm(style); setIsStyleSearchFocused(false); }}> {style} </button> ))}
+                                     {filteredStyles.slice(0, 100).map(style => ( <button key={style} className="style-result-item" style={selectedStyle === style ? {...styles.styleResultItem, ...styles.styleResultItemActive} : styles.styleResultItem} onClick={() => { setSelectedStyle(style); setStyleSearchTerm(style); setIsStyleSearchFocused(false); }}> {style} </button> ))}
                                  </div>
                              )}
                         </div>
@@ -1045,8 +1045,8 @@ const styles: { [key: string]: React.CSSProperties } = {
     header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', flexShrink: 0, marginBottom: '1rem' },
     pageTitle: { fontSize: '1.25rem', fontWeight: 600, color: 'var(--dark-grey)' },
     actions: { display: 'flex', gap: '0.75rem' },
-    button: { padding: '0.6rem 1.2rem', fontSize: '0.9rem', fontWeight: 500, color: '#fff', backgroundColor: 'var(--brand-color)', border: 'none', borderRadius: '8px', cursor: 'pointer', transition: 'all 0.3s ease' },
-    secondaryButton: { backgroundColor: 'var(--light-grey)', color: 'var(--dark-grey)', border: '1px solid var(--skeleton-bg)' },
+    button: { padding: '0.6rem 1.2rem', fontSize: '0.9rem', fontWeight: 500, color: '#fff', backgroundColor: 'var(--brand-color)', border: 'none', borderRadius: '8px', cursor: 'pointer', transition: 'all 0.3s ease', boxShadow: 'rgba(0, 0, 0, 0.09) 0px 5px 17px' },
+    secondaryButton: { backgroundColor: 'var(--card-bg)', color: 'var(--dark-grey)', border: 'none', boxShadow: 'rgba(0, 0, 0, 0.06) 0px 4px 10px' },
     mainLayout: { display: 'grid', gridTemplateColumns: '1fr 380px', gap: '1rem', flex: 1, minHeight: 0 },
     mainPanel: { display: 'flex', flexDirection: 'column', gap: '1.5rem', height: '95%', minHeight: 0 },
     sidePanel: { minHeight: 0 },
@@ -1059,14 +1059,14 @@ const styles: { [key: string]: React.CSSProperties } = {
     collapsibleContentCollapsed: { maxHeight: 0, paddingTop: 0, opacity: 0, overflow: 'hidden' },
     inputGroup: { flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem', minWidth: '200px' },
     label: { fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-color)' },
-    input: { width: '100%', padding: '0.75rem', fontSize: '0.9rem', border: '1px solid var(--skeleton-bg)', borderRadius: '8px', backgroundColor: '#fff', color: 'var(--dark-grey)', transition: 'border-color 0.3s ease' },
-    suggestionsList: { listStyle: 'none', margin: '0.25rem 0 0', padding: '0.5rem 0', position: 'absolute', top: '100%', left: 0, right: 0, backgroundColor: 'var(--card-bg)', border: '1px solid var(--skeleton-bg)', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)', maxHeight: '200px', overflowY: 'auto', zIndex: 10, },
-    suggestionItem: { padding: '0.75rem 1rem', cursor: 'pointer', fontSize: '0.9rem', color: 'var(--text-color)', },
+    input: { width: '100%', padding: '0.75rem', fontSize: '0.9rem', border: '1px solid var(--skeleton-bg)', borderRadius: '8px', backgroundColor: '#fff', color: 'var(--dark-grey)', transition: 'border-color 0.3s ease, box-shadow 0.3s ease' },
+    suggestionsList: { listStyle: 'none', margin: '0.25rem 0 0', padding: '0.5rem 0', position: 'absolute', top: '100%', left: 0, right: 0, backgroundColor: 'var(--glass-bg)', backdropFilter: 'blur(7px)', WebkitBackdropFilter: 'blur(7px)', border: '1px solid var(--glass-border)', boxShadow: '0 8px 24px rgba(0,0,0,0.15)', maxHeight: '200px', overflowY: 'auto', zIndex: 10, borderRadius: '12px' },
+    suggestionItem: { padding: '0.75rem 1rem', cursor: 'pointer', fontSize: '0.9rem', color: 'var(--text-color)', transition: 'background-color 0.2s ease' },
     addSuggestionItem: { color: 'var(--brand-color)', fontWeight: 500, },
     syncingText: { fontSize: '0.85rem', color: 'var(--brand-color)', fontWeight: 500 },
     styleSelectorContainer: { position: 'relative' },
-    styleResultsContainer: { position: 'absolute', top: '100%', left: 0, right: 0, backgroundColor: 'var(--card-bg)', border: '1px solid var(--skeleton-bg)', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)', zIndex: 10, display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.5rem', maxHeight: '160px', overflowY: 'auto', padding: '0.5rem' },
-    styleResultItem: { padding: '0.5rem 1rem', backgroundColor: 'var(--light-grey)', color: 'var(--text-color)', border: '1px solid var(--skeleton-bg)', borderRadius: '20px', cursor: 'pointer', transition: 'all 0.2s ease', fontSize: '0.85rem', fontWeight: 500, },
+    styleResultsContainer: { position: 'absolute', top: '100%', left: 0, right: 0, backgroundColor: 'var(--glass-bg)', backdropFilter: 'blur(7px)', WebkitBackdropFilter: 'blur(7px)', border: '1px solid var(--glass-border)', boxShadow: '0 8px 24px rgba(0,0,0,0.15)', zIndex: 10, display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.5rem', maxHeight: '160px', overflowY: 'auto', padding: '0.5rem', borderRadius: '12px' },
+    styleResultItem: { padding: '0.5rem 1rem', color: 'var(--text-color)', border: '1px solid var(--glass-border)', borderRadius: '20px', cursor: 'pointer', transition: 'all 0.2s ease', fontSize: '0.85rem', fontWeight: 500, },
     styleResultItemActive: { backgroundColor: 'var(--brand-color)', color: '#fff', borderColor: 'var(--brand-color)' },
     matrixContainer: { marginTop: '1rem' },
     matrixStyleTitle: { fontSize: '1.5rem', fontWeight: 600, color: 'var(--dark-grey)', textAlign: 'center', marginBottom: '1.5rem' },
@@ -1139,6 +1139,19 @@ const styles: { [key: string]: React.CSSProperties } = {
 const styleSheet = document.createElement("style");
 styleSheet.type = "text/css";
 styleSheet.innerText = `
+    .styled-input:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+    }
+    .suggestion-item:hover { 
+        background-color: var(--active-bg); 
+    }
+    .style-result-item {
+        background-color: var(--glass-button-bg);
+    }
+    .style-result-item:hover {
+        background-color: var(--active-bg);
+    }
     @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     .checkmark-circle { stroke-dasharray: 166; stroke-dashoffset: 166; stroke-width: 2; stroke-miterlimit: 10; stroke: #2ecc71; fill: none; animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards; }
