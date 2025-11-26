@@ -69,7 +69,7 @@ const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 const EyeIcon = ({ closed }) => ( <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"> {closed ? (<><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"></path><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"></path><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"></path><line x1="2" y1="2" x2="22" y2="22"></line></>) : (<><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></>)} </svg>);
 const MenuIcon = () => <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" width="24" height="24"><path d="M4 18H10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/><path d="M4 12H16" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/><path d="M4 6H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>;
 const CloseSidebarIcon = () => <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" width="24" height="24"><path fillRule="evenodd" clipRule="evenodd" d="M4 5C3.44772 5 3 5.44772 3 6C3 6.55228 3.44772 7 4 7H20C20.5523 7 21 6.55228 21 6C21 5.44772 20.5523 5 20 5H4ZM7 12C7 11.4477 7.44772 11 8 11H20C20.5523 11 21 11.4477 21 12C21 12.5523 20.5523 13 20 13H8C7.44772 13 7 12.5523 7 12ZM13 18C13 17.4477 13.4477 17 14 17H20C20.5523 17 21 17.4477 21 18C21 18.5523 20.5523 19 20 19H14C13.4477 19 13 18.5523 13 18Z" fill="currentColor"/></svg>;
-const DesktopSidebarToggleIcon = () => (<svg viewBox="0 0 56 56" xmlns="http://www.w3.org/2000/svg" width="24" height="24"><path fill="currentColor" d="M7.7148 49.5742H48.2852c4.8984 0 7.3594-2.4375 7.3594-7.2656V13.6914c0-4.8281-2.461-7.2656-7.3594-7.2656H7.7148C2.8398 6.4258.3554 8.8398.3554 13.6914v28.6172c0 4.8516 2.4844 7.2656 7.3594 7.2656zm.0703-3.7734c-2.3438 0-3.6563-1.2422-3.6563-3.6797V13.8789c0-2.4375 1.3125-3.6797 3.6563-3.6797H18.2148v35.6016H7.7851zm40.4296-35.6016c2.3203 0 3.6561 1.2422 3.6561 3.6797v28.2422c0 2.4375-1.3358 3.6797-3.6561 3.6797H21.8944V10.1992h26.3203zM13.7148 18.8945c.7031 0 1.3359-.6328 1.3359-1.3125 0-.7031-.6328-1.3125-1.3359-1.3125H8.6757c-.7031 0-1.3125.6094-1.3125 1.3125 0 .6797.6094 1.3125 1.3125 1.3125zm0 6.0704c.7031 0 1.3359-.6329 1.3359-1.336 0-.7031-.6328-1.2891-1.3359-1.2891H8.6757c-.7031 0-1.3125.5859-1.3125 1.2891 0 .7031.6094 1.336 1.3125 1.336zm0 6.0469c.7031 0 1.3359-.586 1.3359-1.2891 0-.7031-.6328-1.3125-1.3359-1.3125H8.6757c-.7031 0-1.3125.6094-1.3125 1.3125 0 .7031.6094 1.2891 1.3125 1.2891z"/></svg>);
+const DesktopSidebarToggleIcon = () => (<svg viewBox="0 0 56 56" xmlns="http://www.w3.org/2000/svg" width="30" height="30"><path fill="currentColor" d="M7.7148 49.5742H48.2852c4.8984 0 7.3594-2.4375 7.3594-7.2656V13.6914c0-4.8281-2.461-7.2656-7.3594-7.2656H7.7148C2.8398 6.4258.3554 8.8398.3554 13.6914v28.6172c0 4.8516 2.4844 7.2656 7.3594 7.2656zm.0703-3.7734c-2.3438 0-3.6563-1.2422-3.6563-3.6797V13.8789c0-2.4375 1.3125-3.6797 3.6563-3.6797H18.2148v35.6016H7.7851zm40.4296-35.6016c2.3203 0 3.6561 1.2422 3.6561 3.6797v28.2422c0 2.4375-1.3358 3.6797-3.6561 3.6797H21.8944V10.1992h26.3203zM13.7148 18.8945c.7031 0 1.3359-.6328 1.3359-1.3125 0-.7031-.6328-1.3125-1.3359-1.3125H8.6757c-.7031 0-1.3125.6094-1.3125 1.3125 0 .6797.6094 1.3125 1.3125 1.3125zm0 6.0704c.7031 0 1.3359-.6329 1.3359-1.336 0-.7031-.6328-1.2891-1.3359-1.2891H8.6757c-.7031 0-1.3125.5859-1.3125 1.2891 0 .7031.6094 1.336 1.3125 1.336zm0 6.0469c.7031 0 1.3359-.586 1.3359-1.2891 0-.7031-.6328-1.3125-1.3359-1.3125H8.6757c-.7031 0-1.3125.6094-1.3125 1.3125 0 .7031.6094 1.2891 1.3125 1.2891z"/></svg>);
 const LogoutIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>;
 const UserIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>;
 const ShieldIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>;
@@ -82,22 +82,22 @@ const NavIcon = ({ name, active = false }) => {
             <svg width="30" height="30" viewBox="0 0 28 28" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M11.6288 1.94617C12.9452 0.685478 15.0206 0.684487 16.3382 1.94393L25.9705 9.82424C26.0825 9.92147 26.2415 10.0911 26.3998 10.3064C26.5943 10.6198 26.7798 10.9189 27 11.8956V24.9976C27 26.1013 26.1068 27 25 27H18.7601C17.9317 27 17.2601 26.3284 17.2601 25.5V20.7939C17.2601 18.9948 15.8058 17.5405 14.0168 17.5405C12.2279 17.5405 10.7735 18.9948 10.7735 20.7939V25.5C10.7735 26.3284 10.102 27 9.27354 27H3C1.89318 27 1 26.1013 1 24.9976V11.7425C1 11.0901 1.36299 10.564 1.56986 10.3028C1.69049 10.1505 1.89631 9.94036 1.89631 9.94036L11.6288 1.94617Z"/></svg> : 
             <svg width="30" height="30" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><path fillRule="evenodd" clipRule="evenodd" d="M16.3382 1.94393L25.9705 9.82424L26.0201 9.8788C26.1701 10.0437 26.3998 10.3064 26.5943 10.6198C26.7798 10.9189 27 11.3686 27 11.8956V24.9976C27 26.1013 26.1068 27 25 27H18.7601C17.9317 27 17.2601 26.3284 17.2601 25.5V20.7939C17.2601 18.9948 15.8058 17.5405 14.0168 17.5405C12.2279 17.5405 10.7735 18.9948 10.7735 20.7939V25.5C10.7735 26.3284 10.102 27 9.27354 27H3C1.89318 27 1 26.1013 1 24.9976V11.7425C1 11.0901 1.36299 10.564 1.56986 10.3028C1.69049 10.1505 1.80873 10.0264 1.89631 9.94036C1.9407 9.89677 1.97877 9.86147 2.0074 9.83565C2.03384 9.81204 2.05551 9.79329 2.06007 9.7894L11.6288 1.94617C12.9452 0.685478 15.0206 0.684487 16.3382 1.94393ZM3.35246 11.3159C3.33673 11.33 3.31953 11.3459 3.29759 11.3674C3.19388 11.4736 3.07966 11.6178 3.01374 11.7344V24.9976H8.77354V20.7939C8.77354 17.8948 11.1188 15.5405 14.0168 15.5405C16.9149 15.5405 19.2601 17.8948 19.2601 20.7939V25H25V11.8956C24.9788 11.8095 24.8108 11.5389 24.588 11.2772L15.004 3.43645C14.4228 2.86484 13.5451 2.86525 12.997 3.40534L3.35246 11.3159Z" fill="currentColor"/></svg>,
         Entry: active ? 
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M14 2H6C4.89 2 4 2.9 4 4V20C4 21.1 4.89 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2ZM16 18H13V15H11V18H8V15H11V12H13V15H16V18ZM13 9V3.5L18.5 9H13Z"/></svg> : 
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" xmlns="http://www.w3.org/2000/svg"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>,
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M14 2H6C4.89 2 4 2.9 4 4V20C4 21.1 4.89 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2ZM16 18H13V15H11V18H8V15H11V12H13V15H16V18ZM13 9V3.5L18.5 9H13Z"/></svg> : 
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" xmlns="http://www.w3.org/2000/svg"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>,
         Pending: active ? 
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M6 2V8L10 12L6 16V22H18V16L14 12L18 8V2H6ZM16 16.5V20H8V16.5L12 12.5L16 16.5ZM12 11.5L8 7.5V4H16V7.5L12 11.5Z"/></svg> : 
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" xmlns="http://www.w3.org/2000/svg"><path d="M6 2L10 6L6 10V14H18V10L14 6L18 2H6Z"/></svg>,
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M6 2V8L10 12L6 16V22H18V16L14 12L18 8V2H6ZM16 16.5V20H8V16.5L12 12.5L16 16.5ZM12 11.5L8 7.5V4H16V7.5L12 11.5Z"/></svg> : 
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" xmlns="http://www.w3.org/2000/svg"><path d="M6 2L10 6L6 10V14H18V10L14 6L18 2H6Z"/></svg>,
         Stock: active ? 
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M3 11H11V3H3V11ZM13 3V11H21V3H13ZM3 21H11V13H3V21ZM13 21H21V13H13V21Z"/></svg> :
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>,
-        Billing: <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>, 
-        Billed: <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>, 
-        Update: <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>, 
-        Deleted: <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>, 
-        Expired: <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0z" /><path d="M2 2l20 20" /></svg>, 
-        Users: <svg xmlns="hcom/w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>, 
-        Approval: <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg>,
-        Preferences: <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M3 11H11V3H3V11ZM13 3V11H21V3H13ZM3 21H11V13H3V21ZM13 21H21V13H13V21Z"/></svg> :
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>,
+        Billing: <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>, 
+        Billed: <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>, 
+        Update: <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>, 
+        Deleted: <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>, 
+        Expired: <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0z" /><path d="M2 2l20 20" /></svg>, 
+        Users: <svg xmlns="hcom/w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>, 
+        Approval: <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg>,
+        Preferences: <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
     };
     return icons[name] || null;
 };
@@ -130,8 +130,9 @@ const AvatarSeven = () => <svg viewBox="0 0 61.8 61.8" xmlns="http://www.w3.org/
 
 const UserAvatar = ({ name, avatarId, size = 'small', style = {} }) => {
     const isLarge = size === 'large';
-    const dim = isLarge ? 80 : 40; 
-    const fontSize = isLarge ? '2.5rem' : '1.2rem';
+    const isMedium = size === 'medium';
+    const dim = isLarge ? 80 : (isMedium ? 30 : 40); 
+    const fontSize = isLarge ? '2.5rem' : (isMedium ? '1rem' : '1.2rem');
     
     // Fallback to 0 if undefined
     const safeId = typeof avatarId === 'number' && avatarId >= 0 && avatarId <= 7 ? avatarId : 0;
@@ -673,7 +674,7 @@ const Sidebar = ({ activeView, onNavigate, isMobile, isOpen, onClose, session, o
                 <div style={styles.sidebarHeader}>
                      {!isMobile && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem', minHeight: '36px' }}>
-                            <button onClick={onToggleCollapse} style={styles.desktopCollapseButton}>
+                            <button onClick={onToggleCollapse} className="desktop-collapse-button" style={styles.desktopCollapseButton}>
                                <DesktopSidebarToggleIcon />
                             </button>
                             <div style={{
@@ -691,9 +692,13 @@ const Sidebar = ({ activeView, onNavigate, isMobile, isOpen, onClose, session, o
                             </div>
                         </div>
                      )}
-                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', width: isActuallyCollapsed ? '100%' : 'auto', justifyContent: isActuallyCollapsed ? 'center' : 'flex-start' }}>
-                             <UserAvatar name={session.userName} avatarId={session.avatarId} size="small" />
+                     <div style={{ display: 'flex', justifyContent: isActuallyCollapsed ? 'center' : 'space-between', alignItems: 'center' }}>
+                         <div
+                            className="sidebar-user-container"
+                            style={styles.sidebarUserContainer}
+                            onClick={() => onNavigate('Preferences')}
+                         >
+                             <UserAvatar name={session.userName} avatarId={session.avatarId} size={isActuallyCollapsed ? 'medium' : 'small'} />
                              <div style={{
                                 ...styles.sidebarUserInfo,
                                 transition: 'opacity 0.2s 0.1s, max-width 0.3s 0.1s, visibility 0s ' + (isActuallyCollapsed ? '0.3s' : '0s'),
@@ -716,16 +721,30 @@ const Sidebar = ({ activeView, onNavigate, isMobile, isOpen, onClose, session, o
                 </div>
                 <div style={styles.sidebarNav}>
                     {primaryItems.map(item => (
-                        <a key={item.id} href="#" onClick={(e) => { e.preventDefault(); onNavigate(item.id); }} style={navItemStyle(item.id)} title={isActuallyCollapsed ? item.label : ''}>
+                        <a 
+                            key={item.id} 
+                            href="#" 
+                            onClick={(e) => { e.preventDefault(); onNavigate(item.id); }} 
+                            style={navItemStyle(item.id)}
+                            className={`nav-item ${isActuallyCollapsed ? 'nav-item-desktop-collapsed' : ''}`}
+                        >
                             <NavIcon name={item.id} active={activeView === item.id} />
                             <span style={{...styles.navLabel, ...navLabelDynamicStyle}}>{item.label}</span>
+                            <span className="nav-tooltip" style={styles.navTooltip}>{item.label}</span>
                         </a>
                     ))}
                     <hr style={styles.sidebarSeparator} />
                     {secondaryItems.map(item => (
-                        <a key={item.id} href="#" onClick={(e) => { e.preventDefault(); onNavigate(item.id); }} style={navItemStyle(item.id)} title={isActuallyCollapsed ? item.label : ''}>
+                        <a 
+                            key={item.id} 
+                            href="#" 
+                            onClick={(e) => { e.preventDefault(); onNavigate(item.id); }} 
+                            style={navItemStyle(item.id)} 
+                            className={`nav-item ${isActuallyCollapsed ? 'nav-item-desktop-collapsed' : ''}`}
+                        >
                             <NavIcon name={item.id} active={activeView === item.id} />
                             <span style={{...styles.navLabel, ...navLabelDynamicStyle}}>{item.label}</span>
+                            <span className="nav-tooltip" style={styles.navTooltip}>{item.label}</span>
                         </a>
                     ))}
                 </div>
@@ -1301,13 +1320,21 @@ const styles: { [key: string]: React.CSSProperties } = {
     headerTitle: { fontSize: '1.25rem', fontWeight: 600, color: 'var(--dark-grey)' },
     headerPageTitle: { fontFamily: "'Inter Tight', sans-serif", fontSize: '1.2rem', fontWeight: 500, color: 'var(--dark-grey)', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
     menuButton: { background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', color: 'var(--dark-grey)' },
-    sidebar: { width: '250px', backgroundColor: 'var(--card-bg)', borderRight: 'none', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.07)', flexShrink: 0, transition: 'width 0.3s ease, transform 0.3s ease', display: 'flex', flexDirection: 'column' },
-    sidebarCollapsed: { width: '72px' },
+    sidebar: { width: '230px', backgroundColor: 'var(--card-bg)', borderRight: 'none', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.07)', flexShrink: 0, transition: 'width 0.3s ease, transform 0.3s ease', display: 'flex', flexDirection: 'column' },
+    sidebarCollapsed: { width: '80px' },
     sidebarMobile: { position: 'fixed', top: 0, left: 0, height: '100%', zIndex: 200 },
     overlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.05)', backdropFilter: 'blur(1.5px)', WebkitBackdropFilter: 'blur(1.5px)', zIndex: 199 },
     sidebarHeader: { padding: '1.5rem', borderBottom: '1px solid var(--separator-color)' },
-    desktopCollapseButton: { background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-color)', padding: '4px', display: 'flex', alignItems: 'center' },
-    sidebarUser: { display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' },
+    desktopCollapseButton: { background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-color)', padding: '8px', display: 'flex', alignItems: 'center', borderRadius: '12px', transition: 'background-color 0.2s ease' },
+    sidebarUserContainer: {
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '0.75rem',
+        padding: '8px',
+        borderRadius: '12px',
+        transition: 'background-color 0.2s ease',
+        cursor: 'pointer'
+    },
     sidebarUserInfo: { transition: 'opacity 0.2s ease' },
     sidebarUserName: { fontWeight: 600, color: 'var(--dark-grey)', whiteSpace: 'nowrap' },
     sidebarUserRole: { fontSize: '0.8rem', color: 'var(--text-color)', whiteSpace: 'nowrap' },
@@ -1315,9 +1342,29 @@ const styles: { [key: string]: React.CSSProperties } = {
     sidebarLogoutButtonCollapsed: { padding: '0.6rem', width: '44px', height: '44px' },
     sidebarNav: { display: 'flex', flexDirection: 'column', padding: '1rem 0.5rem', flex: 1, overflowY: 'auto' },
     sidebarSeparator: { margin: '0.75rem 1rem', border: 'none', borderTop: '1px solid var(--separator-color)' },
-    navItem: { display: 'flex', alignItems: 'center', padding: '0.75rem 1rem', textDecoration: 'none', color: 'var(--text-color)', borderRadius: '8px', marginBottom: '0.25rem', fontWeight: 500, whiteSpace: 'nowrap', transition: 'background-color 0.2s, color 0.2s' },
+    navItem: { display: 'flex', alignItems: 'center', padding: '0.75rem 1rem', textDecoration: 'none', color: 'var(--text-color)', borderRadius: '8px', marginBottom: '0.25rem', fontWeight: 500, whiteSpace: 'nowrap', transition: 'background-color 0.2s, color 0.2s', position: 'relative' },
     navItemActive: { backgroundColor: 'var(--active-bg)', color: 'var(--brand-color)' },
     navLabel: { fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden' },
+    navTooltip: {
+        position: 'absolute',
+        left: '100%',
+        top: '50%',
+        transform: 'translateY(-50%) translateX(5px)',
+        marginLeft: '12px',
+        padding: '6px 12px',
+        borderRadius: '6px',
+        backgroundColor: 'var(--dark-grey)',
+        color: 'var(--card-bg)',
+        fontSize: '0.85rem',
+        fontWeight: 500,
+        whiteSpace: 'nowrap',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+        opacity: 0,
+        visibility: 'hidden',
+        pointerEvents: 'none',
+        zIndex: 100,
+        transition: 'opacity 0.2s ease, transform 0.2s ease, visibility 0s 0.2s'
+    },
     mainContent: { flex: 1, overflowY: 'auto', padding: '0rem 1rem', display: 'flex', flexDirection: 'column' },
     bottomNav: { display: 'flex', justifyContent: 'space-around', background: 'linear-gradient(to top, var(--card-bg) 70%, transparent)', borderTop: 'none', position: 'fixed', bottom: 0, left: 0, right: 0, height: '70px', zIndex: 100 },
     bottomNavItem: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, textDecoration: 'none', color: 'var(--text-color)' },
@@ -1463,6 +1510,30 @@ styleSheet.innerText = `
     @keyframes slideOutRight {
         from { transform: translateX(0); }
         to { transform: translateX(100%); }
+    }
+
+    /* --- HOVER EFFECTS --- */
+    
+    /* General nav item hover for all views */
+    .nav-item:hover {
+        background-color: var(--active-bg);
+    }
+
+    /* Hover for desktop sidebar controls */
+    .desktop-collapse-button:hover, .sidebar-user-container:hover {
+        background-color: var(--light-grey);
+    }
+    body.dark-mode .desktop-collapse-button:hover,
+    body.dark-mode .sidebar-user-container:hover {
+        background-color: var(--gray-5);
+    }
+    
+    /* Tooltip for collapsed desktop sidebar */
+    .nav-item-desktop-collapsed:hover .nav-tooltip {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(-50%) translateX(10px);
+        transition: opacity 0.2s ease 0.2s, transform 0.2s ease 0.2s, visibility 0s 0.2s;
     }
 `;
 document.head.appendChild(styleSheet);

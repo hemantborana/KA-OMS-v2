@@ -1164,7 +1164,7 @@ styleSheet.type = "text/css";
 styleSheet.innerText = `
     .styled-input:focus {
         border-color: var(--brand-color);
-        box-shadow: 0 0 0 2px var(--active-bg);
+        box-shadow: 0 0 0 1px var(--brand-color);
     }
     .suggestion-item:hover { 
         background-color: var(--active-bg); 
