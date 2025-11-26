@@ -415,10 +415,22 @@ const StyleMatrix = ({ style, catalogData, orderItems, onQuantityChange, isMobil
 
 const CartDetailModal = ({ group, items, onClose, onQuantityChange }) => {
     const [isClosing, setIsClosing] = useState(false);
+    const [deletingItemIds, setDeletingItemIds] = useState<string[]>([]);
 
     const handleClose = () => {
         setIsClosing(true);
         setTimeout(onClose, 300);
+    };
+
+    const startDeleteItem = (itemId: string) => {
+        setDeletingItemIds(prev => [...prev, itemId]);
+    };
+
+    const handleAnimationEnd = (itemId: string, fullItemData: any) => {
+        if (deletingItemIds.includes(itemId)) {
+            onQuantityChange(fullItemData, '0');
+            // The re-render from the parent will remove the item, so no need to clean up local state
+        }
     };
 
     const handleQuantityStep = (item, currentQuantity, step) => onQuantityChange(item.fullItemData, String(Math.max(0, (Number(currentQuantity) || 0) + step)));
@@ -432,9 +444,17 @@ const CartDetailModal = ({ group, items, onClose, onQuantityChange }) => {
                 </div>
                 <div style={styles.cartItemsList}>
                      {items.sort((a,b) => a.fullItemData.Size.localeCompare(b.fullItemData.Size, undefined, {numeric: true})).map(item => (
-                        <div key={item.id} style={styles.cartItem}>
+                        <div 
+                            key={item.id} 
+                            style={styles.cartItem} 
+                            className={deletingItemIds.includes(item.id) ? 'cart-item-deleting' : ''}
+                            onAnimationEnd={() => handleAnimationEnd(item.id, item.fullItemData)}
+                        >
                             <div style={styles.cartItemInfo}> <div style={styles.cartItemDetails}>{`Size: ${item.fullItemData.Size}`}</div> <div style={styles.cartItemSubDetails}>{formatCurrency(item.price)}</div> </div>
-                            <div style={styles.cartItemActions}> <QuantityControl value={item.quantity} onChange={(value) => onQuantityChange(item.fullItemData, value)} onStep={(step) => handleQuantityStep(item, item.quantity, step)} size="small" /> <button onClick={() => onQuantityChange(item.fullItemData, '0')} style={styles.cartItemRemoveBtn} aria-label="Remove item"> <TrashIcon /> </button> </div>
+                            <div style={styles.cartItemActions}> 
+                                <QuantityControl value={item.quantity} onChange={(value) => onQuantityChange(item.fullItemData, value)} onStep={(step) => handleQuantityStep(item, item.quantity, step)} size="small" /> 
+                                <button onClick={() => startDeleteItem(item.id)} style={{...styles.cartItemRemoveBtn, color: 'var(--red)'}} aria-label="Remove item"> <TrashIcon /> </button>
+                            </div>
                         </div>
                     ))}
                 </div>
@@ -446,7 +466,7 @@ const CartDetailModal = ({ group, items, onClose, onQuantityChange }) => {
     );
 };
 
-const Cart = ({ items, onQuantityChange, onClearCart, onEditGroup, isModal, onClose, draftButton, isMobile, onSubmit, isEditMode }) => {
+const Cart = ({ items, onQuantityChange, onClearCartConfirmation, onEditGroup, isModal, onClose, draftButton, isMobile, onSubmit, isEditMode }) => {
     const { totalQuantity, totalValue, groupedItems } = useMemo(() => {
         const summary = { totalQuantity: 0, totalValue: 0 };
         if (!items || items.length === 0) return { ...summary, groupedItems: [] };
@@ -469,7 +489,6 @@ const Cart = ({ items, onQuantityChange, onClearCart, onEditGroup, isModal, onCl
              <div style={{...styles.modalHeader, justifyContent: 'center'}}>
                 <h2 style={styles.cardTitleBare}>Order Summary</h2>
             </div>
-            {items.length > 0 && <button onClick={onClearCart} style={styles.clearCartButton}>Clear All</button>}
             
             {items.length === 0 ? (<p style={styles.cartEmptyText}>Your cart is empty. Add items from the style matrix.</p>) : (
                 <div style={styles.cartItemsList}>
@@ -479,27 +498,13 @@ const Cart = ({ items, onQuantityChange, onClearCart, onEditGroup, isModal, onCl
             <div style={styles.cartFooter}>
                 <div style={styles.cartSummary}> <div> <div style={styles.summaryLabel}>Total Quantity</div> <div style={styles.summaryValue}>{totalQuantity} Items</div> </div> <div> <div style={styles.summaryLabel}>Total Value</div> <div style={styles.summaryValue}>{formatCurrency(totalValue)}</div> </div> </div>
                 {isMobile && isModal && (
-                    <div style={styles.iosModalActions}>
-                        {draftButton && (
-                            <button
-                                onClick={draftButton.props.onClick}
-                                style={{ ...styles.iosModalButtonSecondary, color: draftButton.props.style?.color || 'var(--dark-grey)'}}
-                                disabled={draftButton.props.disabled}
-                                className="ios-modal-button"
-                            >
-                                {draftButton.props.children}
-                            </button>
-                        )}
-                        <button onClick={onSubmit} style={{...styles.iosModalButtonPrimary}} disabled={items.length === 0} className="ios-modal-button">{submitButtonText}</button>
+                    <div style={{...styles.draftsFooter, marginTop: '1.5rem'}}>
+                        <button onClick={onClose} style={{...styles.draftsFooterButton, color: 'var(--dark-grey)', fontWeight: 400}}>Cancel</button>
+                        <button onClick={onClearCartConfirmation} style={{...styles.draftsFooterButton, color: 'var(--red)', fontWeight: 500}} disabled={items.length === 0}>Clear All</button>
+                        <button onClick={onSubmit} style={{...styles.draftsFooterButton, color: 'var(--brand-color)', fontWeight: 600, borderRight: 'none'}} disabled={items.length === 0}>{submitButtonText}</button>
                     </div>
                 )}
             </div>
-             {!isMobile && (
-                <div style={styles.desktopCartActions}>
-                     {draftButton}
-                     <button onClick={onSubmit} style={{...styles.button, flex: 1}} disabled={items.length === 0} className="action-button">{submitButtonText}</button>
-                </div>
-             )}
         </>
     );
 
@@ -511,9 +516,6 @@ const Cart = ({ items, onQuantityChange, onClearCart, onEditGroup, isModal, onCl
         return (
             <>
                 {cartContent}
-                <div style={{...styles.iosModalActions, marginTop: 'auto'}}>
-                    <button onClick={onClose} style={{...styles.iosModalButtonSecondary, borderRight: 'none', flex: 1}}>Cancel</button>
-                </div>
             </>
         )
     }
@@ -530,7 +532,7 @@ const ConfirmationDialog = ({ state, onClose, onConfirm }) => {
     if (!isOpen) return null;
 
     return (
-        <div style={{...styles.modalOverlay, animation: isClosing ? 'overlayOut 0.3s forwards' : 'overlayIn 0.3s forwards'}} onClick={onClose}>
+        <div style={{...styles.modalOverlay, zIndex: 1101, animation: isClosing ? 'overlayOut 0.3s forwards' : 'overlayIn 0.3s forwards'}} onClick={onClose}>
             <div style={{
                 ...styles.modalContent,
                 backgroundColor: 'var(--glass-bg)',
@@ -554,26 +556,16 @@ const ConfirmationDialog = ({ state, onClose, onConfirm }) => {
 };
 
 
-interface DraftsModalProps { isOpen: boolean; onClose: () => void; drafts: Record<string, Draft>; onRestore: (partyName: string) => void; onDelete: (partyName: string) => void; onClearAll: () => void; }
-const DraftsModal: React.FC<DraftsModalProps> = ({ isOpen, onClose, drafts, onRestore, onDelete, onClearAll }) => {
+interface DraftsModalProps { isOpen: boolean; onClose: () => void; drafts: Record<string, Draft>; onRestore: (partyName: string) => void; onDelete: (partyName: string) => void; onClearAll: () => void; showConfirmation: (title: string, message: string, onConfirm: () => void, confirmText: string, confirmColor: string) => void;}
+const DraftsModal: React.FC<DraftsModalProps> = ({ isOpen, onClose, drafts, onRestore, onDelete, onClearAll, showConfirmation }) => {
     const [expandedDraft, setExpandedDraft] = useState<string | null>(null);
     const [isClosing, setIsClosing] = useState(false);
-    const [confirmation, setConfirmation] = useState({ isOpen: false, isClosing: false, title: '', message: '', confirmText: 'Confirm', confirmColor: 'var(--brand-color)', onConfirm: () => {} });
-
-    const showConfirmation = (title, message, onConfirm, confirmText, confirmColor) => {
-        setConfirmation({ isOpen: true, isClosing: false, title, message, onConfirm, confirmText, confirmColor });
-    };
-
-    const closeConfirmation = () => {
-        setConfirmation(prev => ({...prev, isClosing: true}));
-        setTimeout(() => setConfirmation({ isOpen: false, isClosing: false, title: '', message: '', onConfirm: () => {}, confirmText: 'Confirm', confirmColor: 'var(--brand-color)' }), 300);
-    };
 
     const handleDelete = (partyName) => {
         showConfirmation(
             'Confirm Delete',
             `Are you sure you want to delete the draft for "<strong>${partyName}</strong>"? This action cannot be undone.`,
-            () => { onDelete(partyName); closeConfirmation(); },
+            () => onDelete(partyName),
             'Delete',
             'var(--red)'
         );
@@ -583,7 +575,7 @@ const DraftsModal: React.FC<DraftsModalProps> = ({ isOpen, onClose, drafts, onRe
         showConfirmation(
             'Confirm Restore',
             `This will replace your current unsaved order. Are you sure you want to restore the draft for "<strong>${partyName}</strong>"?`,
-            () => { onRestore(partyName); closeConfirmation(); },
+            () => onRestore(partyName),
             'Restore',
             'var(--brand-color)'
         );
@@ -593,7 +585,7 @@ const DraftsModal: React.FC<DraftsModalProps> = ({ isOpen, onClose, drafts, onRe
         showConfirmation(
             'Confirm Clear All',
             `Are you sure you want to delete all saved drafts? This action cannot be undone.`,
-            () => { onClearAll(); closeConfirmation(); },
+            () => onClearAll(),
             'Clear All',
             'var(--red)'
         );
@@ -617,11 +609,6 @@ const DraftsModal: React.FC<DraftsModalProps> = ({ isOpen, onClose, drafts, onRe
 
     return (
         <div style={{...styles.modalOverlay, animation: isClosing ? 'overlayOut 0.3s forwards' : 'overlayIn 0.3s forwards'}} onClick={handleClose}>
-            <ConfirmationDialog 
-                state={confirmation}
-                onClose={closeConfirmation}
-                onConfirm={confirmation.onConfirm}
-            />
             <div style={{...styles.iosModalContent, height: 'auto', maxHeight: '85vh', maxWidth: '600px', animation: isClosing ? 'modalOut 0.3s forwards' : 'modalIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards'}} onClick={(e) => e.stopPropagation()}>
                 <div style={{...styles.modalHeader, justifyContent: 'center', padding: '0rem 1.5rem 0px'}}>
                     <h2 style={styles.cardTitleBare}>Saved Drafts</h2>
@@ -703,8 +690,8 @@ const OrderConfirmationModal = ({ isOpen, onClose, onSubmit, partyName, items, n
     const predefinedNotes = ['Urgent Delivery', 'Call before dispatch', 'Fragile, handle with care', 'Hold until further notice'];
     const handlePredefinedNoteClick = (predefinedNote) => onNoteChange(currentNote => (currentNote ? currentNote + ', ' : '') + predefinedNote);
     
-    const title = isEditMode ? 'Confirm Order Update' : 'Confirm & Place Order';
-    const buttonText = isEditMode ? 'Update Order' : 'Place Order';
+    const title = isEditMode ? 'Confirm Order Update' : 'Confirm & Submit';
+    const buttonText = isEditMode ? 'Update Order' : 'Submit';
     const buttonIcon = isEditMode ? <SaveIcon/> : <SendIcon/>;
 
     return (
@@ -838,6 +825,7 @@ const SuccessModal = ({ isOpen, onClose, orderData, isEditMode }) => {
 
 export const NewOrderEntry = ({ onNavigate }) => {
     const [partyName, setPartyName] = useState('');
+    const [isPartyNameFocused, setIsPartyNameFocused] = useState(false);
     const [items, setItems] = useState<OrderItem[]>([]);
     const [allParties, setAllParties] = useState<string[]>([]);
     const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -857,13 +845,24 @@ export const NewOrderEntry = ({ onNavigate }) => {
     const [editingCartGroup, setEditingCartGroup] = useState(null);
     const [drafts, setDrafts] = useState<Record<string, Draft>>({});
     const [isDraftModalOpen, setIsDraftModalOpen] = useState(false);
-    const [isConfirmationModalOpen, setIsConfirmationModalOpen] = useState(false);
+    const [isOrderConfirmationModalOpen, setIsOrderConfirmationModalOpen] = useState(false);
     const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
     const [finalizedOrder, setFinalizedOrder] = useState(null);
     const [orderNote, setOrderNote] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [editMode, setEditMode] = useState(false);
     const [orderToEdit, setOrderToEdit] = useState<Order | null>(null);
+
+    const [confirmation, setConfirmation] = useState({ isOpen: false, isClosing: false, title: '', message: '', confirmText: 'Confirm', confirmColor: 'var(--brand-color)', onConfirm: () => {} });
+
+    const showConfirmation = (title, message, onConfirm, confirmText, confirmColor) => {
+        setConfirmation({ isOpen: true, isClosing: false, title, message, onConfirm, confirmText, confirmColor });
+    };
+
+    const closeConfirmation = () => {
+        setConfirmation(prev => ({...prev, isClosing: true}));
+        setTimeout(() => setConfirmation({ isOpen: false, isClosing: false, title: '', message: '', onConfirm: () => {}, confirmText: 'Confirm', confirmColor: 'var(--brand-color)' }), 300);
+    };
 
     const partyHasExistingDraft = useMemo(() => partyName && drafts[partyName], [partyName, drafts]);
     
@@ -961,7 +960,7 @@ export const NewOrderEntry = ({ onNavigate }) => {
             showToast('Party name and items are required.', 'error');
             return;
         }
-        setIsConfirmationModalOpen(true);
+        setIsOrderConfirmationModalOpen(true);
     };
 
     const handlePlaceNewOrder = async () => {
@@ -1014,7 +1013,7 @@ export const NewOrderEntry = ({ onNavigate }) => {
         
         playSuccessSound();
         setFinalizedOrder(orderPayload);
-        setIsConfirmationModalOpen(false);
+        setIsOrderConfirmationModalOpen(false);
         setIsSuccessModalOpen(true);
     };
 
@@ -1042,7 +1041,7 @@ export const NewOrderEntry = ({ onNavigate }) => {
 
         playSuccessSound();
         setFinalizedOrder(updatedOrderPayload);
-        setIsConfirmationModalOpen(false);
+        setIsOrderConfirmationModalOpen(false);
         setIsSuccessModalOpen(true);
     };
 
@@ -1148,6 +1147,20 @@ export const NewOrderEntry = ({ onNavigate }) => {
     };
 
     const handleClearCart = () => setItems([]);
+    const handleShowClearCartConfirmation = () => {
+        showConfirmation(
+            'Confirm Clear Cart',
+            `Are you sure you want to clear all items from the current order?`,
+            () => { 
+                handleClearCart(); 
+                closeConfirmation();
+                if(isMobile) handleCloseCartModal();
+            },
+            'Clear All',
+            'var(--red)'
+        );
+    };
+
     const filteredStyles = useMemo(() => !styleSearchTerm ? catalog.styles : catalog.styles.filter(style => style.toLowerCase().includes(styleSearchTerm.toLowerCase())), [styleSearchTerm, catalog.styles]);
     const totalQuantity = useMemo(() => items.reduce((sum, item) => sum + item.quantity, 0), [items]);
 
@@ -1176,9 +1189,26 @@ export const NewOrderEntry = ({ onNavigate }) => {
     
     const submitButtonText = editMode ? 'Update Order' : 'Submit Order';
     const pageTitle = editMode ? `Editing Order ${orderToEdit?.orderNumber}` : '';
+    
+    const partyNameInputStyle = {
+        ...styles.input,
+        borderColor: isPartyNameFocused ? 'var(--brand-color)' : 'var(--skeleton-bg)',
+        boxShadow: isPartyNameFocused ? '0 0 0 2px var(--active-bg)' : 'none',
+    };
+    
+    const styleSearchInputStyle = {
+        ...styles.input,
+        borderColor: isStyleSearchFocused ? 'var(--brand-color)' : 'var(--skeleton-bg)',
+        boxShadow: isStyleSearchFocused ? '0 0 0 2px var(--active-bg)' : 'none',
+    };
 
     return (
         <div style={isMobile ? { ...styles.container, padding: '0', paddingBottom: '80px' } : styles.container}>
+            <ConfirmationDialog 
+                state={confirmation}
+                onClose={closeConfirmation}
+                onConfirm={confirmation.onConfirm}
+            />
             <DraftsModal 
                 isOpen={isDraftModalOpen} 
                 onClose={() => setIsDraftModalOpen(false)} 
@@ -1186,8 +1216,9 @@ export const NewOrderEntry = ({ onNavigate }) => {
                 onRestore={handleRestoreDraft} 
                 onDelete={handleDeleteDraft}
                 onClearAll={handleClearAllDrafts}
+                showConfirmation={showConfirmation}
             />
-            <OrderConfirmationModal isOpen={isConfirmationModalOpen} onClose={() => setIsConfirmationModalOpen(false)} onSubmit={handleOrderSubmission} partyName={partyName} items={items} note={orderNote} onNoteChange={setOrderNote} isLoading={isSubmitting} isEditMode={editMode} />
+            <OrderConfirmationModal isOpen={isOrderConfirmationModalOpen} onClose={() => setIsOrderConfirmationModalOpen(false)} onSubmit={handleOrderSubmission} partyName={partyName} items={items} note={orderNote} onNoteChange={setOrderNote} isLoading={isSubmitting} isEditMode={editMode} />
             <SuccessModal isOpen={isSuccessModalOpen} onClose={() => { setIsSuccessModalOpen(false); if(editMode) { onNavigate('Pending'); } else { resetOrderState(); } }} orderData={finalizedOrder} isEditMode={editMode} />
             
             <div style={isMobile ? { ...styles.header, marginBottom: '0.5rem' } : styles.header}>
@@ -1203,7 +1234,19 @@ export const NewOrderEntry = ({ onNavigate }) => {
                              <div style={styles.collapsibleContent}>
                                 <div style={{...styles.inputGroup, position: 'relative'}} ref={suggestionBoxRef}>
                                     <label htmlFor="partyName" style={styles.label}>Party Name</label>
-                                    <input type="text" id="partyName" className="styled-input" style={styles.input} value={partyName} onChange={handlePartyNameChange} onFocus={() => partyName && suggestions.length > 0 && setIsSuggestionsVisible(true)} placeholder="Enter or select a customer" autoComplete="off" disabled={editMode} />
+                                    <input 
+                                        type="text" 
+                                        id="partyName" 
+                                        className="styled-input" 
+                                        style={partyNameInputStyle}
+                                        value={partyName} 
+                                        onChange={handlePartyNameChange} 
+                                        onFocus={() => { setIsPartyNameFocused(true); if(partyName && suggestions.length > 0) setIsSuggestionsVisible(true); }}
+                                        onBlur={() => setIsPartyNameFocused(false)}
+                                        placeholder="Enter or select a customer" 
+                                        autoComplete="off" 
+                                        disabled={editMode} 
+                                    />
                                      {isSuggestionsVisible && suggestions.length > 0 && (
                                         <ul style={styles.suggestionsList}>
                                             {suggestions.map((s, i) => ( <li key={i} className="suggestion-item hover-effect" style={{...styles.suggestionItem, ...(s.startsWith('Add: ') ? styles.addSuggestionItem : {})}} onClick={() => handleSuggestionClick(s)} onMouseDown={(e) => e.preventDefault()}> {s.startsWith('Add: ') ? `+ Add "${s.substring(5)}"` : s} </li> ))}
@@ -1214,14 +1257,26 @@ export const NewOrderEntry = ({ onNavigate }) => {
                         </div>
                     )}
 
-                    <div style={isMobile ? { ...styles.card, flex: 1, padding: '0.5rem', gap: '1rem', margin: '0 0.5rem' } : { ...styles.card, flex: 1 }}>
+                    <div style={isMobile ? { ...styles.card, flex: 1, padding: '0.5rem', gap: '1rem', margin: '0 1rem' } : { ...styles.card, flex: 1 }}>
                          {isMobile && (
                             <>
                                 <div style={styles.cardHeader}> <h2 style={styles.cardTitleBare}>{partyName ? `Party: ${partyName}` : 'Order Details'}</h2> {partyName && (<button style={styles.collapseButton} onClick={() => setIsOrderDetailsCollapsed(!isOrderDetailsCollapsed)}> <ChevronIcon collapsed={isOrderDetailsCollapsed} /> </button>)} </div>
                                  <div style={{...styles.collapsibleContent, ...(isOrderDetailsCollapsed ? styles.collapsibleContentCollapsed : {})}}>
                                     <div style={{...styles.inputGroup, position: 'relative'}} ref={suggestionBoxRef}>
                                         <label htmlFor="partyName" style={styles.label}>Party Name</label>
-                                        <input type="text" id="partyName" className="styled-input" style={styles.input} value={partyName} onChange={handlePartyNameChange} onFocus={() => partyName && suggestions.length > 0 && setIsSuggestionsVisible(true)} placeholder="Enter or select a customer" autoComplete="off" disabled={editMode} />
+                                        <input 
+                                            type="text" 
+                                            id="partyName" 
+                                            className="styled-input" 
+                                            style={partyNameInputStyle}
+                                            value={partyName} 
+                                            onChange={handlePartyNameChange} 
+                                            onFocus={() => { setIsPartyNameFocused(true); if(partyName && suggestions.length > 0) setIsSuggestionsVisible(true); }}
+                                            onBlur={() => setIsPartyNameFocused(false)}
+                                            placeholder="Enter or select a customer" 
+                                            autoComplete="off" 
+                                            disabled={editMode} 
+                                        />
                                          {isSuggestionsVisible && suggestions.length > 0 && (
                                             <ul style={styles.suggestionsList}>
                                                 {suggestions.map((s, i) => ( <li key={i} className="suggestion-item hover-effect" style={{...styles.suggestionItem, ...(s.startsWith('Add: ') ? styles.addSuggestionItem : {})}} onClick={() => handleSuggestionClick(s)} onMouseDown={(e) => e.preventDefault()}> {s.startsWith('Add: ') ? `+ Add "${s.substring(5)}"` : s} </li> ))}
@@ -1235,7 +1290,18 @@ export const NewOrderEntry = ({ onNavigate }) => {
                         {!isMobile && ( <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}> <h2 style={{...styles.cardTitle, marginBottom: '0', paddingBottom: '0', borderBottom: 'none'}}>Search Item</h2> {isSyncing && <div style={styles.syncingText}>Syncing item catalog...</div>} </div> )}
                         
                         <div style={styles.styleSelectorContainer} ref={styleSearchRef}>
-                             <input type="text" id="styleSearch" className="global-search-input styled-input" style={styles.input} placeholder="Type to search for a style..." value={styleSearchTerm} onChange={e => setStyleSearchTerm(e.target.value)} onFocus={() => setIsStyleSearchFocused(true)} disabled={isSyncing} autoComplete="off" />
+                             <input 
+                                type="text" 
+                                id="styleSearch" 
+                                className="global-search-input styled-input" 
+                                style={styleSearchInputStyle} 
+                                placeholder="Type to search for a style..." 
+                                value={styleSearchTerm} 
+                                onChange={e => setStyleSearchTerm(e.target.value)} 
+                                onFocus={() => setIsStyleSearchFocused(true)} 
+                                disabled={isSyncing} 
+                                autoComplete="off" 
+                             />
                              {isStyleSearchFocused && filteredStyles.length > 0 && (
                                  <div style={styles.styleResultsContainer}>
                                      {filteredStyles.slice(0, 100).map(style => ( <button key={style} className="style-result-item hover-effect" style={selectedStyle === style ? {...styles.styleResultItem, ...styles.styleResultItemActive} : styles.styleResultItem} onClick={() => { setSelectedStyle(style); setStyleSearchTerm(style); setIsStyleSearchFocused(false); }}> {style} </button> ))}
@@ -1247,7 +1313,7 @@ export const NewOrderEntry = ({ onNavigate }) => {
                     </div>
                 </div>
 
-                {!isMobile && ( <div style={styles.sidePanel}> <Cart items={items} onQuantityChange={handleQuantityChange} onClearCart={handleClearCart} onEditGroup={(group) => setEditingCartGroup(group)} isMobile={isMobile} isModal={false} onClose={()=>{}} draftButton={renderDraftButton()} onSubmit={handleSubmit} isEditMode={editMode} /> </div> )}
+                {!isMobile && ( <div style={styles.sidePanel}> <Cart items={items} onQuantityChange={handleQuantityChange} onClearCartConfirmation={handleShowClearCartConfirmation} onEditGroup={(group) => setEditingCartGroup(group)} isMobile={isMobile} isModal={false} onClose={()=>{}} draftButton={renderDraftButton()} onSubmit={handleSubmit} isEditMode={editMode} /> </div> )}
             </div>
 
             {isMobile && (
@@ -1271,7 +1337,7 @@ export const NewOrderEntry = ({ onNavigate }) => {
                         <Cart 
                             items={items} 
                             onQuantityChange={handleQuantityChange} 
-                            onClearCart={() => { handleClearCart(); handleCloseCartModal(); }} 
+                            onClearCartConfirmation={handleShowClearCartConfirmation} 
                             onEditGroup={(group) => setEditingCartGroup(group)} 
                             isMobile={isMobile} 
                             isModal={true} 
@@ -1336,7 +1402,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     cartContainer: { backgroundColor: 'var(--card-bg)', borderRadius: 'var(--border-radius)', boxShadow: 'rgba(0, 0, 0, 0.09) 0px 4px 18px', display: 'flex', flexDirection: 'column', height: '95%' },
     cartHeader: { display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', padding: '1.25rem 1.25rem 1rem', borderBottom: '1px solid var(--separator-color)', flexShrink: 0 },
     cartHeaderActions: { display: 'flex', alignItems: 'center', gap: '0.5rem', gridColumn: 3, justifySelf: 'end' },
-    clearCartButton: { position: 'absolute', top: '1.25rem', right: '1.25rem', background: 'none', border: 'none', color: 'var(--text-color)', fontSize: '0.85rem', fontWeight: 500, cursor: 'pointer' },
+    clearCartButton: { background: 'none', border: 'none', color: 'var(--text-color)', fontSize: '0.85rem', fontWeight: 500, cursor: 'pointer' },
     cartEmptyText: { textAlign: 'center', color: 'var(--text-color)', padding: '3rem 1.25rem', flex: 1 },
     cartItemsList: { flex: 1, overflowY: 'auto', padding: '0.5rem 1.25rem' },
     cartItem: { display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem 0', borderBottom: '1px solid var(--skeleton-bg)' },
@@ -1346,7 +1412,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     cartItemSubDetails: { color: 'var(--text-color)', fontSize: '0.8rem' },
     cartItemActions: { display: 'flex', alignItems: 'center', gap: '0.5rem' },
     cartItemRemoveBtn: { background: 'none', border: 'none', color: 'var(--text-color)', cursor: 'pointer', padding: '0.5rem', lineHeight: 1 },
-    cartFooter: { borderTop: '1px solid var(--separator-color)', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', flexShrink: 0 },
+    cartFooter: { borderTop: '1px solid var(--separator-color)', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', flexShrink: 0, marginTop: 'auto' },
     desktopCartActions: {display: 'flex', gap: '0.75rem', marginTop: '1rem'},
     cartSummary: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
     summaryLabel: { fontSize: '0.85rem', color: 'var(--text-color)', marginBottom: '0.25rem' },
@@ -1359,7 +1425,17 @@ const styles: { [key: string]: React.CSSProperties } = {
     iosModalActions: { display: 'flex', width: 'calc(100% + 3rem)', marginLeft: '-1.5rem', marginBottom: '-1.5rem', borderTop: '1px solid var(--glass-border)', marginTop: 'auto'},
     iosModalButtonSecondary: { background: 'transparent', border: 'none', padding: '1rem 0', cursor: 'pointer', fontSize: '1rem', textAlign: 'center', transition: 'background-color 0.2s ease', flex: 1, color: 'var(--dark-grey)', fontWeight: 400, borderRight: '1px solid var(--glass-border)' },
     iosModalButtonPrimary: { background: 'transparent', border: 'none', padding: '1rem 0', cursor: 'pointer', fontSize: '1rem', textAlign: 'center', transition: 'background-color 0.2s ease', flex: 1, color: 'var(--brand-color)', fontWeight: 600 },
-    stickyActionBar: { position: 'fixed', bottom: 0, left: 0, right: 0, backgroundColor: 'transparent', padding: '0.75rem 1rem', display: 'flex', alignItems: 'center', borderTop: 'none', boxShadow: 'none', zIndex: 90 },
+    stickyActionBar: {
+        position: 'fixed',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        background: 'linear-gradient(to top, var(--card-bg) 70%, transparent)',
+        padding: '1.5rem 1rem 0.75rem',
+        display: 'flex',
+        alignItems: 'center',
+        zIndex: 90
+    },
     stickyCartButton: { background: 'var(--card-bg)', border: 'none', cursor: 'pointer', color: 'var(--dark-grey)', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', boxShadow: 'rgba(0, 0, 0, 0.09) 0px 4px 18px', marginRight: '10px', position: 'relative', width: '48px', height: '48px', marginBottom: '4px', flexShrink: 0 },
     cartCountBadge: { position: 'absolute', top: '-2px', right: '-5px', backgroundColor: '#e74c3c', color: 'white', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '0.75rem', fontWeight: 600, border: '2px solid var(--card-bg)' },
     stickyActionButtons: { display: 'flex', gap: '0.75rem', flex: 1, justifyContent: 'flex-end' },
@@ -1403,8 +1479,24 @@ const styles: { [key: string]: React.CSSProperties } = {
 const styleSheet = document.createElement("style");
 styleSheet.type = "text/css";
 styleSheet.innerText = `
+    @keyframes item-delete-animation {
+        to {
+            opacity: 0;
+            transform: scale(0.8);
+            max-height: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+            margin-bottom: 0;
+            border-width: 0;
+        }
+    }
+    .cart-item-deleting {
+        animation: item-delete-animation 0.3s ease-out forwards;
+        overflow: hidden;
+    }
     .styled-input:focus {
         border-color: var(--brand-color);
+        box-shadow: 0 0 0 2px var(--active-bg);
     }
     .hover-effect:hover {
         transform: translateY(-1px);
