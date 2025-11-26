@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect } from 'react';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
@@ -9,7 +10,11 @@ const Spinner = () => <div style={styles.spinner}></div>;
 const SmallSpinner = () => <div style={{...styles.spinner, width: '20px', height: '20px', borderTop: '3px solid white', borderRight: '3px solid transparent' }}></div>;
 const CalendarIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>;
 const CheckSquareIcon = (props) => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>;
+const TrashIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>;
 const DownloadIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>;
+const HistoryIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>;
+const PlusIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>;
+
 
 const Swipeable: React.FC<{ onAction: () => void; children: React.ReactNode; actionText: string; }> = ({ onAction, children, actionText }) => {
     const contentRef = useRef<HTMLDivElement>(null);
@@ -118,6 +123,60 @@ const showToast = (message: string, type: 'info' | 'success' | 'error' = 'info')
 const formatDate = (isoString) => isoString ? new Date(isoString).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A';
 
 // --- COMPONENTS ---
+const AddNoteModal: React.FC<{
+    isOpen: boolean;
+    onClose: () => void;
+    onSave: (noteText: string) => void;
+}> = ({ isOpen, onClose, onSave }) => {
+    const [noteText, setNoteText] = useState('');
+    const [isClosing, setIsClosing] = useState(false);
+
+    const handleClose = () => {
+        setIsClosing(true);
+        setTimeout(() => {
+            onClose();
+            setIsClosing(false);
+            setNoteText('');
+        }, 300);
+    };
+
+    const handleSave = () => {
+        if (noteText.trim()) {
+            onSave(noteText.trim());
+            handleClose();
+        } else {
+            showToast('Note cannot be empty.', 'error');
+        }
+    };
+    
+    useEffect(() => {
+        if (!isOpen) {
+            setNoteText('');
+        }
+    }, [isOpen]);
+    
+    if (!isOpen) return null;
+
+    return (
+        <div style={{...styles.modalOverlay, animation: isClosing ? 'overlayOut 0.3s forwards' : 'overlayIn 0.3s forwards'}} onClick={handleClose}>
+            <div style={{...styles.modalContent, maxWidth: '400px', animation: isClosing ? 'modalOut 0.3s forwards' : 'modalIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards'}} onClick={(e) => e.stopPropagation()}>
+                <h3 style={{...styles.modalTitle, textAlign: 'center', marginBottom: '0.5rem'}}>Add a New Note</h3>
+                <p style={styles.modalSubtitleText}>This note will be permanently added to the order's history.</p>
+                <textarea 
+                    value={noteText} 
+                    onChange={(e) => setNoteText(e.target.value)}
+                    style={styles.modalTextarea}
+                    placeholder="Type your note here..."
+                />
+                <div style={styles.iosModalActions}>
+                    <button onClick={handleClose} style={styles.iosModalButtonSecondary}>Cancel</button>
+                    <button onClick={handleSave} style={styles.iosModalButtonPrimary}>Save Note</button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 // FIX: Explicitly type props with React.FC to allow the 'key' prop used in lists.
 interface ExpandedBillingViewProps {
     order: Order;
@@ -127,9 +186,11 @@ interface ExpandedBillingViewProps {
     isProcessing: boolean;
     onMatchAll: (order: Order, clear?: boolean) => void;
     isMobile: boolean;
+    onOpenNoteModal: (order: Order) => void;
 }
 
-const ExpandedBillingView: React.FC<ExpandedBillingViewProps> = ({ order, billedQty, onQtyChange, onMarkBilled, isProcessing, onMatchAll, isMobile }) => {
+const ExpandedBillingView: React.FC<ExpandedBillingViewProps> = ({ order, billedQty, onQtyChange, onMarkBilled, isProcessing, onMatchAll, isMobile, onOpenNoteModal }) => {
+    const [isHistoryCollapsed, setIsHistoryCollapsed] = useState(true);
     const isFullyMatched = useMemo(() => {
         if (!billedQty) return false;
         return order.items.every(item => (billedQty[item.id] ?? 0) === item.quantity);
@@ -220,7 +281,7 @@ const ExpandedBillingView: React.FC<ExpandedBillingViewProps> = ({ order, billed
         const matchButtonClickAction = () => {
             onMatchAll(order, isFullyMatched); // pass true to clear if fully matched
         };
-        const matchButtonTitle = isFullyMatched ? "Make Billed Qty Zero" : "Match Ready Qty";
+        const matchButtonTitle = isFullyMatched ? "Clear Billed Quantities" : "Match All Ready Quantities";
 
         const getMarkBilledButtonStyle = () => {
             let style = { ...styles.modalActionButton };
@@ -237,10 +298,7 @@ const ExpandedBillingView: React.FC<ExpandedBillingViewProps> = ({ order, billed
         if (isMobile) {
             return (
                 <div style={styles.mobileFooterContainer}>
-                    <button onClick={matchButtonClickAction} style={styles.iconButton} disabled={isProcessing} title={matchButtonTitle}>
-                        <CheckSquareIcon color="var(--brand-color)" />
-                    </button>
-                    <button onClick={handleDownloadPdf} style={styles.iconButton} disabled={isProcessing} title="Download Packing Slip">
+                    <button onClick={handleDownloadPdf} style={styles.downloadButton} disabled={isProcessing} title="Download Packing Slip">
                         <DownloadIcon />
                     </button>
                     <button 
@@ -250,17 +308,20 @@ const ExpandedBillingView: React.FC<ExpandedBillingViewProps> = ({ order, billed
                     >
                         {isProcessing ? <SmallSpinner /> : 'Mark as Billed'}
                     </button>
+                    <button onClick={matchButtonClickAction} style={styles.matchAllButton} disabled={isProcessing} title={matchButtonTitle}>
+                        <TrashIcon />
+                    </button>
                 </div>
             );
         }
         return (
             <div style={{...styles.modalFooter, padding: '1rem'}}>
-                <button onClick={matchButtonClickAction} style={styles.matchAllButton} disabled={isProcessing} title={matchButtonTitle}>
-                    <CheckSquareIcon />
+                 <button onClick={handleDownloadPdf} style={styles.downloadButton} disabled={isProcessing} title="Download Packing Slip">
+                    <DownloadIcon />
                 </button>
                 <div style={styles.footerActions}>
-                    <button onClick={handleDownloadPdf} style={styles.iconButton} disabled={isProcessing} title="Download Packing Slip">
-                        <DownloadIcon />
+                    <button onClick={matchButtonClickAction} style={styles.matchAllButton} disabled={isProcessing} title={matchButtonTitle}>
+                        <TrashIcon />
                     </button>
                     <button 
                         onClick={handleMarkBilledClick} 
@@ -318,6 +379,37 @@ const ExpandedBillingView: React.FC<ExpandedBillingViewProps> = ({ order, billed
                     </tbody>
                 </table>
             </div>
+          <div style={styles.historySection}>
+                <button style={styles.historyHeader} onClick={() => setIsHistoryCollapsed(!isHistoryCollapsed)}>
+                    <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
+                        <HistoryIcon />
+                        <span>Notes & History</span>
+                    </div>
+                    <ChevronIcon collapsed={isHistoryCollapsed} />
+                </button>
+                <div style={isHistoryCollapsed ? styles.collapsibleContainer : {...styles.collapsibleContainer, ...styles.collapsibleContainerExpanded}}>
+                     <div style={styles.collapsibleContentWrapper}>
+                        <div style={styles.notesAndHistoryContainer}>
+                            <div style={styles.historyList}>
+                                {(order.history || []).map((event, index) => (
+                                    <div key={index} style={styles.historyItem}>
+                                        <div style={styles.historyMeta}>
+                                            <span style={{...styles.historyEventType, backgroundColor: event.event === 'System' ? 'var(--light-grey)' : (event.event === 'Note' ? 'rgba(255, 204, 0, 0.1)' : 'var(--active-bg)'), color: event.event === 'System' ? 'var(--text-color)' : 'var(--orange)'}}>{event.event}</span>
+                                            <span>{new Date(event.timestamp).toLocaleString()}</span>
+                                        </div>
+                                        <p style={styles.historyDetails}>{event.details}</p>
+                                    </div>
+                                ))}
+                            </div>
+                            <div style={styles.addNoteContainer}>
+                                <button onClick={() => onOpenNoteModal(order)} style={styles.addNoteButton}>
+                                    <PlusIcon />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             {renderFooter()}
         </div>
     );
@@ -333,7 +425,8 @@ const PartyGroup: React.FC<{
     onMatchAll: (order: Order, clear?: boolean) => void;
     onPartyExpand: (orders: Order[]) => void;
     isMobile: boolean;
-}> = ({ partyName, data, billedQtys, processingOrders, onQtyChange, onMarkBilled, onMatchAll, onPartyExpand, isMobile }) => {
+    onOpenNoteModal: (order: Order) => void;
+}> = ({ partyName, data, billedQtys, processingOrders, onQtyChange, onMarkBilled, onMatchAll, onPartyExpand, isMobile, onOpenNoteModal }) => {
     const [isCollapsed, setIsCollapsed] = useState(true);
     const totalQty = data.orders.reduce((sum, order) => sum + order.totalQuantity, 0);
 
@@ -375,6 +468,7 @@ const PartyGroup: React.FC<{
                                 isProcessing={processingOrders.includes(order.orderNumber)}
                                 onMatchAll={onMatchAll}
                                 isMobile={isMobile}
+                                onOpenNoteModal={onOpenNoteModal}
                             />
                         ))}
                     </div>
@@ -398,6 +492,37 @@ export const ReadyForBilling = () => {
     const filterPillsRef = useRef(null);
     const pillRefs = useRef({});
     const [markerStyle, setMarkerStyle] = useState({});
+
+    const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
+    const [orderForNewNote, setOrderForNewNote] = useState<Order | null>(null);
+
+    const handleOpenNoteModal = (order: Order) => {
+        setOrderForNewNote(order);
+        setIsNoteModalOpen(true);
+    };
+
+    const handleSaveNote = async (noteText: string) => {
+        if (!orderForNewNote) return;
+        
+        const newNoteEvent = {
+            timestamp: new Date().toISOString(),
+            event: 'Note',
+            details: noteText.trim()
+        };
+        const updatedHistory = [...(orderForNewNote.history || []), newNoteEvent];
+        
+        try {
+            await firebase.database().ref(`${BILLING_ORDERS_REF}/${orderForNewNote.orderNumber}/history`).set(updatedHistory);
+            showToast('Note added successfully!', 'success');
+        } catch (e) {
+            console.error('Failed to add note:', e);
+            showToast('Failed to add note.', 'error');
+        }
+        
+        setIsNoteModalOpen(false);
+        setOrderForNewNote(null);
+    };
+
 
     useEffect(() => {
         const handleResize = () => setIsMobile(window.innerWidth <= 768);
@@ -599,6 +724,7 @@ export const ReadyForBilling = () => {
                         onMatchAll={handleMatchAll}
                         onPartyExpand={handlePartyExpand}
                         isMobile={isMobile}
+                        onOpenNoteModal={handleOpenNoteModal}
                     />
                 ))}
             </div>
@@ -608,6 +734,7 @@ export const ReadyForBilling = () => {
     return (
         <div style={styles.container}>
              <style>{`.fade-in-slide { animation: fadeInSlide 0.4s ease-out forwards; } @keyframes fadeInSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }`}</style>
+             <AddNoteModal isOpen={isNoteModalOpen} onClose={() => setIsNoteModalOpen(false)} onSave={handleSaveNote} />
             <div style={styles.headerCard}>
                 <h2 style={styles.pageTitle}>Ready for Billing</h2>
                 <div style={isSearchFocused ? {...styles.searchContainer, ...styles.searchContainerActive} : styles.searchContainer}>
@@ -707,7 +834,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     orderItemActive: { backgroundColor: 'var(--active-bg)', margin: '0 -1.5rem', padding: '0.75rem 1.5rem' },
     orderInfo: { display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', color: 'var(--dark-grey)' },
     orderMeta: { display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--text-color)', fontSize: '0.85rem' },
-    detailsButton: { display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#eef2f7', border: '1px solid var(--skeleton-bg)', color: 'var(--brand-color)', padding: '0.5rem 1rem', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 },
+    detailsButton: { display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--light-grey)', border: '1px solid var(--skeleton-bg)', color: 'var(--dark-grey)', padding: '0.5rem 1rem', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500 },
     orderWrapper: { border: '1px solid var(--separator-color)', borderRadius: 'var(--border-radius)', backgroundColor: 'var(--billing-card)', overflow: 'hidden' },
     expandedSummary: {
         display: 'grid',
@@ -748,14 +875,77 @@ const styles: { [key: string]: React.CSSProperties } = {
         MozAppearance: 'textfield' 
     },
     modalFooter: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--skeleton-bg)', padding: '1rem' },
-    matchAllButton: { background: 'none', border: '1px solid var(--brand-color)', color: 'var(--brand-color)', padding: '0.75rem', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+    matchAllButton: {
+        background: 'var(--card-bg)',
+        border: '1px solid var(--skeleton-bg)',
+        color: 'var(--red)',
+        padding: '0.75rem',
+        borderRadius: '50%',
+        height: '41px',
+        cursor: 'pointer',
+        width: '41px',
+        boxShadow: 'rgba(0, 0, 0, 0.06) 0px 4px 12px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+    },
     footerActions: { display: 'flex', gap: '0.75rem' },
     iconButton: { background: 'var(--light-grey)', border: '1px solid var(--skeleton-bg)', color: 'var(--dark-grey)', padding: '0.75rem', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' },
-    modalActionButton: { padding: '0.75rem 1.5rem', fontSize: '0.9rem', fontWeight: 600, color: '#fff', backgroundColor: 'var(--green)', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', transition: 'all 0.2s ease', minWidth: '150px' },
+    downloadButton: {
+        background: 'var(--card-bg)',
+        border: '1px solid var(--skeleton-bg)',
+        color: 'var(--brand-color)',
+        padding: '0.75rem',
+        borderRadius: '50%',
+        height: '41px',
+        cursor: 'pointer',
+        width: '41px',
+        boxShadow: 'rgba(0, 0, 0, 0.06) 0px 4px 12px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+    },
+    modalActionButton: {
+        padding: '0.75rem 1.5rem',
+        fontSize: '0.9rem',
+        fontWeight: 600,
+        color: '#fff',
+        backgroundColor: 'var(--green)',
+        border: 'none',
+        borderRadius: '25px',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '0.5rem',
+        transition: 'all 0.2s ease',
+        minWidth: '150px',
+        boxShadow: 'rgba(0, 0, 0, 0.06) 0px 4px 12px'
+    },
     modalActionButtonDisabled: { backgroundColor: 'var(--gray-3)', cursor: 'not-allowed' },
     swipeableContainer: { position: 'relative', overflow: 'hidden' },
     swipeableActions: { position: 'absolute', top: 0, right: 0, height: '100%', display: 'flex', alignItems: 'center', zIndex: 0 },
     swipeableActionButton: { height: '100%', background: 'var(--green)', color: 'white', border: 'none', padding: '0 2rem', cursor: 'pointer', fontSize: '1rem', fontWeight: 600 },
     swipeableContent: { position: 'relative', backgroundColor: 'var(--card-bg)', zIndex: 1 },
     mobileFooterContainer: { display: 'flex', gap: '0.75rem', padding: '0.75rem', borderTop: '1px solid var(--separator-color)' },
+    // History Section
+    historySection: { margin: '1rem', borderTop: '1px solid var(--separator-color)', paddingTop: '1rem' },
+    historyHeader: { width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer', padding: '0.25rem 0', fontSize: '0.9rem', fontWeight: 600, color: 'var(--dark-grey)' },
+    notesAndHistoryContainer: { border: '1px solid var(--separator-color)', borderRadius: '8px', overflow: 'hidden', backgroundColor: 'transparent', marginTop: '0.5rem' },
+    historyList: { maxHeight: '300px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem', padding: '0.75rem' },
+    historyItem: { display: 'flex', flexDirection: 'column', gap: '0.25rem', borderLeft: '3px solid var(--separator-color)', paddingLeft: '1rem' },
+    historyMeta: { display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.8rem', color: 'var(--text-color)' },
+    historyEventType: { fontWeight: 600, padding: '2px 8px', borderRadius: '12px', fontSize: '0.75rem' },
+    historyDetails: { fontSize: '0.9rem', color: 'var(--dark-grey)' },
+    addNoteContainer: { display: 'flex', justifyContent: 'flex-end', padding: '0.5rem 0.75rem', borderTop: '1px solid var(--separator-color)' },
+    addNoteButton: { background: 'var(--brand-color)', border: 'none', color: '#fff', width: '36px', height: '36px', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0, 122, 255, 0.3)', flexShrink: 0 },
+    // Note Modal
+    modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.2)', backdropFilter: 'blur(7px)', WebkitBackdropFilter: 'blur(7px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0 },
+    modalContent: { backgroundColor: 'var(--glass-bg)', padding: '1.5rem', borderRadius: '12px', width: '90%', boxShadow: '0 8px 32px rgba(0,0,0,0.1)', border: '1px solid var(--glass-border)', display: 'flex', flexDirection: 'column', gap: '1rem', transform: 'scale(0.95)', opacity: 0 },
+    modalTitle: { margin: 0, fontSize: '1.1rem', fontWeight: 600, color: 'var(--dark-grey)' },
+    modalSubtitleText: { textAlign: 'center', color: 'var(--text-color)', marginBottom: '1rem', fontSize: '0.9rem', padding: '0 1rem' },
+    modalTextarea: { width: '100%', minHeight: '80px', padding: '0.75rem', fontSize: '0.9rem', border: '1px solid var(--separator-color)', borderRadius: '8px', resize: 'vertical', backgroundColor: 'var(--card-bg)', color: 'var(--dark-grey)', fontFamily: "'Inter', sans-serif" },
+    iosModalActions: { display: 'flex', width: 'calc(100% + 3rem)', marginLeft: '-1.5rem', marginBottom: '-1.5rem', borderTop: '1px solid var(--glass-border)', marginTop: '1.5rem' },
+    iosModalButtonSecondary: { background: 'transparent', border: 'none', padding: '1rem 0', cursor: 'pointer', fontSize: '1rem', textAlign: 'center', transition: 'background-color 0.2s ease', flex: 1, color: 'var(--dark-grey)', borderRight: '1px solid var(--glass-border)', fontWeight: 400 },
+    iosModalButtonPrimary: { background: 'transparent', border: 'none', padding: '1rem 0', cursor: 'pointer', fontSize: '1rem', textAlign: 'center', transition: 'background-color 0.2s ease', flex: 1, color: 'var(--brand-color)', fontWeight: 600 },
 };

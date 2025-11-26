@@ -416,7 +416,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     modalBody: { padding: '0', display: 'flex', flexDirection: 'column', gap: '1rem', overflow: 'hidden', flex: 1 },
     modalSummary: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', backgroundColor: 'rgba(0,0,0,0.03)', padding: '1rem', borderRadius: '8px', color: 'var(--dark-grey)' },
     modalNote: { backgroundColor: 'rgb(255 244 0 / 10%)', borderLeft: '3px solid #ffe58f', padding: '1rem', borderRadius: '8px', fontSize: '0.9rem' },
-    tableContainer: { overflowY: 'auto', borderRadius: '8px', backgroundColor: 'var(--card-bg-secondary)', flex: 1, maxHeight: 'calc(100vh - 30rem)', minHeight: '150px' },
+    tableContainer: { overflowY: 'auto', borderRadius: '8px', backgroundColor: 'var(--card-bg-secondary)', flex: 1, maxHeight: 'calc(100vh - 30rem)' },
     table: { width: '100%', borderCollapse: 'collapse' },
     th: { backgroundColor: 'var(--light-grey)', padding: '10px 12px', textAlign: 'center', fontWeight: 600, color: 'var(--text-color)', borderBottom: '1px solid var(--separator-color)', whiteSpace: 'nowrap', fontSize: '0.85rem', position: 'sticky', top: 0, zIndex: 1 },
     tr: {},
