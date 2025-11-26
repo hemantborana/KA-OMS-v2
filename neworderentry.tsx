@@ -531,10 +531,20 @@ const ConfirmationDialog = ({ state, onClose, onConfirm }) => {
 
     return (
         <div style={{...styles.modalOverlay, animation: isClosing ? 'overlayOut 0.3s forwards' : 'overlayIn 0.3s forwards'}} onClick={onClose}>
-            <div style={{...styles.modalContent, maxWidth: '360px', animation: isClosing ? 'modalOut 0.3s forwards' : 'modalIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards'}} onClick={(e) => e.stopPropagation()}>
+            <div style={{
+                ...styles.modalContent,
+                backgroundColor: 'var(--glass-bg)',
+                padding: '25px',
+                marginLeft: '15px',
+                marginRight: '15px',
+                width: 'auto',
+                maxWidth: '360px',
+                border: '1px solid var(--glass-border)',
+                animation: isClosing ? 'modalOut 0.3s forwards' : 'modalIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards'
+                }} onClick={(e) => e.stopPropagation()}>
                 <h3 style={{...styles.modalTitle, textAlign: 'center', marginBottom: '0.5rem'}}>{title}</h3>
                 <p style={{textAlign: 'center', color: 'var(--text-color)', marginBottom: '1.5rem', fontSize: '0.95rem'}} dangerouslySetInnerHTML={{ __html: message }} />
-                <div style={styles.iosModalActions}>
+                <div style={{...styles.iosModalActions, width: 'calc(100% + 50px)', marginLeft: '-25px', marginBottom: '-25px'}}>
                     <button onClick={onClose} style={styles.iosModalButtonSecondary}>Cancel</button>
                     <button onClick={onConfirm} style={{...styles.iosModalButtonPrimary, color: confirmColor || 'var(--brand-color)'}}>{confirmText}</button>
                 </div>
@@ -613,7 +623,7 @@ const DraftsModal: React.FC<DraftsModalProps> = ({ isOpen, onClose, drafts, onRe
                 onConfirm={confirmation.onConfirm}
             />
             <div style={{...styles.iosModalContent, height: 'auto', maxHeight: '85vh', maxWidth: '600px', animation: isClosing ? 'modalOut 0.3s forwards' : 'modalIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards'}} onClick={(e) => e.stopPropagation()}>
-                <div style={{...styles.modalHeader, justifyContent: 'center'}}>
+                <div style={{...styles.modalHeader, justifyContent: 'center', padding: '0rem 1.5rem 0px'}}>
                     <h2 style={styles.cardTitleBare}>Saved Drafts</h2>
                 </div>
                 <div style={styles.draftsList}>
