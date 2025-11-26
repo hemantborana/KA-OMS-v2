@@ -2011,13 +2011,13 @@ const styles: { [key: string]: React.CSSProperties } = {
     headerTop: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
     pageTitle: { fontSize: '1.25rem', fontWeight: 600, color: 'var(--dark-grey)' },
     headerControls: { display: 'flex', alignItems: 'center', gap: '0.75rem', position: 'relative', zIndex: 101 },
-    viewToggle: { display: 'flex', backgroundColor: 'var(--light-grey)', borderRadius: '8px', padding: '4px' },
+    viewToggle: { display: 'flex', backgroundColor: 'var(--grey-5)', borderRadius: '18px', padding: '4px' },
     toggleButton: { background: 'none', border: 'none', padding: '6px 10px', cursor: 'pointer', color: 'var(--text-color)', borderRadius: '6px' },
     toggleButtonActive: { background: 'var(--card-bg)', border: 'none', padding: '6px 10px', cursor: 'pointer', color: 'var(--brand-color)', borderRadius: '6px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' },
     
     // Mobile Toggle Styles
     mobileFilterButton: { background: 'none', border: 'none', padding: '0.5rem', cursor: 'pointer', color: 'var(--text-color)' },
-    mobileViewToggle: { display: 'flex', backgroundColor: 'var(--light-grey)', borderRadius: '20px', padding: '3px', marginLeft: '0.5rem', gap: '2px' },
+    mobileViewToggle: { display: 'flex', backgroundColor: 'var(--grey-5)', borderRadius: '20px', padding: '3px', marginLeft: '0.5rem', gap: '2px' },
     mobileSegmentInactive: { background: 'transparent', border: 'none', padding: '6px 16px', cursor: 'pointer', color: 'var(--text-color)', borderRadius: '18px', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center' },
     mobileSegmentActive: { background: 'var(--card-bg)', border: 'none', padding: '6px 16px', cursor: 'pointer', color: 'var(--dark-grey)', borderRadius: '18px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center' },
     
