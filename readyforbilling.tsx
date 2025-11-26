@@ -110,7 +110,18 @@ const Swipeable: React.FC<{ onAction: () => void; children: React.ReactNode; act
 // --- TYPE & FIREBASE ---
 interface HistoryEvent { timestamp: string; event: string; details: string; }
 interface OrderItem { id: string; quantity: number; price: number; fullItemData: Record<string, any>; }
-interface Order { orderNumber: string; partyName: string; timestamp: string; totalQuantity: number; totalValue: number; orderNote?: string; items: OrderItem[]; history?: HistoryEvent[]; }
+interface Order { 
+    orderNumber: string; 
+    partyName: string; 
+    timestamp: string; 
+    totalQuantity: number; 
+    totalValue: number; 
+    orderNote?: string; 
+    items: OrderItem[]; 
+    history?: HistoryEvent[];
+    processedDate?: string;
+    billingOrderKey?: string;
+}
 const BILLING_ORDERS_REF = 'Ready_For_Billing_V2';
 const BILLED_ORDERS_REF = 'Billed_Orders_V2';
 
@@ -359,7 +370,8 @@ const ExpandedBillingView: React.FC<ExpandedBillingViewProps> = ({ order, billed
             <div style={{ ...styles.expandedSummary, padding: isMobile ? '0.75rem' : '1rem' }}>
                 <div style={{display: 'none'}}><strong>Party:</strong> {order.partyName}</div>
                 <div><strong>Order #:</strong> {order.orderNumber}</div>
-                <div><strong>Order Date:</strong> {formatDate(order.timestamp)}</div>
+                <div><strong>Original Order Date:</strong> {formatDate(order.timestamp)}</div>
+                <div><strong>Processed Date:</strong> {formatDate(order.processedDate)}</div>
                 <div><strong>Ready Qty:</strong> {order.totalQuantity}</div>
             </div>
             {order.orderNote && <div style={styles.expandedNote}><strong>Note:</strong> {order.orderNote}</div>}
@@ -438,7 +450,7 @@ const PartyGroup: React.FC<{
     data: any; 
     billedQtys: Record<string, Record<string, number>>;
     processingOrders: string[];
-    onQtyChange: (orderNumber: string, itemId: string, value: string, maxQty: number) => void;
+    onQtyChange: (billingOrderKey: string, itemId: string, value: string, maxQty: number) => void;
     onMarkBilled: (order: Order, billedQuantities: Record<string, number>) => void;
     onMatchAll: (order: Order, clear?: boolean) => void;
     onPartyExpand: (orders: Order[]) => void;
@@ -488,12 +500,12 @@ const PartyGroup: React.FC<{
                     <div style={{...styles.cardDetails, padding: isMobile ? '0 0.5rem 1rem' : '0 1.5rem 1.5rem'}}>
                         {data.orders.map(order => (
                             <ExpandedBillingView
-                                key={order.orderNumber}
+                                key={order.billingOrderKey}
                                 order={order}
-                                billedQty={billedQtys[order.orderNumber] || {}}
-                                onQtyChange={(itemId, value, maxQty) => onQtyChange(order.orderNumber, itemId, value, maxQty)}
+                                billedQty={billedQtys[order.billingOrderKey] || {}}
+                                onQtyChange={(itemId, value, maxQty) => onQtyChange(order.billingOrderKey, itemId, value, maxQty)}
                                 onMarkBilled={onMarkBilled}
-                                isProcessing={processingOrders.includes(order.orderNumber)}
+                                isProcessing={processingOrders.includes(order.billingOrderKey)}
                                 onMatchAll={onMatchAll}
                                 isMobile={isMobile}
                                 onOpenNoteModal={onOpenNoteModal}
@@ -530,7 +542,7 @@ export const ReadyForBilling = () => {
     };
 
     const handleSaveNote = async (noteText: string) => {
-        if (!orderForNewNote) return;
+        if (!orderForNewNote || !orderForNewNote.billingOrderKey) return;
         
         const newNoteEvent = {
             timestamp: new Date().toISOString(),
@@ -540,7 +552,7 @@ export const ReadyForBilling = () => {
         const updatedHistory = [...(orderForNewNote.history || []), newNoteEvent];
         
         try {
-            await firebase.database().ref(`${BILLING_ORDERS_REF}/${orderForNewNote.orderNumber}/history`).set(updatedHistory);
+            await firebase.database().ref(`${BILLING_ORDERS_REF}/${orderForNewNote.billingOrderKey}/history`).set(updatedHistory);
             showToast('Note added successfully!', 'success');
         } catch (e) {
             console.error('Failed to add note:', e);
@@ -560,7 +572,10 @@ export const ReadyForBilling = () => {
         const listener = ordersRef.on('value', (snapshot) => {
             const data = snapshot.val();
             if (data) {
-                const ordersArray = Object.values(data) as Order[];
+                const ordersArray = Object.keys(data).map(key => ({
+                    ...(data[key] as Omit<Order, 'billingOrderKey'>),
+                    billingOrderKey: key,
+                })) as Order[];
                 ordersArray.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
                 setOrders(ordersArray);
             } else { setOrders([]); }
@@ -601,12 +616,12 @@ export const ReadyForBilling = () => {
     }, [dateFilter]);
 
 
-    const handleQtyChange = (orderNumber: string, itemId: string, value: string, maxQty: number) => {
+    const handleQtyChange = (billingOrderKey: string, itemId: string, value: string, maxQty: number) => {
         const numValue = Math.max(0, Math.min(maxQty, Number(value) || 0));
         setBilledQtys(prev => ({
             ...prev,
-            [orderNumber]: {
-                ...(prev[orderNumber] || {}),
+            [billingOrderKey]: {
+                ...(prev[billingOrderKey] || {}),
                 [itemId]: numValue,
             },
         }));
@@ -617,10 +632,10 @@ export const ReadyForBilling = () => {
             const newQtys = { ...prevQtys };
             let updated = false;
             ordersInParty.forEach(order => {
-                if (!newQtys[order.orderNumber]) { // Only initialize if not already there
+                if (order.billingOrderKey && !newQtys[order.billingOrderKey]) {
                     const initialQtys = {};
                     order.items.forEach(item => { initialQtys[item.id] = item.quantity; });
-                    newQtys[order.orderNumber] = initialQtys;
+                    newQtys[order.billingOrderKey] = initialQtys;
                     updated = true;
                 }
             });
@@ -629,19 +644,24 @@ export const ReadyForBilling = () => {
     };
     
     const handleMatchAll = useCallback((order: Order, clear = false) => {
+        if (!order.billingOrderKey) return;
         const quantities = order.items.reduce((acc, item) => {
             acc[item.id] = clear ? 0 : item.quantity;
             return acc;
         }, {});
         setBilledQtys(prev => ({
             ...prev,
-            [order.orderNumber]: quantities,
+            [order.billingOrderKey]: quantities,
         }));
         showToast(clear ? 'Quantities cleared for this order.' : 'All quantities matched!', 'info');
     }, []);
 
     const handleMarkBilled = async (order: Order, billedQuantities: Record<string, number>) => {
-        setProcessingOrders(prev => [...prev, order.orderNumber]);
+        if (!order.billingOrderKey) {
+            showToast("Error: Missing order key.", 'error');
+            return;
+        }
+        setProcessingOrders(prev => [...prev, order.billingOrderKey]);
         try {
             const updates = {};
             const itemsForBilled = [];
@@ -664,7 +684,7 @@ export const ReadyForBilling = () => {
             const updatedHistory = [...(order.history || []), newHistoryEvent];
             
             const billedOrderRefPath = `${BILLED_ORDERS_REF}/${order.orderNumber}`;
-            const billingOrderRefPath = `${BILLING_ORDERS_REF}/${order.orderNumber}`;
+            const billingOrderRefPath = `${BILLING_ORDERS_REF}/${order.billingOrderKey}`;
             const existingBilledOrderSnap = await firebase.database().ref(billedOrderRefPath).once('value');
             const existingBilledOrder = existingBilledOrderSnap.val() as Order | null;
             
@@ -683,7 +703,7 @@ export const ReadyForBilling = () => {
                 updates[billingOrderRefPath] = null;
                  setBilledQtys(prev => {
                     const newQtys = { ...prev };
-                    delete newQtys[order.orderNumber];
+                    delete newQtys[order.billingOrderKey];
                     return newQtys;
                 });
             }
@@ -694,7 +714,7 @@ export const ReadyForBilling = () => {
             console.error("Failed to mark as billed", e);
             showToast("Error marking order as billed.", 'error');
         } finally {
-            setProcessingOrders(prev => prev.filter(num => num !== order.orderNumber));
+            setProcessingOrders(prev => prev.filter(key => key !== order.billingOrderKey));
         }
     };
 
@@ -708,7 +728,7 @@ export const ReadyForBilling = () => {
             if (dateFilter === 'today') startDate = today;
             else if (dateFilter === '7days') startDate = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
             else if (dateFilter === '30days') startDate = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
-            if (startDate) filtered = filtered.filter(order => new Date(order.timestamp) >= startDate);
+            if (startDate) filtered = filtered.filter(order => new Date(order.processedDate || order.timestamp) >= startDate);
         }
 
         if (!searchTerm) return filtered;

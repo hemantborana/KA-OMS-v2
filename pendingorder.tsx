@@ -1327,38 +1327,64 @@ export const PendingOrders = ({ onNavigate }) => {
             const updates = {};
             const itemsToProcess = [];
             const itemsRemainingInPending = [];
-
+    
             order.items.forEach(item => {
                 const processQty = quantitiesToProcess[item.id] || 0;
                 if (processQty > 0) itemsToProcess.push({ ...item, quantity: processQty });
                 if (item.quantity > processQty) itemsRemainingInPending.push({ ...item, quantity: item.quantity - processQty });
             });
-
-            if (itemsToProcess.length === 0) { showToast("Cannot process with zero quantity.", 'error'); return; }
-            
+    
+            if (itemsToProcess.length === 0) {
+                showToast("Cannot process with zero quantity.", 'error');
+                return;
+            }
+    
+            const now = new Date();
+            const processingDate = now.toISOString();
+            const processingDateKey = now.toISOString().split('T')[0].replace(/-/g, ''); // YYYYMMDD
+    
+            const billingOrderKey = `${order.orderNumber}_${processingDateKey}`;
+            const billingOrderRefPath = `${BILLING_ORDERS_REF}/${billingOrderKey}`;
+            const pendingOrderRefPath = `${PENDING_ORDERS_REF}/${order.orderNumber}`;
+    
             const totalProcessedQty = itemsToProcess.reduce((sum, i) => sum + i.quantity, 0);
             const newHistoryEvent = {
-                timestamp: new Date().toISOString(),
+                timestamp: processingDate,
                 event: 'System',
                 details: `Processed ${itemsToProcess.length} item types. Total Qty: ${totalProcessedQty}.`
             };
             const updatedHistory = [...(order.history || []), newHistoryEvent];
-
-            const billingOrderRefPath = `${BILLING_ORDERS_REF}/${order.orderNumber}`;
-            const pendingOrderRefPath = `${PENDING_ORDERS_REF}/${order.orderNumber}`;
+            
             const existingBillingSnap = await firebase.database().ref(billingOrderRefPath).once('value');
             const existingBillingOrder = existingBillingSnap.val() as Order | null;
+            
             const finalBillingItemsMap = new Map(existingBillingOrder?.items.map(i => [i.id, i]) || []);
             
             itemsToProcess.forEach(newItem => {
                 const existingItem = finalBillingItemsMap.get(newItem.id);
-                if (existingItem) { existingItem.quantity += newItem.quantity; } 
-                else { finalBillingItemsMap.set(newItem.id, newItem); }
+                if (existingItem) { 
+                    existingItem.quantity += newItem.quantity; 
+                } else { 
+                    finalBillingItemsMap.set(newItem.id, newItem); 
+                }
             });
             
             const finalBillingItems = Array.from(finalBillingItemsMap.values());
-            updates[billingOrderRefPath] = { ...order, items: finalBillingItems, totalQuantity: finalBillingItems.reduce((sum, i) => sum + i.quantity, 0), totalValue: finalBillingItems.reduce((sum, i) => sum + (i.quantity * i.price), 0), history: updatedHistory };
-            updates[pendingOrderRefPath] = itemsRemainingInPending.length > 0 ? { ...order, items: itemsRemainingInPending, totalQuantity: itemsRemainingInPending.reduce((sum, i) => sum + i.quantity, 0), totalValue: itemsRemainingInPending.reduce((sum, i) => sum + (i.quantity * i.price), 0), history: updatedHistory } : null;
+            updates[billingOrderRefPath] = { 
+                ...order, 
+                items: finalBillingItems, 
+                totalQuantity: finalBillingItems.reduce((sum, i) => sum + i.quantity, 0), 
+                totalValue: finalBillingItems.reduce((sum, i) => sum + (i.quantity * i.price), 0), 
+                history: updatedHistory,
+                processedDate: processingDate 
+            };
+            updates[pendingOrderRefPath] = itemsRemainingInPending.length > 0 ? { 
+                ...order, 
+                items: itemsRemainingInPending, 
+                totalQuantity: itemsRemainingInPending.reduce((sum, i) => sum + i.quantity, 0), 
+                totalValue: itemsRemainingInPending.reduce((sum, i) => sum + (i.quantity * i.price), 0), 
+                history: updatedHistory 
+            } : null;
             
             await firebase.database().ref().update(updates);
             showToast(`Processed items for ${order.orderNumber}.`, 'success');
