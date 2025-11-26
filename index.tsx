@@ -673,8 +673,9 @@ const Sidebar = ({ activeView, onNavigate, isMobile, isOpen, onClose, session, o
 
     const userContainerStyle = {
         ...styles.sidebarUserContainer,
+        ...(!isActuallyCollapsed && { width: '100%'}),
         ...(isActuallyCollapsed && {
-            width: '100%',
+            padding: '8px 0',
             justifyContent: 'center',
         })
     };
@@ -728,6 +729,7 @@ const Sidebar = ({ activeView, onNavigate, isMobile, isOpen, onClose, session, o
                                <div style={styles.sidebarUserName}>{session.userName}</div>
                                <div style={styles.sidebarUserRole}>{session.role}</div>
                             </div>
+                            <span className="nav-tooltip" style={styles.navTooltip}>{session.userName}</span>
                          </div>
                          {isMobile && (
                             <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--dark-grey)', padding: '4px' }}>
@@ -1337,17 +1339,17 @@ const styles: { [key: string]: React.CSSProperties } = {
     headerTitle: { fontSize: '1.25rem', fontWeight: 600, color: 'var(--dark-grey)' },
     headerPageTitle: { fontFamily: "'Inter Tight', sans-serif", fontSize: '1.2rem', fontWeight: 500, color: 'var(--dark-grey)', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
     menuButton: { background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', color: 'var(--dark-grey)' },
-    sidebar: { width: '230px', backgroundColor: 'var(--card-bg)', borderRight: 'none', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.07)', flexShrink: 0, transition: 'width 0.3s ease, transform 0.3s ease', display: 'flex', flexDirection: 'column' },
+    sidebar: { width: '230px', backgroundColor: 'var(--card-bg)', borderRight: 'none', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.07)', flexShrink: 0, transition: 'width 0.3s ease, transform 0.3s ease', display: 'flex', flexDirection: 'column', overflow: 'visible', zIndex: 101 },
     sidebarCollapsed: { width: '80px' },
     sidebarMobile: { position: 'fixed', top: 0, left: 0, height: '100%', zIndex: 200 },
     overlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.05)', backdropFilter: 'blur(1.5px)', WebkitBackdropFilter: 'blur(1.5px)', zIndex: 199 },
     sidebarHeader: { padding: '1.5rem', borderBottom: '1px solid var(--separator-color)' },
-    desktopCollapseButton: { background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-color)', padding: '8px', display: 'flex', alignItems: 'center', borderRadius: '12px', transition: 'background-color 0.2s ease, color 0.2s ease' },
+    desktopCollapseButton: { background: 'none', border: 'none', cursor: 'pointer', padding: '8px', display: 'flex', alignItems: 'center', borderRadius: '12px', transition: 'background-color 0.2s ease, color 0.2s ease' },
     sidebarUserContainer: {
         display: 'flex',
         alignItems: 'center',
         gap: '0.75rem',
-        padding: '8px',
+        padding: '0.75rem 1rem',
         borderRadius: '12px',
         transition: 'background-color 0.2s ease, color 0.2s ease',
         cursor: 'pointer'
@@ -1357,30 +1359,30 @@ const styles: { [key: string]: React.CSSProperties } = {
     sidebarUserRole: { fontSize: '0.8rem', color: 'var(--text-color)', whiteSpace: 'nowrap' },
     sidebarLogoutButton: { background: 'none', border: '1px solid var(--border-color)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.6rem', width: '100%', color: 'var(--text-color)', fontSize: '0.9rem', borderRadius: '8px', transition: 'all 0.2s ease' },
     sidebarLogoutButtonCollapsed: { padding: '0.6rem', width: '44px', height: '44px' },
-    sidebarNav: { display: 'flex', flexDirection: 'column', padding: '1rem 0.5rem', flex: 1, overflowY: 'auto' },
+    sidebarNav: { display: 'flex', flexDirection: 'column', padding: '1rem 0.5rem', flex: 1, overflowY: 'auto', overflowX: 'visible' },
     sidebarSeparator: { margin: '0.75rem 1rem', border: 'none', borderTop: '1px solid var(--separator-color)' },
     navItem: { display: 'flex', alignItems: 'center', padding: '0.75rem 1rem', textDecoration: 'none', color: 'var(--text-color)', borderRadius: '8px', marginBottom: '0.25rem', fontWeight: 500, whiteSpace: 'nowrap', transition: 'background-color 0.2s, color 0.2s', position: 'relative' },
     navItemActive: { backgroundColor: 'var(--active-bg)', color: 'var(--brand-color)' },
     navLabel: { fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden' },
     navTooltip: {
         position: 'absolute',
-        left: '100%',
+        left: 'calc(100% + 12px)',
         top: '50%',
-        transform: 'translateY(-50%) translateX(5px)',
-        marginLeft: '12px',
-        padding: '6px 12px',
-        borderRadius: '6px',
-        backgroundColor: 'var(--dark-grey)',
-        color: 'var(--card-bg)',
-        fontSize: '0.85rem',
+        transform: 'translateY(-50%)',
+        padding: '8px 12px',
+        borderRadius: '8px',
+        backgroundColor: 'rgba(0, 0, 0, 0.9)',
+        color: '#fff',
+        fontSize: '0.875rem',
         fontWeight: 500,
         whiteSpace: 'nowrap',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+        boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
         opacity: 0,
         visibility: 'hidden',
         pointerEvents: 'none',
         zIndex: 1001,
-        transition: 'opacity 0.2s ease, transform 0.2s ease, visibility 0s 0.2s'
+        transition: 'opacity 0.15s ease, visibility 0s 0.15s',
+        display: 'none'
     },
     mainContent: { flex: 1, overflowY: 'auto', padding: '0rem 1rem', display: 'flex', flexDirection: 'column' },
     bottomNav: { display: 'flex', justifyContent: 'space-around', background: 'linear-gradient(to top, var(--card-bg) 70%, transparent)', borderTop: 'none', position: 'fixed', bottom: 0, left: 0, right: 0, height: '70px', zIndex: 100 },
@@ -1531,33 +1533,36 @@ styleSheet.innerText = `
 
     /* --- HOVER EFFECTS & TOOLTIPS --- */
     
+    /* Default color for collapse button, so hover can override */
+    .desktop-collapse-button {
+        color: var(--text-color);
+    }
+    
     /* General nav item hover for all views */
     .nav-item:hover {
         background-color: var(--active-bg);
         color: var(--brand-color);
     }
 
-    /* Hover for desktop sidebar controls */
-    .desktop-collapse-button-wrapper {
-        position: relative;
-    }
-    .desktop-collapse-button:hover, .sidebar-user-container:hover {
+    /* Hover for desktop sidebar controls (toggle and user profile) */
+    .desktop-collapse-button-wrapper:hover .desktop-collapse-button,
+    .sidebar-user-container:hover {
         background-color: var(--light-grey);
         color: var(--brand-color);
     }
-    body.dark-mode .desktop-collapse-button:hover,
+    body.dark-mode .desktop-collapse-button-wrapper:hover .desktop-collapse-button,
     body.dark-mode .sidebar-user-container:hover {
         background-color: var(--gray-5);
-        color: var(--brand-color);
     }
     
     /* Tooltip for collapsed desktop sidebar */
-    .nav-item-desktop-collapsed:hover .nav-tooltip,
-    .sidebar-collapsed .desktop-collapse-button-wrapper:hover .nav-tooltip {
+    .sidebar-collapsed .nav-item-desktop-collapsed:hover .nav-tooltip,
+    .sidebar-collapsed .desktop-collapse-button-wrapper:hover .nav-tooltip,
+    .sidebar-collapsed .sidebar-user-container:hover .nav-tooltip {
+        display: block;
         opacity: 1;
         visibility: visible;
-        transform: translateY(-50%) translateX(10px);
-        transition: opacity 0.2s ease 0.2s, transform 0.2s ease 0.2s, visibility 0s 0.2s;
+        transition: opacity 0.15s ease 0.1s;
     }
 `;
 document.head.appendChild(styleSheet);

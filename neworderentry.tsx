@@ -271,6 +271,7 @@ const QuantityControl: React.FC<{
     return (
         <div style={s.container}>
             <button
+                className="quantity-button"
                 style={{ ...s.button, borderRadius: '6px 0 0 6px' }}
                 onClick={() => onStep(-1)}
                 aria-label="Decrease quantity"
@@ -284,6 +285,7 @@ const QuantityControl: React.FC<{
                 placeholder="0"
             />
             <button
+                className="quantity-button"
                 style={{ ...s.button, borderRadius: '0 6px 6px 0' }}
                 onClick={() => onStep(1)}
                 aria-label="Increase quantity"
@@ -412,13 +414,22 @@ const StyleMatrix = ({ style, catalogData, orderItems, onQuantityChange, isMobil
 };
 
 const CartDetailModal = ({ group, items, onClose, onQuantityChange }) => {
+    const [isClosing, setIsClosing] = useState(false);
+
+    const handleClose = () => {
+        setIsClosing(true);
+        setTimeout(onClose, 300);
+    };
+
     const handleQuantityStep = (item, currentQuantity, step) => onQuantityChange(item.fullItemData, String(Math.max(0, (Number(currentQuantity) || 0) + step)));
     const formatCurrency = (value) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(value);
 
     return (
-        <div style={styles.modalOverlay} onClick={onClose}>
-            <div style={{...styles.modalContent, height: 'auto', maxHeight: '80vh'}} onClick={(e) => e.stopPropagation()}>
-                <div style={styles.cartHeader}> <div> <h2 style={styles.cardTitleBare}>Edit Item</h2> <p style={styles.cartItemSubDetails}>{`${group.style} - ${group.color}`}</p> </div> <button style={styles.modalCloseButton} onClick={onClose} aria-label="Close edit view">&times;</button> </div>
+        <div style={{...styles.modalOverlay, animation: isClosing ? 'overlayOut 0.3s forwards' : 'overlayIn 0.3s forwards'}} onClick={handleClose}>
+            <div style={{...styles.iosModalContent, maxWidth: '500px', height: 'auto', maxHeight: '80vh', animation: isClosing ? 'modalOut 0.3s forwards' : 'modalIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards'}} onClick={(e) => e.stopPropagation()}>
+                <div style={{...styles.modalHeader, justifyContent: 'center'}}>
+                     <h2 style={styles.cardTitleBare}>{`${group.style} - ${group.color}`}</h2>
+                </div>
                 <div style={styles.cartItemsList}>
                      {items.sort((a,b) => a.fullItemData.Size.localeCompare(b.fullItemData.Size, undefined, {numeric: true})).map(item => (
                         <div key={item.id} style={styles.cartItem}>
@@ -427,7 +438,9 @@ const CartDetailModal = ({ group, items, onClose, onQuantityChange }) => {
                         </div>
                     ))}
                 </div>
-                <div style={{...styles.cartFooter, borderTop: 'none', padding: '1rem 1.25rem'}}> <button onClick={onClose} style={{...styles.button, width: '100%'}}>Done</button> </div>
+                <div style={styles.iosModalActions}> 
+                    <button onClick={handleClose} style={styles.iosModalButtonPrimary} className="ios-modal-button">Done</button> 
+                </div>
             </div>
         </div>
     );
@@ -451,51 +464,142 @@ const Cart = ({ items, onQuantityChange, onClearCart, onEditGroup, isModal, onCl
 
     const submitButtonText = isEditMode ? 'Update Order' : 'Submit Order';
 
-    return (
-        <div style={styles.cartContainer}>
-            <div style={styles.cartHeader}> <h2 style={styles.cardTitleBare}>Order Summary</h2> <div style={styles.cartHeaderActions}> {items.length > 0 && (<button onClick={onClearCart} style={styles.clearCartButton}>Clear All</button>)} {isModal && <button onClick={onClose} style={styles.cartModalCloseButton}>&times;</button>} </div> </div>
+    const cartContent = (
+        <>
+             <div style={{...styles.modalHeader, justifyContent: 'center'}}>
+                <h2 style={styles.cardTitleBare}>Order Summary</h2>
+            </div>
+            {items.length > 0 && <button onClick={onClearCart} style={styles.clearCartButton}>Clear All</button>}
+            
             {items.length === 0 ? (<p style={styles.cartEmptyText}>Your cart is empty. Add items from the style matrix.</p>) : (
                 <div style={styles.cartItemsList}>
-                    {groupedItems.map(group => ( <button key={`${group.style}-${group.color}`} style={styles.cartGroupItem} onClick={() => onEditGroup(group)}> <div style={styles.cartItemInfo}> <div style={styles.cartItemDetails}>{`${group.style} - ${group.color}`}</div> <div style={styles.cartItemSubDetails}>{`Total Qty: ${group.totalQuantity}`}</div> </div> <ChevronRightIcon /> </button> ))}
+                    {groupedItems.map(group => ( <button key={`${group.style}-${group.color}`} className="cart-group-item" style={styles.cartGroupItem} onClick={() => onEditGroup(group)}> <div style={styles.cartItemInfo}> <div style={styles.cartItemDetails}>{`${group.style} - ${group.color}`}</div> <div style={styles.cartItemSubDetails}>{`Total Qty: ${group.totalQuantity}`}</div> </div> <ChevronRightIcon /> </button> ))}
                 </div>
             )}
             <div style={styles.cartFooter}>
                 <div style={styles.cartSummary}> <div> <div style={styles.summaryLabel}>Total Quantity</div> <div style={styles.summaryValue}>{totalQuantity} Items</div> </div> <div> <div style={styles.summaryLabel}>Total Value</div> <div style={styles.summaryValue}>{formatCurrency(totalValue)}</div> </div> </div>
-                {isMobile && draftButton && ( <div style={styles.stickyActionButtons}> {draftButton} <button onClick={onSubmit} style={{ ...styles.button, ...styles.stickyButton, flex: 1 }} disabled={items.length === 0}>{submitButtonText}</button> </div> )}
+                {isMobile && isModal && (
+                    <div style={styles.iosModalActions}>
+                        {draftButton && (
+                            <button
+                                onClick={draftButton.props.onClick}
+                                style={{ ...styles.iosModalButtonSecondary, color: draftButton.props.style?.color || 'var(--dark-grey)'}}
+                                disabled={draftButton.props.disabled}
+                                className="ios-modal-button"
+                            >
+                                {draftButton.props.children}
+                            </button>
+                        )}
+                        <button onClick={onSubmit} style={{...styles.iosModalButtonPrimary}} disabled={items.length === 0} className="ios-modal-button">{submitButtonText}</button>
+                    </div>
+                )}
             </div>
+             {!isMobile && (
+                <div style={styles.desktopCartActions}>
+                     {draftButton}
+                     <button onClick={onSubmit} style={{...styles.button, flex: 1}} disabled={items.length === 0} className="action-button">{submitButtonText}</button>
+                </div>
+             )}
+        </>
+    );
+
+    if (isMobile && !isModal) {
+         return null; // Don't render cart in main view on mobile
+    }
+    
+    if (isModal) {
+        return (
+            <>
+                {cartContent}
+                <div style={{...styles.iosModalActions, marginTop: 'auto'}}>
+                    <button onClick={onClose} style={{...styles.iosModalButtonSecondary, borderRight: 'none', flex: 1}}>Cancel</button>
+                </div>
+            </>
+        )
+    }
+
+    return (
+        <div style={styles.cartContainer}>
+            {cartContent}
         </div>
     );
 };
 
-interface DraftsModalProps { isOpen: boolean; onClose: () => void; drafts: Record<string, Draft>; onRestore: (partyName: string) => void; onDelete: (partyName: string) => void; }
-const DraftsModal: React.FC<DraftsModalProps> = ({ isOpen, onClose, drafts, onRestore, onDelete }) => {
+interface DraftsModalProps { isOpen: boolean; onClose: () => void; drafts: Record<string, Draft>; onRestore: (partyName: string) => void; onDelete: (partyName: string) => void; onClearAll: () => void; }
+const DraftsModal: React.FC<DraftsModalProps> = ({ isOpen, onClose, drafts, onRestore, onDelete, onClearAll }) => {
     const [expandedDraft, setExpandedDraft] = useState<string | null>(null);
+    const [isClosing, setIsClosing] = useState(false);
+
+    const handleClose = () => {
+        setIsClosing(true);
+        setTimeout(onClose, 300);
+    };
+    
+    useEffect(() => {
+        if(isOpen) { setIsClosing(false); }
+    }, [isOpen]);
+
     if (!isOpen) return null;
+
     const sortedDrafts = !drafts ? [] : (Object.entries(drafts) as [string, Draft][]).sort(([, a], [, b]) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
     const formatTimestamp = (isoString: string) => !isoString ? 'Unknown time' : new Date(isoString).toLocaleString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
     const totalQuantity = (items: OrderItem[]) => !items ? 0 : items.reduce((sum, item) => sum + item.quantity, 0);
 
     return (
-        <div style={styles.modalOverlay} onClick={onClose}>
-            <div style={{...styles.modalContent, height: 'auto', maxHeight: '85vh', maxWidth: '600px'}} onClick={(e) => e.stopPropagation()}>
-                <div style={styles.cartHeader}> <div style={{display: 'flex', alignItems: 'center', gap: '0.75rem'}}> <FolderIcon /> <h2 style={styles.cardTitleBare}>Saved Drafts</h2> </div> <button style={styles.modalCloseButton} onClick={onClose} aria-label="Close drafts view">&times;</button> </div>
+        <div style={{...styles.modalOverlay, animation: isClosing ? 'overlayOut 0.3s forwards' : 'overlayIn 0.3s forwards'}} onClick={handleClose}>
+            <div style={{...styles.iosModalContent, height: 'auto', maxHeight: '85vh', maxWidth: '600px', animation: isClosing ? 'modalOut 0.3s forwards' : 'modalIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards'}} onClick={(e) => e.stopPropagation()}>
+                <div style={{...styles.modalHeader, justifyContent: 'center'}}>
+                    <h2 style={styles.cardTitleBare}>Saved Drafts</h2>
+                </div>
                 <div style={styles.draftsList}>
                     {sortedDrafts.length === 0 ? (<p style={styles.cartEmptyText}>You have no saved drafts.</p>) : (
                         sortedDrafts.map(([partyName, draft]) => (
                             <div key={partyName} style={styles.draftItem}>
                                 <div style={styles.draftHeader} onClick={() => setExpandedDraft(expandedDraft === partyName ? null : partyName)}>
                                     <div style={styles.draftInfo}> <p style={styles.draftPartyName}>{partyName}</p> <div style={styles.draftMeta}> <span style={styles.draftTimestamp}><ClockIcon /> {formatTimestamp(draft.timestamp)}</span> <span>|</span> <span>{totalQuantity(draft.items || [])} items</span> </div> </div>
-                                    <div style={styles.draftActions}> <button onClick={(e) => { e.stopPropagation(); onDelete(partyName); }} style={styles.draftActionButton} aria-label={`Delete draft for ${partyName}`}> <TrashIcon /> </button> <button onClick={(e) => { e.stopPropagation(); onRestore(partyName); }} style={{...styles.draftActionButton, ...styles.draftRestoreButton}} aria-label={`Restore draft for ${partyName}`}> <HistoryIcon /> </button> <ChevronIcon collapsed={expandedDraft !== partyName} /> </div>
+                                    <div style={styles.draftActions}> <button onClick={(e) => { e.stopPropagation(); onDelete(partyName); }} className="draft-action-button" style={{...styles.draftActionButton, color: 'var(--red)'}} aria-label={`Delete draft for ${partyName}`}> <TrashIcon /> </button> <button onClick={(e) => { e.stopPropagation(); onRestore(partyName); }} className="draft-action-button" style={{...styles.draftActionButton, ...styles.draftRestoreButton}} aria-label={`Restore draft for ${partyName}`}> <HistoryIcon /> </button> <ChevronIcon collapsed={expandedDraft !== partyName} /> </div>
                                 </div>
-                                {expandedDraft === partyName && (
-                                    <div style={styles.draftItemsDetails}>
-                                        <div style={styles.draftItemsHeader}> <span>Style</span> <span>Color</span> <span>Size</span> <span>Qty</span> </div>
-                                        <ul> {(draft.items || []).map(item => ( <li key={item.id} style={styles.draftItemRow}> <span>{item.fullItemData.Style}</span> <span>{item.fullItemData.Color}</span> <span>{item.fullItemData.Size}</span> <span>{item.quantity}</span> </li> ))} </ul>
+                                <div style={expandedDraft === partyName ? {...styles.collapsibleContainer, ...styles.collapsibleContainerExpanded} : styles.collapsibleContainer}>
+                                    <div style={styles.collapsibleContentWrapper}>
+                                        <div style={styles.draftItemsDetails}>
+                                             <table style={styles.draftsTable}>
+                                                <thead>
+                                                    <tr>
+                                                        <th style={styles.draftsTh}>Style</th>
+                                                        <th style={styles.draftsTh}>Color</th>
+                                                        <th style={styles.draftsTh}>Size</th>
+                                                        <th style={styles.draftsTh}>Qty</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {(draft.items || []).map((item, index) => (
+                                                        <tr key={item.id} style={index % 2 !== 0 ? { ...styles.draftsTr, backgroundColor: 'var(--stripe-bg)' } : styles.draftsTr}>
+                                                            <td style={styles.draftsTd}>{item.fullItemData.Style}</td>
+                                                            <td style={styles.draftsTd}>{item.fullItemData.Color}</td>
+                                                            <td style={styles.draftsTd}>{item.fullItemData.Size}</td>
+                                                            <td style={styles.draftsTd}>{item.quantity}</td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
                                     </div>
-                                )}
+                                </div>
                             </div>
                         ))
                     )}
+                </div>
+                <div style={styles.draftsFooter}>
+                    <button onClick={handleClose} style={styles.modalFullWidthButtonPrimary} className="ios-modal-button hover-effect">Done</button>
+                    <button
+                        onClick={onClearAll}
+                        style={styles.modalFullWidthButtonDestructive}
+                        className="ios-modal-button hover-effect"
+                        disabled={sortedDrafts.length === 0}
+                    >
+                        Clear All Drafts
+                    </button>
+                    <button onClick={handleClose} style={styles.modalFullWidthButtonSecondary} className="ios-modal-button hover-effect">Cancel</button>
                 </div>
             </div>
         </div>
@@ -503,7 +607,17 @@ const DraftsModal: React.FC<DraftsModalProps> = ({ isOpen, onClose, drafts, onRe
 };
 
 const OrderConfirmationModal = ({ isOpen, onClose, onSubmit, partyName, items, note, onNoteChange, isLoading, isEditMode }) => {
+    const [isClosing, setIsClosing] = useState(false);
+
+    const handleClose = () => {
+        setIsClosing(true);
+        setTimeout(onClose, 300);
+    };
+
+    useEffect(() => { if (isOpen) setIsClosing(false); }, [isOpen]);
+
     if (!isOpen) return null;
+
     const { totalQuantity, totalValue } = useMemo(() => {
         return items.reduce((acc, item) => {
             acc.totalQuantity += item.quantity;
@@ -520,20 +634,25 @@ const OrderConfirmationModal = ({ isOpen, onClose, onSubmit, partyName, items, n
     const buttonIcon = isEditMode ? <SaveIcon/> : <SendIcon/>;
 
     return (
-        <div style={styles.modalOverlay} onClick={onClose}>
-            <div style={{...styles.modalContent, maxWidth: '600px', height: 'auto', maxHeight: '90vh'}} onClick={(e) => e.stopPropagation()}>
-                <div style={styles.cartHeader}> <h2 style={styles.cardTitleBare}>{title}</h2> <button style={styles.modalCloseButton} onClick={onClose}>&times;</button> </div>
+        <div style={{...styles.modalOverlay, animation: isClosing ? 'overlayOut 0.3s forwards' : 'overlayIn 0.3s forwards'}} onClick={handleClose}>
+            <div style={{...styles.iosModalContent, maxWidth: '600px', height: 'auto', maxHeight: '90vh', animation: isClosing ? 'modalOut 0.3s forwards' : 'modalIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards'}} onClick={(e) => e.stopPropagation()}>
+                <div style={{...styles.modalHeader, justifyContent: 'center'}}>
+                    <h2 style={styles.cardTitleBare}>{title}</h2>
+                </div>
                 <div style={styles.confirmationBody}>
                     <div style={styles.confirmationSection}> <h3 style={styles.confirmationSectionTitle}>Party Name</h3> <p>{partyName}</p> </div>
                     <div style={styles.confirmationSection}> <h3 style={styles.confirmationSectionTitle}>Order Summary</h3> <div style={styles.cartSummary}> <div> <div style={styles.summaryLabel}>Total Quantity</div> <div style={styles.summaryValue}>{totalQuantity} Items</div> </div> <div> <div style={styles.summaryLabel}>Total Value</div> <div style={styles.summaryValue}>{formatCurrency(totalValue)}</div> </div> </div> </div>
                     <div style={styles.confirmationSection}>
                         <h3 style={styles.confirmationSectionTitle}>Order Note (Optional)</h3>
-                        <div style={styles.predefinedNotesContainer}> {predefinedNotes.map(pn => <button key={pn} onClick={() => handlePredefinedNoteClick(pn)} style={styles.predefinedNoteButton}>{pn}</button>)} </div>
+                        <div style={styles.predefinedNotesContainer}> {predefinedNotes.map(pn => <button key={pn} onClick={() => handlePredefinedNoteClick(pn)} className="predefined-note-button" style={styles.predefinedNoteButton}>{pn}</button>)} </div>
                         <textarea style={styles.notesTextarea} value={note} onChange={(e) => onNoteChange(e.target.value)} placeholder="Type any special instructions here..." />
                     </div>
                 </div>
-                <div style={{...styles.cartFooter, borderTop: '1px solid var(--skeleton-bg)', marginTop: 'auto'}}>
-                    <button onClick={onSubmit} style={{...styles.button, width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem'}} disabled={isLoading}> {isLoading ? <Spinner /> : <>{buttonIcon} {buttonText}</>} </button>
+                 <div style={styles.iosModalActions}>
+                    <button onClick={handleClose} style={styles.iosModalButtonSecondary}>Cancel</button>
+                    <button onClick={onSubmit} style={styles.iosModalButtonPrimary} disabled={isLoading}>
+                        {isLoading ? <Spinner /> : buttonText}
+                    </button>
                 </div>
             </div>
         </div>
@@ -633,10 +752,10 @@ const SuccessModal = ({ isOpen, onClose, orderData, isEditMode }) => {
                     <div style={styles.successDetailItem}> <span>Total Value</span> <strong>{formatCurrency(orderData.totalValue)}</strong> </div>
                 </div>
                 <div style={styles.successModalButtons}>
-                    <button onClick={handleDownloadPdf} style={{ ...styles.button, ...styles.secondaryButton, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                    <button onClick={handleDownloadPdf} style={{ ...styles.button, ...styles.secondaryButton, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }} className="secondary-action-button">
                         <DownloadIcon /> Download PDF
                     </button>
-                    <button onClick={onClose} style={{...styles.button}}>{closeButtonText}</button>
+                    <button onClick={onClose} style={{...styles.button}} className="action-button">{closeButtonText}</button>
                 </div>
             </div>
         </div>
@@ -659,6 +778,7 @@ export const NewOrderEntry = ({ onNavigate }) => {
     const [stockData, setStockData] = useState({});
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
     const [isCartModalOpen, setIsCartModalOpen] = useState(false);
+    const [isCartModalClosing, setIsCartModalClosing] = useState(false);
     const [isOrderDetailsCollapsed, setIsOrderDetailsCollapsed] = useState(false);
     const [editingCartGroup, setEditingCartGroup] = useState(null);
     const [drafts, setDrafts] = useState<Record<string, Draft>>({});
@@ -672,6 +792,14 @@ export const NewOrderEntry = ({ onNavigate }) => {
     const [orderToEdit, setOrderToEdit] = useState<Order | null>(null);
 
     const partyHasExistingDraft = useMemo(() => partyName && drafts[partyName], [partyName, drafts]);
+    
+    const handleCloseCartModal = () => {
+        setIsCartModalClosing(true);
+        setTimeout(() => {
+            setIsCartModalOpen(false);
+            setIsCartModalClosing(false);
+        }, 300);
+    };
 
     const resetOrderState = () => {
         setPartyName('');
@@ -877,8 +1005,14 @@ export const NewOrderEntry = ({ onNavigate }) => {
     };
 
     const handleDeleteDraft = (partyNameToDelete) => {
-        if (window.confirm(`Are you sure you want to delete the draft for "${partyNameToDelete}"? This cannot be undone.`)) {
-            database.ref(`${DRAFTS_REF}/${partyNameToDelete}`).remove().then(() => showToast('Draft deleted.', 'success')).catch((e) => { console.error(e); showToast('Failed to delete draft.', 'error'); });
+        database.ref(`${DRAFTS_REF}/${partyNameToDelete}`).remove().then(() => showToast('Draft deleted.', 'success')).catch((e) => { console.error(e); showToast('Failed to delete draft.', 'error'); });
+    };
+
+    const handleClearAllDrafts = () => {
+        if (Object.keys(drafts).length > 0) {
+            database.ref(DRAFTS_REF).remove()
+                .then(() => showToast('All drafts have been deleted.', 'success'))
+                .catch((e) => { console.error(e); showToast('Failed to clear drafts.', 'error'); });
         }
     };
 
@@ -957,13 +1091,13 @@ export const NewOrderEntry = ({ onNavigate }) => {
             if (isMobileButton) {
                 draftExistsStyle.boxShadow = 'rgba(0, 0, 0, 0.09) 0px 4px 18px';
             }
-            return <button onClick={() => setIsDraftModalOpen(true)} style={draftExistsStyle}>Draft Exists</button>;
+            return <button onClick={() => setIsDraftModalOpen(true)} style={draftExistsStyle} className="action-button hover-effect">Draft Exists</button>;
         }
     
         if (!partyName) {
-            return <button onClick={() => setIsDraftModalOpen(true)} style={{ ...buttonStyle, ...secondaryStyle }} disabled={Object.keys(drafts).length === 0}>Open Drafts</button>;
+            return <button onClick={() => setIsDraftModalOpen(true)} style={{ ...buttonStyle, ...secondaryStyle }} disabled={Object.keys(drafts).length === 0} className="secondary-action-button hover-effect">Open Drafts</button>;
         }
-        return <button onClick={handleSaveDraft} style={{ ...buttonStyle, ...secondaryStyle }} disabled={items.length === 0}>Save Draft</button>;
+        return <button onClick={handleSaveDraft} style={{ ...buttonStyle, ...secondaryStyle }} disabled={items.length === 0} className="secondary-action-button hover-effect">Save Draft</button>;
     };
     
     const submitButtonText = editMode ? 'Update Order' : 'Submit Order';
@@ -971,13 +1105,20 @@ export const NewOrderEntry = ({ onNavigate }) => {
 
     return (
         <div style={isMobile ? { ...styles.container, padding: '0', paddingBottom: '80px' } : styles.container}>
-            <DraftsModal isOpen={isDraftModalOpen} onClose={() => setIsDraftModalOpen(false)} drafts={drafts} onRestore={handleRestoreDraft} onDelete={handleDeleteDraft} />
+            <DraftsModal 
+                isOpen={isDraftModalOpen} 
+                onClose={() => setIsDraftModalOpen(false)} 
+                drafts={drafts} 
+                onRestore={handleRestoreDraft} 
+                onDelete={handleDeleteDraft}
+                onClearAll={handleClearAllDrafts}
+            />
             <OrderConfirmationModal isOpen={isConfirmationModalOpen} onClose={() => setIsConfirmationModalOpen(false)} onSubmit={handleOrderSubmission} partyName={partyName} items={items} note={orderNote} onNoteChange={setOrderNote} isLoading={isSubmitting} isEditMode={editMode} />
             <SuccessModal isOpen={isSuccessModalOpen} onClose={() => { setIsSuccessModalOpen(false); if(editMode) { onNavigate('Pending'); } else { resetOrderState(); } }} orderData={finalizedOrder} isEditMode={editMode} />
             
             <div style={isMobile ? { ...styles.header, marginBottom: '0.5rem' } : styles.header}>
                 <h2 style={styles.pageTitle}>{pageTitle}</h2>
-                {!isMobile && ( <div style={styles.actions}> {renderDraftButton()} <button onClick={handleSubmit} style={styles.button} disabled={items.length === 0 || !partyName}>{submitButtonText}</button> </div> )}
+                {!isMobile && ( <div style={styles.actions}> {renderDraftButton()} <button onClick={handleSubmit} style={styles.button} disabled={items.length === 0 || !partyName} className="action-button hover-effect">{submitButtonText}</button> </div> )}
             </div>
             
             <div style={isMobile ? { ...styles.mainLayout, gridTemplateColumns: '1fr' } : styles.mainLayout}>
@@ -991,7 +1132,7 @@ export const NewOrderEntry = ({ onNavigate }) => {
                                     <input type="text" id="partyName" className="styled-input" style={styles.input} value={partyName} onChange={handlePartyNameChange} onFocus={() => partyName && suggestions.length > 0 && setIsSuggestionsVisible(true)} placeholder="Enter or select a customer" autoComplete="off" disabled={editMode} />
                                      {isSuggestionsVisible && suggestions.length > 0 && (
                                         <ul style={styles.suggestionsList}>
-                                            {suggestions.map((s, i) => ( <li key={i} className="suggestion-item" style={{...styles.suggestionItem, ...(s.startsWith('Add: ') ? styles.addSuggestionItem : {})}} onClick={() => handleSuggestionClick(s)} onMouseDown={(e) => e.preventDefault()}> {s.startsWith('Add: ') ? `+ Add "${s.substring(5)}"` : s} </li> ))}
+                                            {suggestions.map((s, i) => ( <li key={i} className="suggestion-item hover-effect" style={{...styles.suggestionItem, ...(s.startsWith('Add: ') ? styles.addSuggestionItem : {})}} onClick={() => handleSuggestionClick(s)} onMouseDown={(e) => e.preventDefault()}> {s.startsWith('Add: ') ? `+ Add "${s.substring(5)}"` : s} </li> ))}
                                         </ul>
                                      )}
                                 </div>
@@ -1009,7 +1150,7 @@ export const NewOrderEntry = ({ onNavigate }) => {
                                         <input type="text" id="partyName" className="styled-input" style={styles.input} value={partyName} onChange={handlePartyNameChange} onFocus={() => partyName && suggestions.length > 0 && setIsSuggestionsVisible(true)} placeholder="Enter or select a customer" autoComplete="off" disabled={editMode} />
                                          {isSuggestionsVisible && suggestions.length > 0 && (
                                             <ul style={styles.suggestionsList}>
-                                                {suggestions.map((s, i) => ( <li key={i} className="suggestion-item" style={{...styles.suggestionItem, ...(s.startsWith('Add: ') ? styles.addSuggestionItem : {})}} onClick={() => handleSuggestionClick(s)} onMouseDown={(e) => e.preventDefault()}> {s.startsWith('Add: ') ? `+ Add "${s.substring(5)}"` : s} </li> ))}
+                                                {suggestions.map((s, i) => ( <li key={i} className="suggestion-item hover-effect" style={{...styles.suggestionItem, ...(s.startsWith('Add: ') ? styles.addSuggestionItem : {})}} onClick={() => handleSuggestionClick(s)} onMouseDown={(e) => e.preventDefault()}> {s.startsWith('Add: ') ? `+ Add "${s.substring(5)}"` : s} </li> ))}
                                             </ul>
                                          )}
                                     </div>
@@ -1023,7 +1164,7 @@ export const NewOrderEntry = ({ onNavigate }) => {
                              <input type="text" id="styleSearch" className="global-search-input styled-input" style={styles.input} placeholder="Type to search for a style..." value={styleSearchTerm} onChange={e => setStyleSearchTerm(e.target.value)} onFocus={() => setIsStyleSearchFocused(true)} disabled={isSyncing} autoComplete="off" />
                              {isStyleSearchFocused && filteredStyles.length > 0 && (
                                  <div style={styles.styleResultsContainer}>
-                                     {filteredStyles.slice(0, 100).map(style => ( <button key={style} className="style-result-item" style={selectedStyle === style ? {...styles.styleResultItem, ...styles.styleResultItemActive} : styles.styleResultItem} onClick={() => { setSelectedStyle(style); setStyleSearchTerm(style); setIsStyleSearchFocused(false); }}> {style} </button> ))}
+                                     {filteredStyles.slice(0, 100).map(style => ( <button key={style} className="style-result-item hover-effect" style={selectedStyle === style ? {...styles.styleResultItem, ...styles.styleResultItemActive} : styles.styleResultItem} onClick={() => { setSelectedStyle(style); setStyleSearchTerm(style); setIsStyleSearchFocused(false); }}> {style} </button> ))}
                                  </div>
                              )}
                         </div>
@@ -1032,18 +1173,18 @@ export const NewOrderEntry = ({ onNavigate }) => {
                     </div>
                 </div>
 
-                {!isMobile && ( <div style={styles.sidePanel}> <Cart items={items} onQuantityChange={handleQuantityChange} onClearCart={handleClearCart} onEditGroup={(group) => setEditingCartGroup(group)} isMobile={isMobile} isModal={false} onClose={()=>{}} draftButton={null} onSubmit={()=>{}} isEditMode={editMode} /> </div> )}
+                {!isMobile && ( <div style={styles.sidePanel}> <Cart items={items} onQuantityChange={handleQuantityChange} onClearCart={handleClearCart} onEditGroup={(group) => setEditingCartGroup(group)} isMobile={isMobile} isModal={false} onClose={()=>{}} draftButton={renderDraftButton()} onSubmit={handleSubmit} isEditMode={editMode} /> </div> )}
             </div>
 
             {isMobile && (
                 <div style={styles.stickyActionBar}>
-                    <button style={styles.stickyCartButton} onClick={() => setIsCartModalOpen(true)}>
+                    <button style={styles.stickyCartButton} className="sticky-cart-button hover-effect" onClick={() => setIsCartModalOpen(true)}>
                         <CartIcon />
                         {totalQuantity > 0 && <span style={styles.cartCountBadge}>{totalQuantity}</span>}
                     </button>
                     <div style={styles.stickyActionButtons}>
                         {renderDraftButton(true)}
-                        <button onClick={handleSubmit} style={{ ...styles.button, ...styles.stickyButton }} disabled={items.length === 0 || !partyName}>
+                        <button onClick={handleSubmit} style={{ ...styles.button, ...styles.stickyButton }} disabled={items.length === 0 || !partyName} className="action-button hover-effect">
                             {submitButtonText}
                         </button>
                     </div>
@@ -1051,9 +1192,20 @@ export const NewOrderEntry = ({ onNavigate }) => {
             )}
             
             {isMobile && isCartModalOpen && (
-                <div style={styles.modalOverlay} onClick={() => setIsCartModalOpen(false)}>
-                    <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-                        <Cart items={items} onQuantityChange={handleQuantityChange} onClearCart={() => { handleClearCart(); setIsCartModalOpen(false); }} onEditGroup={(group) => setEditingCartGroup(group)} isMobile={isMobile} isModal={true} onClose={() => setIsCartModalOpen(false)} draftButton={renderDraftButton(true)} onSubmit={() => {handleSubmit(); setIsCartModalOpen(false);}} isEditMode={editMode} />
+                 <div style={{...styles.modalOverlay, animation: isCartModalClosing ? 'overlayOut 0.3s forwards' : 'overlayIn 0.3s forwards'}} onClick={handleCloseCartModal}>
+                    <div style={{...styles.iosModalContent, ...styles.cartModalContent, animation: isCartModalClosing ? 'modalOut 0.3s forwards' : 'modalIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards'}} onClick={(e) => e.stopPropagation()}>
+                        <Cart 
+                            items={items} 
+                            onQuantityChange={handleQuantityChange} 
+                            onClearCart={() => { handleClearCart(); handleCloseCartModal(); }} 
+                            onEditGroup={(group) => setEditingCartGroup(group)} 
+                            isMobile={isMobile} 
+                            isModal={true} 
+                            onClose={handleCloseCartModal} 
+                            draftButton={renderDraftButton(true)} 
+                            onSubmit={() => {handleSubmit(); handleCloseCartModal();}} 
+                            isEditMode={editMode} 
+                        />
                     </div>
                 </div>
             )}
@@ -1108,9 +1260,9 @@ const styles: { [key: string]: React.CSSProperties } = {
     quantityControl: { display: 'flex', alignItems: 'center', justifyContent: 'flex-end', },
     quantityButton: { backgroundColor: 'var(--light-grey)', border: '1px solid var(--skeleton-bg)', color: 'var(--dark-grey)', width: '32px', height: '32px', fontSize: '1.2rem', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background-color 0.2s', lineHeight: 1, },
     cartContainer: { backgroundColor: 'var(--card-bg)', borderRadius: 'var(--border-radius)', boxShadow: 'rgba(0, 0, 0, 0.09) 0px 4px 18px', display: 'flex', flexDirection: 'column', height: '95%' },
-    cartHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.25rem 1.25rem 1rem', borderBottom: '1px solid var(--skeleton-bg)', flexShrink: 0 },
-    cartHeaderActions: { display: 'flex', alignItems: 'center', gap: '0.5rem' },
-    clearCartButton: { background: 'none', border: 'none', color: 'var(--text-color)', fontSize: '0.85rem', fontWeight: 500, cursor: 'pointer' },
+    cartHeader: { display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', padding: '1.25rem 1.25rem 1rem', borderBottom: '1px solid var(--separator-color)', flexShrink: 0 },
+    cartHeaderActions: { display: 'flex', alignItems: 'center', gap: '0.5rem', gridColumn: 3, justifySelf: 'end' },
+    clearCartButton: { position: 'absolute', top: '1.25rem', right: '1.25rem', background: 'none', border: 'none', color: 'var(--text-color)', fontSize: '0.85rem', fontWeight: 500, cursor: 'pointer' },
     cartEmptyText: { textAlign: 'center', color: 'var(--text-color)', padding: '3rem 1.25rem', flex: 1 },
     cartItemsList: { flex: 1, overflowY: 'auto', padding: '0.5rem 1.25rem' },
     cartItem: { display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem 0', borderBottom: '1px solid var(--skeleton-bg)' },
@@ -1120,38 +1272,52 @@ const styles: { [key: string]: React.CSSProperties } = {
     cartItemSubDetails: { color: 'var(--text-color)', fontSize: '0.8rem' },
     cartItemActions: { display: 'flex', alignItems: 'center', gap: '0.5rem' },
     cartItemRemoveBtn: { background: 'none', border: 'none', color: 'var(--text-color)', cursor: 'pointer', padding: '0.5rem', lineHeight: 1 },
-    cartFooter: { borderTop: '1px solid var(--skeleton-bg)', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', flexShrink: 0 },
+    cartFooter: { borderTop: '1px solid var(--separator-color)', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', flexShrink: 0 },
+    desktopCartActions: {display: 'flex', gap: '0.75rem', marginTop: '1rem'},
     cartSummary: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
     summaryLabel: { fontSize: '0.85rem', color: 'var(--text-color)', marginBottom: '0.25rem' },
     summaryValue: { fontSize: '1.1rem', fontWeight: 600, color: 'var(--dark-grey)' },
-    modalOverlay: { position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center' },
+    modalOverlay: { position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.2)', backdropFilter: 'blur(7px)', WebkitBackdropFilter: 'blur(7px)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center' },
     modalContent: { backgroundColor: 'var(--card-bg)', width: '100%', maxWidth: '500px', borderRadius: 'var(--border-radius)', display: 'flex', flexDirection: 'column', position: 'relative', animation: 'slideUp 0.3s ease-out', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' },
-    modalCloseButton: { position: 'absolute', top: '10px', right: '15px', background: 'none', border: 'none', fontSize: '2rem', color: 'var(--text-color)', cursor: 'pointer', zIndex: 1, padding: '0.5rem' },
-    cartModalCloseButton: { background: 'none', border: 'none', fontSize: '2.5rem', color: 'var(--text-color)', cursor: 'pointer', padding: 0, lineHeight: '1' },
+    iosModalContent: { backgroundColor: 'var(--glass-bg)', padding: '1.5rem', borderRadius: '12px', width: '90%', boxShadow: '0 8px 32px rgba(0,0,0,0.1)', border: '1px solid var(--glass-border)', display: 'flex', flexDirection: 'column', gap: '1rem', transform: 'scale(0.95)', opacity: 0 },
+    cartModalContent: { padding: 0, gap: 0, backgroundColor: 'var(--card-bg)', height: 'auto', maxHeight: '80vh' },
+    modalHeader: { padding: '1.5rem 1.5rem 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center'},
+    iosModalActions: { display: 'flex', width: 'calc(100% + 3rem)', marginLeft: '-1.5rem', marginBottom: '-1.5rem', borderTop: '1px solid var(--glass-border)', marginTop: 'auto'},
+    iosModalButtonSecondary: { background: 'transparent', border: 'none', padding: '1rem 0', cursor: 'pointer', fontSize: '1rem', textAlign: 'center', transition: 'background-color 0.2s ease', flex: 1, color: 'var(--dark-grey)', fontWeight: 400, borderRight: '1px solid var(--glass-border)' },
+    iosModalButtonPrimary: { background: 'transparent', border: 'none', padding: '1rem 0', cursor: 'pointer', fontSize: '1rem', textAlign: 'center', transition: 'background-color 0.2s ease', flex: 1, color: 'var(--brand-color)', fontWeight: 600 },
     stickyActionBar: { position: 'fixed', bottom: 0, left: 0, right: 0, backgroundColor: 'transparent', padding: '0.75rem 1rem', display: 'flex', alignItems: 'center', borderTop: 'none', boxShadow: 'none', zIndex: 90 },
     stickyCartButton: { background: 'var(--card-bg)', border: 'none', cursor: 'pointer', color: 'var(--dark-grey)', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', boxShadow: 'rgba(0, 0, 0, 0.09) 0px 4px 18px', marginRight: '10px', position: 'relative', width: '48px', height: '48px', marginBottom: '4px', flexShrink: 0 },
     cartCountBadge: { position: 'absolute', top: '-2px', right: '-5px', backgroundColor: '#e74c3c', color: 'white', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '0.75rem', fontWeight: 600, border: '2px solid var(--card-bg)' },
     stickyActionButtons: { display: 'flex', gap: '0.75rem', flex: 1, justifyContent: 'flex-end' },
     stickyButton: { padding: '0.85rem 1.1rem', fontSize: '0.9rem', fontWeight: 500, borderRadius: '25px', flex: 'auto' },
-    draftsList: { flex: 1, overflowY: 'auto', padding: '0.5rem 1.25rem' },
-    draftItem: { borderBottom: '1px solid var(--skeleton-bg)', padding: '0.75rem 0' },
-    draftHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', padding: '0.5rem 0' },
+    draftsList: { flex: 1, overflowY: 'auto', padding: '0.5rem 0' },
+    draftItem: { borderBottom: '1px solid var(--separator-color)' },
+    draftHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', padding: '1rem 1.5rem' },
     draftInfo: { display: 'flex', flexDirection: 'column', gap: '0.25rem' },
     draftPartyName: { fontWeight: 600, color: 'var(--dark-grey)' },
     draftMeta: { display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-color)', fontSize: '0.8rem' },
     draftTimestamp: { display: 'flex', alignItems: 'center', gap: '0.25rem' },
     draftActions: { display: 'flex', alignItems: 'center', gap: '0.5rem' },
-    draftActionButton: { background: 'none', border: '1px solid var(--skeleton-bg)', color: 'var(--text-color)', cursor: 'pointer', width: '32px', height: '32px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+    draftActionButton: { background: 'none', border: '1px solid var(--separator-color)', color: 'var(--text-color)', cursor: 'pointer', width: '32px', height: '32px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
     draftRestoreButton: { borderColor: 'var(--brand-color)', color: 'var(--brand-color)' },
-    draftItemsDetails: { padding: '0.75rem', backgroundColor: 'var(--light-grey)', borderRadius: '8px', marginTop: '0.5rem' },
-    draftItemsHeader: { display: 'grid', gridTemplateColumns: '2fr 2fr 1fr 1fr', gap: '0.5rem', paddingBottom: '0.5rem', borderBottom: '1px solid var(--skeleton-bg)', fontWeight: '600', fontSize: '0.8rem', color: 'var(--dark-grey)' },
-    draftItemRow: { display: 'grid', gridTemplateColumns: '2fr 2fr 1fr 1fr', gap: '0.5rem', padding: '0.5rem 0', fontSize: '0.85rem' },
-    confirmationBody: { padding: '1rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', overflowY: 'auto' },
+    draftItemsDetails: { padding: '0 1.5rem 1rem' },
+    collapsibleContainer: { display: 'grid', gridTemplateRows: '0fr', transition: 'grid-template-rows 0.3s ease-out' },
+    collapsibleContainerExpanded: { gridTemplateRows: '1fr' },
+    collapsibleContentWrapper: { overflow: 'hidden' },
+    draftsTable: { width: '100%', borderCollapse: 'collapse' },
+    draftsTh: { padding: '8px', textAlign: 'left', fontWeight: 600, borderBottom: '1px solid var(--separator-color)', fontSize: '0.8rem', color: 'var(--text-color)' },
+    draftsTr: { borderBottom: '1px solid var(--separator-color)' },
+    draftsTd: { padding: '8px', fontSize: '0.85rem', color: 'var(--dark-grey)' },
+    draftsFooter: { display: 'flex', flexDirection: 'column', gap: '0.75rem', padding: '1rem 1.5rem 0', borderTop: '1px solid var(--separator-color)', marginTop: 'auto' },
+    modalFullWidthButtonPrimary: { width: '100%', padding: '0.85rem', borderRadius: '8px', border: 'none', backgroundColor: 'var(--brand-color)', color: '#fff', fontSize: '1rem', fontWeight: 600, cursor: 'pointer' },
+    modalFullWidthButtonDestructive: { width: '100%', padding: '0.85rem', borderRadius: '8px', border: 'none', backgroundColor: 'var(--card-bg)', color: 'var(--red)', fontSize: '1rem', fontWeight: 500, cursor: 'pointer' },
+    modalFullWidthButtonSecondary: { width: '100%', padding: '0.85rem', borderRadius: '8px', border: 'none', backgroundColor: 'var(--card-bg)', color: 'var(--dark-grey)', fontSize: '1rem', fontWeight: 500, cursor: 'pointer' },
+    confirmationBody: { padding: '0 1.5rem 1rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', overflowY: 'auto', flex: 1 },
     confirmationSection: { color: 'var(--dark-grey)' },
     confirmationSectionTitle: { fontSize: '0.9rem', fontWeight: 600, color: 'var(--dark-grey)', marginBottom: '0.75rem', borderBottom: '1px solid var(--skeleton-bg)', paddingBottom: '0.5rem' },
     notesTextarea: { width: '100%', minHeight: '80px', padding: '0.75rem', fontSize: '0.9rem', border: '1px solid var(--skeleton-bg)', borderRadius: '8px', resize: 'vertical' },
     predefinedNotesContainer: { display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1rem' },
-    predefinedNoteButton: { background: 'var(--light-grey)', border: '1px solid var(--skeleton-bg)', borderRadius: '20px', padding: '0.4rem 0.8rem', fontSize: '0.8rem', cursor: 'pointer' },
+    predefinedNoteButton: { background: 'var(--light-grey)', border: '1px solid var(--skeleton-bg)', borderRadius: '20px', padding: '0.4rem 0.8rem', fontSize: '0.8rem', cursor: 'pointer', transition: 'all 0.2s' },
     successIconContainer: { margin: '0 auto', },
     successDetails: { border: '1px solid var(--skeleton-bg)', borderRadius: '8px', marginTop: '1.5rem', textAlign: 'left' },
     successDetailItem: { display: 'flex', justifyContent: 'space-between', padding: '0.75rem 1rem', borderBottom: '1px solid var(--skeleton-bg)', color: 'var(--dark-grey)' },
@@ -1164,7 +1330,14 @@ styleSheet.type = "text/css";
 styleSheet.innerText = `
     .styled-input:focus {
         border-color: var(--brand-color);
-        box-shadow: 0 0 0 1px var(--brand-color);
+    }
+    .hover-effect:hover {
+        transform: translateY(-1px);
+        box-shadow: rgba(0, 0, 0, 0.1) 0px 8px 24px;
+    }
+    .hover-effect:active {
+        transform: translateY(0px);
+        box-shadow: rgba(0, 0, 0, 0.06) 0px 4px 10px;
     }
     .suggestion-item:hover { 
         background-color: var(--active-bg); 
@@ -1174,9 +1347,43 @@ styleSheet.innerText = `
     }
     .style-result-item:hover {
         background-color: var(--active-bg);
+        color: var(--brand-color);
     }
+    .cart-group-item:hover {
+        background-color: var(--active-bg);
+    }
+    .draft-action-button:hover {
+        background-color: var(--light-grey);
+    }
+    .quantity-button:hover {
+        background-color: var(--separator-color);
+    }
+    .predefined-note-button:hover {
+        border-color: var(--brand-color);
+        color: var(--brand-color);
+        background-color: var(--active-bg);
+    }
+    .action-button:hover, .secondary-action-button:hover, .sticky-cart-button:hover {
+        transform: translateY(-1px);
+        box-shadow: rgba(0, 0, 0, 0.1) 0px 8px 24px;
+    }
+    .action-button:active, .secondary-action-button:active, .sticky-cart-button:active {
+        transform: translateY(0px);
+        box-shadow: rgba(0, 0, 0, 0.06) 0px 4px 10px;
+    }
+    .ios-modal-button:hover {
+        background-color: rgba(0, 0, 0, 0.04);
+    }
+    body.dark-mode .ios-modal-button:hover {
+        background-color: rgba(255, 255, 255, 0.08);
+    }
+
     @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    @keyframes overlayIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes overlayOut { from { opacity: 1; } to { opacity: 0; } }
+    @keyframes modalIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+    @keyframes modalOut { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(0.95); } }
     .checkmark-circle { stroke-dasharray: 166; stroke-dashoffset: 166; stroke-width: 2; stroke-miterlimit: 10; stroke: #2ecc71; fill: none; animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards; }
     .checkmark { width: 80px; height: 80px; border-radius: 50%; display: block; stroke-width: 3; stroke: #fff; stroke-miterlimit: 10; margin: auto; box-shadow: inset 0px 0px 0px #2ecc71; animation: fill .4s ease-in-out .4s forwards, scale .3s ease-in-out .9s both; }
     .checkmark-check { transform-origin: 50% 50%; stroke-dasharray: 48; stroke-dashoffset: 48; animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards; }
