@@ -301,15 +301,15 @@ const ExpandedBillingView: React.FC<ExpandedBillingViewProps> = ({ order, billed
                     <button onClick={handleDownloadPdf} style={styles.downloadButton} disabled={isProcessing} title="Download Packing Slip">
                         <DownloadIcon />
                     </button>
+                    <button onClick={matchButtonClickAction} style={styles.matchAllButton} disabled={isProcessing} title={matchButtonTitle}>
+                        <TrashIcon />
+                    </button>
                     <button 
                         onClick={handleMarkBilledClick} 
                         style={getMarkBilledButtonStyle()}
                         disabled={isButtonDisabled}
                     >
                         {isProcessing ? <SmallSpinner /> : 'Mark as Billed'}
-                    </button>
-                    <button onClick={matchButtonClickAction} style={styles.matchAllButton} disabled={isProcessing} title={matchButtonTitle}>
-                        <TrashIcon />
                     </button>
                 </div>
             );
@@ -910,7 +910,7 @@ const styles: { [key: string]: React.CSSProperties } = {
         fontSize: '0.9rem',
         fontWeight: 600,
         color: '#fff',
-        backgroundColor: 'var(--green)',
+        background: 'linear-gradient(145deg, var(--green), #29b851)',
         border: 'none',
         borderRadius: '25px',
         cursor: 'pointer',

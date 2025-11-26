@@ -215,9 +215,10 @@ const StockTable = ({ items, onHeaderClick, sortConfigs, isMobile }) => {
                     {headers.map(header => {
                          const sortIndex = sortConfigs.findIndex(s => s.key === header.key);
                          const sort = sortIndex > -1 ? sortConfigs[sortIndex] : null;
+                         const isLeftAligned = header.key === 'style' || header.key === 'color';
                          return (
-                            <th key={header.key} style={thStyle} onClick={(e) => onHeaderClick(e, header.key)}>
-                                <div style={styles.thContent}>
+                            <th key={header.key} style={{...thStyle, textAlign: isLeftAligned ? 'left' : 'center'}} onClick={(e) => onHeaderClick(e, header.key)}>
+                                <div style={{...styles.thContent, justifyContent: isLeftAligned ? 'flex-start' : 'center'}}>
                                     {header.label}
                                     {sort && <span style={styles.sortPriorityBadge}>{sortIndex + 1}</span>}
                                     <SortIcon direction={sort ? sort.direction : null} />
@@ -230,8 +231,8 @@ const StockTable = ({ items, onHeaderClick, sortConfigs, isMobile }) => {
             <tbody>
                 {items.map((item, index) => (
                     <tr key={index} style={index % 2 !== 0 ? { ...styles.tr, backgroundColor: 'var(--stripe-bg)' } : styles.tr}>
-                        <td style={tdStyle}>{item.style}</td>
-                        <td style={tdStyle}>{item.color}</td>
+                        <td style={{...tdStyle, textAlign: 'left'}}>{item.style}</td>
+                        <td style={{...tdStyle, textAlign: 'left'}}>{item.color}</td>
                         <td style={tdStyle}>{item.size}</td>
                         <td style={tdStyle}>{item.stock}</td>
                     </tr>
@@ -293,6 +294,7 @@ const SortPopover = ({ target, sortKey, currentSorts, onSortChange, onClose, isC
     const animationStyle: React.CSSProperties = {
         animation: `${isClosing ? 'popover-out' : 'popover-in'} 0.2s ease-out forwards`,
         transformOrigin: 'top center',
+        willChange: 'transform, opacity',
     };
 
     return (
@@ -441,16 +443,19 @@ export const StockOverview = () => {
     };
 
     const handleHeaderClick = (event, key) => {
-        if (popoverState.visible && popoverState.sortKey === key && !popoverState.isClosing) {
-            handleClosePopover();
-        } else {
-            setPopoverState({
-                visible: true,
-                target: event.currentTarget,
-                sortKey: key,
-                isClosing: false,
-            });
+        // If we're clicking the same header that's already open, do nothing.
+        // The outside click handler will deal with closing it.
+        if (popoverState.visible && popoverState.sortKey === key) {
+            return;
         }
+
+        // Otherwise, open (or move) the popover to the new header.
+        setPopoverState({
+            visible: true,
+            target: event.currentTarget,
+            sortKey: key,
+            isClosing: false,
+        });
     };
     
     const handleSortChange = (key, direction) => {
@@ -494,7 +499,7 @@ export const StockOverview = () => {
                     <div ref={tableContainerRef} style={{
                         ...styles.tableContainer, 
                         position: 'relative',
-                        margin: isMobile ? '0 10px' : undefined
+                        margin: isMobile ? '0 1rem' : undefined
                     }}>
                         {popoverState.visible && (
                             <SortPopover
@@ -640,18 +645,19 @@ const styles: { [key: string]: React.CSSProperties } = {
     // Table Styles
     tableContainer: { flex: 1, overflowY: 'auto', backgroundColor: 'var(--card-bg)', borderRadius: 'var(--border-radius)', border: '1px solid var(--separator-color)' },
     table: { width: '100%', borderCollapse: 'collapse' },
-    th: { backgroundColor: 'var(--card-bg-tertiary)', padding: '16px 20px', textAlign: 'center', fontWeight: 600, color: 'var(--dark-grey)', borderBottom: '1px solid var(--separator-color)', cursor: 'pointer', userSelect: 'none', fontSize: '0.8rem' },
+    th: { backgroundColor: 'var(--card-bg)', padding: '16px 20px', textAlign: 'center', fontWeight: 600, color: 'var(--dark-grey)', borderBottom: '1px solid var(--separator-color)', cursor: 'pointer', userSelect: 'none', fontSize: '0.8rem' },
     thContent: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' },
     tr: { borderBottom: '1px solid var(--separator-color)' },
     td: { padding: '16px 20px', color: 'var(--text-color)', fontSize: '0.9rem', textAlign: 'center' },
     tdStock: { fontWeight: 600, color: 'var(--dark-grey)' },
     thMobile: { padding: '12px 8px', fontSize: '0.8rem' },
-    tdMobile: { padding: '12px 8px', fontSize: '0.85rem' },
+    tdMobile: { padding: '12px 4px', fontSize: '0.85rem' },
     // Marquee Styles
     marqueeWrapper: {
         backgroundColor: 'var(--card-bg-tertiary)',
         borderRadius: '12px',
-        padding: '0.5rem 0',
+        padding: '0.6rem 0',
+        height: '38px',
     },
     marqueeContainer: { 
         width: '100%', 
@@ -672,7 +678,7 @@ const styles: { [key: string]: React.CSSProperties } = {
         padding: '0 2rem',
     },
     // Animation Styles
-    collapsibleContainer: { display: 'grid', gridTemplateRows: '0fr', transition: 'grid-template-rows 0.35s cubic-bezier(0.4, 0, 0.2, 1)' },
+    collapsibleContainer: { display: 'grid', gridTemplateRows: '0fr', transition: 'grid-template-rows 0.3s ease-out' },
     collapsibleContainerExpanded: { gridTemplateRows: '1fr' },
     collapsibleContentWrapper: { overflow: 'hidden', minHeight: 0 },
     // Sort Popover

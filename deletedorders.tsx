@@ -1,8 +1,4 @@
 
-
-
-
-
 import React, { useState, useEffect, useMemo } from 'react';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
@@ -27,6 +23,28 @@ const showToast = (message: string, type: 'info' | 'success' | 'error' = 'info')
     window.dispatchEvent(new CustomEvent('show-toast', { detail: { message, type } }));
 };
 const formatDateTime = (isoString) => isoString ? new Date(isoString).toLocaleString('en-IN', { day: 'numeric', month: 'short', year:'2-digit', hour: 'numeric', minute: '2-digit' }) : 'N/A';
+
+
+const RevertConfirmationModal = ({ state, onClose, onConfirm }) => {
+    const { isOpen, isClosing, order } = state;
+    if (!isOpen) return null;
+
+    return (
+        <div style={{...styles.modalOverlay, animation: isClosing ? 'overlayOut 0.3s forwards' : 'overlayIn 0.3s forwards'}} onClick={onClose}>
+            <div style={{...styles.modalContent, maxWidth: '360px', animation: isClosing ? 'modalOut 0.3s forwards' : 'modalIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards'}} onClick={(e) => e.stopPropagation()}>
+                <h3 style={{...styles.modalTitle, textAlign: 'center', marginBottom: '0.5rem'}}>Confirm Revert</h3>
+                <p style={{textAlign: 'center', color: 'var(--text-color)', marginBottom: '1.5rem', fontSize: '0.95rem'}}>
+                    Are you sure you want to revert order <strong>#{order?.orderNumber}</strong>? It will be moved back to Pending Orders.
+                </p>
+                <div style={styles.iosModalActions}>
+                    <button onClick={onClose} style={styles.iosModalButtonSecondary}>Cancel</button>
+                    <button onClick={onConfirm} style={{...styles.iosModalButtonPrimary, color: 'var(--brand-color)'}}>Revert</button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 
 const DeletedOrderCard: React.FC<{ order: Order; onRevert: (order: Order) => void; }> = ({ order, onRevert }) => {
     const [isHistoryVisible, setIsHistoryVisible] = useState(false);
@@ -91,6 +109,7 @@ export const DeletedOrders = () => {
     const [error, setError] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
     const [isSearchFocused, setIsSearchFocused] = useState(false);
+    const [revertModalState, setRevertModalState] = useState({ isOpen: false, isClosing: false, order: null as Order | null });
 
     useEffect(() => {
         const ordersRef = firebase.database().ref(DELETED_ORDERS_REF);
@@ -114,19 +133,31 @@ export const DeletedOrders = () => {
         });
         return () => ordersRef.off('value', listener);
     }, []);
+    
+    const handleOpenRevertModal = (order: Order) => {
+        setRevertModalState({ isOpen: true, isClosing: false, order });
+    };
 
-    const handleRevertOrder = async (order: Order) => {
-        if (!window.confirm(`Are you sure you want to revert order ${order.orderNumber}? It will be moved back to Pending Orders.`)) {
-            return;
-        }
+    const handleCloseRevertModal = () => {
+        setRevertModalState(prev => ({ ...prev, isClosing: true }));
+        setTimeout(() => {
+            setRevertModalState({ isOpen: false, isClosing: false, order: null });
+        }, 300);
+    };
 
-        const revertedOrder = { ...order };
+    const handleConfirmRevert = async () => {
+        const orderToRevert = revertModalState.order;
+        if (!orderToRevert) return;
+        
+        handleCloseRevertModal();
+
+        const revertedOrder = { ...orderToRevert };
         delete revertedOrder.deletedTimestamp;
         delete revertedOrder.deletionReason;
 
         const updates = {
-            [`${PENDING_ORDERS_REF}/${order.orderNumber}`]: revertedOrder,
-            [`${DELETED_ORDERS_REF}/${order.orderNumber}`]: null
+            [`${PENDING_ORDERS_REF}/${orderToRevert.orderNumber}`]: revertedOrder,
+            [`${DELETED_ORDERS_REF}/${orderToRevert.orderNumber}`]: null
         };
 
         try {
@@ -137,6 +168,7 @@ export const DeletedOrders = () => {
             showToast('An error occurred while reverting the order.', 'error');
         }
     };
+
 
     const filteredOrders = useMemo(() => {
         if (!searchTerm) return orders;
@@ -156,7 +188,7 @@ export const DeletedOrders = () => {
         return (
             <div style={styles.listContainer}>
                 {filteredOrders.map(order => (
-                    <DeletedOrderCard key={order.orderNumber} order={order} onRevert={handleRevertOrder} />
+                    <DeletedOrderCard key={order.orderNumber} order={order} onRevert={handleOpenRevertModal} />
                 ))}
             </div>
         );
@@ -181,6 +213,11 @@ export const DeletedOrders = () => {
                 </div>
             </div>
             {renderContent()}
+            <RevertConfirmationModal 
+                state={revertModalState}
+                onClose={handleCloseRevertModal}
+                onConfirm={handleConfirmRevert}
+            />
         </div>
     );
 };
@@ -256,4 +293,12 @@ const styles: { [key: string]: React.CSSProperties } = {
     historyMeta: { display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.8rem', color: 'var(--text-color)' },
     historyEventType: { fontWeight: 600, padding: '2px 8px', borderRadius: '12px', fontSize: '0.75rem' },
     historyDetails: { fontSize: '0.9rem', color: 'var(--dark-grey)' },
+    
+    // Modal Styles
+    modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.2)', backdropFilter: 'blur(7px)', WebkitBackdropFilter: 'blur(7px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0 },
+    modalContent: { backgroundColor: 'var(--glass-bg)', padding: '1.5rem', borderRadius: '12px', width: '90%', boxShadow: '0 8px 32px rgba(0,0,0,0.1)', border: '1px solid var(--glass-border)', display: 'flex', flexDirection: 'column', gap: '1rem', transform: 'scale(0.95)', opacity: 0 },
+    modalTitle: { margin: 0, fontSize: '1.1rem', fontWeight: 600, color: 'var(--dark-grey)' },
+    iosModalActions: { display: 'flex', width: 'calc(100% + 3rem)', marginLeft: '-1.5rem', marginBottom: '-1.5rem', borderTop: '1px solid var(--glass-border)', marginTop: '1.5rem' },
+    iosModalButtonSecondary: { background: 'transparent', border: 'none', padding: '1rem 0', cursor: 'pointer', fontSize: '1rem', textAlign: 'center', transition: 'background-color 0.2s ease', flex: 1, color: 'var(--dark-grey)', borderRight: '1px solid var(--glass-border)', fontWeight: 400 },
+    iosModalButtonPrimary: { background: 'transparent', border: 'none', padding: '1rem 0', cursor: 'pointer', fontSize: '1rem', textAlign: 'center', transition: 'background-color 0.2s ease', flex: 1, color: 'var(--brand-color)', fontWeight: 600 },
 };
