@@ -525,10 +525,70 @@ const Cart = ({ items, onQuantityChange, onClearCart, onEditGroup, isModal, onCl
     );
 };
 
+const ConfirmationDialog = ({ state, onClose, onConfirm }) => {
+    const { isOpen, isClosing, title, message, confirmText, confirmColor } = state;
+    if (!isOpen) return null;
+
+    return (
+        <div style={{...styles.modalOverlay, animation: isClosing ? 'overlayOut 0.3s forwards' : 'overlayIn 0.3s forwards'}} onClick={onClose}>
+            <div style={{...styles.modalContent, maxWidth: '360px', animation: isClosing ? 'modalOut 0.3s forwards' : 'modalIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards'}} onClick={(e) => e.stopPropagation()}>
+                <h3 style={{...styles.modalTitle, textAlign: 'center', marginBottom: '0.5rem'}}>{title}</h3>
+                <p style={{textAlign: 'center', color: 'var(--text-color)', marginBottom: '1.5rem', fontSize: '0.95rem'}} dangerouslySetInnerHTML={{ __html: message }} />
+                <div style={styles.iosModalActions}>
+                    <button onClick={onClose} style={styles.iosModalButtonSecondary}>Cancel</button>
+                    <button onClick={onConfirm} style={{...styles.iosModalButtonPrimary, color: confirmColor || 'var(--brand-color)'}}>{confirmText}</button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+
 interface DraftsModalProps { isOpen: boolean; onClose: () => void; drafts: Record<string, Draft>; onRestore: (partyName: string) => void; onDelete: (partyName: string) => void; onClearAll: () => void; }
 const DraftsModal: React.FC<DraftsModalProps> = ({ isOpen, onClose, drafts, onRestore, onDelete, onClearAll }) => {
     const [expandedDraft, setExpandedDraft] = useState<string | null>(null);
     const [isClosing, setIsClosing] = useState(false);
+    const [confirmation, setConfirmation] = useState({ isOpen: false, isClosing: false, title: '', message: '', confirmText: 'Confirm', confirmColor: 'var(--brand-color)', onConfirm: () => {} });
+
+    const showConfirmation = (title, message, onConfirm, confirmText, confirmColor) => {
+        setConfirmation({ isOpen: true, isClosing: false, title, message, onConfirm, confirmText, confirmColor });
+    };
+
+    const closeConfirmation = () => {
+        setConfirmation(prev => ({...prev, isClosing: true}));
+        setTimeout(() => setConfirmation({ isOpen: false, isClosing: false, title: '', message: '', onConfirm: () => {}, confirmText: 'Confirm', confirmColor: 'var(--brand-color)' }), 300);
+    };
+
+    const handleDelete = (partyName) => {
+        showConfirmation(
+            'Confirm Delete',
+            `Are you sure you want to delete the draft for "<strong>${partyName}</strong>"? This action cannot be undone.`,
+            () => { onDelete(partyName); closeConfirmation(); },
+            'Delete',
+            'var(--red)'
+        );
+    };
+    
+    const handleRestore = (partyName) => {
+        showConfirmation(
+            'Confirm Restore',
+            `This will replace your current unsaved order. Are you sure you want to restore the draft for "<strong>${partyName}</strong>"?`,
+            () => { onRestore(partyName); closeConfirmation(); },
+            'Restore',
+            'var(--brand-color)'
+        );
+    };
+
+    const handleClearAll = () => {
+        showConfirmation(
+            'Confirm Clear All',
+            `Are you sure you want to delete all saved drafts? This action cannot be undone.`,
+            () => { onClearAll(); closeConfirmation(); },
+            'Clear All',
+            'var(--red)'
+        );
+    };
+
 
     const handleClose = () => {
         setIsClosing(true);
@@ -547,6 +607,11 @@ const DraftsModal: React.FC<DraftsModalProps> = ({ isOpen, onClose, drafts, onRe
 
     return (
         <div style={{...styles.modalOverlay, animation: isClosing ? 'overlayOut 0.3s forwards' : 'overlayIn 0.3s forwards'}} onClick={handleClose}>
+            <ConfirmationDialog 
+                state={confirmation}
+                onClose={closeConfirmation}
+                onConfirm={confirmation.onConfirm}
+            />
             <div style={{...styles.iosModalContent, height: 'auto', maxHeight: '85vh', maxWidth: '600px', animation: isClosing ? 'modalOut 0.3s forwards' : 'modalIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards'}} onClick={(e) => e.stopPropagation()}>
                 <div style={{...styles.modalHeader, justifyContent: 'center'}}>
                     <h2 style={styles.cardTitleBare}>Saved Drafts</h2>
@@ -557,12 +622,18 @@ const DraftsModal: React.FC<DraftsModalProps> = ({ isOpen, onClose, drafts, onRe
                             <div key={partyName} style={styles.draftItem}>
                                 <div style={styles.draftHeader} onClick={() => setExpandedDraft(expandedDraft === partyName ? null : partyName)}>
                                     <div style={styles.draftInfo}> <p style={styles.draftPartyName}>{partyName}</p> <div style={styles.draftMeta}> <span style={styles.draftTimestamp}><ClockIcon /> {formatTimestamp(draft.timestamp)}</span> <span>|</span> <span>{totalQuantity(draft.items || [])} items</span> </div> </div>
-                                    <div style={styles.draftActions}> <button onClick={(e) => { e.stopPropagation(); onDelete(partyName); }} className="draft-action-button" style={{...styles.draftActionButton, color: 'var(--red)'}} aria-label={`Delete draft for ${partyName}`}> <TrashIcon /> </button> <button onClick={(e) => { e.stopPropagation(); onRestore(partyName); }} className="draft-action-button" style={{...styles.draftActionButton, ...styles.draftRestoreButton}} aria-label={`Restore draft for ${partyName}`}> <HistoryIcon /> </button> <ChevronIcon collapsed={expandedDraft !== partyName} /> </div>
+                                    <div style={styles.draftActions}>
+                                         <div style={{display: 'flex', gap: '0.5rem'}}>
+                                            <button onClick={(e) => { e.stopPropagation(); handleDelete(partyName); }} className="draft-action-button" style={{...styles.draftActionButton, color: 'var(--red)'}} aria-label={`Delete draft for ${partyName}`}> <TrashIcon /> </button>
+                                            <button onClick={(e) => { e.stopPropagation(); handleRestore(partyName); }} className="draft-action-button" style={{...styles.draftActionButton, ...styles.draftRestoreButton}} aria-label={`Restore draft for ${partyName}`}> <HistoryIcon /> </button>
+                                        </div>
+                                        <ChevronIcon collapsed={expandedDraft !== partyName} />
+                                    </div>
                                 </div>
                                 <div style={expandedDraft === partyName ? {...styles.collapsibleContainer, ...styles.collapsibleContainerExpanded} : styles.collapsibleContainer}>
                                     <div style={styles.collapsibleContentWrapper}>
-                                        <div style={styles.draftItemsDetails}>
-                                             <table style={styles.draftsTable}>
+                                         <div style={styles.draftTableContainer}>
+                                            <table style={styles.draftsTable}>
                                                 <thead>
                                                     <tr>
                                                         <th style={styles.draftsTh}>Style</th>
@@ -589,17 +660,10 @@ const DraftsModal: React.FC<DraftsModalProps> = ({ isOpen, onClose, drafts, onRe
                         ))
                     )}
                 </div>
-                <div style={styles.draftsFooter}>
-                    <button onClick={handleClose} style={styles.modalFullWidthButtonPrimary} className="ios-modal-button hover-effect">Done</button>
-                    <button
-                        onClick={onClearAll}
-                        style={styles.modalFullWidthButtonDestructive}
-                        className="ios-modal-button hover-effect"
-                        disabled={sortedDrafts.length === 0}
-                    >
-                        Clear All Drafts
-                    </button>
-                    <button onClick={handleClose} style={styles.modalFullWidthButtonSecondary} className="ios-modal-button hover-effect">Cancel</button>
+                 <div style={styles.draftsFooter}>
+                    <button onClick={handleClose} style={{...styles.draftsFooterButton, color: 'var(--dark-grey)', fontWeight: 400}}>Cancel</button>
+                    <button onClick={handleClearAll} style={{...styles.draftsFooterButton, color: 'var(--red)', fontWeight: 500}} disabled={sortedDrafts.length === 0}>Clear All</button>
+                    <button onClick={handleClose} style={{...styles.draftsFooterButton, color: 'var(--brand-color)', fontWeight: 600, borderRight: 'none'}}>Done</button>
                 </div>
             </div>
         </div>
@@ -1297,10 +1361,10 @@ const styles: { [key: string]: React.CSSProperties } = {
     draftPartyName: { fontWeight: 600, color: 'var(--dark-grey)' },
     draftMeta: { display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-color)', fontSize: '0.8rem' },
     draftTimestamp: { display: 'flex', alignItems: 'center', gap: '0.25rem' },
-    draftActions: { display: 'flex', alignItems: 'center', gap: '0.5rem' },
-    draftActionButton: { background: 'none', border: '1px solid var(--separator-color)', color: 'var(--text-color)', cursor: 'pointer', width: '32px', height: '32px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+    draftActions: { display: 'flex', alignItems: 'center', gap: '1rem' },
+    draftActionButton: { background: 'none', border: '1px solid var(--separator-color)', color: 'var(--text-color)', cursor: 'pointer', width: '36px', height: '36px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
     draftRestoreButton: { borderColor: 'var(--brand-color)', color: 'var(--brand-color)' },
-    draftItemsDetails: { padding: '0 1.5rem 1rem' },
+    draftTableContainer: { padding: '0.5rem', backgroundColor: 'var(--card-bg-tertiary)', borderRadius: '8px', margin: '0 1.5rem 1rem' },
     collapsibleContainer: { display: 'grid', gridTemplateRows: '0fr', transition: 'grid-template-rows 0.3s ease-out' },
     collapsibleContainerExpanded: { gridTemplateRows: '1fr' },
     collapsibleContentWrapper: { overflow: 'hidden' },
@@ -1308,7 +1372,8 @@ const styles: { [key: string]: React.CSSProperties } = {
     draftsTh: { padding: '8px', textAlign: 'left', fontWeight: 600, borderBottom: '1px solid var(--separator-color)', fontSize: '0.8rem', color: 'var(--text-color)' },
     draftsTr: { borderBottom: '1px solid var(--separator-color)' },
     draftsTd: { padding: '8px', fontSize: '0.85rem', color: 'var(--dark-grey)' },
-    draftsFooter: { display: 'flex', flexDirection: 'column', gap: '0.75rem', padding: '1rem 1.5rem 0', borderTop: '1px solid var(--separator-color)', marginTop: 'auto' },
+    draftsFooter: { display: 'flex', width: 'calc(100% + 3rem)', marginLeft: '-1.5rem', marginBottom: '-1.5rem', borderTop: '1px solid var(--glass-border)', marginTop: 'auto' },
+    draftsFooterButton: { background: 'transparent', border: 'none', padding: '1rem 0', cursor: 'pointer', fontSize: '1rem', textAlign: 'center', transition: 'background-color 0.2s ease', flex: 1, borderRight: '1px solid var(--glass-border)', },
     modalFullWidthButtonPrimary: { width: '100%', padding: '0.85rem', borderRadius: '8px', border: 'none', backgroundColor: 'var(--brand-color)', color: '#fff', fontSize: '1rem', fontWeight: 600, cursor: 'pointer' },
     modalFullWidthButtonDestructive: { width: '100%', padding: '0.85rem', borderRadius: '8px', border: 'none', backgroundColor: 'var(--card-bg)', color: 'var(--red)', fontSize: '1rem', fontWeight: 500, cursor: 'pointer' },
     modalFullWidthButtonSecondary: { width: '100%', padding: '0.85rem', borderRadius: '8px', border: 'none', backgroundColor: 'var(--card-bg)', color: 'var(--dark-grey)', fontSize: '1rem', fontWeight: 500, cursor: 'pointer' },
@@ -1375,6 +1440,12 @@ styleSheet.innerText = `
         background-color: rgba(0, 0, 0, 0.04);
     }
     body.dark-mode .ios-modal-button:hover {
+        background-color: rgba(255, 255, 255, 0.08);
+    }
+    .draftsFooterButton:hover {
+         background-color: rgba(0, 0, 0, 0.04);
+    }
+    body.dark-mode .draftsFooterButton:hover {
         background-color: rgba(255, 255, 255, 0.08);
     }
 
