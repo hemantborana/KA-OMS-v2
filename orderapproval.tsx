@@ -58,6 +58,17 @@ const itemDb = {
             request.onerror = (event) => { console.error('IndexedDB error:', (event.target as IDBRequest).error); reject((event.target as IDBRequest).error); };
         });
     },
+    clearAndAddItems: async function(items) {
+        const db = await this.init();
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction(['items'], 'readwrite');
+            const store = transaction.objectStore('items');
+            store.clear();
+            items.forEach(item => store.add(item));
+            transaction.oncomplete = () => resolve(true);
+            transaction.onerror = (event) => reject((event.target as IDBRequest).error);
+        });
+    },
     getAllItems: async function() {
         const db = await this.init();
         return new Promise((resolve, reject) => {
@@ -68,6 +79,26 @@ const itemDb = {
             request.onerror = (event) => reject((event.target as IDBRequest).error);
         });
     },
+    getMetadata: async function() {
+        const db = await this.init();
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction(['metadata'], 'readonly');
+            const store = transaction.objectStore('metadata');
+            const request = store.get('syncInfo');
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = (event) => reject((event.target as IDBRequest).error);
+        });
+    },
+    setMetadata: async function(metadata) {
+        const db = await this.init();
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction(['metadata'], 'readwrite');
+            const store = transaction.objectStore('metadata');
+            store.put({ id: 'syncInfo', ...metadata });
+            transaction.oncomplete = () => resolve(true);
+            transaction.onerror = (event) => reject((event.target as IDBRequest).error);
+        });
+    }
 };
 
 
@@ -209,14 +240,75 @@ export const OrderApproval = ({ session }) => {
     const [processingOrder, setProcessingOrder] = useState<string | null>(null);
     const [rejectionModalState, setRejectionModalState] = useState({ isOpen: false, isClosing: false, order: null as UnapprovedOrder | null });
     const [approvalModalState, setApprovalModalState] = useState({ isOpen: false, isClosing: false, order: null as UnapprovedOrder | null });
+    const [isCatalogReady, setIsCatalogReady] = useState(false);
+    const [syncMessage, setSyncMessage] = useState('');
 
-    const fetchOrders = useCallback(async () => {
+
+    useEffect(() => {
+        if (session.role !== 'ADMIN') {
+            setError('Permission denied. Admin access required.');
+            setIsLoading(false);
+            return;
+        }
+
+        const syncItemCatalog = async () => {
+            setIsCatalogReady(false);
+            setSyncMessage('Checking item catalog...');
+            try {
+                const metadataRef = firebase.database().ref('itemData/metadata');
+                const remoteMetaSnapshot = await metadataRef.once('value');
+                const remoteMeta = remoteMetaSnapshot.val();
+                
+                if (!remoteMeta) {
+                    const localItems = await itemDb.getAllItems() as any[];
+                    if(localItems && localItems.length > 0) {
+                        setSyncMessage('');
+                        setIsCatalogReady(true);
+                        return;
+                    }
+                    throw new Error("No item data found on server.");
+                }
+
+                const localMeta = await itemDb.getMetadata() as any;
+                const needsSync = !localMeta || remoteMeta.uploadDate !== localMeta.uploadDate || remoteMeta.manualSync === 'Y';
+
+                if (needsSync) {
+                    setSyncMessage('Catalog is outdated, syncing from server...');
+                    const itemsRef = firebase.database().ref('itemData/items');
+                    const itemsSnapshot = await itemsRef.once('value');
+                    const itemsData = itemsSnapshot.val();
+
+                    if (itemsData && Array.isArray(itemsData)) {
+                        await itemDb.clearAndAddItems(itemsData);
+                        await itemDb.setMetadata({ uploadDate: remoteMeta.uploadDate });
+                        if (remoteMeta.manualSync === 'Y') {
+                            await metadataRef.update({ manualSync: 'N' });
+                        }
+                        setSyncMessage('');
+                        setIsCatalogReady(true);
+                        showToast('Item catalog synced successfully.', 'success');
+                    } else {
+                        throw new Error("Failed to fetch item catalog from server.");
+                    }
+                } else {
+                    setSyncMessage('');
+                    setIsCatalogReady(true);
+                }
+            } catch (err) {
+                console.error("Item sync error:", err);
+                setSyncMessage(`Error: ${err.message}`);
+                setIsCatalogReady(false);
+            }
+        };
+
+        syncItemCatalog();
+        
         const ordersRef = firebase.database().ref(UNAPPROVED_ORDERS_REF);
-        ordersRef.on('value', (snapshot) => {
+        const listener = ordersRef.on('value', (snapshot) => {
             const data = snapshot.val();
             if (data) {
                 const ordersArray = (Object.values(data) as UnapprovedOrder[])
-                    .filter(order => order.status === 'Approval Pending'); // Only show pending orders
+                    .filter(order => order.status === 'Approval Pending');
                 ordersArray.sort((a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime());
                 setOrders(ordersArray);
             } else {
@@ -229,18 +321,8 @@ export const OrderApproval = ({ session }) => {
             setIsLoading(false);
         });
 
-        return () => ordersRef.off('value');
-    }, []);
-
-    useEffect(() => {
-        if (session.role === 'ADMIN') {
-            const unsubscribe = fetchOrders();
-            return () => { unsubscribe.then(off => off()); };
-        } else {
-            setError('Permission denied. Admin access required.');
-            setIsLoading(false);
-        }
-    }, [fetchOrders, session.role]);
+        return () => ordersRef.off('value', listener);
+    }, [session.role]);
     
     const handleOpenRejectionModal = (order: UnapprovedOrder) => {
         setRejectionModalState({ isOpen: true, isClosing: false, order });
@@ -261,6 +343,8 @@ export const OrderApproval = ({ session }) => {
             await firebase.database().ref(`${UNAPPROVED_ORDERS_REF}/${order.referenceNumber}`).update({
                 status: 'Rejected',
                 rejectionReason: reason,
+                rejectedBy: session.userName,
+                rejectionDate: new Date().toISOString(),
             });
             showToast(`Order #${order.referenceNumber} rejected.`, 'success');
             handleCloseRejectionModal();
@@ -287,27 +371,26 @@ export const OrderApproval = ({ session }) => {
     
         setProcessingOrder(order.referenceNumber);
         try {
-            // 1. Fetch master item data from IndexedDB
+            if (!isCatalogReady) {
+                throw new Error("Master item catalog is not ready. Please wait for sync to complete.");
+            }
             const masterItems = await itemDb.getAllItems() as any[];
             if (!masterItems || masterItems.length === 0) {
                 throw new Error("Master item catalog is not available. Please sync data on the New Order page first.");
             }
             const masterItemsByBarcode = new Map(masterItems.map(item => [item.Barcode, item]));
     
-            // 2. Validate all items exist in the master catalog
             const notFoundItems = order.lineItems.filter(item => !masterItemsByBarcode.has(item.barcode));
             if (notFoundItems.length > 0) {
                 const notFoundBarcodes = notFoundItems.map(item => item.barcode).join(', ');
-                throw new Error(`Item matching failed. The following barcodes were not found in the master catalog: ${notFoundBarcodes}`);
+                throw new Error(`Item matching failed. The following barcodes were not found: ${notFoundBarcodes}`);
             }
     
-            // 3. Generate new internal order number
             const counterRef = firebase.database().ref(ORDER_COUNTER_REF);
             const result = await counterRef.transaction(currentValue => (currentValue || 0) + 1);
             if (!result.committed) throw new Error("Failed to generate new order number.");
             const newOrderNumber = `${ORDER_NUMBER_PREFIX}${result.snapshot.val()}`;
     
-            // 4. Transform data using master catalog
             const newPendingOrderItems = order.lineItems.map(item => {
                 const masterItem = masterItemsByBarcode.get(item.barcode);
                 return {
@@ -334,7 +417,6 @@ export const OrderApproval = ({ session }) => {
                 }]
             };
     
-            // 5. Perform Firebase transaction
             const updates = {};
             updates[`${PENDING_ORDERS_REF}/${newOrderNumber}`] = newPendingOrder;
             updates[`${UNAPPROVED_ORDERS_REF}/${order.referenceNumber}/status`] = 'Approved';
@@ -348,7 +430,7 @@ export const OrderApproval = ({ session }) => {
     
         } catch (err) {
             console.error('Failed to approve order:', err);
-            showToast(`Error approving order: ${err.message}`, 'error');
+            showToast(`Failed to approve order: ${err.message}`, 'error');
         } finally {
             setProcessingOrder(null);
         }
@@ -367,8 +449,8 @@ export const OrderApproval = ({ session }) => {
     const renderContent = () => {
         if (isLoading) return <div style={styles.centeredMessage}><Spinner /></div>;
         if (error) return <div style={styles.centeredMessage}>{error}</div>;
-        if (orders.length === 0) return <div style={styles.centeredMessage}>No orders awaiting approval.</div>;
-        if (filteredOrders.length === 0) return <div style={styles.centeredMessage}>No orders match your search.</div>;
+        if (orders.length === 0 && !isLoading) return <div style={styles.centeredMessage}>No orders awaiting approval.</div>;
+        if (filteredOrders.length === 0 && !isLoading) return <div style={styles.centeredMessage}>No orders match your search.</div>;
         
         return (
             <div style={styles.listContainer}>
@@ -378,7 +460,7 @@ export const OrderApproval = ({ session }) => {
                         order={order}
                         onApprove={() => handleOpenApprovalModal(order)}
                         onReject={() => handleOpenRejectionModal(order)}
-                        isProcessing={processingOrder === order.referenceNumber}
+                        isProcessing={processingOrder === order.referenceNumber || !isCatalogReady}
                     />
                 ))}
             </div>
@@ -401,6 +483,7 @@ export const OrderApproval = ({ session }) => {
                         onBlur={() => setIsSearchFocused(false)}
                     />
                 </div>
+                {syncMessage && <div style={styles.syncingText}>{syncMessage}</div>}
             </div>
             {renderContent()}
             <RejectionModal
@@ -429,6 +512,13 @@ const styles: { [key: string]: React.CSSProperties } = {
         display: 'flex',
         flexDirection: 'column',
         gap: '1rem',
+    },
+    syncingText: {
+        textAlign: 'center',
+        fontSize: '0.9rem',
+        color: 'var(--brand-color)',
+        fontWeight: 500,
+        padding: '0.25rem 0'
     },
     searchContainer: { 
         display: 'flex', 
