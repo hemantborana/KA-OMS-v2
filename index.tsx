@@ -774,9 +774,9 @@ const Sidebar = ({ activeView, onNavigate, isMobile, isOpen, onClose, session, o
 const BottomNavBar = ({ activeView, onNavigate }) => {
     const navItems = useMemo(() => [
         { id: 'Dashboard', label: 'Home' },
-        { id: 'Entry', label: 'Entry' },
         { id: 'Stock', label: 'Stock' },
         { id: 'Pending', label: 'Pending' },
+        { id: 'Preferences', label: 'Profile' },
     ], []);
     const navRef = useRef(null);
     const [indicatorStyle, setIndicatorStyle] = useState({});
@@ -1417,10 +1417,10 @@ const styles: { [key: string]: React.CSSProperties } = {
         justifyContent: 'space-around',
         background: 'var(--glass-button-bg)',
         border: 'none',
-        borderTop: '1px solid var(--glass-nav)',
-        borderLeft: '1px solid var(--glass-nav)',
-        backdropFilter: 'blur(4px)',
-        WebkitBackdropFilter: 'blur(4px)',
+        borderTop: '1px solid var(--card-bg)',
+        borderLeft: '1px solid var(--card-bg)',
+        backdropFilter: 'blur(5px)',
+        WebkitBackdropFilter: 'blur(5px)',
         position: 'fixed',
         bottom: '12px',
         left: '15px',
