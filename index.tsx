@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
 import { NewOrderEntry } from './neworderentry';
@@ -816,7 +817,7 @@ const MainContent = React.forwardRef<HTMLElement, MainContentProps>(
             if (activeView === 'Entry' || activeView === 'Pending' || activeView === 'Approval') {
                 mobilePadding = { padding: 0 };
             } else {
-                mobilePadding = { padding: '0rem 0.25rem', paddingBottom: '70px' };
+                mobilePadding = { padding: '0rem 0.25rem', paddingBottom: '100px' };
             }
             mainStyle = {
                 ...styles.mainContent,
@@ -1388,7 +1389,22 @@ const styles: { [key: string]: React.CSSProperties } = {
         display: 'none'
     },
     mainContent: { flex: 1, overflowY: 'auto', padding: '0rem 1rem', display: 'flex', flexDirection: 'column' },
-    bottomNav: { display: 'flex', justifyContent: 'space-around', background: 'linear-gradient(to top, var(--card-bg) 70%, transparent)', borderTop: 'none', position: 'fixed', bottom: 0, left: 0, right: 0, height: '70px', zIndex: 100 },
+    bottomNav: {
+        display: 'flex',
+        justifyContent: 'space-around',
+        background: 'var(--glass-button-bg)',
+        border: '1px solid var(--glass-border)',
+        backdropFilter: 'blur(3px)',
+        WebkitBackdropFilter: 'blur(3px)',
+        position: 'fixed',
+        bottom: '12px',
+        left: '15px',
+        borderRadius: '30px',
+        right: '15px',
+        height: '73px',
+        zIndex: 100,
+        boxShadow: 'var(--box-shadow)',
+    },
     bottomNavItem: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, textDecoration: 'none', color: 'var(--text-color)' },
     bottomNavItemActive: { color: 'var(--brand-color)' },
     pageContainer: { backgroundColor: 'var(--card-bg)', padding: '2rem', borderRadius: 'var(--border-radius)', boxShadow: 'var(--box-shadow)' },
