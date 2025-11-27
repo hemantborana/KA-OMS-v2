@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
-import { DeletedOrders } from './deletedorders';
-import { ExpiredOrders } from './expiredorders';
+import { DeletedOrders as DeletedOrdersComponent } from './deletedorders';
+import { ExpiredOrders as ExpiredOrdersComponent } from './expiredorders';
 
 export const InactiveOrders = () => {
     const [activeView, setActiveView] = useState('deleted'); // 'deleted' or 'expired'
@@ -25,7 +25,7 @@ export const InactiveOrders = () => {
                 </div>
             </div>
             <div style={styles.contentContainer}>
-                {activeView === 'deleted' ? <DeletedOrders /> : <ExpiredOrders />}
+                {activeView === 'deleted' ? <DeletedOrdersComponent /> : <ExpiredOrdersComponent />}
             </div>
         </div>
     );
