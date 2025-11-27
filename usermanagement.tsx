@@ -169,6 +169,26 @@ const UserEditModal = ({ isOpen, isClosing, user, onClose, onSave }) => {
     );
 };
 
+const SendMailConfirmationModal = ({ state, onClose, onConfirm }) => {
+    const { isOpen, isClosing, user } = state;
+    if (!isOpen || !user) return null;
+
+    return (
+        <div style={{...styles.modalOverlay, animation: isClosing ? 'overlayOut 0.3s forwards' : 'overlayIn 0.3s forwards'}} onClick={onClose}>
+            <div style={{...styles.modalContent, maxWidth: '360px', animation: isClosing ? 'modalOut 0.3s forwards' : 'modalIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards'}} onClick={(e) => e.stopPropagation()}>
+                <h3 style={{...styles.modalTitle, textAlign: 'center', marginBottom: '0.5rem'}}>Confirm Send Email</h3>
+                <p style={{textAlign: 'center', color: 'var(--text-color)', marginBottom: '1.5rem', fontSize: '0.95rem'}}>
+                    Are you sure you want to send login details to <strong>{user.userName}</strong> ({user.email})?
+                </p>
+                <div style={styles.iosModalActions}>
+                    <button onClick={onClose} style={styles.iosModalButtonSecondary}>Cancel</button>
+                    <button onClick={onConfirm} style={styles.iosModalButtonPrimary}>Send</button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 
 export const UserManagement = ({ session }) => {
     const [users, setUsers] = useState([]);
@@ -178,6 +198,7 @@ export const UserManagement = ({ session }) => {
     const [isSearchFocused, setIsSearchFocused] = useState(false);
     const [modalState, setModalState] = useState({ isOpen: false, isClosing: false, user: null });
     const [sendingLoginFor, setSendingLoginFor] = useState(null);
+    const [confirmSendState, setConfirmSendState] = useState({ isOpen: false, isClosing: false, user: null as any | null });
 
     const fetchUsers = useCallback(async () => {
         setIsLoading(true);
@@ -222,7 +243,6 @@ export const UserManagement = ({ session }) => {
         const isNewUser = !modalState.user;
         const action = isNewUser ? 'createUser' : 'updateUser';
         
-        // FIX: Cast payload to 'any' to allow for dynamic property assignment based on whether it's a new user or an update. This resolves TypeScript errors about properties not existing on the initial object type.
         let payload: any = {
             action,
             adminRole: session.role,
@@ -257,9 +277,20 @@ export const UserManagement = ({ session }) => {
         }
     };
     
-    const handleSendLogin = async (user) => {
-        if (!window.confirm(`Are you sure you want to send login details to ${user.userName}?`)) return;
+    const handleSendLogin = (user) => {
+        setConfirmSendState({ isOpen: true, isClosing: false, user });
+    };
 
+    const handleCloseConfirmSend = () => {
+        setConfirmSendState(prev => ({ ...prev, isClosing: true }));
+        setTimeout(() => setConfirmSendState({ isOpen: false, isClosing: false, user: null }), 300);
+    };
+
+    const handleConfirmSend = async () => {
+        const user = confirmSendState.user;
+        if (!user) return;
+
+        handleCloseConfirmSend();
         setSendingLoginFor(user.userId);
         try {
             const response = await fetch(SCRIPT_URL, {
@@ -281,7 +312,7 @@ export const UserManagement = ({ session }) => {
         } finally {
             setSendingLoginFor(null);
         }
-    }
+    };
 
 
     const filteredUsers = useMemo(() => {
@@ -358,6 +389,11 @@ export const UserManagement = ({ session }) => {
                 user={modalState.user}
                 onClose={handleCloseModal}
                 onSave={handleSaveUser}
+            />
+             <SendMailConfirmationModal 
+                state={confirmSendState}
+                onClose={handleCloseConfirmSend}
+                onConfirm={handleConfirmSend}
             />
         </div>
     );
