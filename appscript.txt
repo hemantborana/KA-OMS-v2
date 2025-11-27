@@ -199,6 +199,56 @@ function handleGetUsers(payload) {
 }
 
 /**
+ * Creates a new user. (Admin only)
+ * @param {object} payload - Contains admin role and new user details.
+ * @returns {object} A success or error message.
+ */
+function handleCreateUser(payload) {
+  if (payload.adminRole !== 'ADMIN') {
+    return { success: false, message: 'Permission denied. Admin access required.' };
+  }
+
+  const { userId, userName, email, password, role, status } = payload.userData;
+  if (!userId || !userName || !email || !password || !role || !status) {
+    return { success: false, message: 'All fields are required to create a new user.' };
+  }
+
+  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAME);
+  const data = sheet.getDataRange().getValues();
+  const cols = getHeaderColumns(sheet);
+
+  // Check for duplicates
+  const userExists = data.slice(1).some(row => 
+    String(row[cols.UserID - 1]).toLowerCase() === String(userId).toLowerCase() || 
+    String(row[cols.Email - 1]).toLowerCase() === String(email).toLowerCase()
+  );
+  if (userExists) {
+    return { success: false, message: 'A user with this User ID or Email already exists.' };
+  }
+  
+  // Construct the new row in the correct order
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const newRow = headers.map(header => {
+    switch (header) {
+      case 'UserID': return userId;
+      case 'UserName': return userName;
+      case 'Email': return email;
+      case 'Password': return password;
+      case 'Role': return role;
+      case 'Status': return status;
+      case 'LoginAttempts': return 0;
+      case 'AvatarID': return 0; // Default avatar
+      default: return '';
+    }
+  });
+
+  sheet.appendRow(newRow);
+  SpreadsheetApp.flush();
+  
+  return { success: true, message: 'User created successfully.' };
+}
+
+/**
  * Updates a user's details. (Admin only)
  * @param {object} payload - Contains admin role, user ID to update, and the updates.
  * @returns {object} A success or error message.
@@ -327,6 +377,9 @@ function doPost(e) {
         break;
       case 'getUsers': // Admin
         result = handleGetUsers(payload);
+        break;
+      case 'createUser': // Admin
+        result = handleCreateUser(payload);
         break;
       case 'updateUser': // Admin
         result = handleUpdateUser(payload);
