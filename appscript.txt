@@ -28,6 +28,31 @@ function getHeaderColumns(sheet) {
   return columnMap;
 }
 
+/**
+ * Sends a standardized login details email to a user.
+ * @param {object} userInfo - An object containing email, userName, userId, password, subject, and introductoryText.
+ * @throws {Error} If the email fails to send.
+ * @returns {{success: boolean, message: string}}
+ */
+function sendLoginEmail(userInfo) {
+  const { email, userName, userId, password, subject, introductoryText } = userInfo;
+  
+  if (!email) {
+    throw new Error('User does not have an email address.');
+  }
+
+  const body = `Hello ${userName},\n\n${introductoryText}\n\nYour User ID is: ${userId}\nYour Password is: ${password}\n\n- The KA-OMS Team`;
+  
+  try {
+    MailApp.sendEmail(email, subject, body);
+    Logger.log(`Email sent successfully to ${email}`);
+    return { success: true, message: `Login details sent to ${email}.` };
+  } catch (e) {
+    Logger.log(`Failed to send email to ${email}: ${e.toString()}`);
+    throw new Error(`Could not send email to ${email}.`);
+  }
+}
+
 
 // --- API ACTIONS ---
 
@@ -199,7 +224,7 @@ function handleGetUsers(payload) {
 }
 
 /**
- * Creates a new user. (Admin only)
+ * Creates a new user and sends a welcome email. (Admin only)
  * @param {object} payload - Contains admin role and new user details.
  * @returns {object} A success or error message.
  */
@@ -245,7 +270,21 @@ function handleCreateUser(payload) {
   sheet.appendRow(newRow);
   SpreadsheetApp.flush();
   
-  return { success: true, message: 'User created successfully.' };
+  try {
+    const emailInfo = {
+      email,
+      userName,
+      userId,
+      password,
+      subject: 'Welcome to KA-OMS!',
+      introductoryText: 'Your new account has been created for the KA-OMS portal.'
+    };
+    sendLoginEmail(emailInfo);
+    return { success: true, message: 'User created and welcome email sent.' };
+  } catch(e) {
+    // If user creation succeeded but email failed, return success with a warning.
+    return { success: true, message: `User created, but failed to send welcome email: ${e.message}` };
+  }
 }
 
 /**
@@ -309,21 +348,22 @@ function handleSendLoginDetails(payload) {
   if (!userRow) return { success: false, message: 'User not found.' };
 
   const email = userRow[cols.Email - 1];
-  if (!email) return { success: false, message: 'User does not have an email address.' };
-  
   const userId = userRow[cols.UserID - 1];
   const password = userRow[cols.Password - 1];
   const userName = userRow[cols.UserName - 1] || 'User';
   
-  const subject = 'Your KA-OMS Login Information';
-  const body = `Hello ${userName},\n\nYour account details for KA-OMS were requested by an administrator.\n\nYour User ID is: ${userId}\nYour Password is: ${password}\n\n- The KA-OMS Team`;
-  
   try {
-    MailApp.sendEmail(email, subject, body);
-    return { success: true, message: `Login details sent to ${email}.` };
+    const emailInfo = {
+      email,
+      userName,
+      userId,
+      password,
+      subject: 'Your KA-OMS Login Information',
+      introductoryText: 'Your account details for KA-OMS were requested by an administrator.'
+    };
+    return sendLoginEmail(emailInfo);
   } catch (e) {
-    Logger.log('Failed to send email: ' + e.toString());
-    return { success: false, message: 'Could not send email.' };
+    return { success: false, message: e.message };
   }
 }
 
