@@ -106,7 +106,6 @@ export const ExpiredOrders = () => {
                 }
             `}</style>
             <div style={styles.headerCard}>
-                <h2 style={styles.pageTitle}>Expired Orders</h2>
                 <div style={isSearchFocused ? {...styles.searchContainer, ...styles.searchContainerActive} : styles.searchContainer}>
                     <SearchIcon />
                     <input 

@@ -9,7 +9,7 @@ const Spinner = () => <div style={styles.spinner}></div>;
 const CalendarIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>;
 const RevertIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 14 20 9 15 4"></polyline><path d="M4 20v-7a4 4 0 0 1 4-4h12"></path></svg>;
 const HistoryIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>;
-const ChevronIcon = ({ collapsed }) => <svg style={{ transform: collapsed ? 'rotate(0deg)' : 'rotate(180deg)', transition: 'transform 0.3s ease' }} xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>;
+const ChevronIcon = ({ collapsed }) => <svg style={{ transform: collapsed ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }} xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>;
 
 
 // --- TYPE & FIREBASE ---
@@ -23,6 +23,8 @@ const showToast = (message: string, type: 'info' | 'success' | 'error' = 'info')
     window.dispatchEvent(new CustomEvent('show-toast', { detail: { message, type } }));
 };
 const formatDateTime = (isoString) => isoString ? new Date(isoString).toLocaleString('en-IN', { day: 'numeric', month: 'short', year:'2-digit', hour: 'numeric', minute: '2-digit' }) : 'N/A';
+const formatDate = (isoString) => isoString ? new Date(isoString).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A';
+const formatCurrency = (value) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(value);
 
 
 const RevertConfirmationModal = ({ state, onClose, onConfirm }) => {
@@ -47,57 +49,112 @@ const RevertConfirmationModal = ({ state, onClose, onConfirm }) => {
 
 
 const DeletedOrderCard: React.FC<{ order: Order; onRevert: (order: Order) => void; }> = ({ order, onRevert }) => {
-    const [isHistoryVisible, setIsHistoryVisible] = useState(false);
+    const [isExpanded, setIsExpanded] = useState(false);
+
+    const handleRevertClick = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        onRevert(order);
+    };
 
     const cardStyle: React.CSSProperties = {
         ...styles.card,
-        boxShadow: !isHistoryVisible ? 'rgba(0, 0, 0, 0.04) 0px 2px 4px' : 'rgba(0, 0, 0, 0.06) 0px 4px 8px',
+        boxShadow: isExpanded ? 'rgba(0, 0, 0, 0.06) 0px 4px 8px' : 'rgba(0, 0, 0, 0.04) 0px 2px 4px',
         transition: 'box-shadow 0.3s ease',
     };
 
     return (
         <div style={cardStyle}>
-            <div style={styles.cardHeader}>
+            <button style={styles.cardHeaderButton} onClick={() => setIsExpanded(!isExpanded)}>
                 <div style={styles.cardInfo}>
                     <span style={styles.cardTitle}>{order.partyName}</span>
                     <span style={styles.cardSubTitle}>{order.orderNumber}</span>
                 </div>
-                <button style={styles.revertButton} onClick={() => onRevert(order)}>
-                    <RevertIcon /> Revert
-                </button>
-            </div>
-            <div style={styles.cardDetails}>
-                <div style={styles.detailItem}>
-                    <span style={styles.detailLabel}>Deleted On</span>
-                    <div style={styles.detailValue}><CalendarIcon /> {formatDateTime(order.deletedTimestamp)}</div>
+                <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
+                    <span style={styles.deletedOnText}>
+                        <CalendarIcon /> {formatDateTime(order.deletedTimestamp)}
+                    </span>
+                    <ChevronIcon collapsed={isExpanded} />
                 </div>
-                <div style={styles.detailItem}>
-                    <span style={styles.detailLabel}>Reason</span>
-                    <div style={styles.detailValue}>{order.deletionReason || 'No reason provided'}</div>
-                </div>
-                {order.history && order.history.length > 0 && (
-                    <div style={styles.historySection}>
-                        <button style={styles.historyHeader} onClick={() => setIsHistoryVisible(!isHistoryVisible)}>
-                             <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}><HistoryIcon /><span>Full Order History</span></div>
-                             <ChevronIcon collapsed={isHistoryVisible} />
-                        </button>
-                        <div style={!isHistoryVisible ? styles.collapsibleContainer : {...styles.collapsibleContainer, ...styles.collapsibleContainerExpanded}}>
-                            <div style={styles.collapsibleContentWrapper}>
-                                <div style={styles.historyContent}>
-                                    {order.history.map((event, index) => (
-                                         <div key={index} style={styles.historyItem}>
-                                            <div style={styles.historyMeta}>
-                                                <span style={{...styles.historyEventType, backgroundColor: event.event === 'System' ? '#eef2f7' : '#fffbe6', color: event.event === 'System' ? 'var(--brand-color)' : '#d48806'}}>{event.event}</span>
-                                                <span>{new Date(event.timestamp).toLocaleString()}</span>
-                                            </div>
-                                            <p style={styles.historyDetails}>{event.details}</p>
-                                        </div>
-                                    ))}
-                                </div>
+            </button>
+            <div style={!isExpanded ? styles.collapsibleContainer : {...styles.collapsibleContainer, ...styles.collapsibleContainerExpanded}}>
+                <div style={styles.collapsibleContentWrapper}>
+                    <div style={styles.cardDetails}>
+
+                        <div style={styles.summaryGrid}>
+                            <div style={styles.summaryItem}>
+                                <span style={styles.summaryLabel}>Order Date</span>
+                                <span style={styles.summaryValue}>{formatDate(order.timestamp)}</span>
+                            </div>
+                            <div style={styles.summaryItem}>
+                                <span style={styles.summaryLabel}>Deleted Date</span>
+                                <span style={styles.summaryValue}>{formatDate(order.deletedTimestamp)}</span>
+                            </div>
+                            <div style={styles.summaryItem}>
+                                <span style={styles.summaryLabel}>Total Qty</span>
+                                <span style={styles.summaryValue}>{order.totalQuantity}</span>
+                            </div>
+                            <div style={styles.summaryItem}>
+                                <span style={styles.summaryLabel}>Total Value</span>
+                                <span style={styles.summaryValue}>{formatCurrency(order.totalValue)}</span>
                             </div>
                         </div>
+
+                        <div style={styles.reasonAndHistoryContainer}>
+                            <div style={styles.reasonBox}>
+                                <strong>Reason:</strong> {order.deletionReason || 'No reason provided'}
+                            </div>
+
+                            {order.history && order.history.length > 0 && (
+                                <div style={styles.historySection}>
+                                    <h4 style={styles.sectionTitle}>History</h4>
+                                    <div style={styles.historyContent}>
+                                        {order.history.map((event, index) => (
+                                            <div key={index} style={styles.historyItem}>
+                                                <div style={styles.historyMeta}>
+                                                    <span style={{...styles.historyEventType, backgroundColor: event.event === 'System' ? 'var(--light-grey)' : 'rgba(255, 149, 0, 0.1)', color: event.event === 'System' ? 'var(--text-color)' : 'var(--orange)'}}>{event.event}</span>
+                                                    <span>{new Date(event.timestamp).toLocaleString()}</span>
+                                                </div>
+                                                <p style={styles.historyDetails}>{event.details}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                        
+                        <div style={styles.tableSection}>
+                            <h4 style={styles.sectionTitle}>Items in Order ({order.totalQuantity})</h4>
+                            <div style={styles.tableContainer}>
+                                <table style={styles.table}>
+                                    <thead>
+                                        <tr>
+                                            <th style={styles.th}>Style</th>
+                                            <th style={styles.th}>Color</th>
+                                            <th style={styles.th}>Size</th>
+                                            <th style={styles.th}>Qty</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {(order.items || []).map((item, index) => (
+                                            <tr key={item.id ?? index} style={index % 2 !== 0 ? {backgroundColor: 'var(--stripe-bg)'} : {}}>
+                                                <td style={styles.td}>{item.fullItemData.Style}</td>
+                                                <td style={styles.td}>{item.fullItemData.Color}</td>
+                                                <td style={styles.td}>{item.fullItemData.Size}</td>
+                                                <td style={styles.td}>{item.quantity}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <div style={styles.actionsContainer}>
+                            <button style={styles.revertButton} onClick={handleRevertClick}>
+                                <RevertIcon /> Revert this Order
+                            </button>
+                        </div>
                     </div>
-                )}
+                </div>
             </div>
         </div>
     );
@@ -197,7 +254,6 @@ export const DeletedOrders = () => {
     return (
         <div style={styles.container}>
             <div style={styles.headerCard}>
-                <h2 style={styles.pageTitle}>Deleted Orders (Last 20 Days)</h2>
                 <div style={isSearchFocused ? {...styles.searchContainer, ...styles.searchContainerActive} : styles.searchContainer}>
                     <SearchIcon />
                     <input 
@@ -264,20 +320,24 @@ const styles: { [key: string]: React.CSSProperties } = {
         overflow: 'hidden',
         marginLeft: '10px',
         marginRight: '10px',
+        boxShadow: 'rgba(0, 0, 0, 0.04) 0px 2px 4px',
     },
     cardHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.5rem', borderBottom: '1px solid var(--skeleton-bg)', flexWrap: 'wrap', gap: '0.5rem' },
+    cardHeaderButton: { width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.5rem', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' },
     cardInfo: { display: 'flex', flexDirection: 'column', gap: '0.25rem' },
     cardTitle: { fontSize: '1.1rem', fontWeight: 600, color: 'var(--dark-grey)' },
     cardSubTitle: { fontSize: '0.9rem', color: 'var(--text-color)', fontWeight: 500, backgroundColor: 'var(--light-grey)', padding: '0.2rem 0.5rem', borderRadius: '6px' },
-    revertButton: { display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--active-bg)', border: '1px solid var(--brand-color)', color: 'var(--brand-color)', padding: '0.5rem 1rem', borderRadius: '8px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 600 },
-    cardDetails: { padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' },
+    revertButton: { display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--active-bg)', border: '1px solid var(--brand-color)', color: 'var(--brand-color)', padding: '0.75rem 1.5rem', borderRadius: '8px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 600 },
+    cardDetails: { padding: '0rem 1.5rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' },
     detailItem: { display: 'flex', flexDirection: 'column', gap: '0.25rem' },
     detailLabel: { fontSize: '0.8rem', color: 'var(--text-color)', fontWeight: 500 },
     detailValue: { display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.95rem', color: 'var(--dark-grey)' },
-    // History Styles
-    historySection: { marginTop: '1rem', borderTop: '1px solid var(--skeleton-bg)', paddingTop: '1rem' },
-    historyHeader: { width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer', padding: '0.25rem 0', fontSize: '0.9rem', fontWeight: 600, color: 'var(--dark-grey)' },
-    historyContent: { padding: '1rem 0 0', display: 'flex', flexDirection: 'column', gap: '1rem' },
+    deletedOnText: { display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--text-color)', fontSize: '0.8rem' },
+    historySection: {},
+    sectionTitle: { fontSize: '0.9rem', fontWeight: 600, color: 'var(--dark-grey)', marginBottom: '0.75rem', borderBottom: '1px solid var(--separator-color)', paddingBottom: '0.5rem' },
+    reasonAndHistoryContainer: { display: 'flex', flexDirection: 'column', gap: '1.5rem' },
+    reasonBox: { backgroundColor: 'var(--card-bg-tertiary)', borderLeft: '3px solid var(--orange)', padding: '1rem', borderRadius: '4px', fontSize: '0.9rem' },
+    historyContent: { display: 'flex', flexDirection: 'column', gap: '1rem' },
     collapsibleContainer: {
         display: 'grid',
         gridTemplateRows: '0fr',
@@ -293,7 +353,40 @@ const styles: { [key: string]: React.CSSProperties } = {
     historyMeta: { display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.8rem', color: 'var(--text-color)' },
     historyEventType: { fontWeight: 600, padding: '2px 8px', borderRadius: '12px', fontSize: '0.75rem' },
     historyDetails: { fontSize: '0.9rem', color: 'var(--dark-grey)' },
-    
+    tableSection: { marginTop: '0.5rem' },
+    tableContainer: { 
+        overflow: 'hidden',
+        borderRadius: '8px', 
+        backgroundColor: 'var(--card-bg-secondary)', 
+        border: '1px solid var(--separator-color)' 
+    },
+    table: { width: '100%', borderCollapse: 'collapse' },
+    th: { backgroundColor: 'var(--light-grey)', padding: '8px 10px', textAlign: 'left', fontWeight: 600, color: 'var(--text-color)', borderBottom: '1px solid var(--separator-color)', whiteSpace: 'nowrap', fontSize: '0.8rem' },
+    td: { padding: '8px 10px', color: 'var(--text-color)', fontSize: '0.85rem', textAlign: 'left', borderBottom: '1px solid var(--separator-color)' },
+    actionsContainer: { display: 'flex', justifyContent: 'flex-end', paddingTop: '0' },
+    summaryGrid: {
+        display: 'grid',
+        gridTemplateColumns: 'repeat(2, 1fr)',
+        gap: '1rem',
+        padding: '1rem',
+        backgroundColor: 'var(--card-bg-tertiary)',
+        borderRadius: '8px',
+    },
+    summaryItem: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.25rem',
+    },
+    summaryLabel: {
+        fontSize: '0.8rem',
+        color: 'var(--text-color)',
+        fontWeight: 500,
+    },
+    summaryValue: {
+        fontSize: '1rem',
+        fontWeight: 600,
+        color: 'var(--dark-grey)',
+    },
     // Modal Styles
     modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.2)', backdropFilter: 'blur(7px)', WebkitBackdropFilter: 'blur(7px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0 },
     modalContent: { backgroundColor: 'var(--glass-bg)', padding: '1.5rem', borderRadius: '12px', width: '90%', boxShadow: '0 8px 32px rgba(0,0,0,0.1)', border: '1px solid var(--glass-border)', display: 'flex', flexDirection: 'column', gap: '1rem', transform: 'scale(0.95)', opacity: 0 },
