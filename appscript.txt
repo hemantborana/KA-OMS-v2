@@ -50,14 +50,14 @@ function handleLogin(payload) {
   const cols = getHeaderColumns(sheet);
 
   // Proactive check for required columns
-  const requiredCols = ['UserID', 'Password', 'Role', 'UserName', 'Email', 'Status', 'LoginAttempts', 'LastFailedLogin'];
+  const requiredCols = ['UserID', 'Password', 'Role', 'UserName', 'Email', 'Status', 'LoginAttempts'];
   for (const col of requiredCols) {
     if (!cols[col]) {
-      return { success: false, message: `Configuration Error: Column "${col}" was not found in the sheet. Please check the sheet headers.` };
+      return { success: false, message: `Configuration Error: Column "${col}" was not found.` };
     }
   }
 
-  // Find the user row (skip header row) by either UserID or Email
+  // Find the user row by either UserID or Email
   const userRowIndex = data.slice(1).findIndex(row => 
     String(row[cols.UserID - 1]) === String(userId) || 
     String(row[cols.Email - 1]).toLowerCase() === String(userId).toLowerCase()
@@ -68,54 +68,53 @@ function handleLogin(payload) {
   }
 
   const userRow = data[userRowIndex + 1];
-  const sheetRowIndex = userRowIndex + 2; // +1 for slice, +1 for 0-based to 1-based index
+  const sheetRowIndex = userRowIndex + 2;
 
-  // 1. Check if account is locked
-  if (userRow[cols.Status - 1] === 'Locked') {
-    return { success: false, message: 'Your account has been locked due to too many failed login attempts. Please contact the admin.' };
+  // Check if account is disabled or locked
+  const status = userRow[cols.Status - 1];
+  if (status === 'Locked') {
+    return { success: false, message: 'Account locked. Please contact an admin.' };
+  }
+  if (status === 'Disabled') {
+    return { success: false, message: 'Account is disabled. Please contact an admin.' };
   }
   
-  // 2. Check password
+  // Check password
   if (String(userRow[cols.Password - 1]) !== String(password)) {
-    // Password incorrect, handle login attempts
     const currentAttempts = parseInt(userRow[cols.LoginAttempts - 1] || 0);
     const newAttempts = currentAttempts + 1;
     
     sheet.getRange(sheetRowIndex, cols.LoginAttempts).setValue(newAttempts);
-    sheet.getRange(sheetRowIndex, cols.LastFailedLogin).setValue(new Date());
+    if (cols.LastFailedLogin) {
+      sheet.getRange(sheetRowIndex, cols.LastFailedLogin).setValue(new Date());
+    }
 
     if (newAttempts >= 5) {
       sheet.getRange(sheetRowIndex, cols.Status).setValue('Locked');
-      return { success: false, message: 'Your account has been locked due to too many failed login attempts. Please contact the admin.' };
+      return { success: false, message: 'Account locked due to too many failed login attempts.' };
     } else {
       return { success: false, message: 'Invalid User ID/Email or Password.' };
     }
   }
 
-  // 3. Password is correct, proceed with login
-  // Reset login attempts if the column exists and has a value > 0
+  // Password is correct, reset login attempts
   if (userRow[cols.LoginAttempts - 1]) {
       sheet.getRange(sheetRowIndex, cols.LoginAttempts).setValue(0);
   }
 
   // Update timestamps
   const now = new Date();
-  
-  if (cols.FirstLogin && !userRow[cols.FirstLogin - 1]) {
-    sheet.getRange(sheetRowIndex, cols.FirstLogin).setValue(now);
-  }
   if (cols.LastLogin) {
     sheet.getRange(sheetRowIndex, cols.LastLogin).setValue(now);
-  }
-  if (cols.LastUsage) {
-    sheet.getRange(sheetRowIndex, cols.LastUsage).setValue(now);
   }
   
   return { 
     success: true, 
     userId: userRow[cols.UserID - 1], 
     role: userRow[cols.Role - 1],
-    userName: userRow[cols.UserName - 1] 
+    userName: userRow[cols.UserName - 1],
+    email: userRow[cols.Email - 1],
+    avatarId: cols.AvatarID ? (parseInt(userRow[cols.AvatarID - 1]) || 0) : 0
   };
 }
 
@@ -131,9 +130,6 @@ function handleForgotPassword(payload) {
   }
   
   const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAME);
-  if (!sheet) {
-    return { success: false, message: `Sheet with name "${SHEET_NAME}" not found.` };
-  }
   const data = sheet.getDataRange().getValues();
   const cols = getHeaderColumns(sheet);
 
@@ -169,6 +165,146 @@ function handleForgotPassword(payload) {
   }
 }
 
+/**
+ * Fetches all users for the User Management page. (Admin only)
+ * @param {object} payload - Contains admin's role for verification.
+ * @returns {object} A list of users or an error.
+ */
+function handleGetUsers(payload) {
+  if (payload.adminRole !== 'ADMIN') {
+    return { success: false, message: 'Permission denied. Admin access required.' };
+  }
+
+  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAME);
+  const data = sheet.getDataRange().getValues();
+  const cols = getHeaderColumns(sheet);
+
+  const requiredCols = ['UserID', 'UserName', 'Email', 'Role', 'Status'];
+  for (const col of requiredCols) {
+    if (!cols[col]) {
+      return { success: false, message: `Configuration Error: Column "${col}" not found.` };
+    }
+  }
+
+  const users = data.slice(1).map(row => ({
+    userId: row[cols.UserID - 1],
+    userName: row[cols.UserName - 1],
+    email: row[cols.Email - 1],
+    role: row[cols.Role - 1],
+    status: row[cols.Status - 1] || 'Active',
+    avatarId: cols.AvatarID ? (parseInt(row[cols.AvatarID - 1]) || 0) : 0
+  }));
+
+  return { success: true, users: users };
+}
+
+/**
+ * Updates a user's details. (Admin only)
+ * @param {object} payload - Contains admin role, user ID to update, and the updates.
+ * @returns {object} A success or error message.
+ */
+function handleUpdateUser(payload) {
+  if (payload.adminRole !== 'ADMIN') {
+    return { success: false, message: 'Permission denied. Admin access required.' };
+  }
+
+  const { userIdToUpdate, updates } = payload;
+  if (!userIdToUpdate || !updates) {
+    return { success: false, message: 'User ID and updates are required.' };
+  }
+
+  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAME);
+  const data = sheet.getDataRange().getValues();
+  const cols = getHeaderColumns(sheet);
+
+  const userRowIndex = data.slice(1).findIndex(row => String(row[cols.UserID - 1]) === String(userIdToUpdate));
+  if (userRowIndex === -1) {
+    return { success: false, message: 'User not found.' };
+  }
+  const sheetRowIndex = userRowIndex + 2;
+
+  if (updates.userName && cols.UserName) sheet.getRange(sheetRowIndex, cols.UserName).setValue(updates.userName);
+  if (updates.role && cols.Role) sheet.getRange(sheetRowIndex, cols.Role).setValue(updates.role);
+  if (updates.password && cols.Password) sheet.getRange(sheetRowIndex, cols.Password).setValue(updates.password);
+  if (updates.status && cols.Status) {
+    if (updates.status === 'Active' && cols.LoginAttempts) {
+        sheet.getRange(sheetRowIndex, cols.LoginAttempts).setValue(0);
+    }
+    sheet.getRange(sheetRowIndex, cols.Status).setValue(updates.status);
+  }
+
+  SpreadsheetApp.flush();
+  return { success: true, message: 'User updated successfully.' };
+}
+
+/**
+ * Sends login details to a user. (Admin only)
+ * @param {object} payload - Contains admin role and user ID to send details to.
+ * @returns {object} A success or error message.
+ */
+function handleSendLoginDetails(payload) {
+  if (payload.adminRole !== 'ADMIN') {
+    return { success: false, message: 'Permission denied. Admin access required.' };
+  }
+  const { userIdToSend } = payload;
+  if (!userIdToSend) {
+    return { success: false, message: 'User ID is required.' };
+  }
+
+  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAME);
+  const data = sheet.getDataRange().getValues();
+  const cols = getHeaderColumns(sheet);
+
+  const userRow = data.slice(1).find(row => String(row[cols.UserID - 1]) === String(userIdToSend));
+  if (!userRow) return { success: false, message: 'User not found.' };
+
+  const email = userRow[cols.Email - 1];
+  if (!email) return { success: false, message: 'User does not have an email address.' };
+  
+  const userId = userRow[cols.UserID - 1];
+  const password = userRow[cols.Password - 1];
+  const userName = userRow[cols.UserName - 1] || 'User';
+  
+  const subject = 'Your KA-OMS Login Information';
+  const body = `Hello ${userName},\n\nYour account details for KA-OMS were requested by an administrator.\n\nYour User ID is: ${userId}\nYour Password is: ${password}\n\n- The KA-OMS Team`;
+  
+  try {
+    MailApp.sendEmail(email, subject, body);
+    return { success: true, message: `Login details sent to ${email}.` };
+  } catch (e) {
+    Logger.log('Failed to send email: ' + e.toString());
+    return { success: false, message: 'Could not send email.' };
+  }
+}
+
+/**
+ * Updates a user's own profile (name and avatar).
+ * @param {object} payload - Contains user ID, new name, and new avatar ID.
+ * @returns {object} A success or error message.
+ */
+function handleUpdateProfile(payload) {
+  const { userId, newName, newAvatarId } = payload;
+  if (!userId || !newName) {
+    return { success: false, message: 'User ID and new name are required.' };
+  }
+
+  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAME);
+  const data = sheet.getDataRange().getValues();
+  const cols = getHeaderColumns(sheet);
+
+  const userRowIndex = data.slice(1).findIndex(row => String(row[cols.UserID - 1]) === String(userId));
+  if (userRowIndex === -1) {
+    return { success: false, message: 'User not found.' };
+  }
+  const sheetRowIndex = userRowIndex + 2;
+
+  if (cols.UserName) sheet.getRange(sheetRowIndex, cols.UserName).setValue(newName);
+  if (cols.AvatarID && newAvatarId !== undefined) sheet.getRange(sheetRowIndex, cols.AvatarID).setValue(newAvatarId);
+
+  SpreadsheetApp.flush();
+  return { success: true, message: 'Profile updated successfully.' };
+}
+
 
 // --- MAIN ENTRY POINT ---
 
@@ -188,6 +324,18 @@ function doPost(e) {
         break;
       case 'forgotPassword':
         result = handleForgotPassword(payload);
+        break;
+      case 'getUsers': // Admin
+        result = handleGetUsers(payload);
+        break;
+      case 'updateUser': // Admin
+        result = handleUpdateUser(payload);
+        break;
+      case 'sendLoginDetails': // Admin
+        result = handleSendLoginDetails(payload);
+        break;
+      case 'updateProfile': // User self-service
+        result = handleUpdateProfile(payload);
         break;
       default:
         result = { success: false, message: 'Invalid action specified.' };

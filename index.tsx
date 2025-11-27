@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
 import { NewOrderEntry } from './neworderentry';
@@ -7,6 +6,7 @@ import { PendingOrders } from './pendingorder';
 import { ReadyForBilling } from './readyforbilling';
 import { BilledOrders } from './billedorders';
 import { InactiveOrders } from './inactiveorders';
+import { UserManagement } from './usermanagement';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
 
@@ -95,7 +95,7 @@ const NavIcon = ({ name, active = false }) => {
         Billed: <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>, 
         Update: <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>, 
         Inactive: <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path><line x1="15" y1="10" x2="9" y2="16"></line><line x1="9" y1="10" x2="15" y2="16"></line></svg>, 
-        Users: <svg xmlns="hcom/w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>, 
+        Users: <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>, 
         Approval: <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg>,
         Preferences: <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
     };
@@ -750,19 +750,24 @@ const Sidebar = ({ activeView, onNavigate, isMobile, isOpen, onClose, session, o
                         </a>
                     ))}
                     <hr style={styles.sidebarSeparator} />
-                    {secondaryItems.map(item => (
-                        <a 
-                            key={item.id} 
-                            href="#" 
-                            onClick={(e) => { e.preventDefault(); onNavigate(item.id); }} 
-                            style={navItemStyle(item.id)} 
-                            className={`nav-item ${isActuallyCollapsed ? 'nav-item-desktop-collapsed' : ''}`}
-                        >
-                            <NavIcon name={item.id} active={activeView === item.id} />
-                            <span style={{...styles.navLabel, ...navLabelDynamicStyle}}>{item.label}</span>
-                            <span className="nav-tooltip" style={styles.navTooltip}>{item.label}</span>
-                        </a>
-                    ))}
+                    {secondaryItems.map(item => {
+                        if ((item.id === 'Users' || item.id === 'Approval') && session.role !== 'ADMIN') {
+                            return null;
+                        }
+                        return (
+                            <a 
+                                key={item.id} 
+                                href="#" 
+                                onClick={(e) => { e.preventDefault(); onNavigate(item.id); }} 
+                                style={navItemStyle(item.id)} 
+                                className={`nav-item ${isActuallyCollapsed ? 'nav-item-desktop-collapsed' : ''}`}
+                            >
+                                <NavIcon name={item.id} active={activeView === item.id} />
+                                <span style={{...styles.navLabel, ...navLabelDynamicStyle}}>{item.label}</span>
+                                <span className="nav-tooltip" style={styles.navTooltip}>{item.label}</span>
+                            </a>
+                        );
+                    })}
                 </div>
             </nav>
         </>
@@ -831,6 +836,7 @@ const MainContent = React.forwardRef<HTMLElement, MainContentProps>(
                 case 'Billing': return <ReadyForBilling />;
                 case 'Billed': return <BilledOrders />;
                 case 'Inactive': return <InactiveOrders />;
+                case 'Users': return <UserManagement session={session} />;
                 case 'Preferences': return <Preferences session={session} theme={theme} toggleTheme={toggleTheme} updateUserProfile={updateUserProfile} onLogout={onLogout} />;
                 default: return <PageContent />;
             }
@@ -1160,8 +1166,7 @@ const KAOMSLogin = () => {
                     userName: result.userName, 
                     expiry, 
                     email: result.email,
-                    // Set default avatar to 7 (Avatar 8) instead of 0
-                    avatarId: 7 
+                    avatarId: typeof result.avatarId === 'number' ? result.avatarId : 7
                 }; 
                 localStorage.setItem('ka-oms-session', JSON.stringify(newSession));
                 setSession(newSession);
