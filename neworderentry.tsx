@@ -1374,7 +1374,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     collapsibleContentCollapsed: { maxHeight: 0, paddingTop: 0, opacity: 0, overflow: 'hidden' },
     inputGroup: { flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem', minWidth: '200px' },
     label: { fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-color)' },
-    input: { width: '100%', padding: '0.75rem', fontSize: '0.9rem', border: '1px solid var(--skeleton-bg)', borderRadius: '8px', backgroundColor: 'var(---card-bg)', color: 'var(--dark-grey)', transition: 'border-color 0.3s ease, box-shadow 0.3s ease' },
+    input: { width: '100%', padding: '0.75rem', fontSize: '0.9rem', border: '1px solid var(--skeleton-bg)', borderRadius: '8px', backgroundColor: 'var(--card-bg)', color: 'var(--dark-grey)', transition: 'border-color 0.3s ease, box-shadow 0.3s ease' },
     suggestionsList: { listStyle: 'none', margin: '0.25rem 0 0', padding: '0.5rem 0', position: 'absolute', top: '100%', left: 0, right: 0, backgroundColor: 'var(--glass-bg)', backdropFilter: 'blur(7px)', WebkitBackdropFilter: 'blur(7px)', border: '1px solid var(--glass-border)', boxShadow: '0 8px 24px rgba(0,0,0,0.15)', maxHeight: '200px', overflowY: 'auto', zIndex: 10, borderRadius: '12px' },
     suggestionItem: { padding: '0.75rem 1rem', cursor: 'pointer', fontSize: '0.9rem', color: 'var(--text-color)', transition: 'background-color 0.2s ease' },
     addSuggestionItem: { color: 'var(--brand-color)', fontWeight: 500, },
