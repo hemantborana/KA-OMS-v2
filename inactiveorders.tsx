@@ -48,7 +48,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     toggleWrapper: {
         display: 'flex',
         backgroundColor: 'var(--gray-5)',
-        borderRadius: '8px',
+        borderRadius: '18px',
         padding: '4px',
         boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
     },
@@ -70,7 +70,7 @@ const styles: { [key: string]: React.CSSProperties } = {
         backgroundColor: 'var(--card-bg)',
         color: 'var(--dark-grey)',
         cursor: 'pointer',
-        borderRadius: '6px',
+        borderRadius: '14px',
         boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
         fontWeight: 600,
     },

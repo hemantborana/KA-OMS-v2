@@ -2073,9 +2073,9 @@ const styles: { [key: string]: React.CSSProperties } = {
     
     // Mobile Toggle Styles
     mobileFilterButton: { background: 'none', border: 'none', padding: '0.5rem', cursor: 'pointer', color: 'var(--text-color)' },
-    mobileViewToggle: { display: 'flex', backgroundColor: 'var(--grey-5)', borderRadius: '20px', padding: '3px', marginLeft: '0.5rem', gap: '2px' },
+    mobileViewToggle: { display: 'flex', backgroundColor: 'var(--gray-5)', borderRadius: '20px', padding: '3px', marginLeft: '0.5rem', gap: '2px' },
     mobileSegmentInactive: { background: 'transparent', border: 'none', padding: '6px 16px', cursor: 'pointer', color: 'var(--text-color)', borderRadius: '18px', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center' },
-    mobileSegmentActive: { background: 'var(--card-bg)', border: 'none', padding: '8px 12px', cursor: 'pointer', color: 'var(--dark-grey)', borderRadius: '18px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+    mobileSegmentActive: { background: 'var(--card-bg)', border: 'none', padding: '8px 12px', cursor: 'pointer', color: 'var(--brand-color)', borderRadius: '14px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center' },
     
     filtersCollapsed: { maxHeight: 0, opacity: 0, overflow: 'hidden', transition: 'max-height 0.4s ease-out, opacity 0.4s ease-out, margin-top 0.4s ease-out', marginTop: 0 },
     filtersVisible: { maxHeight: '300px', opacity: 1, overflow: 'visible', transition: 'max-height 0.4s ease-in, opacity 0.4s ease-in, margin-top 0.4s ease-in', marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' },
@@ -2095,7 +2095,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     },
     searchInput: { flex: 1, border: 'none', background: 'none', outline: 'none', fontSize: '1rem', color: 'var(--dark-grey)' },
     filterContainer: { display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center', height: '37px', position: 'relative', backgroundColor: 'var(--gray-5)', borderRadius: '18px', padding: '4px' },
-    filterMarker: { position: 'absolute', top: '4px', left: 0, height: 'calc(100% - 8px)', backgroundColor: 'var(--card-bg)', borderRadius: '14px', transition: 'all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)', zIndex: 0, boxShadow: 'rgba(0, 0, 0, 0.05) 0px 1px 3px, rgba(0, 0, 0, 0.05) 0px 1px 2px', opacity: 0 },
+    filterMarker: { position: 'absolute', top: '4px', left: 0, height: '30px', backgroundColor: 'var(--card-bg)', borderRadius: '14px', transition: 'all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)', zIndex: 0, boxShadow: 'rgba(0, 0, 0, 0.05) 0px 1px 3px, rgba(0, 0, 0, 0.05) 0px 1px 2px', opacity: 0 },
     filterButton: { background: 'transparent', border: 'none', color: 'var(--text-color)', padding: '0.4rem 0.8rem', borderRadius: '14px', cursor: 'pointer', fontSize: '0.85rem', position: 'relative', zIndex: 1, transition: 'color 0.3s ease' },
     filterButtonActive: { background: 'transparent', border: 'none', color: 'var(--brand-color)', padding: '0.4rem 0.8rem', borderRadius: '14px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600, position: 'relative', zIndex: 1, transition: 'color 0.3s ease' },
     tagFilterContainer: { display: 'flex', flexDirection: 'column', gap: '0.5rem', position: 'relative', zIndex: 101 },
@@ -2312,7 +2312,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     rightPanel: { display: 'flex', flexDirection: 'column', backgroundColor: 'var(--card-bg)', borderRadius: 'var(--border-radius)', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)', border: 'none', minHeight: 0, overflowY: 'auto' },
     panelHeader: { padding: '1rem', borderBottom: '1px solid var(--skeleton-bg)', fontWeight: 600, color: 'var(--dark-grey)', flexShrink: 0 },
     panelContent: { padding: '0.5rem', overflowY: 'auto', flex: 1 },
-    partyListItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', padding: '0.75rem 1rem', background: 'none', border: 'none', borderRadius: '8px', cursor: 'pointer', textAlign: 'left' },
+    partyListItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', padding: '0.75rem 1rem', background: 'none', color: 'var(--dark-grey)', border: 'none', borderRadius: '8px', cursor: 'pointer', textAlign: 'left' },
     partyListItemActive: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', padding: '0.75rem 1rem', background: 'var(--active-bg)', border: 'none', borderRadius: '8px', cursor: 'pointer', textAlign: 'left', color: 'var(--brand-color)' },
     partyNameText: { fontWeight: 500, flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
     partyCountBadge: { backgroundColor: 'var(--light-grey)', color: 'var(--text-color)', padding: '0.2rem 0.6rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600 },

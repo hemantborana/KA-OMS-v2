@@ -411,7 +411,7 @@ const styles: { [key: string]: React.CSSProperties } = {
         flexDirection: 'column',
         gap: '1rem',
     },
-    headerTop: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', },
+    headerTop: { display: 'flex', justifyContent: 'end', alignItems: 'center', },
     pageTitle: { display: 'none' },
     newUserButton: {
         display: 'flex',

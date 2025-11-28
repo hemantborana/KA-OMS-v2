@@ -564,6 +564,8 @@ const styles: { [key: string]: React.CSSProperties } = {
     collapsibleContainer: {
         display: 'grid',
         gridTemplateRows: '0fr',
+        paddingLeft: '1rem',
+        paddingRight: '1rem',
         transition: 'grid-template-rows 0.35s ease',
     },
     collapsibleContainerExpanded: {

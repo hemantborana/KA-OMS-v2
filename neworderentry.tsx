@@ -721,7 +721,7 @@ const SuccessModal = ({ isOpen, onClose, orderData, isEditMode }) => {
 
   const title = isEditMode ? 'Order Updated Successfully!' : 'Order Placed Successfully!';
   const message = isEditMode ? 'Your changes have been saved.' : 'Your order has been submitted for processing.';
-  const closeButtonText = isEditMode ? 'Back to Orders' : 'Create New Order';
+  const closeButtonText = isEditMode ? 'Done' : 'Done';
 
   const handleDownloadPdf = async () => {
     const jsPDF = (window as any).jspdf.jsPDF;
@@ -1266,7 +1266,7 @@ export const NewOrderEntry = ({ onNavigate }) => {
             </div>
           )}
 
-          <div style={isMobile ? { ...styles.card, flex: 1, padding: '1.3rem 1rem 1rem 1.2rem', gap: '1rem', margin: '0 0.5rem' } : { ...styles.card, flex: 1 }}>
+          <div style={isMobile ? { ...styles.card, backgroundColor: 'transparent', boxShadow: 'none', flex: 1, padding: '1.3rem 1rem 1rem 1.2rem', gap: '1rem', margin: '0 0.5rem' } : { ...styles.card, flex: 1 }}>
             {isMobile && (
               <>
                 <div style={styles.cardHeader}> <h2 style={styles.cardTitleBare}>{partyName ? `Party: ${partyName}` : 'Order Details'}</h2> {partyName && (<button style={styles.collapseButton} onClick={() => setIsOrderDetailsCollapsed(!isOrderDetailsCollapsed)}> <ChevronIcon collapsed={isOrderDetailsCollapsed} /> </button>)} </div>
@@ -1383,7 +1383,7 @@ const styles: { [key: string]: React.CSSProperties } = {
   collapsibleContentCollapsed: { maxHeight: 0, paddingTop: 0, opacity: 0, overflow: 'hidden' },
   inputGroup: { flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem', minWidth: '200px' },
   label: { fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-color)' },
-  input: { width: '100%', padding: '0.75rem', fontSize: '0.9rem', border: '1px solid var(--skeleton-bg)', borderRadius: '8px', backgroundColor: 'var(--card-bg)', color: 'var(--dark-grey)', transition: 'border-color 0.3s ease, box-shadow 0.3s ease' },
+  input: { width: '100%', padding: '0.85rem', fontSize: '0.9rem', border: '1px solid var(--skeleton-bg)', borderRadius: '8px', backgroundColor: 'var(--card-bg)', color: 'var(--dark-grey)', transition: 'border-color 0.3s ease, box-shadow 0.3s ease' },
   suggestionsList: { listStyle: 'none', margin: '0.25rem 0 0', padding: '0.5rem 0', position: 'absolute', top: '100%', left: 0, right: 0, backgroundColor: 'var(--glass-bg)', backdropFilter: 'blur(7px)', WebkitBackdropFilter: 'blur(7px)', border: '1px solid var(--glass-border)', boxShadow: '0 8px 24px rgba(0,0,0,0.15)', maxHeight: '200px', overflowY: 'auto', zIndex: 10, borderRadius: '12px' },
   suggestionItem: { padding: '0.75rem 1rem', cursor: 'pointer', fontSize: '0.9rem', color: 'var(--text-color)', transition: 'background-color 0.2s ease' },
   addSuggestionItem: { color: 'var(--brand-color)', fontWeight: 500, },
@@ -1428,9 +1428,9 @@ const styles: { [key: string]: React.CSSProperties } = {
   summaryValue: { fontSize: '1.1rem', fontWeight: 600, color: 'var(--dark-grey)' },
   modalOverlay: { position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.2)', backdropFilter: 'blur(7px)', WebkitBackdropFilter: 'blur(7px)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center' },
   modalContent: { backgroundColor: 'var(--card-bg)', width: '100%', maxWidth: '500px', borderRadius: 'var(--border-radius)', display: 'flex', flexDirection: 'column', position: 'relative', animation: 'slideUp 0.3s ease-out', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' },
-  iosModalContent: { backgroundColor: 'var(--glass-bg)', padding: '1.5rem', borderRadius: '12px', width: '90%', boxShadow: '0 8px 32px rgba(0,0,0,0.1)', border: '1px solid var(--glass-border)', display: 'flex', flexDirection: 'column', gap: '1rem', transform: 'scale(0.95)', opacity: 0 },
+  iosModalContent: { backgroundColor: 'var(--glass-bg)', padding: '1.5rem', borderRadius: '15px', width: '88%', boxShadow: '0 8px 32px rgba(0,0,0,0.1)', border: '1px solid var(--glass-border)', display: 'flex', flexDirection: 'column', gap: '1rem', transform: 'scale(0.95)', opacity: 0 },
   cartModalContent: { padding: 0, gap: 0, backgroundColor: 'var(--glass-bg)', height: 'auto', maxHeight: '80vh' },
-  modalHeader: { padding: '1.5rem 1.5rem 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center'},
+  modalHeader: { padding: '0.5rem 1.5rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center'},
   iosModalActions: { display: 'flex', width: 'calc(100% + 3rem)', marginLeft: '-1.5rem', marginBottom: '-1.5rem', borderTop: '1px solid var(--glass-border)', marginTop: 'auto'},
   iosModalButtonSecondary: { background: 'transparent', border: 'none', padding: '1rem 0', cursor: 'pointer', fontSize: '1rem', textAlign: 'center', transition: 'background-color 0.2s ease', flex: 1, color: 'var(--dark-grey)', fontWeight: 400, borderRight: '1px solid var(--glass-border)' },
   iosModalButtonPrimary: { background: 'transparent', border: 'none', padding: '1rem 0', cursor: 'pointer', fontSize: '1rem', textAlign: 'center', transition: 'background-color 0.2s ease', flex: 1, color: 'var(--brand-color)', fontWeight: 600 },
@@ -1439,7 +1439,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     bottom: 0,
     left: 0,
     right: 0,
-    background: 'linear-gradient(to top, var(--card-bg) 70%, transparent)',
+    background: 'linear-gradient(to top, var(--light-grey) 70%, transparent)',
     padding: '1.5rem 1rem 0.75rem',
     display: 'flex',
     alignItems: 'center',
@@ -1475,13 +1475,13 @@ const styles: { [key: string]: React.CSSProperties } = {
   confirmationBody: { padding: '0 1.5rem 1rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', overflowY: 'auto', flex: 1 },
   confirmationSection: { color: 'var(--dark-grey)' },
   confirmationSectionTitle: { fontSize: '0.9rem', fontWeight: 600, color: 'var(--dark-grey)', marginBottom: '0.75rem', borderBottom: '1px solid var(--skeleton-bg)', paddingBottom: '0.5rem' },
-  notesTextarea: { width: '100%', minHeight: '80px', padding: '0.75rem', fontSize: '0.9rem', border: '1px solid var(--skeleton-bg)', borderRadius: '8px', resize: 'vertical' },
+  notesTextarea: { width: '100%', minHeight: '80px', padding: '0.75rem', fontSize: '0.9rem', border: '1px solid var(--skeleton-bg)', background: 'var(--glass-bg)', color: 'var(--text-color)', borderRadius: '16px', resize: 'vertical' },
   predefinedNotesContainer: { display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1rem' },
-  predefinedNoteButton: { background: 'var(--light-grey)', border: '1px solid var(--skeleton-bg)', borderRadius: '20px', padding: '0.4rem 0.8rem', fontSize: '0.8rem', cursor: 'pointer', transition: 'all 0.2s' },
+  predefinedNoteButton: { background: 'var(--glass-bg)', color: 'var(--text-color)', border: '1px solid var(--skeleton-bg)', borderRadius: '20px', padding: '0.4rem 0.8rem', fontSize: '0.8rem', cursor: 'pointer', transition: 'all 0.2s' },
   successIconContainer: { margin: '0 auto', },
-  successDetails: { border: '1px solid var(--skeleton-bg)', borderRadius: '8px', marginTop: '1.5rem', textAlign: 'left' },
+  successDetails: { border: '1px solid var(--skeleton-bg)', background: 'var(--gray-6)', borderRadius: '8px', marginTop: '1.5rem', textAlign: 'left' },
   successDetailItem: { display: 'flex', justifyContent: 'space-between', padding: '0.75rem 1rem', borderBottom: '1px solid var(--skeleton-bg)', color: 'var(--dark-grey)' },
-  spinner: { border: '3px solid rgba(255,255,255,0.3)', borderRadius: '50%', borderTop: '3px solid #fff', width: '20px', height: '20px', animation: 'spin 1s linear infinite' },
+  spinner: { border: '3px solid rgba(255,255,255,0.3)', marginLeft: '15px', borderRadius: '50%', borderTop: '3px solid #fff', width: '20px', height: '20px', animation: 'spin 1s linear infinite' },
 };
 
 const styleSheet = document.createElement("style");
