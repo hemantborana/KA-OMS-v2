@@ -1,7 +1,7 @@
-
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
+import { sendWebPushNotification } from './webpushr';
 
 // --- Firebase & App Script Configuration ---
 const DRAFTS_REF = 'KA-OMS-v2-Draft';
@@ -1018,6 +1018,8 @@ export const NewOrderEntry = ({ onNavigate }) => {
       console.error('Error dispatching to Google Sheet backup:', backupError);
       showToast('Order saved, but could not send to backup sheet.', 'error');
     }
+
+    sendWebPushNotification(partyName);
 
     if (partyHasExistingDraft) await database.ref(`${DRAFTS_REF}/${partyName}`).remove();
 

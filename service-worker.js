@@ -1,3 +1,5 @@
+importScripts('https://cdn.webpushr.com/sw-server.min.js');
+
 const CACHE_NAME = 'pwa-test-cache-v1';
 const urlsToCache = [
   '/',
