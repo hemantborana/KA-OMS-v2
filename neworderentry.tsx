@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
@@ -795,8 +796,8 @@ const SuccessModal = ({ isOpen, onClose, orderData, isEditMode }) => {
 
   return (
     <div style={styles.modalOverlay}>
-      <div style={{...styles.modalContent, maxWidth: '450px', height: 'auto', textAlign: 'center', padding: '2rem'}} onClick={(e) => e.stopPropagation()}>
-        <div style={styles.successIconContainer}> <svg className="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52"><circle className="checkmark-circle" cx="26" cy="26" r="25" fill="none"/><path className="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/></svg> </div>
+      <div style={{...styles.iosModalContent, maxWidth: '450px', height: 'auto', textAlign: 'center', opacity: 1, transform: 'none', animation: 'modalIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards'}} onClick={(e) => e.stopPropagation()}>
+        <div style={{...styles.successIconContainer, marginTop: '0.5rem'}}> <svg className="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52"><circle className="checkmark-circle" cx="26" cy="26" r="25" fill="none"/><path className="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/></svg> </div>
         <h2 style={{...styles.cardTitleBare, fontSize: '1.5rem', color: '#2ecc71', marginTop: '1.5rem'}}>{title}</h2>
         <p style={{color: 'var(--text-color)', margin: '0.5rem 0 1.5rem'}}>{message}</p>
         <div style={styles.successDetails}>
@@ -805,11 +806,11 @@ const SuccessModal = ({ isOpen, onClose, orderData, isEditMode }) => {
           <div style={styles.successDetailItem}> <span>Total Quantity</span> <strong>{orderData.totalQuantity} Items</strong> </div>
           <div style={styles.successDetailItem}> <span>Total Value</span> <strong>{formatCurrency(orderData.totalValue)}</strong> </div>
         </div>
-        <div style={styles.successModalButtons}>
-          <button onClick={handleDownloadPdf} style={{ ...styles.button, ...styles.secondaryButton, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }} className="secondary-action-button">
+        <div style={styles.iosModalActions}>
+          <button onClick={handleDownloadPdf} style={{ ...styles.iosModalButtonSecondary, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', fontWeight: 500 }}>
             <DownloadIcon /> Download PDF
           </button>
-          <button onClick={onClose} style={{...styles.button}} className="action-button">{closeButtonText}</button>
+          <button onClick={onClose} style={styles.iosModalButtonPrimary}>{closeButtonText}</button>
         </div>
       </div>
     </div>
@@ -1481,7 +1482,6 @@ const styles: { [key: string]: React.CSSProperties } = {
   successDetails: { border: '1px solid var(--skeleton-bg)', borderRadius: '8px', marginTop: '1.5rem', textAlign: 'left' },
   successDetailItem: { display: 'flex', justifyContent: 'space-between', padding: '0.75rem 1rem', borderBottom: '1px solid var(--skeleton-bg)', color: 'var(--dark-grey)' },
   spinner: { border: '3px solid rgba(255,255,255,0.3)', borderRadius: '50%', borderTop: '3px solid #fff', width: '20px', height: '20px', animation: 'spin 1s linear infinite' },
-  successModalButtons: { display: 'flex', gap: '1rem', width: '100%', marginTop: '2rem' },
 };
 
 const styleSheet = document.createElement("style");
