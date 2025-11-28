@@ -2075,7 +2075,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     mobileFilterButton: { background: 'none', border: 'none', padding: '0.5rem', cursor: 'pointer', color: 'var(--text-color)' },
     mobileViewToggle: { display: 'flex', backgroundColor: 'var(--grey-5)', borderRadius: '20px', padding: '3px', marginLeft: '0.5rem', gap: '2px' },
     mobileSegmentInactive: { background: 'transparent', border: 'none', padding: '6px 16px', cursor: 'pointer', color: 'var(--text-color)', borderRadius: '18px', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center' },
-    mobileSegmentActive: { background: 'var(--card-bg)', border: 'none', padding: '6px 16px', cursor: 'pointer', color: 'var(--dark-grey)', borderRadius: '18px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+    mobileSegmentActive: { background: 'var(--card-bg)', border: 'none', padding: '8px 12px', cursor: 'pointer', color: 'var(--dark-grey)', borderRadius: '18px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center' },
     
     filtersCollapsed: { maxHeight: 0, opacity: 0, overflow: 'hidden', transition: 'max-height 0.4s ease-out, opacity 0.4s ease-out, margin-top 0.4s ease-out', marginTop: 0 },
     filtersVisible: { maxHeight: '300px', opacity: 1, overflow: 'visible', transition: 'max-height 0.4s ease-in, opacity 0.4s ease-in, margin-top 0.4s ease-in', marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' },
