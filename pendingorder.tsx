@@ -2067,7 +2067,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     headerTop: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
     pageTitle: { fontSize: '1.25rem', fontWeight: 600, color: 'var(--dark-grey)' },
     headerControls: { display: 'flex', alignItems: 'center', gap: '0.75rem', position: 'relative', zIndex: 101 },
-    viewToggle: { display: 'flex', backgroundColor: 'var(--grey-5)', borderRadius: '18px', padding: '4px' },
+    viewToggle: { display: 'flex', backgroundColor: 'var(--gray-5)', borderRadius: '18px', padding: '4px' },
     toggleButton: { background: 'none', border: 'none', padding: '6px 10px', cursor: 'pointer', color: 'var(--text-color)', borderRadius: '6px' },
     toggleButtonActive: { background: 'var(--card-bg)', border: 'none', padding: '8px 12px', cursor: 'pointer', color: 'var(--brand-color)', borderRadius: '14px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' },
     

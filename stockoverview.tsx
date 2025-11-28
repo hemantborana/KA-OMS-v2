@@ -609,7 +609,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     headerInfo: { display: 'flex', justifyContent: 'flex-end', alignItems: 'center' },
     lastUpdated: { fontSize: '0.9rem', color: 'var(--text-color)', fontWeight: 500, whiteSpace: 'nowrap' },
     syncingIndicator: { color: 'var(--brand-color)', fontSize: '0.8rem', fontWeight: 500 },
-    viewToggle: { display: 'flex', backgroundColor: 'var(--grey-5)', borderRadius: '18px', padding: '4px' },
+    viewToggle: { display: 'flex', backgroundColor: 'var(--gray-5)', borderRadius: '18px', padding: '4px' },
     toggleButton: { background: 'none', border: 'none', padding: '6px 10px', cursor: 'pointer', color: 'var(--text-color)', borderRadius: '6px' },
     toggleButtonActive: { background: 'var(--card-bg)', alignItems: 'center', border: 'none', padding: '6px 10px', cursor: 'pointer', color: 'var(--brand-color)', borderRadius: '14px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' },
     searchContainer: { 

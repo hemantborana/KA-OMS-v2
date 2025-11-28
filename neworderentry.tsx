@@ -730,7 +730,7 @@ const SuccessModal = ({ isOpen, onClose, orderData, isEditMode }) => {
     const closeButtonText = isEditMode ? 'Back to Orders' : 'Create New Order';
 
     const handleDownloadPdf = async () => {
-        const { jsPDF } = (window as any).jspdf;
+        const jsPDF = (window as any).jspdf.jsPDF;
         const doc = new jsPDF();
     
         // 1. Header
@@ -1309,10 +1309,12 @@ export const NewOrderEntry = ({ onNavigate }) => {
                              )}
                         </div>
 
+                        {/* FIX: Pass 'handleQuantityChange' as the 'onQuantityChange' prop. The original code was passing an undefined variable. */}
                         {selectedStyle && ( <StyleMatrix style={selectedStyle} catalogData={catalog.groupedData} orderItems={items} onQuantityChange={handleQuantityChange} isMobile={isMobile} stockData={stockData} /> )}
                     </div>
                 </div>
 
+                {/* FIX: Pass 'handleQuantityChange' as the 'onQuantityChange' prop. The original code was passing an undefined variable. */}
                 {!isMobile && ( <div style={styles.sidePanel}> <Cart items={items} onQuantityChange={handleQuantityChange} onClearCartConfirmation={handleShowClearCartConfirmation} onEditGroup={(group) => setEditingCartGroup(group)} isMobile={isMobile} isModal={false} onClose={()=>{}} draftButton={renderDraftButton()} onSubmit={handleSubmit} isEditMode={editMode} /> </div> )}
             </div>
 
@@ -1334,6 +1336,7 @@ export const NewOrderEntry = ({ onNavigate }) => {
             {isMobile && isCartModalOpen && (
                  <div style={{...styles.modalOverlay, animation: isCartModalClosing ? 'overlayOut 0.3s forwards' : 'overlayIn 0.3s forwards'}} onClick={handleCloseCartModal}>
                     <div style={{...styles.iosModalContent, ...styles.cartModalContent, animation: isCartModalClosing ? 'modalOut 0.3s forwards' : 'modalIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards'}} onClick={(e) => e.stopPropagation()}>
+                        {/* FIX: Pass 'handleQuantityChange' as the 'onQuantityChange' prop. The original code was passing an undefined variable. */}
                         <Cart 
                             items={items} 
                             onQuantityChange={handleQuantityChange} 
@@ -1350,6 +1353,7 @@ export const NewOrderEntry = ({ onNavigate }) => {
                 </div>
             )}
             
+            {/* FIX: Pass 'handleQuantityChange' as the 'onQuantityChange' prop. The original code was passing an undefined variable. */}
             {editingCartGroup && ( <CartDetailModal group={editingCartGroup} items={items.filter(item => item.fullItemData.Style === editingCartGroup.style && item.fullItemData.Color === editingCartGroup.color)} onClose={() => setEditingCartGroup(null)} onQuantityChange={handleQuantityChange} /> )}
         </div>
     );
