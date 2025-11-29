@@ -1526,7 +1526,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     sidebarCollapsed: { width: '80px' },
     sidebarMobile: { position: 'fixed', top: 0, left: 0, height: '100%', zIndex: 200 },
     overlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.05)', backdropFilter: 'blur(1.5px)', WebkitBackdropFilter: 'blur(1.5px)', zIndex: 199 },
-    sidebarHeader: { padding: '1.5rem', borderBottom: '1px solid var(--separator-color)' },
+    sidebarHeader: { paddingTop: '0.5rem', borderBottom: '1px solid var(--separator-color)' },
     desktopCollapseButton: { background: 'none', border: 'none', cursor: 'pointer', padding: '8px', display: 'flex', alignItems: 'center', borderRadius: '12px', transition: 'background-color 0.2s ease, color 0.2s ease' },
     sidebarUserContainer: {
         display: 'flex',
@@ -1600,13 +1600,14 @@ const styles: { [key: string]: React.CSSProperties } = {
     // --- Dashboard Styles ---
     dashboardContainer: { display: 'flex', flexDirection: 'column', gap: '1.5rem' },
     dashboardGreeting: {
-        fontFamily: 'Arial, sans-serif',
+        marginLeft: '10px',
         fontSize: '1.2rem',
-        fontWeight: 400,
+        fontWeight: 500,
         color: 'var(--text-color)',
     },
     dashboardUserName: {
         fontFamily: "'FK Grotesk Neue', 'Inter Tight', sans-serif",
+        marginLeft: '10px',
         fontSize: '2rem',
         fontWeight: 600,
         color: 'var(--dark-grey)',
@@ -1614,6 +1615,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     },
     dashboardSubtitle: {
         fontSize: '0.9rem',
+        marginLeft: '10px',
         fontWeight: 400,
         color: 'var(--text-color)',
         marginTop: '0.5rem'
@@ -1624,13 +1626,13 @@ const styles: { [key: string]: React.CSSProperties } = {
     kpiValueNew: { fontSize: '1.5rem', fontFamily: "'FK Grotesk Neue', 'Inter Tight', sans-serif", fontWeight: 600, color: 'var(--dark-grey)' },
     kpiTitleNew: { fontSize: '0.9rem', fontFamily: "'Inter Tight', sans-serif", color: 'var(--text-color)', marginTop: '0.25rem' },
     quickActionsContainer: { gridColumn: '1 / -1', background: 'transparent' },
-    quickActionsGrid: { display: 'flex', flexWrap: 'wrap', gap: '0.75rem' },
-    actionButton: { display: 'flex', alignItems: 'center', gap: '0.75rem', flex: '1 1 auto', padding: '0.5rem 0.8rem', fontSize: '0.9rem', background: 'var(--card-bg)', border: 'none', borderRadius: '8px', cursor: 'pointer', textAlign: 'left', color: 'var(--dark-grey)', fontWeight: 500, boxShadow: '0 2px 8px rgba(0,0,0,0.06)' },
-    recentActivitySection: { gridColumn: '1 / -1', marginTop: '1.5rem', background: 'transparent' },
+    quickActionsGrid: { display: 'flex',  marginLeft: '10px', marginRight: '10px', flexWrap: 'wrap', gap: '0.75rem' },
+    actionButton: { display: 'flex', alignItems: 'center', gap: '0.75rem', flex: '1 1 auto', padding: '1rem 0.8rem', fontSize: '0.9rem', background: 'var(--card-bg)', border: 'none', borderRadius: '8px', cursor: 'pointer', textAlign: 'left', color: 'var(--dark-grey)', fontWeight: 500, boxShadow: '0 2px 8px rgba(0,0,0,0.06)' },
+    recentActivitySection: { gridColumn: '1 / -1', marginTop: '1.5rem', marginLeft: '10px', marginRight: '10px', background: 'transparent' },
     recentActivityTitle: { fontSize: '1.1rem', fontWeight: 600, color: 'var(--dark-grey)', marginBottom: '1rem' },
     recentActivityList: { listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '1rem' },
     recentActivityItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.95rem', color: 'var(--dark-grey)' },
-    recentActivityInfo: { display: 'flex', alignItems: 'center', gap: '1rem' },
+    recentActivityInfo: { display: 'flex', alignItems: 'center', gap: '1.3rem' },
     recentActivityOrderNumber: { fontWeight: 600, color: 'var(--dark-grey)' },
     recentActivityTime: { fontSize: '0.85rem', color: 'var(--dark-grey)' },
     // --- Toast Styles ---
