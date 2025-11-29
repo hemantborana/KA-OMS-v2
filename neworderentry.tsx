@@ -734,8 +734,8 @@ const SuccessModal = ({ isOpen, onClose, orderData, isEditMode }) => {
 
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
-    doc.text('123 Business Road, Commerce City, 12345', 105, 27, { align: 'center' });
-    doc.text('Email: contact@kambeshwar.com | Phone: +91 98765 43210', 105, 32, { align: 'center' });
+    doc.text('UGF, Shop No. 6, Essar Trade Centre,, Morod, Mapusa, Goa', 105, 27, { align: 'center' });
+    doc.text('Email: hreenkarcreation@gmail.com | Phone: +91 94225 93814', 105, 32, { align: 'center' });
 
     // 2. Document Title
     doc.setFontSize(16);
