@@ -3,11 +3,11 @@ export function sendWebPushNotification(partyName: string) {
   const token = '98413';
 
   const payload = {
-    badge:'https://i.postimg.cc/BQ2J7HGM/03042020043247760-brlo.png',
-    title: 'KA OMS',
+    badge:'https://i.ibb.co/spDFy1wW/applogo-1.png',
+    title: 'KA OMS v2',
     message: `New Order for ${partyName}`,
-    target_url: 'https://ka-oms.netlify.app',
-    icon: 'https://i.postimg.cc/BQ2J7HGM/03042020043247760-brlo.png'
+    target_url: 'https://ka-oms-v2.netlify.app/',
+    icon: 'https://i.ibb.co/spDFy1wW/applogo-1.png'
   };
 
   fetch('https://api.webpushr.com/v1/notification/send/all', {
