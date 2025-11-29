@@ -79,11 +79,13 @@ const ShieldIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" heig
 const ChevronRightIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>;
 const ChevronLeftIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>;
 const ArrowRightIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>;
+const MessagingIcon = ({ active }) => active ? <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M20 2H4C2.9 2 2 2.9 2 4V22L6 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2Z"/></svg> : <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" xmlns="http://www.w3.org/2000/svg"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>;
 const NavIcon = ({ name, active = false, size = 30 }) => {
     const icons = {
         Dashboard: active ? 
             <svg width={size} height={size} viewBox="0 0 28 28" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M11.6288 1.94617C12.9452 0.685478 15.0206 0.684487 16.3382 1.94393L25.9705 9.82424C26.0825 9.92147 26.2415 10.0911 26.3998 10.3064C26.5943 10.6198 26.7798 10.9189 27 11.8956V24.9976C27 26.1013 26.1068 27 25 27H18.7601C17.9317 27 17.2601 26.3284 17.2601 25.5V20.7939C17.2601 18.9948 15.8058 17.5405 14.0168 17.5405C12.2279 17.5405 10.7735 18.9948 10.7735 20.7939V25.5C10.7735 26.3284 10.102 27 9.27354 27H3C1.89318 27 1 26.1013 1 24.9976V11.7425C1 11.0901 1.36299 10.564 1.56986 10.3028C1.69049 10.1505 1.89631 9.94036 1.89631 9.94036L11.6288 1.94617Z"/></svg> : 
             <svg width={size} height={size} viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><path fillRule="evenodd" clipRule="evenodd" d="M16.3382 1.94393L25.9705 9.82424L26.0201 9.8788C26.1701 10.0437 26.3998 10.3064 26.5943 10.6198C26.7798 10.9189 27 11.3686 27 11.8956V24.9976C27 26.1013 26.1068 27 25 27H18.7601C17.9317 27 17.2601 26.3284 17.2601 25.5V20.7939C17.2601 18.9948 15.8058 17.5405 14.0168 17.5405C12.2279 17.5405 10.7735 18.9948 10.7735 20.7939V25.5C10.7735 26.3284 10.102 27 9.27354 27H3C1.89318 27 1 26.1013 1 24.9976V11.7425C1 11.0901 1.36299 10.564 1.56986 10.3028C1.69049 10.1505 1.80873 10.0264 1.89631 9.94036C1.9407 9.89677 1.97877 9.86147 2.0074 9.83565C2.03384 9.81204 2.05551 9.79329 2.06007 9.7894L11.6288 1.94617C12.9452 0.685478 15.0206 0.684487 16.3382 1.94393ZM3.35246 11.3159C3.33673 11.33 3.31953 11.3459 3.29759 11.3674C3.19388 11.4736 3.07966 11.6178 3.01374 11.7344V24.9976H8.77354V20.7939C8.77354 17.8948 11.1188 15.5405 14.0168 15.5405C16.9149 15.5405 19.2601 17.8948 19.2601 20.7939V25H25V11.8956C24.9788 11.8095 24.8108 11.5389 24.588 11.2772L15.004 3.43645C14.4228 2.86484 13.5451 2.86525 12.997 3.40534L3.35246 11.3159Z" fill="currentColor"/></svg>,
+        Messaging: <MessagingIcon active={active}/>,
         Entry: active ? 
             <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M14 2H6C4.89 2 4 2.9 4 4V20C4 21.1 4.89 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2ZM16 18H13V15H11V18H8V15H11V12H13V15H16V18ZM13 9V3.5L18.5 9H13Z"/></svg> : 
             <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" xmlns="http://www.w3.org/2000/svg"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>,
@@ -131,15 +133,13 @@ const UserAvatar = ({ name, avatarId, size = 'small', style = {} }) => {
     const dim = isLarge ? 80 : (isMedium ? 30 : 40); 
     const fontSize = isLarge ? '2.5rem' : (isMedium ? '1rem' : '1.2rem');
     
-    // Fallback to 0 if undefined
     const safeId = typeof avatarId === 'number' && avatarId >= 0 && avatarId <= 7 ? avatarId : 0;
 
-    // Base container style
     const containerStyle = {
         width: `${dim}px`, 
         height: `${dim}px`, 
         borderRadius: '50%', 
-        overflow: 'hidden', // Ensures SVGs stay within the circle
+        overflow: 'hidden',
         backgroundColor: safeId === 0 ? 'var(--brand-color)' : 'transparent',
         color: '#fff', 
         display: 'flex', 
@@ -172,6 +172,59 @@ const UserAvatar = ({ name, avatarId, size = 'small', style = {} }) => {
         </div>
     );
 };
+
+// --- DATABASE LOGIC for user ID ---
+const DB_NAME = 'user-session-db';
+const DB_VERSION = 1;
+const STORE_NAME = 'user';
+const USER_ID_KEY = 'currentUserId';
+
+const openUserDb = () => {
+    return new Promise<IDBDatabase>((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+        request.onupgradeneeded = () => {
+            const db = request.result;
+            if (!db.objectStoreNames.contains(STORE_NAME)) {
+                db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+            }
+        };
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+    });
+};
+
+const saveUserIdToDB = async (userId: string) => {
+    try {
+        const db = await openUserDb();
+        const transaction = db.transaction(STORE_NAME, 'readwrite');
+        const store = transaction.objectStore(STORE_NAME);
+        store.put({ id: USER_ID_KEY, userId });
+        await new Promise<void>((resolve, reject) => {
+            transaction.oncomplete = () => resolve();
+            transaction.onerror = () => reject(transaction.error);
+        });
+        console.log('User ID saved to IndexedDB');
+    } catch (error) {
+        console.error('Failed to save user ID to IndexedDB:', error);
+    }
+};
+
+const clearUserIdFromDB = async () => {
+    try {
+        const db = await openUserDb();
+        const transaction = db.transaction(STORE_NAME, 'readwrite');
+        const store = transaction.objectStore(STORE_NAME);
+        store.delete(USER_ID_KEY);
+        await new Promise<void>((resolve, reject) => {
+            transaction.oncomplete = () => resolve();
+            transaction.onerror = () => reject(transaction.error);
+        });
+        console.log('User ID cleared from IndexedDB');
+    } catch (error) {
+        console.error('Failed to clear user ID from IndexedDB:', error);
+    }
+};
+
 
 // --- DATABASE LOGIC ---
 interface CachedImage { id: string; blob: Blob; url: string; }
@@ -485,42 +538,85 @@ const Preferences = ({ session, theme, toggleTheme, updateUserProfile, onLogout 
     );
 };
 
-const Dashboard = ({ onNavigate, session }) => {
-    const [stats, setStats] = useState({ pending: 0, billing: 0, overdue: 0 });
+const Dashboard = ({ onNavigate, session, isMobile }) => {
+    const [stats, setStats] = useState({ pending: 0, billing: 0, billed: 0, today: 0 });
+    const [recentActivities, setRecentActivities] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
 
+    const getGreeting = () => {
+        const hour = new Date().getHours();
+        if (hour >= 5 && hour < 12) return 'Good Morning';
+        if (hour >= 12 && hour < 17) return 'Good Afternoon';
+        return 'Good Evening';
+    };
+
+    const timeSince = (dateString) => {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000);
+        let interval = seconds / 86400;
+        if (interval > 1) return `${Math.floor(interval)}d ago`;
+        interval = seconds / 3600;
+        if (interval > 1) return `${Math.floor(interval)}h ago`;
+        interval = seconds / 60;
+        if (interval > 1) return `${Math.floor(interval)}m ago`;
+        return "just now";
+    };
+
     useEffect(() => {
-        const refs = [
+        const statRefs = [
             firebase.database().ref('Pending_Order_V2'),
             firebase.database().ref('Ready_For_Billing_V2'),
+            firebase.database().ref('Billed_Orders_V2'),
         ];
-
-        const listeners = refs.map(ref => {
-            const listener = ref.on('value', () => {
-                // This is just to trigger a re-fetch when any node changes.
-                // The main logic is consolidated below.
-                fetchStats();
-            });
-            return { ref, listener };
-        });
+        const recentActivityRef = firebase.database().ref('Billed_Orders_V2').orderByChild('billedTimestamp').limitToLast(5);
 
         const fetchStats = async () => {
             try {
-                const [pendingSnapshot, billingSnapshot] = await Promise.all(refs.map(r => r.once('value')));
+                const [
+                    pendingSnapshot, 
+                    billingSnapshot, 
+                    billedSnapshot, 
+                    recentActivitySnapshot
+                ] = await Promise.all([
+                    statRefs[0].once('value'),
+                    statRefs[1].once('value'),
+                    statRefs[2].once('value'),
+                    recentActivityRef.once('value'),
+                ]);
+
                 const pendingData = pendingSnapshot.val() || {};
                 const billingData = billingSnapshot.val() || {};
+                const billedData = billedSnapshot.val() || {};
                 
-                const pendingOrders = Object.values(pendingData) as any[];
-                const billingOrders = Object.values(billingData) as any[];
-                
-                const twentyFiveDaysAgo = new Date().getTime() - (25 * 24 * 60 * 60 * 1000);
-                const overdueCount = pendingOrders.filter(order => new Date(order.timestamp).getTime() < twentyFiveDaysAgo).length;
+                const pendingOrders = Object.values(pendingData);
+                const billingOrders = Object.values(billingData);
+                const billedOrders = Object.values(billedData);
 
+                const isToday = (dateString) => {
+                    if (!dateString) return false;
+                    const today = new Date();
+                    const d = new Date(dateString);
+                    return d.getDate() === today.getDate() &&
+                           d.getMonth() === today.getMonth() &&
+                           d.getFullYear() === today.getFullYear();
+                };
+
+                const todayOrdersCount = pendingOrders.filter((order: any) => isToday(order.timestamp)).length +
+                                       billingOrders.filter((order: any) => isToday(order.processedDate || order.timestamp)).length +
+                                       billedOrders.filter((order: any) => isToday(order.billedTimestamp)).length;
+                
                 setStats({
                     pending: pendingOrders.length,
                     billing: billingOrders.length,
-                    overdue: overdueCount,
+                    billed: billedOrders.length,
+                    today: todayOrdersCount
                 });
+                
+                const recentData = recentActivitySnapshot.val() || {};
+                const recentArray = Object.values(recentData).sort((a: any, b: any) => new Date(b.billedTimestamp).getTime() - new Date(a.billedTimestamp).getTime());
+                setRecentActivities(recentArray);
+
             } catch (e) {
                 console.error("Failed to fetch dashboard stats", e);
             } finally {
@@ -529,69 +625,86 @@ const Dashboard = ({ onNavigate, session }) => {
         };
 
         fetchStats();
+        
+        const listeners = statRefs.map(ref => {
+            const listener = ref.on('value', fetchStats);
+            return { ref, listener };
+        });
+        const recentActivityListener = recentActivityRef.on('value', fetchStats);
+
 
         return () => {
             listeners.forEach(({ ref, listener }) => ref.off('value', listener));
+            recentActivityRef.off('value', recentActivityListener);
         };
     }, []);
     
     const kpiCards = [
-        { title: 'Pending Orders', value: stats.pending, icon: <NavIcon name="Pending" />, color: 'var(--orange)' },
-        { title: 'Ready for Billing', value: stats.billing, icon: <NavIcon name="Billing" />, color: 'var(--blue)' },
+        { title: 'Pending', value: stats.pending },
+        { title: 'Billing', value: stats.billing },
+        { title: 'Billed', value: stats.billed },
+    ];
+    
+    const quickActionsList = [
+        { title: 'New Order', icon: 'Entry', color: 'var(--green)' },
+        { title: 'Pending Orders', icon: 'Pending', color: 'var(--orange)' },
+        { title: 'Ready for Billing', icon: 'Billing', color: 'var(--blue)' },
+        { title: 'Billed Orders', icon: 'Billed', color: 'var(--purple)' },
+        { title: 'View Stock Overview', icon: 'Stock', color: 'var(--teal)' },
     ];
 
-    const actionCard = stats.overdue > 0 ? {
-        title: 'Action Required',
-        value: `${stats.overdue} Orders Overdue`,
-        icon: <AlertTriangleIcon />,
-        style: styles.kpiCardAlert,
-        onClick: () => onNavigate('Pending')
-    } : null;
+    const quickActionsGridStyle = isMobile 
+        ? { ...styles.quickActionsGrid, flexDirection: 'column' as 'column', gap: '0.5rem' }
+        : styles.quickActionsGrid;
 
     return (
         <div style={styles.dashboardContainer}>
-            <h2 style={styles.dashboardWelcome}>Welcome back, {session.userName}!</h2>
+            <div>
+                <div style={styles.dashboardGreeting}>{getGreeting()}</div>
+                <div style={styles.dashboardUserName}>{session.userName}</div>
+                <p style={styles.dashboardSubtitle}>You have {stats.today} orders today.</p>
+            </div>
             {isLoading ? <div style={{display: 'flex', justifyContent: 'center', padding: '2rem'}}><Spinner /></div> : (
                 <div style={styles.dashboardGrid}>
-                    {/* KPI Cards */}
-                    {kpiCards.map(card => (
-                        <div key={card.title} style={styles.kpiCard}>
-                            <div style={{...styles.kpiIcon, color: card.color}}>{card.icon}</div>
-                            <div>
-                                <div style={styles.kpiTitle}>{card.title}</div>
-                                <div style={styles.kpiValue}>{card.value}</div>
+                    <div style={styles.newKpiWrapper}>
+                        {kpiCards.map(card => (
+                            <div key={card.title} style={styles.kpiCardNew}>
+                                <div style={styles.kpiValueNew}>{card.value}</div>
+                                <div style={styles.kpiTitleNew}>{card.title}</div>
                             </div>
-                        </div>
-                    ))}
+                        ))}
+                    </div>
 
-                    {/* Action Card */}
-                    {actionCard && (
-                         <div key={actionCard.title} style={{...styles.kpiCard, ...actionCard.style, cursor: 'pointer'}} onClick={actionCard.onClick}>
-                            <div style={{...styles.kpiIcon, color: 'var(--red)'}}>{actionCard.icon}</div>
-                            <div>
-                                <div style={styles.kpiTitle}>{actionCard.title}</div>
-                                <div style={styles.kpiValue}>{actionCard.value}</div>
-                            </div>
+                    <div style={styles.quickActionsContainer}>
+                        <div style={quickActionsGridStyle}>
+                            {quickActionsList.map(action => (
+                                <button key={action.title} style={styles.actionButton} onClick={() => onNavigate(action.icon)}>
+                                    <span style={{ color: action.color, display: 'flex' }}>
+                                        <NavIcon name={action.icon} size={18} />
+                                    </span>
+                                    {action.title}
+                                </button>
+                            ))}
                         </div>
-                    )}
-
-                    {/* Quick Actions */}
-                    <div style={{...styles.dashboardCard, gridColumn: 'span 2'}}>
-                        <h3 style={styles.cardTitle}>Quick Actions</h3>
-                        <div style={styles.quickActions}>
-                            <button style={styles.actionButton} onClick={() => onNavigate('Entry')}>
-                                <span style={{color: 'var(--green)', display: 'flex'}}><NavIcon name="Entry" /></span>
-                                New Order
-                            </button>
-                             <button style={styles.actionButton} onClick={() => onNavigate('Stock')}>
-                                <span style={{color: 'var(--teal)', display: 'flex'}}><NavIcon name="Stock" /></span>
-                                View Stock
-                            </button>
-                             <button style={styles.actionButton} onClick={() => onNavigate('Billed')}>
-                                <span style={{color: 'var(--purple)', display: 'flex'}}><NavIcon name="Billed" /></span>
-                                View Billed Archive
-                            </button>
-                        </div>
+                    </div>
+                    
+                    <div style={styles.recentActivitySection}>
+                        <h3 style={styles.recentActivityTitle}>Recent Activity</h3>
+                        {recentActivities.length > 0 ? (
+                            <ul style={styles.recentActivityList}>
+                                {recentActivities.map((activity: any) => (
+                                    <li key={activity.orderNumber} style={styles.recentActivityItem}>
+                                        <div style={styles.recentActivityInfo}>
+                                            <span style={styles.recentActivityOrderNumber}>{activity.orderNumber}</span>
+                                            <span>{activity.partyName}</span>
+                                        </div>
+                                        <span style={styles.recentActivityTime}>{timeSince(activity.billedTimestamp)}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        ) : (
+                             <p style={{color: 'var(--text-color)', fontSize: '0.9rem', textAlign: 'center', padding: '1rem 0'}}>No recent activity to show.</p>
+                        )}
                     </div>
                 </div>
             )}
@@ -601,9 +714,14 @@ const Dashboard = ({ onNavigate, session }) => {
 
 
 // --- LAYOUT COMPONENTS ---
-const Header = ({ onToggleSidebar, appLogoSrc, isMobile, title }) => {
+const Header = ({ onToggleSidebar, appLogoSrc, isMobile, title, onNavigate, activeView, theme }) => {
+    const headerStyle = { ...styles.appHeader };
+    if (activeView === 'Dashboard') {
+        headerStyle.backgroundColor = theme === 'dark' ? '#000000' : '#FFFFFF';
+    }
+
     return (
-        <header style={styles.appHeader}>
+        <header style={headerStyle}>
             <div style={styles.headerLeft}>
                 {isMobile ? (
                     <>
@@ -618,7 +736,11 @@ const Header = ({ onToggleSidebar, appLogoSrc, isMobile, title }) => {
                 <h1 style={styles.headerPageTitle}>{title}</h1>
             </div>
             <div style={styles.headerRight}>
-                {/* Kept for layout balance and potential future use */}
+                {isMobile && title === 'Dashboard' && (
+                    <button onClick={() => onNavigate('Preferences')} style={styles.profileButtonMobile}>
+                        <UserIcon />
+                    </button>
+                )}
             </div>
         </header>
     );
@@ -774,7 +896,7 @@ const Sidebar = ({ activeView, onNavigate, isMobile, isOpen, onClose, session, o
 const BottomNavBar = ({ activeView, onNavigate }) => {
     const navItems = useMemo(() => [
         { id: 'Dashboard', label: 'Home' },
-        { id: 'Stock', label: 'Stock' },
+        { id: 'Messaging', label: 'Messages' },
         { id: 'Pending', label: 'Pending' },
         { id: 'Preferences', label: 'Profile' },
     ], []);
@@ -835,15 +957,19 @@ const MainContent = React.forwardRef<HTMLElement, MainContentProps>(
     ({ activeView, onNavigate, session, isMobile, theme, toggleTheme, updateUserProfile, onLogout }, ref) => {
         let mainStyle = styles.mainContent;
 
+        if (activeView === 'Dashboard') {
+            mainStyle = { ...mainStyle, backgroundColor: theme === 'dark' ? '#000000' : '#FFFFFF' };
+        }
+
         if (isMobile) {
             let mobilePadding;
-            if (activeView === 'Entry' || activeView === 'Pending' || activeView === 'Approval') {
+            if (activeView === 'Entry' || activeView === 'Pending' || activeView === 'Approval' || activeView === 'Messaging') {
                 mobilePadding = { padding: 0 };
             } else {
-                mobilePadding = { padding: '0rem 0.25rem', paddingBottom: '100px' };
+                mobilePadding = { padding: '0rem 1.2rem', paddingBottom: '100px' };
             }
             mainStyle = {
-                ...styles.mainContent,
+                ...mainStyle,
                 ...mobilePadding,
             };
             if (activeView === 'Pending' || activeView === 'Approval') {
@@ -854,8 +980,9 @@ const MainContent = React.forwardRef<HTMLElement, MainContentProps>(
 
         const renderView = () => {
             switch (activeView) {
-                case 'Dashboard': return <Dashboard onNavigate={onNavigate} session={session} />;
+                case 'Dashboard': return <Dashboard onNavigate={onNavigate} session={session} isMobile={isMobile} />;
                 case 'Entry': return <NewOrderEntry onNavigate={onNavigate} />;
+                case 'Messaging': return <Messaging session={session} isMobile={isMobile} />;
                 case 'Stock': return <StockOverview />;
                 case 'Pending': return <PendingOrders onNavigate={onNavigate} />;
                 case 'Billing': return <ReadyForBilling />;
@@ -886,7 +1013,7 @@ const HomePage = ({ session, onLogout, appLogoSrc, updateUserProfile }) => {
     const mainContentRef = useRef<HTMLElement | null>(null);
     
     const pages = {
-        'Dashboard': 'Dashboard', 'Entry': 'New Order Entry', 'Pending': 'Pending Orders', 'Billing': 'Ready for Billing', 'Billed': 'Billed Orders (Archive)',
+        'Dashboard': 'Dashboard', 'Entry': 'New Order Entry', 'Messaging': 'Messaging', 'Pending': 'Pending Orders', 'Billing': 'Ready for Billing', 'Billed': 'Billed Orders (Archive)',
         'Stock': 'Stock Overview', 'Update': 'Stock Updation', 'Inactive': 'Inactive Orders', 'Users': 'User Management', 'Approval': 'Order Approval (Admin)',
         'Preferences': 'Preferences'
     };
@@ -1070,7 +1197,15 @@ const HomePage = ({ session, onLogout, appLogoSrc, updateUserProfile }) => {
                 appLogoSrc={appLogoSrc}
             />
             <div style={styles.mainWrapper}>
-                <Header onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} appLogoSrc={appLogoSrc} isMobile={isMobile} title={pages[activeView] || 'Dashboard'} />
+                <Header 
+                    onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} 
+                    appLogoSrc={appLogoSrc} 
+                    isMobile={isMobile} 
+                    title={pages[activeView] || 'Dashboard'} 
+                    onNavigate={handleNavigate} 
+                    activeView={activeView} 
+                    theme={theme} 
+                />
                 <MainContent 
                     ref={mainContentRef} 
                     activeView={activeView} 
@@ -1119,7 +1254,13 @@ const KAOMSLogin = () => {
         if (storedSession) {
             try {
                 const sessionData = JSON.parse(storedSession);
-                if (new Date().getTime() < sessionData.expiry) { setSession(sessionData); setIsLoggedIn(true); } 
+                if (new Date().getTime() < sessionData.expiry) { 
+                    setSession(sessionData); 
+                    setIsLoggedIn(true); 
+                    // Associate user with Webpushr
+                    (window as any).webpushr('attributes', { 'uid': sessionData.userId });
+                    saveUserIdToDB(sessionData.userId);
+                } 
                 else { localStorage.removeItem('ka-oms-session'); }
             } catch (e) { console.error("Error parsing session data", e); localStorage.removeItem('ka-oms-session'); }
         }
@@ -1197,6 +1338,9 @@ const KAOMSLogin = () => {
                 localStorage.setItem('ka-oms-session', JSON.stringify(newSession));
                 setSession(newSession);
                 setIsLoggedIn(true);
+                // Associate user with Webpushr
+                (window as any).webpushr('attributes', { 'uid': newSession.userId });
+                saveUserIdToDB(newSession.userId);
             } else { setError(result.message || 'Login failed.'); }
         } catch (err) { setError('An error occurred. Please check your network connection.'); } 
         finally { setIsLoading(false); }
@@ -1222,6 +1366,7 @@ const KAOMSLogin = () => {
         setSession(null);
         setUserId('');
         setPassword('');
+        clearUserIdFromDB();
     };
     
     const updateUserProfile = (newName, newAvatarId) => {
@@ -1353,7 +1498,6 @@ const KAOMSLogin = () => {
          </div>
     );
 };
-
 const styles: { [key: string]: React.CSSProperties } = {
     // --- App Layout ---
     appContainer: { display: 'flex', height: '100vh', backgroundColor: 'var(--light-grey)' },
@@ -1366,6 +1510,18 @@ const styles: { [key: string]: React.CSSProperties } = {
     headerTitle: { fontSize: '1.25rem', fontWeight: 600, color: 'var(--dark-grey)' },
     headerPageTitle: { fontFamily: "'Inter Tight', sans-serif", fontSize: '1.2rem', fontWeight: 500, color: 'var(--dark-grey)', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
     menuButton: { background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', color: 'var(--dark-grey)' },
+    profileButtonMobile: {
+        background: 'var(--gray-5)',
+        border: 'none',
+        borderRadius: '50%',
+        width: '36px',
+        height: '36px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: 'var(--dark-grey)',
+        cursor: 'pointer'
+    },
     sidebar: { width: '230px', backgroundColor: 'var(--card-bg)', borderRight: 'none', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.07)', flexShrink: 0, transition: 'width 0.3s ease, transform 0.3s ease', display: 'flex', flexDirection: 'column', overflow: 'visible', zIndex: 101 },
     sidebarCollapsed: { width: '80px' },
     sidebarMobile: { position: 'fixed', top: 0, left: 0, height: '100%', zIndex: 200 },
@@ -1443,22 +1599,40 @@ const styles: { [key: string]: React.CSSProperties } = {
     pageContainer: { backgroundColor: 'var(--card-bg)', padding: '2rem', borderRadius: 'var(--border-radius)', boxShadow: 'var(--box-shadow)' },
     // --- Dashboard Styles ---
     dashboardContainer: { display: 'flex', flexDirection: 'column', gap: '1.5rem' },
-    dashboardWelcome: { fontFamily: "'Inter Tight', sans-serif", fontSize: '1.75rem', fontWeight: 500, color: 'var(--dark-grey)' },
-    dashboardGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' },
-    dashboardCard: { backgroundColor: 'var(--card-bg)', padding: '1.5rem', borderRadius: 'var(--border-radius)', boxShadow: 'var(--box-shadow)', gridColumn: 'span 1' },
-    kpiCard: { backgroundColor: 'var(--card-bg)', padding: '1.5rem', borderRadius: 'var(--border-radius)', boxShadow: 'var(--box-shadow)', display: 'flex', alignItems: 'center', gap: '1.5rem' },
-    kpiCardAlert: { backgroundColor: 'rgba(255, 56, 60, 0.1)', border: '1px solid var(--red)' },
-    kpiIcon: { color: 'var(--brand-color)' },
-    kpiTitle: { fontSize: '0.9rem', color: 'var(--text-color)', marginBottom: '0.25rem' },
-    kpiValue: { fontSize: '1.5rem', fontWeight: 600, color: 'var(--dark-grey)' },
-    cardTitle: { fontSize: '1.1rem', fontWeight: 600, color: 'var(--dark-grey)', marginBottom: '1rem' },
-    cardText: { fontSize: '0.9rem', color: 'var(--text-color)' },
-    quickActions: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem' },
-    actionButton: { display: 'flex', alignItems: 'center', gap: '0.75rem', width: '100%', padding: '0.75rem 1rem', fontSize: '1rem', background: 'var(--card-bg)', border: '1px solid var(--separator-color)', borderRadius: '8px', cursor: 'pointer', textAlign: 'left', color: 'var(--dark-grey)', fontWeight: 500 },
-    itemList: { listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem' },
-    listItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem 0', borderBottom: '1px solid var(--light-grey)', fontSize: '0.9rem' },
-    lowStockBadge: { backgroundColor: 'rgba(255, 56, 60, 0.1)', color: 'var(--red)', padding: '0.2rem 0.5rem', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 600 },
-    activityTime: { color: 'var(--text-tertiary)', fontSize: '0.8rem' },
+    dashboardGreeting: {
+        fontFamily: 'Arial, sans-serif',
+        fontSize: '1.2rem',
+        fontWeight: 400,
+        color: 'var(--text-color)',
+    },
+    dashboardUserName: {
+        fontFamily: "'FK Grotesk Neue', 'Inter Tight', sans-serif",
+        fontSize: '2rem',
+        fontWeight: 600,
+        color: 'var(--dark-grey)',
+        marginTop: '0.25rem'
+    },
+    dashboardSubtitle: {
+        fontSize: '0.9rem',
+        fontWeight: 400,
+        color: 'var(--text-color)',
+        marginTop: '0.5rem'
+    },
+    dashboardGrid: { display: 'grid', gridTemplateColumns: '1fr', gap: '1rem' },
+    newKpiWrapper: { gridColumn: '1 / -1', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginTop: '1rem' },
+    kpiCardNew: { backgroundColor: 'transparent', boxShadow: 'none', textAlign: 'left', marginLeft: '30px', padding: '1rem 0' },
+    kpiValueNew: { fontSize: '1.5rem', fontFamily: "'FK Grotesk Neue', 'Inter Tight', sans-serif", fontWeight: 600, color: 'var(--dark-grey)' },
+    kpiTitleNew: { fontSize: '0.9rem', fontFamily: "'Inter Tight', sans-serif", color: 'var(--text-color)', marginTop: '0.25rem' },
+    quickActionsContainer: { gridColumn: '1 / -1', background: 'transparent' },
+    quickActionsGrid: { display: 'flex', flexWrap: 'wrap', gap: '0.75rem' },
+    actionButton: { display: 'flex', alignItems: 'center', gap: '0.75rem', flex: '1 1 auto', padding: '0.5rem 0.8rem', fontSize: '0.9rem', background: 'var(--card-bg)', border: 'none', borderRadius: '8px', cursor: 'pointer', textAlign: 'left', color: 'var(--dark-grey)', fontWeight: 500, boxShadow: '0 2px 8px rgba(0,0,0,0.06)' },
+    recentActivitySection: { gridColumn: '1 / -1', marginTop: '1.5rem', background: 'transparent' },
+    recentActivityTitle: { fontSize: '1.1rem', fontWeight: 600, color: 'var(--dark-grey)', marginBottom: '1rem' },
+    recentActivityList: { listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '1rem' },
+    recentActivityItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.95rem', color: 'var(--dark-grey)' },
+    recentActivityInfo: { display: 'flex', alignItems: 'center', gap: '1rem' },
+    recentActivityOrderNumber: { fontWeight: 600, color: 'var(--dark-grey)' },
+    recentActivityTime: { fontSize: '0.85rem', color: 'var(--dark-grey)' },
     // --- Toast Styles ---
     toastContainer: { position: 'fixed', bottom: '20px', right: '20px', zIndex: 1000, display: 'flex', flexDirection: 'column', gap: '10px' },
     toast: { padding: '12px 20px', borderRadius: '8px', color: 'white', boxShadow: '0 4px 15px rgba(0,0,0,0.1)', animation: 'toast-in 0.5s forwards' },
@@ -1607,7 +1781,7 @@ styleSheet.innerText = `
         background-color: var(--gray-5);
     }
     
-    /* Tooltip for collapsed desktop sidebar */
+    /* Tooltip for collapsed desktop sidebar */ 
     .sidebar-collapsed .nav-item-desktop-collapsed:hover .nav-tooltip,
     .sidebar-collapsed .desktop-collapse-button-wrapper:hover .nav-tooltip,
     .sidebar-collapsed .sidebar-user-container:hover .nav-tooltip {
