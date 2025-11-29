@@ -982,7 +982,6 @@ const MainContent = React.forwardRef<HTMLElement, MainContentProps>(
             switch (activeView) {
                 case 'Dashboard': return <Dashboard onNavigate={onNavigate} session={session} isMobile={isMobile} />;
                 case 'Entry': return <NewOrderEntry onNavigate={onNavigate} />;
-                case 'Messaging': return <Messaging session={session} isMobile={isMobile} />;
                 case 'Stock': return <StockOverview />;
                 case 'Pending': return <PendingOrders onNavigate={onNavigate} />;
                 case 'Billing': return <ReadyForBilling />;
@@ -1627,7 +1626,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     kpiTitleNew: { fontSize: '0.9rem', fontFamily: "'Inter Tight', sans-serif", color: 'var(--text-color)', marginTop: '0.25rem' },
     quickActionsContainer: { gridColumn: '1 / -1', background: 'transparent' },
     quickActionsGrid: { display: 'flex',  marginLeft: '10px', marginRight: '10px', flexWrap: 'wrap', gap: '0.75rem' },
-    actionButton: { display: 'flex', alignItems: 'center', gap: '0.75rem', flex: '1 1 auto', padding: '1rem 0.8rem', fontSize: '0.9rem', background: 'var(--card-bg)', border: 'none', borderRadius: '8px', cursor: 'pointer', textAlign: 'left', color: 'var(--dark-grey)', fontWeight: 500, boxShadow: '0 2px 8px rgba(0,0,0,0.06)' },
+    actionButton: { display: 'flex', alignItems: 'center', gap: '0.75rem', flex: '1 1 auto', padding: '1rem 0.8rem', fontSize: '0.9rem', background: 'var(--card-bg)', border: 'none', borderRadius: '8px', cursor: 'pointer', textAlign: 'left', color: 'var(--dark-grey)', fontWeight: 500, boxShadow: '0 0px 12px rgba(0,0,0,0.08)' },
     recentActivitySection: { gridColumn: '1 / -1', marginTop: '1.5rem', marginLeft: '10px', marginRight: '10px', background: 'transparent' },
     recentActivityTitle: { fontSize: '1.1rem', fontWeight: 600, color: 'var(--dark-grey)', marginBottom: '1rem' },
     recentActivityList: { listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '1rem' },
