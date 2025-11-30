@@ -140,7 +140,7 @@ const PartyNameChanger = ({ isMobile }) => {
     };
 
     useEffect(() => {
-        if (modifiedPreviewBytes) {
+        if (modifiedPreviewBytes && modifiedCanvasRef.current) {
             renderPdfPreview(modifiedPreviewBytes, modifiedCanvasRef.current);
         }
     }, [modifiedPreviewBytes]);
@@ -514,7 +514,7 @@ const PartyNameChanger = ({ isMobile }) => {
                 </div>
                 <div style={styles.previewBox}>
                     <h3 style={styles.previewTitle}>Modified PDF Preview</h3>
-                    {modifiedPdfBytes ? (
+                    {modifiedPreviewBytes ? (
                         <canvas ref={modifiedCanvasRef} style={styles.canvas}></canvas>
                     ) : (
                         <div style={styles.canvasPlaceholder}>The modified PDF will appear here after generation.</div>
@@ -542,9 +542,11 @@ export const PDFEditor = () => {
 
     return (
         <div style={styles.container}>
-            <div style={styles.pillContainer}>
-                <button onClick={() => setActiveTab('partyChange')} style={activeTab === 'partyChange' ? styles.pillButtonActive : styles.pillButton}>Party Name Change</button>
-                <button onClick={() => setActiveTab('cnDeductor')} style={activeTab === 'cnDeductor' ? styles.pillButtonActive : styles.pillButton}>CN Deductor</button>
+            <div style={styles.pillContainerWrapper}>
+                <div style={styles.pillContainer}>
+                    <button onClick={() => setActiveTab('partyChange')} style={activeTab === 'partyChange' ? styles.pillButtonActive : styles.pillButton}>Party Name Change</button>
+                    <button onClick={() => setActiveTab('cnDeductor')} style={activeTab === 'cnDeductor' ? styles.pillButtonActive : styles.pillButton}>CN Deductor</button>
+                </div>
             </div>
             <div style={styles.contentContainer}>
                 {activeTab === 'partyChange' && <PartyNameChanger isMobile={isMobile} />}
@@ -556,11 +558,43 @@ export const PDFEditor = () => {
 
 
 const styles: { [key: string]: React.CSSProperties } = {
-    container: { display: 'flex', flexDirection: 'column', height: '100%' },
-    pillContainer: { display: 'flex', justifyContent: 'center', padding: '1rem 1rem 0', backgroundColor: 'var(--light-grey)' },
-    pillButton: { padding: '0.6rem 1.5rem', fontSize: '0.9rem', border: 'none', backgroundColor: 'var(--gray-5)', color: 'var(--text-color)', cursor: 'pointer', fontWeight: 500, transition: 'all 0.2s ease' },
-    pillButtonActive: { padding: '0.6rem 1.5rem', fontSize: '0.9rem', border: 'none', backgroundColor: 'var(--card-bg)', color: 'var(--dark-grey)', cursor: 'pointer', fontWeight: 600, boxShadow: '0 1px 3px rgba(0,0,0,0.1)' },
-    contentContainer: { flex: 1, overflowY: 'auto', padding: '1rem 1.5rem', backgroundColor: 'var(--light-grey)' },
+    container: { display: 'flex', flexDirection: 'column', height: '100%', backgroundColor: 'var(--light-grey)' },
+    pillContainerWrapper: {
+        display: 'flex',
+        justifyContent: 'center',
+        padding: '1rem 1rem 0',
+        backgroundColor: 'var(--light-grey)'
+    },
+    pillContainer: { 
+        display: 'flex',
+        backgroundColor: 'var(--gray-5)',
+        borderRadius: '18px',
+        padding: '4px',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+    },
+    pillButton: { 
+        padding: '0.5rem 1.5rem', 
+        fontSize: '0.9rem', 
+        border: 'none', 
+        backgroundColor: 'transparent', 
+        color: 'var(--text-color)', 
+        cursor: 'pointer', 
+        fontWeight: 500, 
+        transition: 'all 0.2s ease',
+        borderRadius: '14px',
+    },
+    pillButtonActive: { 
+        padding: '0.5rem 1.5rem', 
+        fontSize: '0.9rem', 
+        border: 'none', 
+        backgroundColor: 'var(--card-bg)', 
+        color: 'var(--dark-grey)', 
+        cursor: 'pointer', 
+        fontWeight: 600, 
+        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+        borderRadius: '14px',
+    },
+    contentContainer: { flex: 1, overflowY: 'auto', padding: '1.5rem', backgroundColor: 'var(--light-grey)' },
     placeholderContainer: { textAlign: 'center', padding: '3rem 1rem' },
     placeholderTitle: { fontSize: '1.2rem', fontWeight: 600, color: 'var(--dark-grey)', marginBottom: '0.5rem' },
     placeholderText: { fontSize: '1rem', color: 'var(--text-color)' },
@@ -572,7 +606,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     uploadButton: { display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1rem', border: '1px solid var(--separator-color)', borderRadius: '8px', cursor: 'pointer', backgroundColor: 'var(--card-bg)', color: 'var(--text-color)' },
     partyDetails: { backgroundColor: 'var(--light-grey)', padding: '1rem', borderRadius: '8px', fontSize: '0.9rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', border: '1px solid var(--separator-color)' },
     detailsHeader: { margin: 0, marginBottom: '0.5rem', fontSize: '1rem', fontWeight: 600, color: 'var(--dark-grey)' },
-    actionButton: { padding: '0.8rem', fontSize: '1rem', fontWeight: 600, color: '#fff', backgroundColor: 'var(--brand-color)', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background-color 0.2s, box-shadow 0.2s, transform 0.1s' },
+    actionButton: { padding: '0.8rem', fontSize: '1rem', fontWeight: 600, color: '#fff', backgroundColor: 'var(--brand-color)', border: 'none', borderRadius: '25px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background-color 0.2s, box-shadow 0.2s, transform 0.1s' },
     actionButtonDisabled: { backgroundColor: 'rgba(0, 122, 255, 0.4)', color: 'rgba(255, 255, 255, 0.7)', cursor: 'not-allowed', boxShadow: 'none' },
     spinner: { border: '3px solid rgba(255,255,255,0.3)', borderRadius: '50%', borderTop: '3px solid #fff', width: '20px', height: '20px', animation: 'spin 1s linear infinite' },
     progressBarContainer: { height: '8px', backgroundColor: 'var(--separator-color)', borderRadius: '4px', overflow: 'hidden' },
@@ -604,7 +638,7 @@ const styles: { [key: string]: React.CSSProperties } = {
         width: '100%',
         flexGrow: 1
     },
-    downloadButton: { padding: '0.75rem 1.5rem', fontSize: '0.9rem', fontWeight: 600, color: '#fff', backgroundColor: 'var(--green)', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' },
+    downloadButton: { padding: '0.75rem 1.5rem', fontSize: '0.9rem', fontWeight: 600, color: '#fff', backgroundColor: 'var(--green)', border: 'none', borderRadius: '25px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' },
 };
 
 const styleSheet = document.createElement("style");
