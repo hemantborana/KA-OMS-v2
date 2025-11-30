@@ -13,6 +13,8 @@ const Spinner = () => <div style={styles.spinner}></div>;
 const FileIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" /><polyline points="14 2 14 8 20 8" /></svg>;
 const DownloadIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>;
 const CheckCircleIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>;
+const ChevronDownIcon = ({ size = 20 }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>;
+const SearchIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>;
 
 
 // --- FIREBASE CONFIG for party data ---
@@ -42,20 +44,24 @@ const CNDeductor = () => (
     </div>
 );
 
-const PartyNameChanger = () => {
+const PartyNameChanger = ({ isMobile }) => {
     // Component states
     const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
     const [modifiedPdfBytes, setModifiedPdfBytes] = useState<Uint8Array | null>(null);
+    const [modifiedPreviewBytes, setModifiedPreviewBytes] = useState<Uint8Array | null>(null);
     const [downloadFilename, setDownloadFilename] = useState<string>('');
     
     const [parties, setParties] = useState<any[]>([]);
     const [selectedPartyId, setSelectedPartyId] = useState('');
+    const [isPartyDropdownOpen, setIsPartyDropdownOpen] = useState(false);
+    const [partySearchTerm, setPartySearchTerm] = useState('');
 
     const [status, setStatus] = useState<{ message: string; percent?: number }>({ message: 'Upload a PDF to begin.' });
     const [isLoading, setIsLoading] = useState(false);
-
+    
     const originalCanvasRef = useRef<HTMLCanvasElement>(null);
     const modifiedCanvasRef = useRef<HTMLCanvasElement>(null);
+    const partyDropdownRef = useRef<HTMLDivElement>(null);
 
     // --- Firebase Data Loading ---
     useEffect(() => {
@@ -98,9 +104,20 @@ const PartyNameChanger = () => {
         loadAllParties();
     }, []);
     
+    // --- Close dropdown on outside click ---
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (partyDropdownRef.current && !partyDropdownRef.current.contains(event.target as Node)) {
+                setIsPartyDropdownOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
     // --- PDF Handling ---
-    const renderPdfPreview = async (pdfBytes: Uint8Array, canvasRef: React.RefObject<HTMLCanvasElement>) => {
-        if (!canvasRef.current || !pdfBytes) return;
+    const renderPdfPreview = async (pdfBytes: Uint8Array, canvasEl: HTMLCanvasElement | null) => {
+        if (!canvasEl || !pdfBytes) return;
 
         if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
             pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js`;
@@ -111,10 +128,9 @@ const PartyNameChanger = () => {
         const page = await pdf.getPage(1);
         const viewport = page.getViewport({ scale: 1.5 });
 
-        const canvas = canvasRef.current;
-        const context = canvas.getContext('2d');
-        canvas.height = viewport.height;
-        canvas.width = viewport.width;
+        const context = canvasEl.getContext('2d');
+        canvasEl.height = viewport.height;
+        canvasEl.width = viewport.width;
 
         const renderContext = {
             canvasContext: context,
@@ -123,14 +139,30 @@ const PartyNameChanger = () => {
         await page.render(renderContext).promise;
     };
 
+    useEffect(() => {
+        if (modifiedPreviewBytes) {
+            renderPdfPreview(modifiedPreviewBytes, modifiedCanvasRef.current);
+        }
+    }, [modifiedPreviewBytes]);
+
 
     const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const files = event.target.files;
         if (files && files.length > 0) {
             setUploadedFiles(Array.from(files));
-            setModifiedPdfBytes(null); // Clear previous results
+            setModifiedPdfBytes(null); 
+            setModifiedPreviewBytes(null);
+
+            // Clear modified canvas visually
+            if (modifiedCanvasRef.current) {
+                const context = modifiedCanvasRef.current.getContext('2d');
+                if (context) {
+                    context.clearRect(0, 0, modifiedCanvasRef.current.width, modifiedCanvasRef.current.height);
+                }
+            }
+
             const arrayBuffer = await files[0].arrayBuffer();
-            await renderPdfPreview(new Uint8Array(arrayBuffer), originalCanvasRef);
+            await renderPdfPreview(new Uint8Array(arrayBuffer), originalCanvasRef.current);
             setStatus({ message: `${files.length} file(s) loaded. Select a party to modify.` });
         }
     };
@@ -249,10 +281,10 @@ const PartyNameChanger = () => {
             }
             
             const mergedBytes = await mergedPdf.save();
-            setModifiedPdfBytes(mergedBytes);
-            
             const firstModifiedPdfBytes = await processedPdfDocs[0].save();
-            await renderPdfPreview(firstModifiedPdfBytes, modifiedCanvasRef);
+            
+            setModifiedPdfBytes(mergedBytes);
+            setModifiedPreviewBytes(firstModifiedPdfBytes);
             
             setStatus({ message: `Successfully processed ${uploadedFiles.length} file(s)!`, percent: 100 });
         } catch (error) {
@@ -387,9 +419,38 @@ const PartyNameChanger = () => {
     const selectedPartyDetails = useMemo(() => {
         return parties.find(p => p.id === selectedPartyId);
     }, [selectedPartyId, parties]);
+
+    const handlePartySelect = (partyId: string) => {
+        setSelectedPartyId(partyId);
+        setIsPartyDropdownOpen(false);
+        setPartySearchTerm('');
+    };
     
+    const filteredParties = useMemo(() => {
+        if (!partySearchTerm) return parties;
+        return parties.filter(p => p.partyName.toLowerCase().includes(partySearchTerm.toLowerCase()));
+    }, [partySearchTerm, parties]);
+    
+    const isGenerateDisabled = isLoading || !selectedPartyId || uploadedFiles.length === 0;
+
+    const editorContainerStyle = {
+        ...styles.editorContainer,
+        ...(isMobile && {
+            gridTemplateColumns: '1fr',
+            gap: '1.5rem',
+            height: 'auto'
+        })
+    };
+
+    const previewSectionStyle = {
+        ...styles.previewSection,
+        ...(isMobile && {
+            gridTemplateColumns: '1fr'
+        }),
+    };
+
     return (
-        <div style={styles.editorContainer}>
+        <div style={editorContainerStyle}>
             <div style={styles.controlsSection}>
                  <div style={styles.inputGroup}>
                     <label style={styles.label}>1. Upload Invoice PDF(s)</label>
@@ -399,14 +460,31 @@ const PartyNameChanger = () => {
                     </label>
                     <input id="pdf-upload" type="file" accept=".pdf" multiple onChange={handleFileChange} style={{ display: 'none' }} />
                 </div>
-                 <div style={styles.inputGroup}>
+                 <div style={styles.inputGroup} ref={partyDropdownRef}>
                     <label style={styles.label}>2. Select Party to Apply</label>
-                    <select value={selectedPartyId} onChange={e => setSelectedPartyId(e.target.value)} style={styles.selectInput} disabled={isLoading || parties.length === 0}>
-                        <option value="">
-                             {isLoading ? "Loading parties..." : (parties.length === 0 ? "No parties found" : "-- Select a Party --")}
-                        </option>
-                        {parties.map(p => <option key={p.id} value={p.id}>{p.partyName}</option>)}
-                    </select>
+                    <button style={styles.customDropdownButton} onClick={() => setIsPartyDropdownOpen(prev => !prev)} disabled={isLoading || parties.length === 0}>
+                        <span>{selectedPartyDetails?.partyName || (isLoading ? "Loading..." : "Select a Party")}</span>
+                        <ChevronDownIcon />
+                    </button>
+                    {isPartyDropdownOpen && (
+                        <div style={styles.dropdownMenu}>
+                            <div style={styles.dropdownSearchContainer}>
+                                <SearchIcon />
+                                <input 
+                                    type="text"
+                                    placeholder="Search parties..."
+                                    value={partySearchTerm}
+                                    onChange={(e) => setPartySearchTerm(e.target.value)}
+                                    style={styles.dropdownSearchInput}
+                                />
+                            </div>
+                            <ul style={styles.dropdownList}>
+                                {filteredParties.length > 0 ? filteredParties.map(p => (
+                                    <li key={p.id} className="dropdown-list-item" style={styles.dropdownListItem} onClick={() => handlePartySelect(p.id)}>{p.partyName}</li>
+                                )) : <li style={{...styles.dropdownListItem, cursor: 'default', color: 'var(--text-tertiary)'}}>No parties found</li>}
+                            </ul>
+                        </div>
+                    )}
                 </div>
                 {selectedPartyDetails && (
                     <div style={styles.partyDetails}>
@@ -417,7 +495,7 @@ const PartyNameChanger = () => {
                          <div><strong>GST:</strong> {selectedPartyDetails.gst || 'N/A'}</div>
                     </div>
                 )}
-                 <button onClick={generateModifiedPDF} style={styles.actionButton} disabled={isLoading || !selectedPartyId || uploadedFiles.length === 0}>
+                 <button onClick={generateModifiedPDF} style={isGenerateDisabled ? {...styles.actionButton, ...styles.actionButtonDisabled} : styles.actionButton} disabled={isGenerateDisabled}>
                     {isLoading ? <Spinner /> : 'Generate Modified PDF'}
                 </button>
                 {status.percent !== undefined && (
@@ -425,14 +503,22 @@ const PartyNameChanger = () => {
                 )}
             </div>
 
-            <div style={styles.previewSection}>
+            <div style={previewSectionStyle}>
                 <div style={styles.previewBox}>
                     <h3 style={styles.previewTitle}>Original PDF Preview</h3>
-                    <canvas ref={originalCanvasRef} style={styles.canvas}></canvas>
+                    {uploadedFiles.length > 0 ? (
+                        <canvas ref={originalCanvasRef} style={styles.canvas}></canvas>
+                    ) : (
+                        <div style={styles.canvasPlaceholder}>Upload a PDF to see a preview.</div>
+                    )}
                 </div>
                 <div style={styles.previewBox}>
                     <h3 style={styles.previewTitle}>Modified PDF Preview</h3>
-                    <canvas ref={modifiedCanvasRef} style={styles.canvas}></canvas>
+                    {modifiedPdfBytes ? (
+                        <canvas ref={modifiedCanvasRef} style={styles.canvas}></canvas>
+                    ) : (
+                        <div style={styles.canvasPlaceholder}>The modified PDF will appear here after generation.</div>
+                    )}
                     {modifiedPdfBytes && (
                         <button onClick={handleDownload} style={styles.downloadButton}>
                             <DownloadIcon /> Download Merged PDF
@@ -446,14 +532,22 @@ const PartyNameChanger = () => {
 
 export const PDFEditor = () => {
     const [activeTab, setActiveTab] = useState('partyChange');
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth <= 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
     return (
         <div style={styles.container}>
-            <div style={styles.tabContainer}>
-                <button onClick={() => setActiveTab('partyChange')} style={activeTab === 'partyChange' ? styles.tabButtonActive : styles.tabButton}>Party Name Change</button>
-                <button onClick={() => setActiveTab('cnDeductor')} style={activeTab === 'cnDeductor' ? styles.tabButtonActive : styles.tabButton}>CN Deductor</button>
+            <div style={styles.pillContainer}>
+                <button onClick={() => setActiveTab('partyChange')} style={activeTab === 'partyChange' ? styles.pillButtonActive : styles.pillButton}>Party Name Change</button>
+                <button onClick={() => setActiveTab('cnDeductor')} style={activeTab === 'cnDeductor' ? styles.pillButtonActive : styles.pillButton}>CN Deductor</button>
             </div>
             <div style={styles.contentContainer}>
-                {activeTab === 'partyChange' && <PartyNameChanger />}
+                {activeTab === 'partyChange' && <PartyNameChanger isMobile={isMobile} />}
                 {activeTab === 'cnDeductor' && <CNDeductor />}
             </div>
         </div>
@@ -463,30 +557,65 @@ export const PDFEditor = () => {
 
 const styles: { [key: string]: React.CSSProperties } = {
     container: { display: 'flex', flexDirection: 'column', height: '100%' },
-    tabContainer: { display: 'flex', gap: '0.5rem', padding: '1rem', borderBottom: '1px solid var(--separator-color)', flexShrink: 0 },
-    tabButton: { padding: '0.5rem 1rem', fontSize: '0.9rem', border: 'none', backgroundColor: 'transparent', color: 'var(--text-color)', cursor: 'pointer', borderRadius: '6px', fontWeight: 500 },
-    tabButtonActive: { padding: '0.5rem 1rem', fontSize: '0.9rem', border: 'none', backgroundColor: 'var(--active-bg)', color: 'var(--brand-color)', cursor: 'pointer', borderRadius: '6px', fontWeight: 600 },
-    contentContainer: { flex: 1, overflowY: 'auto', padding: '1.5rem', backgroundColor: 'var(--light-grey)' },
+    pillContainer: { display: 'flex', justifyContent: 'center', padding: '1rem 1rem 0', backgroundColor: 'var(--light-grey)' },
+    pillButton: { padding: '0.6rem 1.5rem', fontSize: '0.9rem', border: 'none', backgroundColor: 'var(--gray-5)', color: 'var(--text-color)', cursor: 'pointer', fontWeight: 500, transition: 'all 0.2s ease' },
+    pillButtonActive: { padding: '0.6rem 1.5rem', fontSize: '0.9rem', border: 'none', backgroundColor: 'var(--card-bg)', color: 'var(--dark-grey)', cursor: 'pointer', fontWeight: 600, boxShadow: '0 1px 3px rgba(0,0,0,0.1)' },
+    contentContainer: { flex: 1, overflowY: 'auto', padding: '1rem 1.5rem', backgroundColor: 'var(--light-grey)' },
     placeholderContainer: { textAlign: 'center', padding: '3rem 1rem' },
     placeholderTitle: { fontSize: '1.2rem', fontWeight: 600, color: 'var(--dark-grey)', marginBottom: '0.5rem' },
     placeholderText: { fontSize: '1rem', color: 'var(--text-color)' },
     
     editorContainer: { display: 'grid', gridTemplateColumns: '320px 1fr', gap: '1.5rem', height: '100%' },
     controlsSection: { display: 'flex', flexDirection: 'column', gap: '1.5rem' },
-    inputGroup: { display: 'flex', flexDirection: 'column', gap: '0.5rem' },
+    inputGroup: { display: 'flex', flexDirection: 'column', gap: '0.5rem', position: 'relative' },
     label: { fontSize: '0.9rem', fontWeight: 600, color: 'var(--dark-grey)' },
     uploadButton: { display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1rem', border: '1px solid var(--separator-color)', borderRadius: '8px', cursor: 'pointer', backgroundColor: 'var(--card-bg)', color: 'var(--text-color)' },
-    selectInput: { width: '100%', padding: '0.75rem', fontSize: '1rem', border: '1px solid var(--separator-color)', borderRadius: '8px', backgroundColor: 'var(--card-bg)', color: 'var(--dark-grey)' },
     partyDetails: { backgroundColor: 'var(--light-grey)', padding: '1rem', borderRadius: '8px', fontSize: '0.9rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', border: '1px solid var(--separator-color)' },
     detailsHeader: { margin: 0, marginBottom: '0.5rem', fontSize: '1rem', fontWeight: 600, color: 'var(--dark-grey)' },
-    actionButton: { padding: '0.8rem', fontSize: '1rem', fontWeight: 600, color: '#fff', backgroundColor: 'var(--brand-color)', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+    actionButton: { padding: '0.8rem', fontSize: '1rem', fontWeight: 600, color: '#fff', backgroundColor: 'var(--brand-color)', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background-color 0.2s, box-shadow 0.2s, transform 0.1s' },
+    actionButtonDisabled: { backgroundColor: 'rgba(0, 122, 255, 0.4)', color: 'rgba(255, 255, 255, 0.7)', cursor: 'not-allowed', boxShadow: 'none' },
     spinner: { border: '3px solid rgba(255,255,255,0.3)', borderRadius: '50%', borderTop: '3px solid #fff', width: '20px', height: '20px', animation: 'spin 1s linear infinite' },
     progressBarContainer: { height: '8px', backgroundColor: 'var(--separator-color)', borderRadius: '4px', overflow: 'hidden' },
     progressBar: { height: '100%', backgroundColor: 'var(--brand-color)', transition: 'width 0.3s ease' },
     
+    // Custom Dropdown
+    customDropdownButton: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', padding: '0.75rem', fontSize: '1rem', border: '1px solid var(--separator-color)', borderRadius: '8px', backgroundColor: 'var(--card-bg)', color: 'var(--dark-grey)', cursor: 'pointer', textAlign: 'left' },
+    dropdownMenu: { position: 'absolute', top: '100%', left: 0, right: 0, backgroundColor: 'var(--glass-bg)', backdropFilter: 'blur(7px)', WebkitBackdropFilter: 'blur(7px)', border: '1px solid var(--glass-border)', boxShadow: '0 8px 24px rgba(0,0,0,0.15)', maxHeight: '250px', overflowY: 'hidden', zIndex: 10, borderRadius: '12px', marginTop: '4px', display: 'flex', flexDirection: 'column' },
+    dropdownSearchContainer: { padding: '0.5rem', borderBottom: '1px solid var(--glass-border)', display: 'flex', alignItems: 'center', gap: '0.5rem' },
+    dropdownSearchInput: { flex: 1, border: 'none', background: 'transparent', outline: 'none', fontSize: '0.9rem', color: 'var(--dark-grey)', padding: '0.5rem' },
+    dropdownList: { listStyle: 'none', margin: 0, padding: 0, overflowY: 'auto' },
+    // FIX: Removed ':hover' pseudo-selector from inline style object to prevent React errors. Hover effects are handled via a stylesheet.
+    dropdownListItem: { padding: '0.75rem 1rem', cursor: 'pointer', fontSize: '0.9rem', color: 'var(--text-color)' },
+
     previewSection: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', overflow: 'auto' },
     previewBox: { display: 'flex', flexDirection: 'column', gap: '1rem', backgroundColor: 'var(--card-bg)', padding: '1rem', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', alignItems: 'center' },
-    previewTitle: { margin: 0, fontSize: '1rem', fontWeight: 600 },
+    previewTitle: { margin: 0, fontSize: '1rem', fontWeight: 600, width: '100%', textAlign: 'left' },
     canvas: { width: '100%', height: 'auto', border: '1px solid var(--separator-color)', borderRadius: '8px' },
+    canvasPlaceholder: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        textAlign: 'center',
+        padding: '2rem',
+        border: '2px dashed var(--separator-color)',
+        borderRadius: '8px',
+        color: 'var(--text-tertiary)',
+        minHeight: '200px',
+        width: '100%',
+        flexGrow: 1
+    },
     downloadButton: { padding: '0.75rem 1.5rem', fontSize: '0.9rem', fontWeight: 600, color: '#fff', backgroundColor: 'var(--green)', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' },
 };
+
+const styleSheet = document.createElement("style");
+styleSheet.type = "text/css";
+styleSheet.innerText = `
+    .dropdown-list-item:hover {
+        background-color: var(--active-bg);
+    }
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+`;
+document.head.appendChild(styleSheet);
