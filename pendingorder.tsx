@@ -501,42 +501,6 @@ const ExpandedPendingView: React.FC<{ order: Order, onProcess, onDelete, isProce
     const [isHistoryCollapsed, setIsHistoryCollapsed] = useState(true);
     const isProcessable = useMemo(() => Object.values(processingQty).some(qty => Number(qty) > 0), [processingQty]);
 
-    const sortedItems = useMemo(() => {
-        if (!order || !order.items) return [];
-
-        const sizeSortValue = (size) => {
-            const standardSizes = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL'];
-            const standardIndex = standardSizes.indexOf(size.toUpperCase());
-            if (standardIndex !== -1) return standardIndex;
-
-            const braSizeMatch = size.match(/^(\d+)([A-Z]+)$/i);
-            if (braSizeMatch) {
-                const band = parseInt(braSizeMatch[1], 10);
-                const cup = braSizeMatch[2].toUpperCase().charCodeAt(0);
-                return band * 100 + cup - 'A'.charCodeAt(0) + 1;
-            }
-
-            const numericMatch = size.match(/\d+/);
-            if (numericMatch) return parseInt(numericMatch[0], 10);
-            
-            return 9999;
-        };
-
-        return [...order.items].sort((a, b) => {
-            const itemA = a.fullItemData;
-            const itemB = b.fullItemData;
-
-            const styleCompare = (itemA.Style || '').localeCompare(itemB.Style || '');
-            if (styleCompare !== 0) return styleCompare;
-
-            const colorCompare = (itemA.Color || '').localeCompare(itemB.Color || '');
-            if (colorCompare !== 0) return colorCompare;
-            
-            return sizeSortValue(itemA.Size || '') - sizeSortValue(itemB.Size || '');
-        });
-    }, [order]);
-
-
     const handleProcessClick = () => {
         const totalToProcess = Object.values(processingQty).reduce((sum: number, qty: number) => sum + qty, 0);
         if (totalToProcess === 0) {
@@ -558,7 +522,7 @@ const ExpandedPendingView: React.FC<{ order: Order, onProcess, onDelete, isProce
                     <th style={{...styles.th, textAlign: 'center'}}>To Process</th>
                 </tr></thead>
                 <tbody>
-                    {sortedItems.map((item, index) => {
+                    {order.items.map((item, index) => {
                         const stockKey = `${normalizeKeyPart(item.fullItemData.Style)}-${normalizeKeyPart(item.fullItemData.Color)}-${normalizeKeyPart(item.fullItemData.Size)}`;
                         const qtyToProcess = processingQty[item.id] || 0;
                         const isPartial = qtyToProcess > 0 && qtyToProcess < item.quantity;
@@ -599,7 +563,7 @@ const ExpandedPendingView: React.FC<{ order: Order, onProcess, onDelete, isProce
 
     const renderMobileCards = () => (
         <div style={styles.mobileItemContainer}>
-            {sortedItems.map(item => {
+            {order.items.map(item => {
                 const stockKey = `${normalizeKeyPart(item.fullItemData.Style)}-${normalizeKeyPart(item.fullItemData.Color)}-${normalizeKeyPart(item.fullItemData.Size)}`;
                 return (
                     <div key={item.id} style={styles.mobileItemCard}>
