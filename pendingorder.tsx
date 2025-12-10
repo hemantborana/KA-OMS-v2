@@ -505,29 +505,29 @@ const ExpandedPendingView: React.FC<{ order: Order, onProcess, onDelete, isProce
     const sortedItems = useMemo(() => {
         if (!order.items || order.items.length === 0) return [];
         
-        return [...order.items].sort((a, b) => {
-            const styleA = String(a.fullItemData?.Style || '').toUpperCase();
-            const styleB = String(b.fullItemData?.Style || '').toUpperCase();
-            const colorA = String(a.fullItemData?.Color || '').toUpperCase();
-            const colorB = String(b.fullItemData?.Color || '').toUpperCase();
-            const sizeA = String(a.fullItemData?.Size || '').toUpperCase();
-            const sizeB = String(b.fullItemData?.Size || '').toUpperCase();
+        const sorted = [...order.items].sort((a, b) => {
+            // Extract values safely
+            const styleA = (a.fullItemData?.Style || '').toString().trim();
+            const styleB = (b.fullItemData?.Style || '').toString().trim();
+            const colorA = (a.fullItemData?.Color || '').toString().trim();
+            const colorB = (b.fullItemData?.Color || '').toString().trim();
+            const sizeA = (a.fullItemData?.Size || '').toString().trim();
+            const sizeB = (b.fullItemData?.Size || '').toString().trim();
             
-            // Compare Style first (primary sort)
-            const styleCompare = styleA.localeCompare(styleB, undefined, { numeric: true, sensitivity: 'base' });
-            if (styleCompare !== 0) {
-                return styleCompare;
-            }
+            // Primary sort: Style
+            if (styleA < styleB) return -1;
+            if (styleA > styleB) return 1;
             
-            // Then Color (secondary sort)
-            const colorCompare = colorA.localeCompare(colorB, undefined, { numeric: true, sensitivity: 'base' });
-            if (colorCompare !== 0) {
-                return colorCompare;
-            }
+            // Secondary sort: Color
+            if (colorA < colorB) return -1;
+            if (colorA > colorB) return 1;
             
-            // Finally Size (tertiary sort with numeric support)
-            return sizeA.localeCompare(sizeB, undefined, { numeric: true, sensitivity: 'base' });
+            // Tertiary sort: Size (with numeric support for sizes like 32B, 34B, etc.)
+            return sizeA.localeCompare(sizeB, undefined, { numeric: true });
         });
+        
+        console.log('Sorted items:', sorted.map(item => `${item.fullItemData?.Style}-${item.fullItemData?.Color}-${item.fullItemData?.Size}`));
+        return sorted;
     }, [order.items]);
     const handleProcessClick = () => {
         const totalToProcess = Object.values(processingQty).reduce((sum: number, qty: number) => sum + qty, 0);
