@@ -500,7 +500,30 @@ const ProcessQuantityControl: React.FC<{
 const ExpandedPendingView: React.FC<{ order: Order, onProcess, onDelete, isProcessing, processingQty, onQtyChange, stockData: Record<string, number>, isMobile, onAddTag, onRemoveTag, onOpenCustomTagModal, onOpenNoteModal, globalTags }> = ({ order, onProcess, onDelete, isProcessing, processingQty, onQtyChange, stockData, isMobile, onAddTag, onRemoveTag, onOpenCustomTagModal, onOpenNoteModal, globalTags }) => {
     const [isHistoryCollapsed, setIsHistoryCollapsed] = useState(true);
     const isProcessable = useMemo(() => Object.values(processingQty).some(qty => Number(qty) > 0), [processingQty]);
-
+    
+    // Sort items by Style (ItemName), then Color, then Size
+    const sortedItems = useMemo(() => {
+        return [...order.items].sort((a, b) => {
+            const styleA = a.fullItemData?.Style || '';
+            const styleB = b.fullItemData?.Style || '';
+            const colorA = a.fullItemData?.Color || '';
+            const colorB = b.fullItemData?.Color || '';
+            const sizeA = a.fullItemData?.Size || '';
+            const sizeB = b.fullItemData?.Size || '';
+            
+            // Compare Style first
+            if (styleA !== styleB) {
+                return styleA.localeCompare(styleB);
+            }
+            // Then Color
+            if (colorA !== colorB) {
+                return colorA.localeCompare(colorB);
+            }
+            // Finally Size (with numeric support)
+            return sizeA.localeCompare(sizeB, undefined, { numeric: true });
+        });
+    }, [order.items]);
+    
     const handleProcessClick = () => {
         const totalToProcess = Object.values(processingQty).reduce((sum: number, qty: number) => sum + qty, 0);
         if (totalToProcess === 0) {
