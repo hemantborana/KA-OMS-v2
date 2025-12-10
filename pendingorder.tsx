@@ -500,35 +500,7 @@ const ProcessQuantityControl: React.FC<{
 const ExpandedPendingView: React.FC<{ order: Order, onProcess, onDelete, isProcessing, processingQty, onQtyChange, stockData: Record<string, number>, isMobile, onAddTag, onRemoveTag, onOpenCustomTagModal, onOpenNoteModal, globalTags }> = ({ order, onProcess, onDelete, isProcessing, processingQty, onQtyChange, stockData, isMobile, onAddTag, onRemoveTag, onOpenCustomTagModal, onOpenNoteModal, globalTags }) => {
     const [isHistoryCollapsed, setIsHistoryCollapsed] = useState(true);
     const isProcessable = useMemo(() => Object.values(processingQty).some(qty => Number(qty) > 0), [processingQty]);
-    
-    // Sort items by Style (ItemName), then Color, then Size
-    const sortedItems = useMemo(() => {
-        if (!order.items || order.items.length === 0) return [];
-        
-        const sorted = [...order.items].sort((a, b) => {
-            // Extract values safely
-            const styleA = (a.fullItemData?.Style || '').toString().trim();
-            const styleB = (b.fullItemData?.Style || '').toString().trim();
-            const colorA = (a.fullItemData?.Color || '').toString().trim();
-            const colorB = (b.fullItemData?.Color || '').toString().trim();
-            const sizeA = (a.fullItemData?.Size || '').toString().trim();
-            const sizeB = (b.fullItemData?.Size || '').toString().trim();
-            
-            // Primary sort: Style
-            if (styleA < styleB) return -1;
-            if (styleA > styleB) return 1;
-            
-            // Secondary sort: Color
-            if (colorA < colorB) return -1;
-            if (colorA > colorB) return 1;
-            
-            // Tertiary sort: Size (with numeric support for sizes like 32B, 34B, etc.)
-            return sizeA.localeCompare(sizeB, undefined, { numeric: true });
-        });
-        
-        console.log('Sorted items:', sorted.map(item => `${item.fullItemData?.Style}-${item.fullItemData?.Color}-${item.fullItemData?.Size}`));
-        return sorted;
-    }, [order.items]);
+
     const handleProcessClick = () => {
         const totalToProcess = Object.values(processingQty).reduce((sum: number, qty: number) => sum + qty, 0);
         if (totalToProcess === 0) {
