@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import firebase from 'firebase/compat/app';
@@ -501,6 +502,48 @@ const ExpandedPendingView: React.FC<{ order: Order, onProcess, onDelete, isProce
     const [isHistoryCollapsed, setIsHistoryCollapsed] = useState(true);
     const isProcessable = useMemo(() => Object.values(processingQty).some(qty => Number(qty) > 0), [processingQty]);
 
+    // Insert sorting logic here
+    const sortedItems = useMemo(() => {
+        const sizeOrder = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL', '6XL', 'FREE'];
+        return [...order.items].sort((a, b) => {
+            const styleA = (a.fullItemData.Style || '').toString();
+            const styleB = (b.fullItemData.Style || '').toString();
+            const styleDiff = styleA.localeCompare(styleB);
+            if (styleDiff !== 0) return styleDiff;
+
+            const colorA = (a.fullItemData.Color || '').toString();
+            const colorB = (b.fullItemData.Color || '').toString();
+            const colorDiff = colorA.localeCompare(colorB);
+            if (colorDiff !== 0) return colorDiff;
+
+            const sizeA = (a.fullItemData.Size || '').toString();
+            const sizeB = (b.fullItemData.Size || '').toString();
+
+            // Bra sizes logic
+            const braSizeRegex = /^(\d+)([A-Z]+)$/;
+            const matchA = sizeA.match(braSizeRegex);
+            const matchB = sizeB.match(braSizeRegex);
+
+            if (matchA && matchB) {
+                const bandA = parseInt(matchA[1]);
+                const cupA = matchA[2];
+                const bandB = parseInt(matchB[1]);
+                const cupB = matchB[2];
+                if (bandA !== bandB) return bandA - bandB;
+                return cupA.localeCompare(cupB);
+            }
+
+            const indexA = sizeOrder.indexOf(sizeA.toUpperCase());
+            const indexB = sizeOrder.indexOf(sizeB.toUpperCase());
+
+            if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+            if (indexA !== -1) return -1;
+            if (indexB !== -1) return 1;
+
+            return sizeA.localeCompare(sizeB, undefined, { numeric: true });
+        });
+    }, [order.items]);
+
     const handleProcessClick = () => {
         const totalToProcess = Object.values(processingQty).reduce((sum: number, qty: number) => sum + qty, 0);
         if (totalToProcess === 0) {
@@ -522,7 +565,7 @@ const ExpandedPendingView: React.FC<{ order: Order, onProcess, onDelete, isProce
                     <th style={{...styles.th, textAlign: 'center'}}>To Process</th>
                 </tr></thead>
                 <tbody>
-                    {order.items.map((item, index) => {
+                    {sortedItems.map((item, index) => {
                         const stockKey = `${normalizeKeyPart(item.fullItemData.Style)}-${normalizeKeyPart(item.fullItemData.Color)}-${normalizeKeyPart(item.fullItemData.Size)}`;
                         const qtyToProcess = processingQty[item.id] || 0;
                         const isPartial = qtyToProcess > 0 && qtyToProcess < item.quantity;
@@ -563,7 +606,7 @@ const ExpandedPendingView: React.FC<{ order: Order, onProcess, onDelete, isProce
 
     const renderMobileCards = () => (
         <div style={styles.mobileItemContainer}>
-            {order.items.map(item => {
+            {sortedItems.map(item => {
                 const stockKey = `${normalizeKeyPart(item.fullItemData.Style)}-${normalizeKeyPart(item.fullItemData.Color)}-${normalizeKeyPart(item.fullItemData.Size)}`;
                 return (
                     <div key={item.id} style={styles.mobileItemCard}>
