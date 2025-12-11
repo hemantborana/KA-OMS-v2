@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect } from 'react';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
@@ -225,6 +226,48 @@ const ExpandedBillingView: React.FC<ExpandedBillingViewProps> = ({ order, billed
         return order.items.every(item => (billedQty[item.id] ?? 0) === item.quantity);
     }, [order, billedQty]);
 
+    // Sorting Logic
+    const sortedItems = useMemo(() => {
+        const sizeOrder = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL', '6XL', 'FREE'];
+        return [...order.items].sort((a, b) => {
+            const styleA = (a.fullItemData.Style || '').toString();
+            const styleB = (b.fullItemData.Style || '').toString();
+            const styleDiff = styleA.localeCompare(styleB);
+            if (styleDiff !== 0) return styleDiff;
+
+            const colorA = (a.fullItemData.Color || '').toString();
+            const colorB = (b.fullItemData.Color || '').toString();
+            const colorDiff = colorA.localeCompare(colorB);
+            if (colorDiff !== 0) return colorDiff;
+
+            const sizeA = (a.fullItemData.Size || '').toString();
+            const sizeB = (b.fullItemData.Size || '').toString();
+
+            // Bra sizes logic
+            const braSizeRegex = /^(\d+)([A-Z]+)$/;
+            const matchA = sizeA.match(braSizeRegex);
+            const matchB = sizeB.match(braSizeRegex);
+
+            if (matchA && matchB) {
+                const bandA = parseInt(matchA[1]);
+                const cupA = matchA[2];
+                const bandB = parseInt(matchB[1]);
+                const cupB = matchB[2];
+                if (bandA !== bandB) return bandA - bandB;
+                return cupA.localeCompare(cupB);
+            }
+
+            const indexA = sizeOrder.indexOf(sizeA.toUpperCase());
+            const indexB = sizeOrder.indexOf(sizeB.toUpperCase());
+
+            if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+            if (indexA !== -1) return -1;
+            if (indexB !== -1) return 1;
+
+            return sizeA.localeCompare(sizeB, undefined, { numeric: true });
+        });
+    }, [order.items]);
+
     const handleMarkBilledClick = () => {
         const totalBilled = Object.values(billedQty).reduce((sum: number, qty: number) => sum + qty, 0);
         if (totalBilled === 0) {
@@ -261,7 +304,7 @@ const ExpandedBillingView: React.FC<ExpandedBillingViewProps> = ({ order, billed
         const tableColumn = ["#", "Style", "Color", "Size", "Quantity"];
         const tableRows = [];
     
-        const itemsToProcess = order.items.filter(item => (billedQty[item.id] || 0) > 0);
+        const itemsToProcess = sortedItems.filter(item => (billedQty[item.id] || 0) > 0);
 
         itemsToProcess.forEach((item, index) => {
             const itemData = [
@@ -364,6 +407,9 @@ const ExpandedBillingView: React.FC<ExpandedBillingViewProps> = ({ order, billed
         );
     };
 
+    const thStyle = isMobile ? { ...styles.th, padding: '8px 4px', fontSize: '0.8rem' } : styles.th;
+    const tdStyle = isMobile ? { ...styles.td, padding: '8px 4px', fontSize: '0.85rem' } : styles.td;
+    const inputStyle = isMobile ? { ...styles.billingQtyInput, width: '45px', padding: '6px 2px' } : styles.billingQtyInput;
 
     return (
         <div style={styles.orderWrapper}>
@@ -379,26 +425,26 @@ const ExpandedBillingView: React.FC<ExpandedBillingViewProps> = ({ order, billed
                 <table style={styles.table}>
                     <thead>
                         <tr>
-                            <th style={{...styles.th, textAlign: 'left'}}>Style</th>
-                            <th style={{...styles.th, textAlign: 'left'}}>Color</th>
-                            <th style={{...styles.th, textAlign: 'left'}}>Size</th>
-                            <th style={styles.th}>{isMobile ? 'Qty' : 'Ready Qty'}</th>
-                            <th style={styles.th}>{isMobile ? 'Billed' : 'Billed Qty'}</th>
+                            <th style={{...thStyle, textAlign: 'left'}}>Style</th>
+                            <th style={{...thStyle, textAlign: 'left'}}>Color</th>
+                            <th style={{...thStyle, textAlign: 'left'}}>Size</th>
+                            <th style={thStyle}>{isMobile ? 'Qty' : 'Ready Qty'}</th>
+                            <th style={thStyle}>{isMobile ? 'Billed' : 'Billed Qty'}</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {order.items.map((item, index) => (
+                        {sortedItems.map((item, index) => (
                             <tr key={item.id} style={index % 2 !== 0 ? { ...styles.tr, backgroundColor: 'var(--stripe-bg)' } : styles.tr}>
-                                <td style={{...styles.td, textAlign: 'left'}}>{item.fullItemData.Style}</td>
-                                <td style={{...styles.td, textAlign: 'left'}}>{item.fullItemData.Color}</td>
-                                <td style={{...styles.td, textAlign: 'left'}}>{item.fullItemData.Size}</td>
-                                <td style={styles.td}>{item.quantity}</td>
-                                <td style={{...styles.td, ...styles.tdInput}}>
+                                <td style={{...tdStyle, textAlign: 'left'}}>{item.fullItemData.Style}</td>
+                                <td style={{...tdStyle, textAlign: 'left'}}>{item.fullItemData.Color}</td>
+                                <td style={{...tdStyle, textAlign: 'left'}}>{item.fullItemData.Size}</td>
+                                <td style={tdStyle}>{item.quantity}</td>
+                                <td style={{...tdStyle, ...styles.tdInput}}>
                                      <input
                                         type="number"
                                         value={billedQty[item.id] || ''}
                                         onChange={(e) => onQtyChange(item.id, e.target.value, item.quantity)}
-                                        style={styles.billingQtyInput}
+                                        style={inputStyle}
                                         max={item.quantity}
                                         min="0"
                                         placeholder="0"
