@@ -4,14 +4,16 @@ import 'firebase/compat/database';
 
 // --- ICONS ---
 const PlusIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>;
-const ChevronIcon = ({ collapsed }) => <svg style={{ transform: collapsed ? 'rotate(0deg)' : 'rotate(180deg)', transition: 'transform 0.3s ease' }} xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9" x2="6" y2="15"></polyline></svg>;
+const ChevronIcon = ({ collapsed }) => <svg style={{ transform: collapsed ? 'rotate(0deg)' : 'rotate(180deg)', transition: 'transform 0.3s ease' }} xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>;
 const Spinner = () => <div style={styles.spinner}></div>;
 const SearchIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>;
-const ChevronLeftIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12" x2="15" y2="6"></polyline></svg>;
+const ChevronLeftIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>;
 const BarcodeIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6v12h18V6H3zM8 6v12M12 6v12M16 6v12"/></svg>;
 const ManualIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>;
 const TrashIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>;
 const SmallSpinner = () => <div style={{...styles.spinner, width: '20px', height: '20px', borderTop: '3px solid white', borderRight: '3px solid transparent' }}></div>;
+const CameraIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>;
+
 
 const GIVEN_TO_PARTY_REF = 'GivenToParty_V2';
 
@@ -174,6 +176,7 @@ const GivenToPartyEntry = ({ onExit }) => {
     const [manualItem, setManualItem] = useState({ name: '', color: '', size: '', mrp: '', quantity: '1' });
     
     const [confirmationModal, setConfirmationModal] = useState({ isOpen: false, isClosing: false, item: null });
+    const [isScannerOpen, setIsScannerOpen] = useState(false);
 
     const barcodeInputRef = useRef(null);
 
@@ -190,12 +193,8 @@ const GivenToPartyEntry = ({ onExit }) => {
         });
     }, []);
 
-    const handleBarcodeSubmit = (e) => {
-        e.preventDefault();
-        if (!barcode.trim() || !masterItems) return;
-
-        const scannedBarcode = barcode.trim();
-        setBarcode('');
+    const processScannedBarcode = useCallback((scannedBarcode: string) => {
+        if (!scannedBarcode || !masterItems) return;
         
         const existingItemIndex = items.findIndex(item => item.id === scannedBarcode);
         if (existingItemIndex > -1) {
@@ -221,6 +220,19 @@ const GivenToPartyEntry = ({ onExit }) => {
             showToast('Barcode not found. Please add manually.', 'error');
             setIsManualMode(true);
         }
+    }, [items, masterItems]);
+
+
+    const handleBarcodeSubmit = (e) => {
+        e.preventDefault();
+        processScannedBarcode(barcode.trim());
+        setBarcode('');
+    };
+    
+    const handleScanSuccess = (scannedValue: string) => {
+        setIsScannerOpen(false);
+        if (navigator.vibrate) navigator.vibrate(100);
+        processScannedBarcode(scannedValue);
     };
 
     const handleConfirmAddItem = (confirmedItem) => {
@@ -304,6 +316,7 @@ const GivenToPartyEntry = ({ onExit }) => {
      
      return (
         <div style={styles.entryContainer}>
+            {isScannerOpen && <BarcodeScanner onScan={handleScanSuccess} onClose={() => setIsScannerOpen(false)} />}
             <div style={styles.entryHeader}>
                 <button style={styles.backButton} onClick={onExit}><ChevronLeftIcon /></button>
                 <h2 style={styles.entryTitle}>New Entry</h2>
@@ -317,11 +330,16 @@ const GivenToPartyEntry = ({ onExit }) => {
                 <div style={styles.entrySection}>
                     {!isManualMode ? (
                          <>
-                            <label style={styles.entryLabel}>Scan Barcode</label>
-                            <form onSubmit={handleBarcodeSubmit} style={styles.barcodeForm}>
-                                <BarcodeIcon/>
-                                <input ref={barcodeInputRef} type="text" style={styles.barcodeInput} placeholder="Scan item..." value={barcode} onChange={(e) => setBarcode(e.target.value)} disabled={isLoadingCatalog} />
-                            </form>
+                            <label style={styles.entryLabel}>Scan or Enter Barcode</label>
+                            <div style={styles.barcodeInputContainer}>
+                                <form onSubmit={handleBarcodeSubmit} style={styles.barcodeForm}>
+                                    <BarcodeIcon/>
+                                    <input ref={barcodeInputRef} type="text" style={styles.barcodeInput} placeholder="Scan or type barcode..." value={barcode} onChange={(e) => setBarcode(e.target.value)} disabled={isLoadingCatalog} />
+                                </form>
+                                <button style={styles.cameraScanButton} onClick={() => setIsScannerOpen(true)} aria-label="Scan with Camera">
+                                    <CameraIcon />
+                                </button>
+                            </div>
                             <button style={styles.secondaryButton} onClick={() => setIsManualMode(true)}>+ Add Manually</button>
                          </>
                     ) : (
@@ -391,18 +409,28 @@ const ItemConfirmationModal = ({ item, onClose, onConfirm, isClosing }) => {
         setEditedItem(prev => ({...prev, [field]: value}));
     };
     
+    const handleQtyStep = (step) => {
+        setEditedItem(prev => ({...prev, quantity: Math.max(1, prev.quantity + step)}));
+    };
+    
     return (
         <div style={{...styles.modalOverlay, animation: isClosing ? 'overlayOut 0.3s forwards' : 'overlayIn 0.3s forwards'}} onClick={onClose}>
             <div style={{...styles.modalContent, animation: isClosing ? 'modalOut 0.3s forwards' : 'modalIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards'}} onClick={(e) => e.stopPropagation()}>
-                <h3 style={styles.modalTitle}>Confirm Item</h3>
+                <h3 style={{...styles.modalTitle, textAlign: 'center'}}>{editedItem.name}</h3>
                 <p style={styles.modalSubtitle}>Verify or edit the item details before adding.</p>
                 
                 <div style={styles.confirmationForm}>
-                    <label>Name</label><input type="text" value={editedItem.name} onChange={(e) => handleFieldChange('name', e.target.value)} />
-                    <label>Color</label><input type="text" value={editedItem.color} onChange={(e) => handleFieldChange('color', e.target.value)} />
-                    <label>Size</label><input type="text" value={editedItem.size} onChange={(e) => handleFieldChange('size', e.target.value)} />
-                    <label>MRP</label><input type="number" value={editedItem.mrp} onChange={(e) => handleFieldChange('mrp', Number(e.target.value))} />
-                    <label>Quantity</label><input type="number" value={editedItem.quantity} onChange={(e) => handleFieldChange('quantity', Number(e.target.value))} />
+                    <div style={styles.formRow}><label>Color</label><input type="text" value={editedItem.color} onChange={(e) => handleFieldChange('color', e.target.value)} /></div>
+                    <div style={styles.formRow}><label>Size</label><input type="text" value={editedItem.size} onChange={(e) => handleFieldChange('size', e.target.value)} /></div>
+                    <div style={styles.formRow}><label>MRP</label><input type="number" value={editedItem.mrp} onChange={(e) => handleFieldChange('mrp', Number(e.target.value))} /></div>
+                    <div style={styles.formRow}>
+                        <label>Quantity</label>
+                         <div style={styles.processQtyContainer}>
+                            <button onClick={() => handleQtyStep(-1)} style={{ ...styles.processQtyButton, borderRadius: '6px 0 0 6px' }}>-</button>
+                            <input type="number" value={editedItem.quantity} onChange={(e) => handleFieldChange('quantity', Number(e.target.value))} style={styles.processQtyInput} />
+                            <button onClick={() => handleQtyStep(1)} style={{ ...styles.processQtyButton, borderRadius: '0 6px 6px 0' }}>+</button>
+                        </div>
+                    </div>
                 </div>
 
                 <div style={styles.iosModalActions}>
@@ -413,6 +441,77 @@ const ItemConfirmationModal = ({ item, onClose, onConfirm, isClosing }) => {
         </div>
     );
 };
+
+const BarcodeScanner = ({ onScan, onClose }) => {
+    const videoRef = useRef(null);
+    const animationFrameId = useRef(null);
+    const [error, setError] = useState('');
+
+    useEffect(() => {
+        if (!('BarcodeDetector' in window)) {
+            setError('Barcode Detector is not supported by this browser.');
+            return;
+        }
+
+        let stream;
+        const barcodeDetector = new (window as any).BarcodeDetector({ formats: ['ean_13', 'code_128', 'qr_code'] });
+
+        const startScan = async () => {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                if (videoRef.current) {
+                    videoRef.current.srcObject = stream;
+                    await videoRef.current.play();
+                    detectFrame();
+                }
+            } catch (err) {
+                console.error('Camera access error:', err);
+                setError('Could not access the camera. Please check permissions.');
+            }
+        };
+
+        const detectFrame = async () => {
+            if (!videoRef.current || videoRef.current.readyState !== 4) {
+                animationFrameId.current = requestAnimationFrame(detectFrame);
+                return;
+            }
+            try {
+                const barcodes = await barcodeDetector.detect(videoRef.current);
+                if (barcodes.length > 0) {
+                    onScan(barcodes[0].rawValue);
+                } else {
+                    animationFrameId.current = requestAnimationFrame(detectFrame);
+                }
+            } catch (err) {
+                console.error('Barcode detection error:', err);
+                animationFrameId.current = requestAnimationFrame(detectFrame);
+            }
+        };
+
+        startScan();
+
+        return () => {
+            if (animationFrameId.current) cancelAnimationFrame(animationFrameId.current);
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+        };
+    }, [onScan]);
+
+    return (
+        <div style={styles.scannerOverlay}>
+            <video ref={videoRef} style={styles.scannerVideo} muted playsInline />
+            <div style={styles.scannerUiContainer}>
+                <div style={styles.scannerBox}></div>
+                <div style={styles.scannerLine}></div>
+                <p style={styles.scannerText}>Align barcode within the frame</p>
+                {error && <p style={{...styles.scannerText, backgroundColor: 'var(--red)', padding: '0.5rem', borderRadius: '8px'}}>{error}</p>}
+                <button style={styles.scannerCloseButton} onClick={onClose}>Cancel</button>
+            </div>
+        </div>
+    );
+};
+
 
 const styles: { [key: string]: React.CSSProperties } = {
     container: { display: 'flex', flexDirection: 'column', height: '100%', backgroundColor: 'var(--light-grey)' },
@@ -445,8 +544,10 @@ const styles: { [key: string]: React.CSSProperties } = {
     entrySection: { backgroundColor: 'var(--card-bg)', padding: '1rem', borderRadius: '12px', display: 'flex', flexDirection: 'column', gap: '1rem' },
     entryLabel: { fontSize: '0.9rem', fontWeight: 600, color: 'var(--dark-grey)' },
     entryInput: { width: '100%', padding: '0.75rem', fontSize: '1rem', border: '1px solid var(--separator-color)', borderRadius: '8px' },
-    barcodeForm: { display: 'flex', alignItems: 'center', gap: '0.5rem', border: '1px solid var(--separator-color)', borderRadius: '8px', padding: '0 0.5rem' },
+    barcodeInputContainer: { display: 'flex', gap: '0.5rem' },
+    barcodeForm: { flex: 1, display: 'flex', alignItems: 'center', gap: '0.5rem', border: '1px solid var(--separator-color)', borderRadius: '8px', padding: '0 0.5rem' },
     barcodeInput: { flex: 1, border: 'none', background: 'none', outline: 'none', padding: '0.75rem 0.5rem', fontSize: '1rem' },
+    cameraScanButton: { backgroundColor: 'var(--brand-color)', border: 'none', color: '#fff', borderRadius: '8px', padding: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center' },
     secondaryButton: { background: 'var(--light-grey)', border: '1px solid var(--separator-color)', color: 'var(--dark-grey)', padding: '0.5rem 1rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 500 },
     primaryButton: { backgroundColor: 'var(--brand-color)', color: 'white', border: 'none', padding: '0.75rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, fontSize: '1rem' },
     primaryButtonDisabled: { backgroundColor: 'var(--gray-3)', cursor: 'not-allowed' },
@@ -468,21 +569,38 @@ const styles: { [key: string]: React.CSSProperties } = {
     summaryRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
     summaryItem: { display: 'flex', flexDirection: 'column', gap: '2px' },
     
+    // Modals
     modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.2)', backdropFilter: 'blur(7px)', WebkitBackdropFilter: 'blur(7px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' },
     modalContent: { backgroundColor: 'var(--glass-bg)', padding: '1.5rem', borderRadius: '12px', width: '90%', maxWidth: '420px', boxShadow: '0 8px 32px rgba(0,0,0,0.1)', border: '1px solid var(--glass-border)', display: 'flex', flexDirection: 'column', gap: '1rem' },
     modalTitle: { margin: 0, fontSize: '1.1rem', fontWeight: 600, color: 'var(--dark-grey)' },
-    modalSubtitle: { margin: '-0.5rem 0 0.5rem', fontSize: '0.9rem', color: 'var(--text-color)' },
-    confirmationForm: { display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '1rem', alignItems: 'center' },
+    modalSubtitle: { margin: '-0.5rem 0 0.5rem', fontSize: '0.9rem', color: 'var(--text-color)', textAlign: 'center' },
+    confirmationForm: { display: 'flex', flexDirection: 'column', gap: '1rem' },
+    formRow: { display: 'grid', gridTemplateColumns: '80px 1fr', alignItems: 'center', gap: '1rem' },
     iosModalActions: { display: 'flex', width: 'calc(100% + 3rem)', marginLeft: '-1.5rem', marginBottom: '-1.5rem', borderTop: '1px solid var(--glass-border)', marginTop: '1.5rem' },
     iosModalButtonSecondary: { background: 'transparent', border: 'none', padding: '1rem 0', cursor: 'pointer', fontSize: '1rem', textAlign: 'center', flex: 1, color: 'var(--dark-grey)', borderRight: '1px solid var(--glass-border)', fontWeight: 400 },
     iosModalButtonPrimary: { background: 'transparent', border: 'none', padding: '1rem 0', cursor: 'pointer', fontSize: '1rem', textAlign: 'center', flex: 1, color: 'var(--brand-color)', fontWeight: 600 },
+    processQtyContainer: { display: 'flex', alignItems: 'center' },
+    processQtyButton: { backgroundColor: 'var(--light-grey)', border: '1px solid var(--separator-color)', color: 'var(--dark-grey)', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', width: '36px', height: '36px', fontSize: '1.2rem' },
+    processQtyInput: { textAlign: 'center', border: '1px solid var(--separator-color)', borderLeft: 'none', borderRight: 'none', fontSize: '1rem', backgroundColor: 'var(--card-bg)', color: 'var(--dark-grey)', width: '50px', height: '36px' },
+
+    // Barcode Scanner
+    scannerOverlay: { position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 1001, display: 'flex', justifyContent: 'center', alignItems: 'center' },
+    scannerVideo: { position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' },
+    scannerUiContainer: { position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' },
+    scannerBox: { width: '80%', maxWidth: '400px', height: '200px', border: '3px solid white', borderRadius: '12px', boxShadow: '0 0 0 2000px rgba(0,0,0,0.5)' },
+    scannerLine: { position: 'absolute', width: 'calc(80% - 10px)', maxWidth: '390px', height: '3px', backgroundColor: 'var(--red)', borderRadius: '2px', animation: 'scan 2s infinite ease-in-out' },
+    scannerText: { marginTop: '1.5rem', color: 'white', fontSize: '1rem', fontWeight: 500 },
+    scannerCloseButton: { position: 'absolute', bottom: '3rem', padding: '0.75rem 1.5rem', backgroundColor: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.4)', color: 'white', borderRadius: '25px', cursor: 'pointer' },
 };
 
 const styleSheet = document.createElement("style");
 styleSheet.type = "text/css";
-styleSheet.innerText = `@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+styleSheet.innerText = `
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+@keyframes scan { 0% { top: 40%; } 50% { top: 60%; } 100% { top: 40%; } }
 @keyframes overlayIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes overlayOut { from { opacity: 1; } to { opacity: 0; } }
 @keyframes modalIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-@keyframes modalOut { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(0.95); } }`;
+@keyframes modalOut { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(0.95); } }
+`;
 document.head.appendChild(styleSheet);
