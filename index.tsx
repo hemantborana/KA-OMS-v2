@@ -9,6 +9,7 @@ import { InactiveOrders } from './inactiveorders';
 import { UserManagement } from './usermanagement';
 import { OrderApproval } from './orderapproval';
 import { PDFEditor } from './pdfeditor';
+import { StockUpdation } from './stockupdation';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
 
@@ -758,7 +759,7 @@ const Sidebar = ({ activeView, onNavigate, isMobile, isOpen, onClose, session, o
     ];
     const secondaryItems = [
         { id: 'Stock', label: 'Stock Overview' },
-        { id: 'Update', label: 'Stock Updation' },
+        { id: 'Update', label: 'Item Update' },
         { id: 'Inactive', label: 'Inactive Orders' },
         { id: 'Users', label: 'User Management' },
         { id: 'Approval', label: 'Order Approval (Admin)' },
@@ -872,7 +873,7 @@ const Sidebar = ({ activeView, onNavigate, isMobile, isOpen, onClose, session, o
                     ))}
                     <hr style={styles.sidebarSeparator} />
                     {secondaryItems.map(item => {
-                        if ((item.id === 'Users' || item.id === 'Approval') && session.role !== 'ADMIN') {
+                        if ((item.id === 'Users' || item.id === 'Approval' || item.id === 'Update') && session.role !== 'ADMIN') {
                             return null;
                         }
                         return (
@@ -965,7 +966,7 @@ const MainContent = React.forwardRef<HTMLElement, MainContentProps>(
 
         if (isMobile) {
             let mobilePadding;
-            if (activeView === 'Entry' || activeView === 'Pending' || activeView === 'Approval' || activeView === 'Messaging' || activeView === 'PDF Editor') {
+            if (activeView === 'Entry' || activeView === 'Pending' || activeView === 'Approval' || activeView === 'Messaging' || activeView === 'PDF Editor' || activeView === 'Update') {
                 mobilePadding = { padding: 0 };
             } else {
                 mobilePadding = { padding: '0rem 1.2rem', paddingBottom: '100px' };
@@ -988,6 +989,7 @@ const MainContent = React.forwardRef<HTMLElement, MainContentProps>(
                 case 'Pending': return <PendingOrders onNavigate={onNavigate} />;
                 case 'Billing': return <ReadyForBilling />;
                 case 'Billed': return <BilledOrders />;
+                case 'Update': return <StockUpdation />;
                 case 'Inactive': return <InactiveOrders />;
                 case 'Users': return <UserManagement session={session} />;
                 case 'Approval': return <OrderApproval session={session} />;
@@ -1016,7 +1018,7 @@ const HomePage = ({ session, onLogout, appLogoSrc, updateUserProfile }) => {
     
     const pages = {
         'Dashboard': 'Dashboard', 'Entry': 'New Order Entry', 'Messaging': 'Messaging', 'Pending': 'Pending Orders', 'Billing': 'Ready for Billing', 'Billed': 'Billed Orders (Archive)',
-        'Stock': 'Stock Overview', 'Update': 'Stock Updation', 'Inactive': 'Inactive Orders', 'Users': 'User Management', 'Approval': 'Order Approval (Admin)',
+        'Stock': 'Stock Overview', 'Update': 'Item Update', 'Inactive': 'Inactive Orders', 'Users': 'User Management', 'Approval': 'Order Approval (Admin)',
         'PDF Editor': 'PDF Editor', 'Preferences': 'Preferences'
     };
 
@@ -1220,7 +1222,7 @@ const HomePage = ({ session, onLogout, appLogoSrc, updateUserProfile }) => {
                     onLogout={onLogout}
                 />
             </div>
-            {isMobile && activeView !== 'Entry' && activeView !== 'PDF Editor' && <BottomNavBar activeView={activeView} onNavigate={handleNavigate} />}
+            {isMobile && activeView !== 'Entry' && activeView !== 'PDF Editor' && activeView !== 'Update' && <BottomNavBar activeView={activeView} onNavigate={handleNavigate} />}
         </div>
     );
 };
