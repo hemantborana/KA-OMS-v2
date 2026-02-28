@@ -434,7 +434,20 @@ const ExpandedBillingView: React.FC<ExpandedBillingViewProps> = ({ order, billed
                     </thead>
                     <tbody>
                         {sortedItems.map((item, index) => (
-                            <tr key={item.id} style={index % 2 !== 0 ? { ...styles.tr, backgroundColor: 'var(--stripe-bg)' } : styles.tr}>
+                            <tr 
+                                key={item.id} 
+                                style={{
+                                    ...(index % 2 !== 0 ? { ...styles.tr, backgroundColor: 'var(--stripe-bg)' } : styles.tr),
+                                    cursor: 'pointer',
+                                    userSelect: 'none'
+                                }}
+                                onDoubleClick={() => {
+                                    const currentQty = billedQty[item.id] || 0;
+                                    if (currentQty < item.quantity) {
+                                        onQtyChange(item.id, (currentQty + 1).toString(), item.quantity);
+                                    }
+                                }}
+                            >
                                 <td style={{...tdStyle, textAlign: 'left'}}>{item.fullItemData.Style}</td>
                                 <td style={{...tdStyle, textAlign: 'left'}}>{item.fullItemData.Color}</td>
                                 <td style={{...tdStyle, textAlign: 'left'}}>{item.fullItemData.Size}</td>
