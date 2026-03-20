@@ -13,8 +13,12 @@ const Spinner = () => <div style={styles.spinner}></div>;
 const FileIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" /><polyline points="14 2 14 8 20 8" /></svg>;
 const DownloadIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>;
 const CheckCircleIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>;
-const ChevronDownIcon = ({ size = 20 }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>;
-const SearchIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>;
+const TrashIcon = ({ size = 16, color = "currentColor" }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>;
+const EditIcon = ({ size = 16, color = "currentColor" }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>;
+const PlusIcon = ({ size = 16, color = "currentColor" }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>;
+const XIcon = ({ size = 20, color = "currentColor" }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>;
+const ChevronDownIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>;
+const SearchIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>;
 
 
 // --- FIREBASE CONFIG for party data ---
@@ -44,6 +48,248 @@ const CNDeductor = () => (
     </div>
 );
 
+const PartyFormModal = ({ isOpen, onClose, onSave, initialData = null }) => {
+    const [formData, setFormData] = useState({
+        partyName: '',
+        address1: '',
+        address2: '',
+        city: '',
+        state: 'GOA(30)',
+        phone1: '',
+        phone2: '',
+        gst: '',
+        hasDifferentShipTo: false,
+        shipTo: {
+            partyName: '',
+            address1: '',
+            address2: '',
+            city: '',
+            state: '',
+            phone: '',
+            gst: ''
+        }
+    });
+
+    useEffect(() => {
+        if (initialData) {
+            setFormData({
+                ...formData,
+                ...initialData,
+                shipTo: initialData.shipTo || formData.shipTo
+            });
+        } else {
+            setFormData({
+                partyName: '',
+                address1: '',
+                address2: '',
+                city: '',
+                state: 'GOA(30)',
+                phone1: '',
+                phone2: '',
+                gst: '',
+                hasDifferentShipTo: false,
+                shipTo: {
+                    partyName: '',
+                    address1: '',
+                    address2: '',
+                    city: '',
+                    state: '',
+                    phone: '',
+                    gst: ''
+                }
+            });
+        }
+    }, [initialData, isOpen]);
+
+    if (!isOpen) return null;
+
+    const handleChange = (e) => {
+        const { name, value, type, checked } = e.target;
+        if (name.startsWith('shipTo.')) {
+            const field = name.split('.')[1];
+            setFormData(prev => ({
+                ...prev,
+                shipTo: { ...prev.shipTo, [field]: value }
+            }));
+        } else {
+            setFormData(prev => ({
+                ...prev,
+                [name]: type === 'checkbox' ? checked : value
+            }));
+        }
+    };
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        if (!formData.partyName) {
+            alert("Party Name is required");
+            return;
+        }
+        onSave(formData);
+    };
+
+    return (
+        <div style={styles.modalOverlay} onClick={onClose}>
+            <div style={{...styles.modalContent, maxWidth: '600px', maxHeight: '90vh', overflowY: 'auto'}} onClick={e => e.stopPropagation()}>
+                <div style={styles.modalHeader}>
+                    <h3 style={styles.modalTitle}>{initialData ? 'Edit Party' : 'Add New Party'}</h3>
+                    <button onClick={onClose} style={styles.closeButton}><XIcon /></button>
+                </div>
+                <form onSubmit={handleSubmit} style={styles.form}>
+                    <div style={styles.formSection}>
+                        <h4 style={styles.sectionTitle}>Bill To Details</h4>
+                        <div style={styles.formGrid}>
+                            <div style={styles.formGroup}>
+                                <label style={styles.formLabel}>Party Name *</label>
+                                <input name="partyName" value={formData.partyName} onChange={handleChange} style={styles.formInput} required />
+                            </div>
+                            <div style={styles.formGroup}>
+                                <label style={styles.formLabel}>GSTIN</label>
+                                <input name="gst" value={formData.gst} onChange={handleChange} style={styles.formInput} />
+                            </div>
+                            <div style={styles.formGroup}>
+                                <label style={styles.formLabel}>Address Line 1</label>
+                                <input name="address1" value={formData.address1} onChange={handleChange} style={styles.formInput} />
+                            </div>
+                            <div style={styles.formGroup}>
+                                <label style={styles.formLabel}>Address Line 2</label>
+                                <input name="address2" value={formData.address2} onChange={handleChange} style={styles.formInput} />
+                            </div>
+                            <div style={styles.formGroup}>
+                                <label style={styles.formLabel}>City</label>
+                                <input name="city" value={formData.city} onChange={handleChange} style={styles.formInput} />
+                            </div>
+                            <div style={styles.formGroup}>
+                                <label style={styles.formLabel}>State</label>
+                                <input name="state" value={formData.state} onChange={handleChange} style={styles.formInput} />
+                            </div>
+                            <div style={styles.formGroup}>
+                                <label style={styles.formLabel}>Phone 1</label>
+                                <input name="phone1" value={formData.phone1} onChange={handleChange} style={styles.formInput} />
+                            </div>
+                            <div style={styles.formGroup}>
+                                <label style={styles.formLabel}>Phone 2</label>
+                                <input name="phone2" value={formData.phone2} onChange={handleChange} style={styles.formInput} />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style={styles.formSection}>
+                        <label style={{...styles.formLabel, display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer'}}>
+                            <input type="checkbox" name="hasDifferentShipTo" checked={formData.hasDifferentShipTo} onChange={handleChange} />
+                            Different Ship To Address
+                        </label>
+                    </div>
+
+                    {formData.hasDifferentShipTo && (
+                        <div style={styles.formSection}>
+                            <h4 style={styles.sectionTitle}>Ship To Details</h4>
+                            <div style={styles.formGrid}>
+                                <div style={styles.formGroup}>
+                                    <label style={styles.formLabel}>Ship To Name</label>
+                                    <input name="shipTo.partyName" value={formData.shipTo.partyName} onChange={handleChange} style={styles.formInput} />
+                                </div>
+                                <div style={styles.formGroup}>
+                                    <label style={styles.formLabel}>Ship To GST</label>
+                                    <input name="shipTo.gst" value={formData.shipTo.gst} onChange={handleChange} style={styles.formInput} />
+                                </div>
+                                <div style={styles.formGroup}>
+                                    <label style={styles.formLabel}>Address Line 1</label>
+                                    <input name="shipTo.address1" value={formData.shipTo.address1} onChange={handleChange} style={styles.formInput} />
+                                </div>
+                                <div style={styles.formGroup}>
+                                    <label style={styles.formLabel}>Address Line 2</label>
+                                    <input name="shipTo.address2" value={formData.shipTo.address2} onChange={handleChange} style={styles.formInput} />
+                                </div>
+                                <div style={styles.formGroup}>
+                                    <label style={styles.formLabel}>City</label>
+                                    <input name="shipTo.city" value={formData.shipTo.city} onChange={handleChange} style={styles.formInput} />
+                                </div>
+                                <div style={styles.formGroup}>
+                                    <label style={styles.formLabel}>State</label>
+                                    <input name="shipTo.state" value={formData.shipTo.state} onChange={handleChange} style={styles.formInput} />
+                                </div>
+                                <div style={styles.formGroup}>
+                                    <label style={styles.formLabel}>Phone</label>
+                                    <input name="shipTo.phone" value={formData.shipTo.phone} onChange={handleChange} style={styles.formInput} />
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    <div style={styles.modalFooter}>
+                        <button type="button" onClick={onClose} style={styles.secondaryButton}>Cancel</button>
+                        <button type="submit" style={styles.primaryButton}>Save Party</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+};
+
+const ManagePartiesModal = ({ isOpen, onClose, parties, onEdit, onDelete, onAdd }) => {
+    const [searchTerm, setSearchTerm] = useState('');
+    
+    if (!isOpen) return null;
+
+    const filtered = parties.filter(p => p.partyName.toLowerCase().includes(searchTerm.toLowerCase()));
+
+    return (
+        <div style={styles.modalOverlay} onClick={onClose}>
+            <div style={{...styles.modalContent, maxWidth: '800px', height: '80vh', display: 'flex', flexDirection: 'column'}} onClick={e => e.stopPropagation()}>
+                <div style={styles.modalHeader}>
+                    <h3 style={styles.modalTitle}>Manage Parties</h3>
+                    <button onClick={onClose} style={styles.closeButton}><XIcon /></button>
+                </div>
+                
+                <div style={{padding: '1rem', borderBottom: '1px solid var(--separator-color)', display: 'flex', gap: '1rem'}}>
+                    <div style={{...styles.dropdownSearchContainer, flex: 1, margin: 0}}>
+                        <SearchIcon />
+                        <input 
+                            type="text" 
+                            placeholder="Search parties..." 
+                            value={searchTerm} 
+                            onChange={e => setSearchTerm(e.target.value)}
+                            style={styles.dropdownSearchInput}
+                        />
+                    </div>
+                    <button onClick={onAdd} style={{...styles.actionButton, padding: '0 1.5rem', borderRadius: '8px', height: '40px'}}>
+                        <PlusIcon /> Add New
+                    </button>
+                </div>
+
+                <div style={{flex: 1, overflowY: 'auto', padding: '1rem'}}>
+                    <table style={{width: '100%', borderCollapse: 'collapse'}}>
+                        <thead>
+                            <tr style={{textAlign: 'left', borderBottom: '2px solid var(--separator-color)'}}>
+                                <th style={{padding: '0.75rem'}}>Party Name</th>
+                                <th style={{padding: '0.75rem'}}>City</th>
+                                <th style={{padding: '0.75rem'}}>GST</th>
+                                <th style={{padding: '0.75rem', textAlign: 'right'}}>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {filtered.map(p => (
+                                <tr key={p.id} style={{borderBottom: '1px solid var(--separator-color)'}}>
+                                    <td style={{padding: '0.75rem'}}>{p.partyName}</td>
+                                    <td style={{padding: '0.75rem'}}>{p.city}</td>
+                                    <td style={{padding: '0.75rem'}}>{p.gst || 'N/A'}</td>
+                                    <td style={{padding: '0.75rem', textAlign: 'right'}}>
+                                        <div style={{display: 'flex', gap: '0.5rem', justifyContent: 'flex-end'}}>
+                                            <button onClick={() => onEdit(p)} style={styles.iconButton} title="Edit"><EditIcon color="var(--brand-color)" /></button>
+                                            <button onClick={() => onDelete(p)} style={styles.iconButton} title="Delete"><TrashIcon color="var(--red)" /></button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const PartyNameChanger = ({ isMobile }) => {
     // Component states
     const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
@@ -59,50 +305,109 @@ const PartyNameChanger = ({ isMobile }) => {
     const [status, setStatus] = useState<{ message: string; percent?: number }>({ message: 'Upload a PDF to begin.' });
     const [isLoading, setIsLoading] = useState(false);
     
+    const [isManageModalOpen, setIsManageModalOpen] = useState(false);
+    const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+    const [editingParty, setEditingParty] = useState<any>(null);
+
     const originalCanvasRef = useRef<HTMLCanvasElement>(null);
     const modifiedCanvasRef = useRef<HTMLCanvasElement>(null);
     const partyDropdownRef = useRef<HTMLDivElement>(null);
 
     // --- Firebase Data Loading ---
-    useEffect(() => {
-        const loadAllParties = async () => {
-            setIsLoading(true);
-            setStatus({ message: 'Loading party data...' });
-            try {
-                const snapshot = await pdfEditorDatabase.ref('brands').once('value');
-                const brandsData = snapshot.val() || {};
-    
-                const allParties: any[] = [];
-                for (const brandKey in brandsData) {
-                    const brand = brandsData[brandKey];
-                    if (brand && typeof brand.parties === 'object' && brand.parties) {
-                        for (const partyId in brand.parties) {
-                            const party = brand.parties[partyId];
-                            if (typeof party === 'object' && party && party.partyName) {
-                                allParties.push({
-                                    id: partyId,
-                                    ...party
-                                });
-                            }
+    const loadAllParties = async () => {
+        setIsLoading(true);
+        setStatus({ message: 'Loading party data...' });
+        try {
+            const snapshot = await pdfEditorDatabase.ref('brands').once('value');
+            const brandsData = snapshot.val() || {};
+
+            const allParties: any[] = [];
+            for (const brandKey in brandsData) {
+                const brand = brandsData[brandKey];
+                if (brand && typeof brand.parties === 'object' && brand.parties) {
+                    for (const partyId in brand.parties) {
+                        const party = brand.parties[partyId];
+                        if (typeof party === 'object' && party && party.partyName) {
+                            allParties.push({
+                                id: partyId,
+                                brandKey: brandKey,
+                                ...party
+                            });
                         }
                     }
                 }
-                
-                allParties.sort((a, b) => a.partyName.localeCompare(b.partyName));
-                
-                setParties(allParties);
-                setSelectedPartyId('');
-                setStatus({ message: 'Select a party to proceed.' });
-            } catch (error) {
-                console.error('Error loading parties:', error);
-                setStatus({ message: 'Error loading party data.' });
-            } finally {
-                setIsLoading(false);
             }
-        };
-    
+            
+            allParties.sort((a, b) => a.partyName.localeCompare(b.partyName));
+            
+            setParties(allParties);
+            setStatus({ message: 'Select a party to proceed.' });
+        } catch (error) {
+            console.error('Error loading parties:', error);
+            setStatus({ message: 'Error loading party data.' });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
         loadAllParties();
     }, []);
+    
+    // --- CRUD Handlers ---
+    const handleAddParty = () => {
+        setEditingParty(null);
+        setIsFormModalOpen(true);
+    };
+
+    const handleEditParty = (party) => {
+        setEditingParty(party);
+        setIsFormModalOpen(true);
+    };
+
+    const handleDeleteParty = async (party) => {
+        if (!window.confirm(`Are you sure you want to delete ${party.partyName}?`)) return;
+        
+        try {
+            await pdfEditorDatabase.ref(`brands/${party.brandKey}/parties/${party.id}`).remove();
+            alert("Party deleted successfully");
+            loadAllParties();
+        } catch (e) {
+            console.error(e);
+            alert("Failed to delete party");
+        }
+    };
+
+    const handleSaveParty = async (formData) => {
+        try {
+            setIsLoading(true);
+            if (editingParty) {
+                // Update
+                await pdfEditorDatabase.ref(`brands/${editingParty.brandKey}/parties/${editingParty.id}`).update(formData);
+                alert("Party updated successfully");
+            } else {
+                // Add
+                // We need a brandKey. We'll use 'DEFAULT_BRAND' or create one.
+                let brandKey = 'DEFAULT_BRAND';
+                const brandsSnap = await pdfEditorDatabase.ref('brands').once('value');
+                if (brandsSnap.exists()) {
+                    brandKey = Object.keys(brandsSnap.val())[0];
+                } else {
+                    await pdfEditorDatabase.ref('brands/DEFAULT_BRAND').set({ name: 'Default Brand' });
+                }
+                
+                await pdfEditorDatabase.ref(`brands/${brandKey}/parties`).push(formData);
+                alert("Party added successfully");
+            }
+            setIsFormModalOpen(false);
+            loadAllParties();
+        } catch (e) {
+            console.error(e);
+            alert("Failed to save party");
+        } finally {
+            setIsLoading(false);
+        }
+    };
     
     // --- Close dropdown on outside click ---
     useEffect(() => {
@@ -251,7 +556,16 @@ const PartyNameChanger = ({ isMobile }) => {
                 const billToData = { partyName: selectedParty.partyName, address: [selectedParty.address1, selectedParty.address2].filter(Boolean).join('\n'), city: selectedParty.city, state: selectedParty.state, phone: [selectedParty.phone1, selectedParty.phone2].filter(Boolean).join(', '), gst: selectedParty.gst || 'NA' };
                 
                 let shipToData;
-                if (selectedParty.partyName.toUpperCase() === 'POSHAK RETAIL') {
+                if (selectedParty.hasDifferentShipTo && selectedParty.shipTo) {
+                    shipToData = {
+                        partyName: selectedParty.shipTo.partyName || selectedParty.partyName,
+                        address: [selectedParty.shipTo.address1, selectedParty.shipTo.address2].filter(Boolean).join('\n'),
+                        city: selectedParty.shipTo.city,
+                        state: selectedParty.shipTo.state,
+                        phone: selectedParty.shipTo.phone,
+                        gst: selectedParty.shipTo.gst
+                    };
+                } else if (selectedParty.partyName.toUpperCase() === 'POSHAK RETAIL') {
                     shipToData = { 
                         partyName: 'Poshak Panjim', 
                         address: '', 
@@ -461,7 +775,10 @@ const PartyNameChanger = ({ isMobile }) => {
                     <input id="pdf-upload" type="file" accept=".pdf" multiple onChange={handleFileChange} style={{ display: 'none' }} />
                 </div>
                  <div style={styles.inputGroup} ref={partyDropdownRef}>
-                    <label style={styles.label}>2. Select Party to Apply</label>
+                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                        <label style={styles.label}>2. Select Party to Apply</label>
+                        <button onClick={() => setIsManageModalOpen(true)} style={styles.manageButton}>Manage</button>
+                    </div>
                     <button style={styles.customDropdownButton} onClick={() => setIsPartyDropdownOpen(prev => !prev)} disabled={isLoading || parties.length === 0}>
                         <span>{selectedPartyDetails?.partyName || (isLoading ? "Loading..." : "Select a Party")}</span>
                         <ChevronDownIcon />
@@ -526,6 +843,20 @@ const PartyNameChanger = ({ isMobile }) => {
                     )}
                 </div>
             </div>
+            <ManagePartiesModal 
+                isOpen={isManageModalOpen} 
+                onClose={() => setIsManageModalOpen(false)} 
+                parties={parties}
+                onEdit={handleEditParty}
+                onDelete={handleDeleteParty}
+                onAdd={handleAddParty}
+            />
+            <PartyFormModal 
+                isOpen={isFormModalOpen} 
+                onClose={() => setIsFormModalOpen(false)} 
+                onSave={handleSaveParty}
+                initialData={editingParty}
+            />
         </div>
     );
 };
@@ -639,6 +970,28 @@ const styles: { [key: string]: React.CSSProperties } = {
         flexGrow: 1
     },
     downloadButton: { padding: '0.75rem 1.5rem', fontSize: '0.9rem', fontWeight: 600, color: '#fff', backgroundColor: 'var(--green)', border: 'none', borderRadius: '25px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' },
+    
+    // Modal Styles
+    modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 },
+    modalContent: { backgroundColor: 'var(--card-bg)', borderRadius: '12px', width: '90%', padding: '1.5rem', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' },
+    modalHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--separator-color)', paddingBottom: '1rem' },
+    modalTitle: { margin: 0, fontSize: '1.25rem', fontWeight: 700, color: 'var(--dark-grey)' },
+    closeButton: { background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-color)', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+    modalFooter: { display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1.5rem', borderTop: '1px solid var(--separator-color)', paddingTop: '1rem' },
+    primaryButton: { padding: '0.6rem 1.5rem', backgroundColor: 'var(--brand-color)', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' },
+    secondaryButton: { padding: '0.6rem 1.5rem', backgroundColor: 'var(--gray-5)', color: 'var(--dark-grey)', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' },
+    
+    // Form Styles
+    form: { display: 'flex', flexDirection: 'column', gap: '1.5rem' },
+    formSection: { display: 'flex', flexDirection: 'column', gap: '1rem' },
+    sectionTitle: { margin: 0, fontSize: '1rem', fontWeight: 600, color: 'var(--brand-color)', borderBottom: '1px solid var(--active-bg)', paddingBottom: '0.25rem' },
+    formGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' },
+    formGroup: { display: 'flex', flexDirection: 'column', gap: '0.25rem' },
+    formLabel: { fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-color)' },
+    formInput: { padding: '0.6rem', borderRadius: '6px', border: '1px solid var(--separator-color)', backgroundColor: 'var(--card-bg)', color: 'var(--dark-grey)', fontSize: '0.9rem' },
+    
+    manageButton: { background: 'none', border: 'none', color: 'var(--brand-color)', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer', textDecoration: 'underline' },
+    iconButton: { background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '4px', transition: 'background-color 0.2s' },
 };
 
 const styleSheet = document.createElement("style");
