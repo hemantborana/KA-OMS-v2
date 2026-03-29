@@ -157,7 +157,7 @@ export const StockUpdation = () => {
     return (
         <div style={styles.container}>
             <div style={styles.header}>
-                <h2 style={styles.pageTitle}>Stock Updation</h2>
+                <h2 style={styles.pageTitle}>Item Updation</h2>
                 <p style={styles.pageSubtitle}>Upload and update the master item catalog from an XLSX file.</p>
             </div>
 
