@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
+import { getPersistedState, setPersistedState } from './persistence';
 
 declare const XLSX: any;
 
@@ -18,8 +19,8 @@ const showToast = (message: string, type: 'info' | 'success' | 'error' = 'info')
 
 export const StockUpdation = () => {
     const [file, setFile] = useState<File | null>(null);
-    const [headerRow, setHeaderRow] = useState(1);
-    const [dataStartRow, setDataStartRow] = useState(2);
+    const [headerRow, setHeaderRow] = useState(() => getPersistedState('stock_updation_header_row', 1));
+    const [dataStartRow, setDataStartRow] = useState(() => getPersistedState('stock_updation_start_row', 2));
     const [previewData, setPreviewData] = useState<any[]>([]);
     const [fullData, setFullData] = useState<any[]>([]);
     const [headers, setHeaders] = useState<string[]>([]);
@@ -29,6 +30,14 @@ export const StockUpdation = () => {
     const [isUploading, setIsUploading] = useState(false);
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
     const [dragActive, setDragActive] = useState(false);
+
+    useEffect(() => {
+        setPersistedState('stock_updation_header_row', headerRow);
+    }, [headerRow]);
+
+    useEffect(() => {
+        setPersistedState('stock_updation_start_row', dataStartRow);
+    }, [dataStartRow]);
 
     const parseXLSX = useCallback(() => {
         if (!file) return;

@@ -1,10 +1,15 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DeletedOrders as DeletedOrdersComponent } from './deletedorders';
 import { ExpiredOrders as ExpiredOrdersComponent } from './expiredorders';
+import { getPersistedState, setPersistedState } from './persistence';
 
 export const InactiveOrders = () => {
-    const [activeView, setActiveView] = useState('deleted'); // 'deleted' or 'expired'
+    const [activeView, setActiveView] = useState(() => getPersistedState('inactive_orders_view', 'deleted')); // 'deleted' or 'expired'
+
+    useEffect(() => {
+        setPersistedState('inactive_orders_view', activeView);
+    }, [activeView]);
 
     return (
         <div style={styles.container}>

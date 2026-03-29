@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
+import { getPersistedState, setPersistedState } from './persistence';
 
 // Global declarations for libraries loaded from CDN
 declare const PDFLib: any;
@@ -47,6 +48,66 @@ const CNDeductor = () => (
         <p style={styles.placeholderText}>This feature is currently under development and will be available soon.</p>
     </div>
 );
+
+// --- INDEXEDDB CACHE FOR PDF WORK ---
+const pdfCache = {
+    db: null as IDBDatabase | null,
+    init: function(): Promise<IDBDatabase> {
+        return new Promise((resolve, reject) => {
+            if (this.db) { resolve(this.db); return; }
+            const request = indexedDB.open('PDFEditorCache', 1);
+            request.onupgradeneeded = (event) => {
+                const db = (event.target as IDBOpenDBRequest).result;
+                if (!db.objectStoreNames.contains('pdf_work')) {
+                    db.createObjectStore('pdf_work');
+                }
+            };
+            request.onsuccess = (event) => {
+                this.db = (event.target as IDBOpenDBRequest).result;
+                resolve(this.db);
+            };
+            request.onerror = (event) => {
+                reject((event.target as IDBOpenDBRequest).error);
+            };
+        });
+    },
+    save: function(key: string, data: any): Promise<void> {
+        return new Promise(async (resolve, reject) => {
+            try {
+                const db = await this.init();
+                const transaction = db.transaction(['pdf_work'], 'readwrite');
+                const store = transaction.objectStore('pdf_work');
+                store.put(data, key);
+                transaction.oncomplete = () => resolve();
+                transaction.onerror = (event) => reject((event.target as IDBRequest).error);
+            } catch (e) { reject(e); }
+        });
+    },
+    get: function(key: string): Promise<any> {
+        return new Promise(async (resolve, reject) => {
+            try {
+                const db = await this.init();
+                const transaction = db.transaction(['pdf_work'], 'readonly');
+                const store = transaction.objectStore('pdf_work');
+                const request = store.get(key);
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = (event) => reject((event.target as IDBRequest).error);
+            } catch (e) { reject(e); }
+        });
+    },
+    clear: function(): Promise<void> {
+        return new Promise(async (resolve, reject) => {
+            try {
+                const db = await this.init();
+                const transaction = db.transaction(['pdf_work'], 'readwrite');
+                const store = transaction.objectStore('pdf_work');
+                store.clear();
+                transaction.oncomplete = () => resolve();
+                transaction.onerror = (event) => reject((event.target as IDBRequest).error);
+            } catch (e) { reject(e); }
+        });
+    }
+};
 
 const PartyFormModal = ({ isOpen, onClose, onSave, initialData = null }) => {
     const [formData, setFormData] = useState({
@@ -295,14 +356,75 @@ const PartyNameChanger = ({ isMobile }) => {
     const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
     const [modifiedPdfBytes, setModifiedPdfBytes] = useState<Uint8Array | null>(null);
     const [modifiedPreviewBytes, setModifiedPreviewBytes] = useState<Uint8Array | null>(null);
-    const [downloadFilename, setDownloadFilename] = useState<string>('');
+
+    // Load large files from IndexedDB on mount
+    useEffect(() => {
+        const loadCachedWork = async () => {
+            const lastSeen = localStorage.getItem('ka_oms_last_seen');
+            if (lastSeen && Date.now() - parseInt(lastSeen) < 10 * 60 * 1000) {
+                try {
+                    const cachedFiles = await pdfCache.get('uploadedFiles');
+                    if (cachedFiles) setUploadedFiles(cachedFiles);
+                    
+                    const cachedPdf = await pdfCache.get('modifiedPdfBytes');
+                    if (cachedPdf) setModifiedPdfBytes(cachedPdf);
+
+                    const cachedPreview = await pdfCache.get('modifiedPreviewBytes');
+                    if (cachedPreview) setModifiedPreviewBytes(cachedPreview);
+                } catch (e) {
+                    console.error('Failed to load cached PDF work:', e);
+                }
+            } else {
+                // Clear cache if more than 10 minutes
+                pdfCache.clear();
+            }
+        };
+        loadCachedWork();
+    }, []);
+
+    // Save large files to IndexedDB when they change
+    useEffect(() => {
+        if (uploadedFiles.length > 0) {
+            pdfCache.save('uploadedFiles', uploadedFiles);
+        } else {
+            // We don't explicitly clear here because uploadedFiles might be empty during initial load
+            // but we should clear if it's a manual reset. 
+            // Actually, if it's empty, we can just leave it or delete it.
+        }
+    }, [uploadedFiles]);
+
+    useEffect(() => {
+        if (modifiedPdfBytes) {
+            pdfCache.save('modifiedPdfBytes', modifiedPdfBytes);
+        } else {
+            // If modifiedPdfBytes is null, it means we reset or haven't generated yet.
+            // We should probably remove it from cache to avoid restoring stale data.
+            pdfCache.init().then(db => {
+                const transaction = db.transaction(['pdf_work'], 'readwrite');
+                transaction.objectStore('pdf_work').delete('modifiedPdfBytes');
+            });
+        }
+    }, [modifiedPdfBytes]);
+
+    useEffect(() => {
+        if (modifiedPreviewBytes) {
+            pdfCache.save('modifiedPreviewBytes', modifiedPreviewBytes);
+        } else {
+            pdfCache.init().then(db => {
+                const transaction = db.transaction(['pdf_work'], 'readwrite');
+                transaction.objectStore('pdf_work').delete('modifiedPreviewBytes');
+            });
+        }
+    }, [modifiedPreviewBytes]);
+
+    const [downloadFilename, setDownloadFilename] = useState<string>(() => getPersistedState('pdf_editor_filename', ''));
     
     const [parties, setParties] = useState<any[]>([]);
-    const [selectedPartyId, setSelectedPartyId] = useState('');
+    const [selectedPartyId, setSelectedPartyId] = useState(() => getPersistedState('pdf_editor_party_id', ''));
     const [isPartyDropdownOpen, setIsPartyDropdownOpen] = useState(false);
     const [partySearchTerm, setPartySearchTerm] = useState('');
 
-    const [status, setStatus] = useState<{ message: string; percent?: number }>({ message: 'Upload a PDF to begin.' });
+    const [status, setStatus] = useState<{ message: string; percent?: number }>(() => getPersistedState('pdf_editor_status', { message: 'Upload a PDF to begin.' }));
     const [isLoading, setIsLoading] = useState(false);
     
     const [isManageModalOpen, setIsManageModalOpen] = useState(false);
@@ -312,6 +434,18 @@ const PartyNameChanger = ({ isMobile }) => {
     const originalCanvasRef = useRef<HTMLCanvasElement>(null);
     const modifiedCanvasRef = useRef<HTMLCanvasElement>(null);
     const partyDropdownRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        setPersistedState('pdf_editor_party_id', selectedPartyId);
+    }, [selectedPartyId]);
+
+    useEffect(() => {
+        setPersistedState('pdf_editor_status', status);
+    }, [status]);
+
+    useEffect(() => {
+        setPersistedState('pdf_editor_filename', downloadFilename);
+    }, [downloadFilename]);
 
     // --- Firebase Data Loading ---
     const loadAllParties = async () => {
@@ -862,8 +996,12 @@ const PartyNameChanger = ({ isMobile }) => {
 };
 
 export const PDFEditor = () => {
-    const [activeTab, setActiveTab] = useState('partyChange');
+    const [activeTab, setActiveTab] = useState(() => getPersistedState('pdf_editor_tab', 'partyChange'));
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+    useEffect(() => {
+        setPersistedState('pdf_editor_tab', activeTab);
+    }, [activeTab]);
 
     useEffect(() => {
         const handleResize = () => setIsMobile(window.innerWidth <= 768);

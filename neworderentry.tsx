@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
+import { getPersistedState, setPersistedState } from './persistence';
 import { sendWebPushNotification } from './webpushr';
 
 // --- Firebase & App Script Configuration ---
@@ -818,9 +819,9 @@ const SuccessModal = ({ isOpen, onClose, orderData, isEditMode }) => {
 };
 
 export const NewOrderEntry = ({ onNavigate }) => {
-  const [partyName, setPartyName] = useState('');
+  const [partyName, setPartyName] = useState(() => getPersistedState('new_order_party_name', ''));
   const [isPartyNameFocused, setIsPartyNameFocused] = useState(false);
-  const [items, setItems] = useState<OrderItem[]>([]);
+  const [items, setItems] = useState<OrderItem[]>(() => getPersistedState('new_order_items', []));
   const [allParties, setAllParties] = useState<string[]>([]);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isSuggestionsVisible, setIsSuggestionsVisible] = useState(false);
@@ -842,12 +843,25 @@ export const NewOrderEntry = ({ onNavigate }) => {
   const [isOrderConfirmationModalOpen, setIsOrderConfirmationModalOpen] = useState(false);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [finalizedOrder, setFinalizedOrder] = useState(null);
-  const [orderNote, setOrderNote] = useState('');
+  const [orderNote, setOrderNote] = useState(() => getPersistedState('new_order_note', ''));
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [orderToEdit, setOrderToEdit] = useState<Order | null>(null);
 
   const [confirmation, setConfirmation] = useState({ isOpen: false, isClosing: false, title: '', message: '', confirmText: 'Confirm', confirmColor: 'var(--brand-color)', onConfirm: () => {} });
+
+  // Save state to localStorage
+  useEffect(() => {
+    setPersistedState('new_order_party_name', partyName);
+  }, [partyName]);
+
+  useEffect(() => {
+    setPersistedState('new_order_items', items);
+  }, [items]);
+
+  useEffect(() => {
+    setPersistedState('new_order_note', orderNote);
+  }, [orderNote]);
 
   const showConfirmation = (title, message, onConfirm, confirmText, confirmColor) => {
     setConfirmation({ isOpen: true, isClosing: false, title, message, onConfirm, confirmText, confirmColor });

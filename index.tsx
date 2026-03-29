@@ -13,6 +13,7 @@ import { StockUpdation } from './stockupdation';
 import { GivenToParty } from './givetoparty';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
+import { getPersistedState, setPersistedState } from './persistence';
 
 
 // --- TOAST NOTIFICATION SYSTEM ---
@@ -1010,7 +1011,7 @@ const MainContent = React.forwardRef<HTMLElement, MainContentProps>(
 
 // --- HOMEPAGE WRAPPER ---
 const HomePage = ({ session, onLogout, appLogoSrc, updateUserProfile }) => {
-    const [activeView, setActiveView] = useState('Dashboard');
+    const [activeView, setActiveView] = useState(() => getPersistedState('ka_oms_active_view', 'Dashboard'));
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
@@ -1019,6 +1020,30 @@ const HomePage = ({ session, onLogout, appLogoSrc, updateUserProfile }) => {
     const showToast = useToast();
     const sidebarRef = useRef(null);
     const mainContentRef = useRef<HTMLElement | null>(null);
+
+    // PERSISTENCE LOGIC
+    useEffect(() => {
+        setPersistedState('ka_oms_active_view', activeView);
+        localStorage.setItem('ka_oms_last_seen', Date.now().toString());
+    }, [activeView]);
+
+    useEffect(() => {
+        const updateLastSeen = () => {
+            localStorage.setItem('ka_oms_last_seen', Date.now().toString());
+        };
+
+        window.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden') {
+                updateLastSeen();
+            }
+        });
+        window.addEventListener('beforeunload', updateLastSeen);
+
+        return () => {
+            window.removeEventListener('visibilitychange', updateLastSeen);
+            window.removeEventListener('beforeunload', updateLastSeen);
+        };
+    }, []);
     
     const pages = {
         'Dashboard': 'Dashboard', 'Entry': 'New Order Entry', 'Messaging': 'Messaging', 'Pending': 'Pending Orders', 'Billing': 'Ready for Billing', 'Billed': 'Billed Orders (Archive)',

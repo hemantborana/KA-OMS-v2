@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useMemo, useRef, useLayoutEffect } from 'react';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
+import { getPersistedState, setPersistedState } from './persistence';
 
 // --- ICONS ---
 const SearchIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>;
@@ -245,11 +246,24 @@ export const BilledOrders = () => {
     const [orders, setOrders] = useState<Order[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
-    const [searchTerm, setSearchTerm] = useState('');
-    const [dateFilter, setDateFilter] = useState('all');
-    const [view, setView] = useState('order'); // Default to order view
+    const [searchTerm, setSearchTerm] = useState(() => getPersistedState('billed_orders_search', ''));
+    const [dateFilter, setDateFilter] = useState(() => getPersistedState('billed_orders_date_filter', 'all'));
+    const [view, setView] = useState(() => getPersistedState('billed_orders_view', 'order')); // Default to order view
     const [isSearchFocused, setIsSearchFocused] = useState(false);
     const [expandedOrders, setExpandedOrders] = useState(new Set<string>());
+
+    // Save state to localStorage
+    useEffect(() => {
+        setPersistedState('billed_orders_search', searchTerm);
+    }, [searchTerm]);
+
+    useEffect(() => {
+        setPersistedState('billed_orders_date_filter', dateFilter);
+    }, [dateFilter]);
+
+    useEffect(() => {
+        setPersistedState('billed_orders_view', view);
+    }, [view]);
     
     const filterPillsRef = useRef(null);
     const pillRefs = useRef({});

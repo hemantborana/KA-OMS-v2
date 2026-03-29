@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect } from 'react';
+import { getPersistedState, setPersistedState } from './persistence';
 
 // --- ICONS ---
 const SearchIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>;
@@ -329,13 +330,25 @@ export const StockOverview = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [isSyncing, setIsSyncing] = useState(false);
     const [error, setError] = useState('');
-    const [searchTerm, setSearchTerm] = useState('');
-    const [view, setView] = useState('card');
-    const [sortConfigs, setSortConfigs] = useState([{ key: 'style', direction: 'ascending' }]);
+    const [searchTerm, setSearchTerm] = useState(() => getPersistedState('stock_overview_search', ''));
+    const [view, setView] = useState(() => getPersistedState('stock_overview_view', 'card'));
+    const [sortConfigs, setSortConfigs] = useState(() => getPersistedState('stock_overview_sort', [{ key: 'style', direction: 'ascending' }]));
     const [popoverState, setPopoverState] = useState({ visible: false, target: null, sortKey: null, isClosing: false });
     const [isSearchFocused, setIsSearchFocused] = useState(false);
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
     const tableContainerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        setPersistedState('stock_overview_search', searchTerm);
+    }, [searchTerm]);
+
+    useEffect(() => {
+        setPersistedState('stock_overview_view', view);
+    }, [view]);
+
+    useEffect(() => {
+        setPersistedState('stock_overview_sort', sortConfigs);
+    }, [sortConfigs]);
 
     useEffect(() => {
         const handleResize = () => setIsMobile(window.innerWidth <= 768);

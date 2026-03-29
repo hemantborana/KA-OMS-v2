@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { getPersistedState, setPersistedState } from './persistence';
 
 // SCRIPT URL
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwrXxhHNWtz6a5bNCNNP2xvZorw6SC56neUCmsxVq54b4M8M7XvLUqL092zD054FW1w/exec';
@@ -194,8 +195,12 @@ export const UserManagement = ({ session }) => {
     const [users, setUsers] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
-    const [searchTerm, setSearchTerm] = useState('');
+    const [searchTerm, setSearchTerm] = useState(() => getPersistedState('user_management_search', ''));
     const [isSearchFocused, setIsSearchFocused] = useState(false);
+
+    useEffect(() => {
+        setPersistedState('user_management_search', searchTerm);
+    }, [searchTerm]);
     const [modalState, setModalState] = useState({ isOpen: false, isClosing: false, user: null });
     const [sendingLoginFor, setSendingLoginFor] = useState(null);
     const [confirmSendState, setConfirmSendState] = useState({ isOpen: false, isClosing: false, user: null as any | null });

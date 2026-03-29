@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
 import { ExportMatching } from './exportmatching';
+import { getPersistedState, setPersistedState } from './persistence';
 
 // --- ICONS ---
 const SearchIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>;
@@ -1131,9 +1132,9 @@ export const PendingOrders = ({ onNavigate }) => {
     const [stockData, setStockData] = useState<Record<string, number>>({});
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
-    const [searchTerm, setSearchTerm] = useState('');
-    const [view, setView] = useState('summarized');
-    const [sortConfig, setSortConfig] = useState({ key: 'timestamp', direction: 'descending' });
+    const [searchTerm, setSearchTerm] = useState(() => getPersistedState('pending_orders_search', ''));
+    const [view, setView] = useState(() => getPersistedState('pending_orders_view', 'summarized'));
+    const [sortConfig, setSortConfig] = useState(() => getPersistedState('pending_orders_sort', { key: 'timestamp', direction: 'descending' }));
     const [expandedOrderNumber, setExpandedOrderNumber] = useState<string | null>(null);
     const [processingOrder, setProcessingOrder] = useState<string | null>(null);
     const [processingQty, setProcessingQty] = useState<Record<string, number>>({});
@@ -1141,6 +1142,18 @@ export const PendingOrders = ({ onNavigate }) => {
     const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
     const [isFilterVisible, setIsFilterVisible] = useState(false);
     const [activeTagFilter, setActiveTagFilter] = useState<string | null>(null);
+
+    useEffect(() => {
+        setPersistedState('pending_orders_search', searchTerm);
+    }, [searchTerm]);
+
+    useEffect(() => {
+        setPersistedState('pending_orders_view', view);
+    }, [view]);
+
+    useEffect(() => {
+        setPersistedState('pending_orders_sort', sortConfig);
+    }, [sortConfig]);
     
     const [collapsedSummarized, setCollapsedSummarized] = useState<Record<string, boolean>>({});
     const [expandedDetailed, setExpandedDetailed] = useState<string | null>(null);

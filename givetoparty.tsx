@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
+import { getPersistedState, setPersistedState } from './persistence';
 
 // --- ICONS ---
 const PlusIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>;
@@ -56,10 +57,19 @@ const formatCurrency = (value) => new Intl.NumberFormat('en-IN', { style: 'curre
 
 // Main component managing both List and Entry views
 export const GivenToParty = ({ onNavigate }) => {
-    const [view, setView] = useState('list'); // 'list' or 'entry'
+    const [view, setView] = useState(() => getPersistedState('given_to_party_view', 'list')); // 'list' or 'entry'
     const [isLoading, setIsLoading] = useState(true);
     const [entries, setEntries] = useState([]);
-    const [searchTerm, setSearchTerm] = useState('');
+    const [searchTerm, setSearchTerm] = useState(() => getPersistedState('given_to_party_search', ''));
+
+    // Save state to localStorage
+    useEffect(() => {
+        setPersistedState('given_to_party_view', view);
+    }, [view]);
+
+    useEffect(() => {
+        setPersistedState('given_to_party_search', searchTerm);
+    }, [searchTerm]);
 
     useEffect(() => {
         const entriesRef = firebase.database().ref(GIVEN_TO_PARTY_REF);
@@ -164,9 +174,18 @@ const PartyGroup = ({ partyName, entries }) => {
 
 
 const GivenToPartyEntry = ({ onExit }) => {
-    const [partyName, setPartyName] = useState('');
-    const [items, setItems] = useState([]);
+    const [partyName, setPartyName] = useState(() => getPersistedState('given_to_party_entry_party', ''));
+    const [items, setItems] = useState(() => getPersistedState('given_to_party_entry_items', []));
     const [barcode, setBarcode] = useState('');
+
+    // Save state to localStorage
+    useEffect(() => {
+        setPersistedState('given_to_party_entry_party', partyName);
+    }, [partyName]);
+
+    useEffect(() => {
+        setPersistedState('given_to_party_entry_items', items);
+    }, [items]);
     
     const [masterItems, setMasterItems] = useState(null);
     const [isLoadingCatalog, setIsLoadingCatalog] = useState(true);

@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect } from 'react';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
+import { getPersistedState, setPersistedState } from './persistence';
 
 // --- ICONS ---
 const SearchIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>;
@@ -581,12 +582,24 @@ export const ReadyForBilling = () => {
     const [orders, setOrders] = useState<Order[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
-    const [searchTerm, setSearchTerm] = useState('');
-    const [dateFilter, setDateFilter] = useState('all');
-    const [billedQtys, setBilledQtys] = useState<Record<string, Record<string, number>>>({});
+    const [searchTerm, setSearchTerm] = useState(() => getPersistedState('ready_billing_search', ''));
+    const [dateFilter, setDateFilter] = useState(() => getPersistedState('ready_billing_date', 'all'));
+    const [billedQtys, setBilledQtys] = useState<Record<string, Record<string, number>>>(() => getPersistedState('ready_billing_qtys', {}));
     const [processingOrders, setProcessingOrders] = useState<string[]>([]);
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
     const [isSearchFocused, setIsSearchFocused] = useState(false);
+
+    useEffect(() => {
+        setPersistedState('ready_billing_search', searchTerm);
+    }, [searchTerm]);
+
+    useEffect(() => {
+        setPersistedState('ready_billing_date', dateFilter);
+    }, [dateFilter]);
+
+    useEffect(() => {
+        setPersistedState('ready_billing_qtys', billedQtys);
+    }, [billedQtys]);
     
     const filterPillsRef = useRef(null);
     const pillRefs = useRef({});

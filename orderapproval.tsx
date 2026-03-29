@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
+import { getPersistedState, setPersistedState } from './persistence';
 
 // --- ICONS ---
 const SearchIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>;
@@ -235,9 +236,13 @@ export const OrderApproval = ({ session }) => {
     const [orders, setOrders] = useState<UnapprovedOrder[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
-    const [searchTerm, setSearchTerm] = useState('');
+    const [searchTerm, setSearchTerm] = useState(() => getPersistedState('order_approval_search', ''));
     const [isSearchFocused, setIsSearchFocused] = useState(false);
     const [processingOrder, setProcessingOrder] = useState<string | null>(null);
+
+    useEffect(() => {
+        setPersistedState('order_approval_search', searchTerm);
+    }, [searchTerm]);
     const [rejectionModalState, setRejectionModalState] = useState({ isOpen: false, isClosing: false, order: null as UnapprovedOrder | null });
     const [approvalModalState, setApprovalModalState] = useState({ isOpen: false, isClosing: false, order: null as UnapprovedOrder | null });
     const [isCatalogReady, setIsCatalogReady] = useState(false);
