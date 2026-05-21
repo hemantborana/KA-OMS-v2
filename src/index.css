@@ -1,0 +1,47 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    background-color: #0f172a; /* Slate 900 */
+    color: #f1f5f9; /* Slate 100 */
+    font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1e293b;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+/* Pulsing rings, animations, custom designs */
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 12px rgba(99, 102, 241, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 24px rgba(99, 102, 241, 0.8), 0 0 8px rgba(99, 102, 241, 0.4);
+  }
+}
+
+.sticky-bill-glow {
+  animation: pulseGlow 2s infinite ease-in-out;
+}
+
+.note-highlight {
+  background: linear-gradient(135deg, rgba(234, 179, 8, 0.15) 0%, rgba(234, 179, 8, 0.05) 100%);
+  border-left: 3px solid #eab308;
+}
