@@ -36,7 +36,7 @@ const CartIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height
 
 // --- TYPE & FIREBASE ---
 interface HistoryEvent { timestamp: string; event: string; details: string; }
-interface OrderItem { id: string; quantity: number; price: number; fullItemData: Record<string, any>; }
+interface OrderItem { id: string; quantity: number; price: number; fullItemData: Record<string, any>; itemNote?: string; }
 interface Order { orderNumber: string; partyName: string; timestamp: string; totalQuantity: number; totalValue: number; orderNote?: string; items: OrderItem[]; history?: HistoryEvent[]; tags?: string[]; lastExported?: string; }
 interface SummarizedData { [partyName: string]: { orderCount: number; orders: Order[]; } }
 interface Parties { [partyName: string]: number; }
@@ -579,25 +579,48 @@ const ExpandedPendingView: React.FC<{ order: Order, onProcess, onDelete, isProce
                         }
 
                         return (
-                            <tr key={item.id} style={rowStyle}>
-                                <td style={{...styles.td, textAlign: 'left'}}>{item.fullItemData.Style}</td>
-                                <td style={{...styles.td, textAlign: 'left'}}>{item.fullItemData.Color}</td>
-                                <td style={{...styles.td, textAlign: 'left'}}>{item.fullItemData.Size}</td>
-                                <td style={{...styles.td, textAlign: 'center'}}>
-                                    <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px'}}>
-                                        <StockIndicator stockLevel={stockLevel} />
-                                        <span style={{fontSize: '0.8rem', color: 'var(--text-color)'}}>{stockLevel}</span>
-                                    </div>
-                                </td>
-                                <td style={{...styles.td, textAlign: 'right'}}>{item.quantity}</td>
-                                <td style={{...styles.td, ...styles.tdInput}}>
-                                    <ProcessQuantityControl
-                                        value={processingQty[item.id] || ''}
-                                        max={item.quantity}
-                                        onUpdate={(newValue) => onQtyChange(item.id, newValue, item.quantity)}
-                                    />
-                                </td>
-                            </tr>
+                            <React.Fragment key={item.id}>
+                                <tr style={rowStyle}>
+                                    <td style={{...styles.td, textAlign: 'left'}}>{item.fullItemData.Style}</td>
+                                    <td style={{...styles.td, textAlign: 'left'}}>{item.fullItemData.Color}</td>
+                                    <td style={{...styles.td, textAlign: 'left'}}>{item.fullItemData.Size}</td>
+                                    <td style={{...styles.td, textAlign: 'center'}}>
+                                        <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px'}}>
+                                            <StockIndicator stockLevel={stockLevel} />
+                                            <span style={{fontSize: '0.8rem', color: 'var(--text-color)'}}>{stockLevel}</span>
+                                        </div>
+                                    </td>
+                                    <td style={{...styles.td, textAlign: 'right'}}>{item.quantity}</td>
+                                    <td style={{...styles.td, ...styles.tdInput}}>
+                                        <ProcessQuantityControl
+                                            value={processingQty[item.id] || ''}
+                                            max={item.quantity}
+                                            onUpdate={(newValue) => onQtyChange(item.id, newValue, item.quantity)}
+                                        />
+                                    </td>
+                                </tr>
+                                {item.itemNote && (
+                                    <tr style={{ backgroundColor: rowStyle.backgroundColor }}>
+                                        <td colSpan={6} style={{ padding: '0px 10px 6px 10px', textAlign: 'left' }}>
+                                            <div style={{
+                                                backgroundColor: 'rgba(255, 204, 0, 0.15)',
+                                                borderLeft: '4px solid var(--orange)',
+                                                borderRadius: '4px',
+                                                padding: '4px 8px',
+                                                fontSize: '0.8rem',
+                                                color: 'var(--orange)',
+                                                fontWeight: 600,
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: '6px'
+                                            }}>
+                                                <NoteIcon style={{ color: 'var(--orange)' }} />
+                                                Note: {item.itemNote}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                )}
+                            </React.Fragment>
                         );
                     })}
                 </tbody>
@@ -610,23 +633,43 @@ const ExpandedPendingView: React.FC<{ order: Order, onProcess, onDelete, isProce
             {sortedItems.map(item => {
                 const stockKey = `${normalizeKeyPart(item.fullItemData.Style)}-${normalizeKeyPart(item.fullItemData.Color)}-${normalizeKeyPart(item.fullItemData.Size)}`;
                 return (
-                    <div key={item.id} style={styles.mobileItemCard}>
-                        <div style={styles.mobileItemInfo}>
-                            <div style={styles.mobileItemName}>{item.fullItemData.Style} - {item.fullItemData.Color} - <strong>{item.fullItemData.Size}</strong></div>
-                            <div style={styles.mobileItemStock}>
-                                <StockIndicator stockLevel={stockData[stockKey]} />
-                                <span style={{fontSize: '0.8rem', color: 'var(--dark-grey)'}}>Stock: {stockData[stockKey] ?? 0}</span>
+                    <div key={item.id} style={{ ...styles.mobileItemCard, flexDirection: 'column', alignItems: 'stretch', padding: '0.75rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', width: '100%' }}>
+                            <div style={styles.mobileItemInfo}>
+                                <div style={styles.mobileItemName}>{item.fullItemData.Style} - {item.fullItemData.Color} - <strong>{item.fullItemData.Size}</strong></div>
+                                <div style={styles.mobileItemStock}>
+                                    <StockIndicator stockLevel={stockData[stockKey]} />
+                                    <span style={{fontSize: '0.8rem', color: 'var(--dark-grey)'}}>Stock: {stockData[stockKey] ?? 0}</span>
+                                </div>
+                            </div>
+                            <div style={styles.mobileItemQty}>
+                                <div style={styles.mobileQtyLabel}>Ord: {item.quantity}</div>
+                                 <ProcessQuantityControl
+                                    value={processingQty[item.id] || ''}
+                                    max={item.quantity}
+                                    onUpdate={(newValue) => onQtyChange(item.id, newValue, item.quantity)}
+                                    size="small"
+                                 />
                             </div>
                         </div>
-                        <div style={styles.mobileItemQty}>
-                            <div style={styles.mobileQtyLabel}>Ord: {item.quantity}</div>
-                             <ProcessQuantityControl
-                                value={processingQty[item.id] || ''}
-                                max={item.quantity}
-                                onUpdate={(newValue) => onQtyChange(item.id, newValue, item.quantity)}
-                                size="small"
-                             />
-                        </div>
+                        {item.itemNote && (
+                            <div style={{
+                                backgroundColor: 'rgba(255, 204, 0, 0.15)',
+                                borderLeft: '4px solid var(--orange)',
+                                borderRadius: '4px',
+                                padding: '4px 8px',
+                                fontSize: '0.8rem',
+                                color: 'var(--orange)',
+                                fontWeight: 600,
+                                marginTop: '6px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px'
+                            }}>
+                                <NoteIcon style={{ color: 'var(--orange)' }} />
+                                Note: {item.itemNote}
+                            </div>
+                        )}
                     </div>
                 )
             })}
@@ -1127,6 +1170,75 @@ const DeleteConfirmationModal = ({ state, setState, onConfirm }) => {
     );
 };
 
+const DirectBillingModal = ({ isOpen, onClose, order, processingQty, onConfirm, isProcessing }) => {
+    const [isClosing, setIsClosing] = useState(false);
+
+    const handleClose = () => {
+        if (isProcessing) return;
+        setIsClosing(true);
+        setTimeout(() => {
+            onClose();
+            setIsClosing(false);
+        }, 300);
+    };
+
+    if (!isOpen || !order) return null;
+
+    const billedItems = order.items.filter(item => (processingQty[item.id] || 0) > 0);
+    const totalBilledPcs = billedItems.reduce((sum, item) => sum + (processingQty[item.id] || 0), 0);
+
+    return (
+        <div style={{...styles.modalOverlay, zIndex: 11000, animation: isClosing ? 'overlayOut 0.3s forwards' : 'overlayIn 0.3s forwards', opacity: 1}} onClick={handleClose}>
+            <div style={{...styles.modalContent, maxWidth: '500px', animation: isClosing ? 'modalOut 0.3s forwards' : 'modalIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards', opacity: 1}} onClick={(e) => e.stopPropagation()}>
+                <h3 style={{...styles.modalTitle, textAlign: 'center', marginBottom: '0.5rem', fontSize: '1.2rem'}}>Confirm Direct Billing</h3>
+                <p style={{...styles.modalSubtitleText, textAlign: 'center', marginBottom: '1rem'}}>
+                    You are billing <strong>{totalBilledPcs}</strong> items for <strong>{order.partyName}</strong> (Order #{order.orderNumber}). Please review the quantities below:
+                </p>
+                <div style={{
+                    maxHeight: '250px',
+                    overflowY: 'auto',
+                    border: '1px solid var(--separator-color)',
+                    borderRadius: '8px',
+                    padding: '0.5rem',
+                    backgroundColor: 'var(--light-grey)',
+                    marginBottom: '1rem'
+                }}>
+                    <table style={{width: '100%', borderCollapse: 'collapse'}}>
+                        <thead>
+                            <tr style={{borderBottom: '1px solid var(--separator-color)'}}>
+                                <th style={{textAlign: 'left', padding: '6px', fontSize: '0.8rem', color: 'var(--text-color)'}}>Item</th>
+                                <th style={{textAlign: 'center', padding: '6px', fontSize: '0.8rem', color: 'var(--text-color)'}}>Size</th>
+                                <th style={{textAlign: 'right', padding: '6px', fontSize: '0.8rem', color: 'var(--text-color)'}}>Bill Qty</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {billedItems.map((item, idx) => (
+                                <tr key={item.id} style={{borderBottom: idx === billedItems.length - 1 ? 'none' : '1px solid rgba(0,0,0,0.05)'}}>
+                                    <td style={{padding: '8px 6px', fontSize: '0.85rem', color: 'var(--dark-grey)', fontWeight: 500}}>
+                                        {item.fullItemData?.Style} - {item.fullItemData?.Color}
+                                    </td>
+                                    <td style={{padding: '8px 6px', textAlign: 'center', fontSize: '0.85rem', color: 'var(--dark-grey)'}}>
+                                        {item.fullItemData?.Size}
+                                    </td>
+                                    <td style={{padding: '8px 6px', textAlign: 'right', fontSize: '0.85rem', color: 'var(--brand-color)', fontWeight: 600}}>
+                                        {processingQty[item.id]} / {item.quantity}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+                <div style={styles.iosModalActions}>
+                    <button onClick={handleClose} style={styles.iosModalButtonSecondary} disabled={isProcessing}>Cancel</button>
+                    <button onClick={onConfirm} style={{...styles.iosModalButtonPrimary, color: 'var(--green)'}} disabled={isProcessing}>
+                        {isProcessing ? <SmallSpinner /> : 'Direct Bill'}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 export const PendingOrders = ({ onNavigate }) => {
     const [orders, setOrders] = useState<Order[]>([]);
     const [stockData, setStockData] = useState<Record<string, number>>({});
@@ -1174,6 +1286,7 @@ export const PendingOrders = ({ onNavigate }) => {
     const [isExportModalOpen, setIsExportModalOpen] = useState(false);
     const [ordersToExport, setOrdersToExport] = useState<Order[]>([]);
     const [isSearchFocused, setIsSearchFocused] = useState(false);
+    const [isDirectBillModalOpen, setIsDirectBillModalOpen] = useState(false);
     
     const sortPillsRef = useRef(null);
     const pillRefs = useRef({});
@@ -1181,6 +1294,19 @@ export const PendingOrders = ({ onNavigate }) => {
 
 
     const isSelectionMode = selectedOrders.length > 0;
+
+    const currentlyActiveOrder = useMemo(() => {
+        if (isMobile) {
+            return orders.find(o => o.orderNumber === expandedDetailed) || null;
+        } else {
+            return activeOrder;
+        }
+    }, [isMobile, orders, expandedDetailed, activeOrder]);
+
+    const totalPiecesToBill = useMemo(() => {
+        if (!currentlyActiveOrder) return 0;
+        return currentlyActiveOrder.items.reduce((sum, item) => sum + (processingQty[item.id] || 0), 0);
+    }, [currentlyActiveOrder, processingQty]);
 
     // --- Data Fetching and Management ---
     useEffect(() => {
@@ -2076,6 +2202,59 @@ export const PendingOrders = ({ onNavigate }) => {
                 </div>
             )}
             {isMobile ? renderMobileLayout() : renderDesktopLayout()}
+
+            {createPortal(
+                <DirectBillingModal
+                    isOpen={isDirectBillModalOpen}
+                    onClose={() => setIsDirectBillModalOpen(false)}
+                    order={currentlyActiveOrder}
+                    processingQty={processingQty}
+                    onConfirm={() => {
+                        if (currentlyActiveOrder) {
+                            handleProcessOrder(currentlyActiveOrder, processingQty);
+                            setIsDirectBillModalOpen(false);
+                        }
+                    }}
+                    isProcessing={processingOrder === currentlyActiveOrder?.orderNumber}
+                />,
+                document.body
+            )}
+
+            {currentlyActiveOrder && totalPiecesToBill > 0 && (
+                <div style={{
+                    position: 'fixed',
+                    bottom: isMobile ? '80px' : '30px',
+                    right: isMobile ? '20px' : '30px',
+                    zIndex: 9999,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px'
+                }}>
+                    <button
+                        onClick={() => setIsDirectBillModalOpen(true)}
+                        style={{
+                            backgroundColor: 'var(--green)',
+                            color: '#fff',
+                            border: 'none',
+                            borderRadius: '30px',
+                            padding: '12px 24px',
+                            fontWeight: 600,
+                            fontSize: '0.95rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            boxShadow: '0 4px 15px rgba(46, 204, 113, 0.4)',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                        }}
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        Bill {totalPiecesToBill} PCs
+                    </button>
+                </div>
+            )}
         </div>
     );
 };

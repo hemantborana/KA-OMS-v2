@@ -17,6 +17,7 @@ interface OrderItem {
   quantity: number;
   price: number;
   fullItemData: Record<string, any>;
+  itemNote?: string;
 }
 
 interface Draft {
@@ -267,7 +268,7 @@ const StyleMatrix = ({ style, catalogData, orderItems, onQuantityChange, isMobil
   );
 };
 
-const CartDetailModal = ({ group, items, onClose, onQuantityChange }) => {
+const CartDetailModal = ({ group, items, onClose, onQuantityChange, onItemNoteChange }) => {
   const [isClosing, setIsClosing] = useState(false);
   const [deletingItemIds, setDeletingItemIds] = useState<string[]>([]);
 
@@ -300,15 +301,34 @@ const CartDetailModal = ({ group, items, onClose, onQuantityChange }) => {
           {items.sort((a,b) => a.fullItemData.Size.localeCompare(b.fullItemData.Size, undefined, {numeric: true})).map(item => (
             <div
               key={item.id}
-              style={styles.cartItem}
+              style={{...styles.cartItem, flexDirection: 'column', alignItems: 'stretch', gap: '6px'}}
               className={deletingItemIds.includes(item.id) ? 'cart-item-deleting' : ''}
               onAnimationEnd={() => handleAnimationEnd(item.id, item.fullItemData)}
             >
-              <div style={styles.cartItemInfo}> <div style={styles.cartItemDetails}>{`Size: ${item.fullItemData.Size}`}</div> <div style={styles.cartItemSubDetails}>{formatCurrency(item.price)}</div> </div>
-              <div style={styles.cartItemActions}>
-                <QuantityControl value={item.quantity} onChange={(value) => onQuantityChange(item.fullItemData, value)} onStep={(step) => handleQuantityStep(item, item.quantity, step)} size="small" />
-                <button onClick={() => startDeleteItem(item.id)} style={{...styles.cartItemRemoveBtn, color: 'var(--red)'}} aria-label="Remove item"> <TrashIcon /> </button>
+              <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%'}}>
+                <div style={styles.cartItemInfo}> <div style={styles.cartItemDetails}>{`Size: ${item.fullItemData.Size}`}</div> <div style={styles.cartItemSubDetails}>{formatCurrency(item.price)}</div> </div>
+                <div style={styles.cartItemActions}>
+                  <QuantityControl value={item.quantity} onChange={(value) => onQuantityChange(item.fullItemData, value)} onStep={(step) => handleQuantityStep(item, item.quantity, step)} size="small" />
+                  <button onClick={() => startDeleteItem(item.id)} style={{...styles.cartItemRemoveBtn, color: 'var(--red)'}} aria-label="Remove item"> <TrashIcon /> </button>
+                </div>
               </div>
+              <input 
+                type="text"
+                placeholder="Add item note (e.g. urgent, custom wash)..."
+                value={item.itemNote || ''}
+                onChange={(e) => onItemNoteChange(item.id, e.target.value)}
+                style={{
+                  fontSize: '0.8rem',
+                  padding: '6px 12px',
+                  borderRadius: '6px',
+                  border: '1px solid var(--skeleton-bg)',
+                  marginTop: '2px',
+                  backgroundColor: 'var(--card-bg)',
+                  color: 'var(--dark-grey)',
+                  outline: 'none',
+                  width: '100%',
+                }}
+              />
             </div>
           ))}
         </div>
@@ -873,6 +893,7 @@ export const NewOrderEntry = ({ onNavigate }) => {
         size: item.fullItemData.Size, barcode: item.fullItemData.Barcode,
         quantity: item.quantity, mrp: item.price,
         itemTotal: item.quantity * item.price,
+        itemNote: item.itemNote || '',
       }))
     };
 
@@ -1023,6 +1044,18 @@ export const NewOrderEntry = ({ onNavigate }) => {
         if (existingItemIndex > -1) { const newItems = [...currentItems]; newItems[existingItemIndex] = { ...newItems[existingItemIndex], quantity: quantity }; return newItems; }
         else { const price = parseFloat(String(fullItemData.MRP).replace(/[^0-9.-]+/g, "")) || 0; const newItem: OrderItem = { id: barcode, quantity: quantity, price: price, fullItemData: fullItemData, }; return [...currentItems, newItem]; }
       } else { if (existingItemIndex > -1) return currentItems.filter(item => item.fullItemData.Barcode !== barcode); }
+      return currentItems;
+    });
+  };
+
+  const handleItemNoteChange = (itemId, noteStr) => {
+    setItems(currentItems => {
+      const idx = currentItems.findIndex(item => item.id === itemId);
+      if (idx > -1) {
+        const newItems = [...currentItems];
+        newItems[idx] = { ...newItems[idx], itemNote: noteStr };
+        return newItems;
+      }
       return currentItems;
     });
   };
@@ -1231,7 +1264,7 @@ export const NewOrderEntry = ({ onNavigate }) => {
         </div>
       )}
 
-      {editingCartGroup && ( <CartDetailModal group={editingCartGroup} items={items.filter(item => item.fullItemData.Style === editingCartGroup.style && item.fullItemData.Color === editingCartGroup.color)} onClose={() => setEditingCartGroup(null)} onQuantityChange={handleQuantityChange} /> )}
+      {editingCartGroup && ( <CartDetailModal group={editingCartGroup} items={items.filter(item => item.fullItemData.Style === editingCartGroup.style && item.fullItemData.Color === editingCartGroup.color)} onClose={() => setEditingCartGroup(null)} onQuantityChange={handleQuantityChange} onItemNoteChange={handleItemNoteChange} /> )}
     </div>
   );
 };

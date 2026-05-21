@@ -218,9 +218,10 @@ interface ExpandedBillingViewProps {
     onMatchAll: (order: Order, clear?: boolean) => void;
     isMobile: boolean;
     onOpenNoteModal: (order: Order) => void;
+    onDeleteOrder?: (order: Order) => void;
 }
 
-const ExpandedBillingView: React.FC<ExpandedBillingViewProps> = ({ order, billedQty, onQtyChange, onMarkBilled, isProcessing, onMatchAll, isMobile, onOpenNoteModal }) => {
+const ExpandedBillingView: React.FC<ExpandedBillingViewProps> = ({ order, billedQty, onQtyChange, onMarkBilled, isProcessing, onMatchAll, isMobile, onOpenNoteModal, onDeleteOrder }) => {
     const [isHistoryCollapsed, setIsHistoryCollapsed] = useState(true);
     const isFullyMatched = useMemo(() => {
         if (!billedQty) return false;
@@ -414,9 +415,41 @@ const ExpandedBillingView: React.FC<ExpandedBillingViewProps> = ({ order, billed
 
     return (
         <div style={styles.orderWrapper}>
+            <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '0.75rem 1rem',
+                borderBottom: '1px solid var(--separator-color)',
+                backgroundColor: 'rgba(0,0,0,0.02)'
+            }}>
+                <div style={{ fontWeight: 600, color: 'var(--brand-color)', fontSize: '0.95rem' }}>
+                    Order #{order.orderNumber}
+                </div>
+                {onDeleteOrder && (
+                    <button
+                        onClick={() => onDeleteOrder(order)}
+                        style={{
+                            background: 'rgba(255, 59, 48, 0.1)',
+                            border: 'none',
+                            color: 'var(--red)',
+                            borderRadius: '15px',
+                            padding: '6px 14px',
+                            fontSize: '0.8rem',
+                            fontWeight: 650,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '5px',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                        }}
+                    >
+                        <TrashIcon /> Delete Order
+                    </button>
+                )}
+            </div>
             <div style={{ ...styles.expandedSummary, padding: isMobile ? '0.75rem' : '1rem' }}>
                 <div style={{display: 'none'}}><strong>Party:</strong> {order.partyName}</div>
-                <div><strong>Order #:</strong> {order.orderNumber}</div>
                 <div><strong>Original Order Date:</strong> {formatDate(order.timestamp)}</div>
                 <div><strong>Processed Date:</strong> {formatDate(order.processedDate)}</div>
                 <div><strong>Ready Qty:</strong> {order.totalQuantity}</div>
@@ -516,7 +549,8 @@ const PartyGroup: React.FC<{
     onPartyExpand: (orders: Order[]) => void;
     isMobile: boolean;
     onOpenNoteModal: (order: Order) => void;
-}> = ({ partyName, data, billedQtys, processingOrders, onQtyChange, onMarkBilled, onMatchAll, onPartyExpand, isMobile, onOpenNoteModal }) => {
+    onDeleteOrder: (order: Order) => void;
+}> = ({ partyName, data, billedQtys, processingOrders, onQtyChange, onMarkBilled, onMatchAll, onPartyExpand, isMobile, onOpenNoteModal, onDeleteOrder }) => {
     const [isCollapsed, setIsCollapsed] = useState(true);
     const totalQty = data.orders.reduce((sum, order) => sum + order.totalQuantity, 0);
 
@@ -569,6 +603,7 @@ const PartyGroup: React.FC<{
                                 onMatchAll={onMatchAll}
                                 isMobile={isMobile}
                                 onOpenNoteModal={onOpenNoteModal}
+                                onDeleteOrder={onDeleteOrder}
                             />
                         ))}
                     </div>
@@ -633,6 +668,29 @@ export const ReadyForBilling = () => {
         
         setIsNoteModalOpen(false);
         setOrderForNewNote(null);
+    };
+
+    const handleDeleteOrder = async (order: Order) => {
+        if (!window.confirm(`Are you sure you want to delete order #${order.orderNumber} from Ready for Billing completely?`)) {
+            return;
+        }
+        try {
+            setProcessingOrders(prev => [...prev, order.billingOrderKey]);
+            await firebase.database().ref(`${BILLING_ORDERS_REF}/${order.billingOrderKey}`).remove();
+            
+            // Clean up billedQty state
+            setBilledQtys(prev => {
+                const newQtys = { ...prev };
+                delete newQtys[order.billingOrderKey];
+                return newQtys;
+            });
+            showToast(`Order #${order.orderNumber} completely removed from Ready for Billing.`, 'success');
+        } catch (e) {
+            console.error("Failed to delete order from ready for billing", e);
+            showToast("Failed to delete order.", "error");
+        } finally {
+            setProcessingOrders(prev => prev.filter(key => key !== order.billingOrderKey));
+        }
     };
 
 
@@ -845,6 +903,7 @@ export const ReadyForBilling = () => {
                         onPartyExpand={handlePartyExpand}
                         isMobile={isMobile}
                         onOpenNoteModal={handleOpenNoteModal}
+                        onDeleteOrder={handleDeleteOrder}
                     />
                 ))}
             </div>
