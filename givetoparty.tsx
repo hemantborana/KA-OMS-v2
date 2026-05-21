@@ -138,7 +138,7 @@ export const GivenToParty = ({ onNavigate }) => {
     );
 };
 
-const PartyGroup = ({ partyName, entries }) => {
+const PartyGroup: React.FC<{ partyName: string; entries: any[] }> = ({ partyName, entries }) => {
     const [isCollapsed, setIsCollapsed] = useState(true);
     
     const summary = useMemo(() => {

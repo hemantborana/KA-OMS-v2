@@ -1269,7 +1269,7 @@ const KAOMSLogin = () => {
     const [emailFocused, setEmailFocused] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
     const [areImagesReady, setAreImagesReady] = useState(false);
-    const [appLogoSrc, setAppLogoSrc] = useState('');
+    const [appLogoSrc, setAppLogoSrc] = useState<string | null>(null);
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
     const [isPasswordStep, setIsPasswordStep] = useState(false);
     const [isShowingPassword, setIsShowingPassword] = useState(false);

@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect } from 'react';
 import { getPersistedState, setPersistedState } from './persistence';
+import { stockDb } from './db';
 
 // --- ICONS ---
 const SearchIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>;
@@ -12,74 +13,6 @@ const SortIcon = ({ direction }) => <svg style={{ width: 14, height: 14, opacity
 
 // --- CONFIGURATION ---
 const STOCK_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyY4ys2VzcsmslZj-vYieV1l-RRTp90eDMwcdANFZ3qecf8VRPgz-dNo46jqIqencqF/exec';
-
-// --- INDEXEDDB HELPER ---
-const DB_NAME = 'StockDataDB';
-const DB_VERSION = 4;
-const STOCK_STORE = 'stockItems';
-const METADATA_STORE = 'metadata';
-
-const stockDb = {
-    db: null,
-    init: function() {
-        return new Promise((resolve, reject) => {
-            if (this.db) return resolve(this.db);
-            const request = indexedDB.open(DB_NAME, DB_VERSION);
-            request.onupgradeneeded = (event) => {
-                const db = (event.target as IDBOpenDBRequest).result;
-                if (!db.objectStoreNames.contains(STOCK_STORE)) {
-                    db.createObjectStore(STOCK_STORE, { keyPath: 'id', autoIncrement: true });
-                }
-                if (!db.objectStoreNames.contains(METADATA_STORE)) {
-                    db.createObjectStore(METADATA_STORE, { keyPath: 'id' });
-                }
-            };
-            request.onsuccess = (event) => { this.db = (event.target as IDBOpenDBRequest).result; resolve(this.db); };
-            request.onerror = (event) => reject((event.target as IDBRequest).error);
-        });
-    },
-    clearAndAddStock: async function(items) {
-        const db = await this.init();
-        return new Promise((resolve, reject) => {
-            const transaction = db.transaction([STOCK_STORE], 'readwrite');
-            const store = transaction.objectStore(STOCK_STORE);
-            store.clear();
-            items.forEach(item => store.add(item));
-            transaction.oncomplete = () => resolve(true);
-            transaction.onerror = (event) => reject((event.target as IDBRequest).error);
-        });
-    },
-    getAllStock: async function() {
-        const db = await this.init();
-        return new Promise((resolve, reject) => {
-            const transaction = db.transaction([STOCK_STORE], 'readonly');
-            const store = transaction.objectStore(STOCK_STORE);
-            const request = store.getAll();
-            request.onsuccess = () => resolve(request.result);
-            request.onerror = (event) => reject((event.target as IDBRequest).error);
-        });
-    },
-    getMetadata: async function() {
-        const db = await this.init();
-        return new Promise((resolve, reject) => {
-            const transaction = db.transaction([METADATA_STORE], 'readonly');
-            const store = transaction.objectStore(METADATA_STORE);
-            const request = store.get('syncInfo');
-            request.onsuccess = () => resolve(request.result);
-            request.onerror = (event) => reject((event.target as IDBRequest).error);
-        });
-    },
-    setMetadata: async function(metadata) {
-        const db = await this.init();
-        return new Promise((resolve, reject) => {
-            const transaction = db.transaction([METADATA_STORE], 'readwrite');
-            const store = transaction.objectStore(METADATA_STORE);
-            store.put({ id: 'syncInfo', ...metadata });
-            transaction.oncomplete = () => resolve(true);
-            transaction.onerror = (event) => reject((event.target as IDBRequest).error);
-        });
-    }
-};
 
 // --- HELPER FUNCTIONS ---
 const showToast = (message: string, type: 'info' | 'success' | 'error' = 'info') => {
