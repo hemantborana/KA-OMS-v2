@@ -1,0 +1,157 @@
+// --- IMPORTANT SETUP ---
+// To run this script, you MUST enable the "Drive API" Advanced Google Service.
+// 1. In the Apps Script editor, click on "Services" in the left sidebar (+ icon).
+// 2. Find "Drive API" in the list, click "Add".
+// 3. The service will be added and will be available as the `Drive` object in the script.
+
+// --- CONFIGURATION ---
+const FOLDER_ID = '1sUqAqiYvB3k_zay4eI1Qm5zxTqVaznWl';
+const FILENAME_REGEX = /^modenik_inventory_report_(\d{8}_\d{6})/;
+
+// --- HELPER FUNCTIONS ---
+
+/**
+ * Creates a standardized JSON response for the web app.
+ * @param {object} data - The data payload for the response.
+ * @returns {GoogleAppsScript.Content.TextOutput} The JSON response object.
+ */
+function createJsonResponse(data) {
+  return ContentService.createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+/**
+ * Finds the latest stock report file in the specified Google Drive folder.
+ * @returns {object|null} The latest file object and its timestamp, or null if not found.
+ */
+function getLatestStockFile() {
+  const folder = DriveApp.getFolderById(FOLDER_ID);
+  const files = folder.getFiles();
+  let latestFile = null;
+  let latestTimestamp = '';
+
+  while (files.hasNext()) {
+    const file = files.next();
+    const fileName = file.getName();
+    const match = fileName.match(FILENAME_REGEX);
+
+    if (match) {
+      const timestamp = match[1];
+      if (timestamp > latestTimestamp) {
+        latestTimestamp = timestamp;
+        latestFile = file;
+      }
+    }
+  }
+
+  if (latestFile) {
+    return { file: latestFile, timestamp: latestTimestamp };
+  }
+  return null;
+}
+
+/**
+ * Parses the stock data from a given spreadsheet file by converting it if necessary.
+ * @param {GoogleAppsScript.Drive.File} file - The spreadsheet file to parse.
+ * @returns {Array<object>} An array of stock item objects.
+ */
+function parseStockSheet(file) {
+  let tempSheetId = null;
+  try {
+    // Convert the .xlsx file to a temporary Google Sheet
+    const resource = {
+      title: `[TEMP] ${file.getName()}`,
+      mimeType: MimeType.GOOGLE_SHEETS
+    };
+    // FIX: Use the correct `create` method instead of the deprecated `insert` method.
+    const tempGoogleSheet = Drive.Files.create(resource, file.getBlob());
+    tempSheetId = tempGoogleSheet.id;
+
+    // Open and parse the new temporary Google Sheet
+    const spreadsheet = SpreadsheetApp.openById(tempSheetId);
+    const sheet = spreadsheet.getSheets()[0];
+    const lastRow = sheet.getLastRow();
+    if (lastRow < 4) return []; // No data to read
+    
+    const dataRange = sheet.getRange(4, 1, lastRow - 3, sheet.getLastColumn());
+    const values = dataRange.getValues();
+    const stockData = [];
+
+    const COL_Q_INDEX = 16; // Column Q is the 17th column, so index is 16
+    const COL_AB_INDEX = 27; // Column AB is the 28th column, so index is 27
+
+    for (const row of values) {
+      const rawStyleInfo = row[COL_Q_INDEX];
+      if (!rawStyleInfo || typeof rawStyleInfo !== 'string' || rawStyleInfo.trim() === '') {
+        break; // End of data
+      }
+      
+      const stock = row[COL_AB_INDEX];
+      const parts = rawStyleInfo.split(',').map(part => part.trim());
+
+      if (parts.length >= 3) {
+        const stylePart = parts[0].split('-')[0].trim();
+        const color = parts[1];
+        const size = parts[2];
+        
+        if(stylePart && color && size){
+          stockData.push({
+            style: stylePart,
+            color: color,
+            size: size,
+            stock: parseInt(stock, 10) || 0
+          });
+        }
+      }
+    }
+    
+    return stockData;
+
+  } finally {
+    // CRITICAL: Clean up and delete the temporary file, even if errors occurred.
+    if (tempSheetId) {
+      Drive.Files.remove(tempSheetId);
+    }
+  }
+}
+
+
+// --- MAIN ENTRY POINT ---
+
+/**
+ * Handles GET requests to the web app.
+ * Fetches and returns the latest stock data.
+ * @param {object} e - The event parameter from the GET request.
+ * @returns {GoogleAppsScript.Content.TextOutput} A JSON response.
+ */
+function doGet(e) {
+  try {
+    const latest = getLatestStockFile();
+
+    if (!latest) {
+      return createJsonResponse({ 
+        success: false, 
+        message: 'No valid stock report file found in the specified folder.' 
+      });
+    }
+
+    const stockItems = parseStockSheet(latest.file);
+
+    return createJsonResponse({
+      success: true,
+      timestamp: latest.timestamp,
+      data: stockItems
+    });
+
+  } catch (error) {
+    Logger.log(error.toString() + "\n" + error.stack);
+    return createJsonResponse({ 
+      success: false, 
+      message: 'An unexpected server error occurred.',
+      error: {
+        message: error.message,
+        stack: error.stack
+      }
+    });
+  }
+}

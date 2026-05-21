@@ -1,0 +1,135 @@
+
+// --- CONFIGURATION ---
+const SHEET_ID = '1zQEKFxy52nJuGM0jsSNlOZAf9H5ZFjYFPZp1QJNIRQ0';
+const SHEET_NAME = 'Orders'; // The name of the sheet/tab where orders will be saved.
+
+// --- HELPER FUNCTIONS ---
+
+/**
+ * Creates a standardized JSON response for the web app.
+ * @param {object} data - The data payload for the response.
+ * @returns {GoogleAppsScript.Content.TextOutput} The JSON response object.
+ */
+function createJsonResponse(data) {
+  return ContentService.createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+// --- API ACTIONS ---
+
+/**
+ * Handles the request to append a new order to the Google Sheet.
+ * @param {object} payload - The request payload containing the order data.
+ * @returns {object} A success or error response object.
+ */
+function handleAppendOrder(payload) {
+  const { orderData } = payload;
+  
+  if (!orderData || !Array.isArray(orderData) || orderData.length === 0) {
+    return { success: false, message: 'Invalid or empty order data provided.' };
+  }
+
+  try {
+    const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAME);
+    if (!sheet) {
+      return { success: false, message: `Sheet with name "${SHEET_NAME}" not found.` };
+    }
+
+    // Define the headers to ensure the order of columns
+    // This also allows us to create the header row if the sheet is empty.
+    const headers = [
+      'Order Number', 'Party Name', 'Timestamp', 'Order Note',
+      'Style', 'Color', 'Size', 'Barcode', 'Quantity', 'MRP', 'Item Total'
+    ];
+    
+    // Check if the sheet has a header row. If not, create one.
+    if (sheet.getLastRow() === 0) {
+      sheet.appendRow(headers);
+    }
+
+    // Transform the array of item objects into a 2D array of values for setValues()
+    const rowsToAppend = orderData.map(item => [
+      item.orderNumber || '',
+      item.partyName || '',
+      item.timestamp || new Date().toISOString(),
+      item.orderNote || '',
+      item.style || '',
+      item.color || '',
+      item.size || '',
+      item.barcode || '',
+      item.quantity || 0,
+      item.mrp || 0,
+      item.itemTotal || 0
+    ]);
+    
+    // Get the next available row and append all items from the order
+    // This is more efficient than calling appendRow for each item.
+    sheet.getRange(sheet.getLastRow() + 1, 1, rowsToAppend.length, headers.length)
+         .setValues(rowsToAppend);
+
+    return { success: true, message: `Successfully appended ${rowsToAppend.length} items.` };
+  
+  } catch (e) {
+    Logger.log('Error in handleAppendOrder: ' + e.toString());
+    return { 
+      success: false, 
+      message: 'An error occurred while writing to the sheet.',
+      error: e.toString()
+    };
+  }
+}
+
+// --- BROWSER ACCESS HANDLER ---
+
+/**
+ * Handles GET requests, which are not supported for this API endpoint.
+ * This function prevents the "Script function not found: doGet" error when the script URL is accessed directly in a browser.
+ * It provides a clear message indicating the correct usage.
+ * @param {object} e - The event parameter from the GET request.
+ * @returns {GoogleAppsScript.Content.TextOutput} A JSON response indicating the error.
+ */
+function doGet(e) {
+  return createJsonResponse({
+    success: false,
+    message: 'This API endpoint is for internal use and only accepts POST requests to backup order data. Direct browser access is not permitted.'
+  });
+}
+
+
+// --- MAIN ENTRY POINT ---
+
+/**
+ * Handles POST requests to the web app.
+ * @param {object} e - The event parameter containing request data.
+ * @returns {GoogleAppsScript.Content.TextOutput} A JSON response.
+ */
+function doPost(e) {
+  try {
+    // The web app sends data as a JSON string in the request body.
+    const payload = JSON.parse(e.postData.contents);
+    let result;
+
+    switch (payload.action) {
+      case 'appendOrder':
+        result = handleAppendOrder(payload);
+        break;
+      default:
+        result = { success: false, message: 'Invalid action specified.' };
+    }
+    
+    return createJsonResponse(result);
+
+  } catch (error) {
+    Logger.log('doPost Error: ' + error.toString() + "\nStack: " + error.stack);
+    return createJsonResponse({ 
+      success: false, 
+      message: 'An unexpected server error occurred.',
+      error: {
+        message: error.message,
+        stack: error.stack,
+        fileName: error.fileName,
+        lineNumber: error.lineNumber
+      }
+    });
+  }
+}
