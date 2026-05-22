@@ -4,6 +4,78 @@ import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
 import { getPersistedState, setPersistedState } from './persistence';
 
+// --- HAPTIC & AUDIO QUANTITY FEEDBACK ---
+const playQtySound = (isLimitExceeded: boolean) => {
+    try {
+        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+        if (!AudioContextClass) return;
+        const audioContext = new AudioContextClass();
+        
+        if (!isLimitExceeded) {
+            // Standard crisp upbeat tone
+            const osc = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            osc.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(587.33, audioContext.currentTime); // D5
+            
+            gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0.2, audioContext.currentTime + 0.01);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.08);
+            
+            osc.start(audioContext.currentTime);
+            osc.stop(audioContext.currentTime + 0.1);
+        } else {
+            // Error slide-down warning tone
+            const osc1 = audioContext.createOscillator();
+            const gain1 = audioContext.createGain();
+            osc1.connect(gain1);
+            gain1.connect(audioContext.destination);
+            
+            osc1.type = 'triangle';
+            osc1.frequency.setValueAtTime(180, audioContext.currentTime);
+            osc1.frequency.linearRampToValueAtTime(90, audioContext.currentTime + 0.25);
+            
+            gain1.gain.setValueAtTime(0, audioContext.currentTime);
+            gain1.gain.linearRampToValueAtTime(0.4, audioContext.currentTime + 0.01);
+            gain1.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.25);
+            
+            osc1.start(audioContext.currentTime);
+            osc1.stop(audioContext.currentTime + 0.25);
+            
+            const osc2 = audioContext.createOscillator();
+            const gain2 = audioContext.createGain();
+            osc2.connect(gain2);
+            gain2.connect(audioContext.destination);
+            
+            osc2.type = 'sawtooth';
+            osc2.frequency.setValueAtTime(360, audioContext.currentTime);
+            osc2.frequency.linearRampToValueAtTime(180, audioContext.currentTime + 0.25);
+            
+            gain2.gain.setValueAtTime(0, audioContext.currentTime);
+            gain2.gain.linearRampToValueAtTime(0.15, audioContext.currentTime + 0.01);
+            gain2.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.25);
+            
+            osc2.start(audioContext.currentTime);
+            osc2.stop(audioContext.currentTime + 0.25);
+        }
+    } catch (e) {
+        console.error("Audio feedback error:", e);
+    }
+};
+
+const triggerHaptic = (isLimitExceeded: boolean) => {
+    if (navigator.vibrate) {
+        if (!isLimitExceeded) {
+            navigator.vibrate(15);
+        } else {
+            navigator.vibrate([60, 40, 60]);
+        }
+    }
+};
+
 // --- ICONS ---
 const SearchIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>;
 const ChevronIcon = ({ collapsed }) => <svg style={{ transform: collapsed ? 'rotate(0deg)' : 'rotate(180deg)', transition: 'transform 0.3s ease' }} xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>;
@@ -479,6 +551,9 @@ const ExpandedBillingView: React.FC<ExpandedBillingViewProps> = ({ order, billed
                                     const currentQty = billedQty[item.id] || 0;
                                     if (currentQty < item.quantity) {
                                         onQtyChange(item.id, (currentQty + 1).toString(), item.quantity);
+                                    } else {
+                                        triggerHaptic(true);
+                                        playQtySound(true);
                                     }
                                 }}
                             >
@@ -747,12 +822,53 @@ export const ReadyForBilling = () => {
 
 
     const handleQtyChange = (billingOrderKey: string, itemId: string, value: string, maxQty: number) => {
-        const numValue = Math.max(0, Math.min(maxQty, Number(value) || 0));
+        if (value === '') {
+            triggerHaptic(false);
+            playQtySound(false);
+            setBilledQtys(prev => ({
+                ...prev,
+                [billingOrderKey]: {
+                    ...(prev[billingOrderKey] || {}),
+                    [itemId]: '' as any,
+                },
+            }));
+            return;
+        }
+
+        const requestedValue = Number(value) || 0;
+        if (requestedValue > maxQty) {
+            triggerHaptic(true);
+            playQtySound(true);
+            setBilledQtys(prev => ({
+                ...prev,
+                [billingOrderKey]: {
+                    ...(prev[billingOrderKey] || {}),
+                    [itemId]: maxQty,
+                },
+            }));
+            return;
+        }
+
+        if (requestedValue < 0) {
+            triggerHaptic(true);
+            playQtySound(true);
+            setBilledQtys(prev => ({
+                ...prev,
+                [billingOrderKey]: {
+                    ...(prev[billingOrderKey] || {}),
+                    [itemId]: 0,
+                },
+            }));
+            return;
+        }
+
+        triggerHaptic(false);
+        playQtySound(false);
         setBilledQtys(prev => ({
             ...prev,
             [billingOrderKey]: {
                 ...(prev[billingOrderKey] || {}),
-                [itemId]: numValue,
+                [itemId]: requestedValue,
             },
         }));
     };

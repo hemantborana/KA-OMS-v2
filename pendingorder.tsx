@@ -75,6 +75,78 @@ const showToast = (message: string, type: 'info' | 'success' | 'error' = 'info')
     window.dispatchEvent(new CustomEvent('show-toast', { detail: { message, type } }));
 };
 
+// --- HAPTIC & AUDIO QUANTITY FEEDBACK ---
+const playQtySound = (isLimitExceeded: boolean) => {
+    try {
+        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+        if (!AudioContextClass) return;
+        const audioContext = new AudioContextClass();
+        
+        if (!isLimitExceeded) {
+            // Standard crisp upbeat tone
+            const osc = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            osc.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(587.33, audioContext.currentTime); // D5
+            
+            gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0.2, audioContext.currentTime + 0.01);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.08);
+            
+            osc.start(audioContext.currentTime);
+            osc.stop(audioContext.currentTime + 0.1);
+        } else {
+            // Error slide-down warning tone
+            const osc1 = audioContext.createOscillator();
+            const gain1 = audioContext.createGain();
+            osc1.connect(gain1);
+            gain1.connect(audioContext.destination);
+            
+            osc1.type = 'triangle';
+            osc1.frequency.setValueAtTime(180, audioContext.currentTime);
+            osc1.frequency.linearRampToValueAtTime(90, audioContext.currentTime + 0.25);
+            
+            gain1.gain.setValueAtTime(0, audioContext.currentTime);
+            gain1.gain.linearRampToValueAtTime(0.4, audioContext.currentTime + 0.01);
+            gain1.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.25);
+            
+            osc1.start(audioContext.currentTime);
+            osc1.stop(audioContext.currentTime + 0.25);
+            
+            const osc2 = audioContext.createOscillator();
+            const gain2 = audioContext.createGain();
+            osc2.connect(gain2);
+            gain2.connect(audioContext.destination);
+            
+            osc2.type = 'sawtooth';
+            osc2.frequency.setValueAtTime(360, audioContext.currentTime);
+            osc2.frequency.linearRampToValueAtTime(180, audioContext.currentTime + 0.25);
+            
+            gain2.gain.setValueAtTime(0, audioContext.currentTime);
+            gain2.gain.linearRampToValueAtTime(0.15, audioContext.currentTime + 0.01);
+            gain2.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.25);
+            
+            osc2.start(audioContext.currentTime);
+            osc2.stop(audioContext.currentTime + 0.25);
+        }
+    } catch (e) {
+        console.error("Audio feedback error:", e);
+    }
+};
+
+const triggerHaptic = (isLimitExceeded: boolean) => {
+    if (navigator.vibrate) {
+        if (!isLimitExceeded) {
+            navigator.vibrate(15);
+        } else {
+            navigator.vibrate([60, 40, 60]);
+        }
+    }
+};
+
 const timeSince = (dateString) => {
     if (!dateString) return 'N/A';
     const seconds = Math.floor((new Date().getTime() - new Date(dateString).getTime()) / 1000);
@@ -462,7 +534,20 @@ const ProcessQuantityControl: React.FC<{
     const currentValue = Number(value) || 0;
 
     const handleStep = (step: number) => {
+        if (step > 0 && currentValue >= max) {
+            triggerHaptic(true);
+            playQtySound(true);
+            return;
+        }
+        if (step < 0 && currentValue <= 0) {
+            triggerHaptic(true);
+            playQtySound(true);
+            return;
+        }
+        
         const newValue = Math.max(0, Math.min(max, currentValue + step));
+        triggerHaptic(false);
+        playQtySound(false);
         onUpdate(String(newValue));
     };
     
@@ -488,7 +573,28 @@ const ProcessQuantityControl: React.FC<{
             <input 
                 type="number" 
                 value={value} 
-                onChange={(e) => onUpdate(e.target.value)} 
+                onChange={(e) => {
+                    const typedStr = e.target.value;
+                    const typedValue = Number(typedStr) || 0;
+                    if (typedStr === '') {
+                        onUpdate('');
+                        return;
+                    }
+                    if (typedValue > max) {
+                        triggerHaptic(true);
+                        playQtySound(true);
+                        onUpdate(String(max));
+                    } else if (typedValue < 0) {
+                        triggerHaptic(true);
+                        playQtySound(true);
+                        onUpdate("0");
+                    } else {
+                        triggerHaptic(false);
+                        playQtySound(false);
+                        onUpdate(typedStr);
+                    }
+                }} 
+                onClick={(e) => (e.target as HTMLInputElement).select()}
                 style={s.input} 
                 max={max}
                 min="0"

@@ -63,7 +63,32 @@ const showToast = (message: string, type: 'info' | 'success' | 'error' = 'info')
 
 const triggerHapticFeedback = () => {
   if (navigator.vibrate) {
-    navigator.vibrate(50); // A short vibration
+    navigator.vibrate(15); // A short crisp click vibration
+  }
+};
+
+const playQtySound = () => {
+  try {
+    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContextClass) return;
+    const audioContext = new AudioContextClass();
+    
+    const osc = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    osc.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(587.33, audioContext.currentTime); // D5
+    
+    gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+    gainNode.gain.linearRampToValueAtTime(0.2, audioContext.currentTime + 0.01);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.08);
+    
+    osc.start(audioContext.currentTime);
+    osc.stop(audioContext.currentTime + 0.1);
+  } catch (e) {
+    console.error("Audio feedback error:", e);
   }
 };
 
@@ -1037,10 +1062,14 @@ export const NewOrderEntry = ({ onNavigate }) => {
   const handleQuantityChange = (fullItemData, quantityStr) => {
     const quantity = parseInt(quantityStr, 10); const barcode = fullItemData.Barcode;
     if (isNaN(quantity)) { setItems(currentItems => currentItems.filter(item => item.fullItemData.Barcode !== barcode)); return; }
+    
+    // Play haptic + sound on adjustment
+    triggerHapticFeedback();
+    playQtySound();
+
     setItems(currentItems => {
       const existingItemIndex = currentItems.findIndex(item => item.fullItemData.Barcode === barcode);
       if (quantity > 0) {
-        if(existingItemIndex === -1) triggerHapticFeedback();
         if (existingItemIndex > -1) { const newItems = [...currentItems]; newItems[existingItemIndex] = { ...newItems[existingItemIndex], quantity: quantity }; return newItems; }
         else { const price = parseFloat(String(fullItemData.MRP).replace(/[^0-9.-]+/g, "")) || 0; const newItem: OrderItem = { id: barcode, quantity: quantity, price: price, fullItemData: fullItemData, }; return [...currentItems, newItem]; }
       } else { if (existingItemIndex > -1) return currentItems.filter(item => item.fullItemData.Barcode !== barcode); }
