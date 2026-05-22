@@ -76,11 +76,24 @@ const showToast = (message: string, type: 'info' | 'success' | 'error' = 'info')
 };
 
 // --- HAPTIC & AUDIO QUANTITY FEEDBACK ---
+let sharedAudioCtx: AudioContext | null = null;
+const getAudioContext = () => {
+    if (!sharedAudioCtx) {
+        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+        if (AudioContextClass) {
+            sharedAudioCtx = new AudioContextClass();
+        }
+    }
+    if (sharedAudioCtx && sharedAudioCtx.state === 'suspended') {
+        sharedAudioCtx.resume();
+    }
+    return sharedAudioCtx;
+};
+
 const playQtySound = (isLimitExceeded: boolean) => {
     try {
-        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-        if (!AudioContextClass) return;
-        const audioContext = new AudioContextClass();
+        const audioContext = getAudioContext();
+        if (!audioContext) return;
         
         if (!isLimitExceeded) {
             // Standard crisp upbeat tone
@@ -537,6 +550,7 @@ const ProcessQuantityControl: React.FC<{
         if (step > 0 && currentValue >= max) {
             triggerHaptic(true);
             playQtySound(true);
+            showToast(`Cannot exceed order size of ${max}!`, 'error');
             return;
         }
         if (step < 0 && currentValue <= 0) {
@@ -583,6 +597,7 @@ const ProcessQuantityControl: React.FC<{
                     if (typedValue > max) {
                         triggerHaptic(true);
                         playQtySound(true);
+                        showToast(`Cannot exceed order size of ${max}!`, 'error');
                         onUpdate(String(max));
                     } else if (typedValue < 0) {
                         triggerHaptic(true);
@@ -696,7 +711,7 @@ const ExpandedPendingView: React.FC<{ order: Order, onProcess, onDelete, isProce
                                             <span style={{fontSize: '0.8rem', color: 'var(--text-color)'}}>{stockLevel}</span>
                                         </div>
                                     </td>
-                                    <td style={{...styles.td, textAlign: 'right'}}>{item.quantity}</td>
+                                    <td style={{...styles.td, textAlign: 'right'}}><span style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--brand-color)' }}>{item.quantity}</span></td>
                                     <td style={{...styles.td, ...styles.tdInput}}>
                                         <ProcessQuantityControl
                                             value={processingQty[item.id] || ''}
@@ -749,7 +764,7 @@ const ExpandedPendingView: React.FC<{ order: Order, onProcess, onDelete, isProce
                                 </div>
                             </div>
                             <div style={styles.mobileItemQty}>
-                                <div style={styles.mobileQtyLabel}>Ord: {item.quantity}</div>
+                                <div style={{ ...styles.mobileQtyLabel, fontSize: '0.95rem', fontWeight: 700, color: 'var(--brand-color)' }}>Ord: {item.quantity}</div>
                                  <ProcessQuantityControl
                                     value={processingQty[item.id] || ''}
                                     max={item.quantity}

@@ -67,11 +67,24 @@ const triggerHapticFeedback = () => {
   }
 };
 
+let sharedAudioCtx: AudioContext | null = null;
+const getAudioContext = () => {
+  if (!sharedAudioCtx) {
+    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    if (AudioContextClass) {
+      sharedAudioCtx = new AudioContextClass();
+    }
+  }
+  if (sharedAudioCtx && sharedAudioCtx.state === 'suspended') {
+    sharedAudioCtx.resume();
+  }
+  return sharedAudioCtx;
+};
+
 const playQtySound = () => {
   try {
-    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-    if (!AudioContextClass) return;
-    const audioContext = new AudioContextClass();
+    const audioContext = getAudioContext();
+    if (!audioContext) return;
     
     const osc = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
@@ -93,7 +106,9 @@ const playQtySound = () => {
 };
 
 const playSuccessSound = () => {
-  const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+  const audioContext = getAudioContext();
+  if (!audioContext) return;
+
   const oscillator = audioContext.createOscillator();
   const gainNode = audioContext.createGain();
 

@@ -5,11 +5,24 @@ import 'firebase/compat/database';
 import { getPersistedState, setPersistedState } from './persistence';
 
 // --- HAPTIC & AUDIO QUANTITY FEEDBACK ---
+let sharedAudioCtx: AudioContext | null = null;
+const getAudioContext = () => {
+    if (!sharedAudioCtx) {
+        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+        if (AudioContextClass) {
+            sharedAudioCtx = new AudioContextClass();
+        }
+    }
+    if (sharedAudioCtx && sharedAudioCtx.state === 'suspended') {
+        sharedAudioCtx.resume();
+    }
+    return sharedAudioCtx;
+};
+
 const playQtySound = (isLimitExceeded: boolean) => {
     try {
-        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-        if (!AudioContextClass) return;
-        const audioContext = new AudioContextClass();
+        const audioContext = getAudioContext();
+        if (!audioContext) return;
         
         if (!isLimitExceeded) {
             // Standard crisp upbeat tone
@@ -554,6 +567,7 @@ const ExpandedBillingView: React.FC<ExpandedBillingViewProps> = ({ order, billed
                                     } else {
                                         triggerHaptic(true);
                                         playQtySound(true);
+                                        showToast(`Cannot exceed ready quantity of ${item.quantity}!`, 'error');
                                     }
                                 }}
                             >
@@ -839,6 +853,7 @@ export const ReadyForBilling = () => {
         if (requestedValue > maxQty) {
             triggerHaptic(true);
             playQtySound(true);
+            showToast(`Cannot exceed ready quantity of ${maxQty}!`, 'error');
             setBilledQtys(prev => ({
                 ...prev,
                 [billingOrderKey]: {
