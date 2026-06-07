@@ -58,6 +58,10 @@ const CNDeductor = ({ isMobile }) => {
     const [detectedData, setDetectedData] = useState<any>(null);
 
     // Editing states for values
+    const [grossAmountVal, setGrossAmountVal] = useState<number>(0);
+    const [taxableAmountVal, setTaxableAmountVal] = useState<number>(0);
+    const [cgstVal, setCgstVal] = useState<number>(0);
+    const [sgstVal, setSgstVal] = useState<number>(0);
     const [subTotalVal, setSubTotalVal] = useState<number>(0);
     const [crNoteVal, setCrNoteVal] = useState<number>(0); // Target CR Note - default is 0.00
     const [crNotePercentVal, setCrNotePercentVal] = useState<number>(0); // Target CR Note % of subtotal
@@ -236,6 +240,9 @@ const CNDeductor = ({ isMobile }) => {
 
             // Auto parse labels and identify billing records coordinates
             const parseResults = {
+                taxableAmount: { labelItem: null as any, valueItem: null as any, value: 0 },
+                cgstAmount: { labelItem: null as any, valueItem: null as any, value: 0 },
+                sgstAmount: { labelItem: null as any, valueItem: null as any, value: 0 },
                 subTotal: { labelItem: null as any, valueItem: null as any, value: 0 },
                 crNote: { labelItem: null as any, valueItem: null as any, value: 0 },
                 rounding: { labelItem: null as any, valueItem: null as any, value: 0 },
@@ -246,6 +253,15 @@ const CNDeductor = ({ isMobile }) => {
             firstPageItems.forEach((item) => {
                 const text = item.str.toUpperCase().trim();
                 
+                if (text.includes("TAXABLE AMOUNT") && !parseResults.taxableAmount.labelItem) {
+                    parseResults.taxableAmount.labelItem = item;
+                }
+                if (text.includes("CGST AMOUNT") && !parseResults.cgstAmount.labelItem) {
+                    parseResults.cgstAmount.labelItem = item;
+                }
+                if (text.includes("SGST AMOUNT") && !parseResults.sgstAmount.labelItem) {
+                    parseResults.sgstAmount.labelItem = item;
+                }
                 if (text.includes("SUB TOTAL") && !parseResults.subTotal.labelItem) {
                     parseResults.subTotal.labelItem = item;
                 }
@@ -291,6 +307,24 @@ const CNDeductor = ({ isMobile }) => {
                 return null;
             };
 
+            const taxableInfo = findNumericValue(parseResults.taxableAmount.labelItem);
+            if (taxableInfo) {
+                parseResults.taxableAmount.value = taxableInfo.value;
+                parseResults.taxableAmount.valueItem = taxableInfo.item;
+            }
+
+            const cgstInfo = findNumericValue(parseResults.cgstAmount.labelItem);
+            if (cgstInfo) {
+                parseResults.cgstAmount.value = cgstInfo.value;
+                parseResults.cgstAmount.valueItem = cgstInfo.item;
+            }
+
+            const sgstInfo = findNumericValue(parseResults.sgstAmount.labelItem);
+            if (sgstInfo) {
+                parseResults.sgstAmount.value = sgstInfo.value;
+                parseResults.sgstAmount.valueItem = sgstInfo.item;
+            }
+
             const subTotalInfo = findNumericValue(parseResults.subTotal.labelItem);
             if (subTotalInfo) {
                 parseResults.subTotal.value = subTotalInfo.value;
@@ -333,25 +367,37 @@ const CNDeductor = ({ isMobile }) => {
             setDetectedData(parseResults);
             
             // Set dynamic formula default triggers
-            const detectedSub = parseResults.subTotal.value || 1906.56;
-            setSubTotalVal(detectedSub);
+            // Gross amount maps to the parsed taxable value, with subTotal/1.05 as a fallback
+            const detectedTaxable = parseResults.taxableAmount.value || (parseResults.subTotal.value ? Number((parseResults.subTotal.value / 1.05).toFixed(2)) : 1815.72);
+            setGrossAmountVal(detectedTaxable);
             
             // Rule #1: MAKE CR AMOUNT ZERO (explicit rule)
             setCrNoteVal(0.00);
             setCrNotePercentVal(0.00);
             
+            const taxAmt = detectedTaxable;
+            setTaxableAmountVal(taxAmt);
+            
+            const cgst = Number((taxAmt * 0.025).toFixed(2));
+            setCgstVal(cgst);
+            const sgst = Number((taxAmt * 0.025).toFixed(2));
+            setSgstVal(sgst);
+            
+            const sub = Number((taxAmt + cgst + sgst).toFixed(2));
+            setSubTotalVal(sub);
+            
             // Rule #2: Compute nearest rounding off adjustment dynamically
-            const defaultRounding = Number((Math.round(detectedSub) - detectedSub).toFixed(2));
+            const defaultRounding = Number((Math.round(sub) - sub).toFixed(2));
             setRoundingVal(defaultRounding);
             
             // Rule #3: Calc corresponding Net amount
-            const defaultNet = Number((detectedSub + defaultRounding).toFixed(2));
+            const defaultNet = Number((sub + defaultRounding).toFixed(2));
             setNetAmountVal(defaultNet);
             
             // Rule #4: Generate Spelling text matching net amount
             setWordsVal(numberToWords(defaultNet));
 
-            setStatusMessage(`Successfully scanned document! Found Sub Total: ${detectedSub.toFixed(2)}, original Credit Note: ${(parseResults.crNote.value || 0).toFixed(2)}. Make adjustments below.`);
+            setStatusMessage(`Successfully scanned document! Found Gross/Taxable: ${detectedTaxable.toFixed(2)}, original Credit Note: ${(parseResults.crNote.value || 0).toFixed(2)}. Make adjustments below.`);
             
             setTimeout(() => {
                 if (cnOriginalCanvasRef.current) {
@@ -367,48 +413,63 @@ const CNDeductor = ({ isMobile }) => {
         }
     };
 
-    // Calculate live dynamic formulas reactively
-    const handleValueChange = (field: 'subtotal' | 'crnote' | 'crnotepercent' | 'rounding', value: number) => {
-        if (field === 'subtotal') {
-            setSubTotalVal(value);
-            const computedRounding = Number((Math.round(value) - value).toFixed(2));
-            setRoundingVal(computedRounding);
-            
-            // Recalculate CR Note value based on Percentage if non-zero
-            let newCrNote = crNoteVal;
-            if (crNotePercentVal > 0) {
-                newCrNote = Number(((value * crNotePercentVal) / 100).toFixed(2));
-                setCrNoteVal(newCrNote);
-            } else {
-                // Otherwise update the percentage based on the new subtotal
-                const p = value ? Number(((crNoteVal / value) * 100).toFixed(2)) : 0;
-                setCrNotePercentVal(p);
+    const recalculateBilling = (
+        gross: number, 
+        scheme: number, 
+        schemePercent: number, 
+        rounding: number, 
+        activeField: 'gross' | 'scheme' | 'schemePercent' | 'rounding'
+    ) => {
+        let finalGross = gross;
+        let finalScheme = scheme;
+        let finalSchemePercent = schemePercent;
+        let finalRounding = rounding;
+
+        if (activeField === 'gross') {
+            if (finalSchemePercent > 0) {
+                finalScheme = Number(((finalGross * finalSchemePercent) / 100).toFixed(2));
+            } else if (finalScheme > 0) {
+                finalSchemePercent = finalGross ? Number(((finalScheme / finalGross) * 100).toFixed(2)) : 0;
             }
-            
-            const net = Number((value + computedRounding - newCrNote).toFixed(2));
-            setNetAmountVal(net);
-            setWordsVal(numberToWords(net));
+        } else if (activeField === 'scheme') {
+            finalSchemePercent = finalGross ? Number(((finalScheme / finalGross) * 100).toFixed(2)) : 0;
+        } else if (activeField === 'schemePercent') {
+            finalScheme = Number(((finalGross * finalSchemePercent) / 100).toFixed(2));
+        }
+
+        const finalTaxable = Number((finalGross - finalScheme).toFixed(2));
+        const finalCgst = Number((finalTaxable * 0.025).toFixed(2));
+        const finalSgst = Number((finalTaxable * 0.025).toFixed(2));
+        const finalSubTotal = Number((finalTaxable + finalCgst + finalSgst).toFixed(2));
+        
+        if (activeField !== 'rounding') {
+            finalRounding = Number((Math.round(finalSubTotal) - finalSubTotal).toFixed(2));
+        }
+        
+        const finalNet = Number((finalSubTotal + finalRounding).toFixed(2));
+
+        setGrossAmountVal(finalGross);
+        setCrNoteVal(finalScheme);
+        setCrNotePercentVal(finalSchemePercent);
+        setTaxableAmountVal(finalTaxable);
+        setCgstVal(finalCgst);
+        setSgstVal(finalSgst);
+        setSubTotalVal(finalSubTotal);
+        setRoundingVal(finalRounding);
+        setNetAmountVal(finalNet);
+        setWordsVal(numberToWords(finalNet));
+    };
+
+    // Calculate live dynamic formulas reactively
+    const handleValueChange = (field: 'gross' | 'crnote' | 'crnotepercent' | 'rounding', value: number) => {
+        if (field === 'gross') {
+            recalculateBilling(value, crNoteVal, crNotePercentVal, roundingVal, 'gross');
         } else if (field === 'crnote') {
-            setCrNoteVal(value);
-            const p = subTotalVal ? Number(((value / subTotalVal) * 100).toFixed(2)) : 0;
-            setCrNotePercentVal(p);
-            
-            const net = Number((subTotalVal + roundingVal - value).toFixed(2));
-            setNetAmountVal(net);
-            setWordsVal(numberToWords(net));
+            recalculateBilling(grossAmountVal, value, crNotePercentVal, roundingVal, 'scheme');
         } else if (field === 'crnotepercent') {
-            setCrNotePercentVal(value);
-            const amt = Number(((subTotalVal * value) / 100).toFixed(2));
-            setCrNoteVal(amt);
-            
-            const net = Number((subTotalVal + roundingVal - amt).toFixed(2));
-            setNetAmountVal(net);
-            setWordsVal(numberToWords(net));
+            recalculateBilling(grossAmountVal, crNoteVal, value, roundingVal, 'schemePercent');
         } else if (field === 'rounding') {
-            setRoundingVal(value);
-            const net = Number((subTotalVal + value - crNoteVal).toFixed(2));
-            setNetAmountVal(net);
-            setWordsVal(numberToWords(net));
+            recalculateBilling(grossAmountVal, crNoteVal, crNotePercentVal, value, 'rounding');
         }
     };
 
@@ -487,119 +548,169 @@ const CNDeductor = ({ isMobile }) => {
                 }
             };
 
-            // 1. Redact & write CR Note Amount / Scheme Amount
-            if (detectedData.crNote.labelItem || detectedData.crNote.valueItem) {
-                const labelItem = detectedData.crNote.labelItem;
-                const valueItem = detectedData.crNote.valueItem;
-                const isInline = !valueItem || valueItem === labelItem;
+            // Render the unified calculation block
+            const topY = detectedData.subTotal?.labelItem?.y || 160;
+            const bottomY = detectedData.netAmount?.labelItem?.y || 90;
+            const labelX = detectedData.subTotal?.labelItem?.x || 420;
+            const valueItem = detectedData.subTotal?.valueItem || detectedData.netAmount?.valueItem;
+            const valueRightX = valueItem ? (valueItem.x + (valueItem.width || 60)) : 570;
 
-                if (isInline && labelItem) {
-                    // Combine label and value in one line
-                    const labelText = useSchemeLabel ? getCrNotePdfLabel() : (labelItem.str.split(':')[0] || "CR NOTE AMOUNT");
-                    const combinedText = `${labelText} :   ${crNoteVal.toFixed(2)}`;
-                    
-                    const lx = labelItem.x;
-                    const ly = labelItem.y;
-                    const lwidth = labelItem.width || 180;
-                    const lheight = labelItem.height || 10;
-                    
+            const rowsToDraw = [
+                { label: "GROSS AMOUNT", value: grossAmountVal.toFixed(2), isBold: false },
+                { label: getCrNotePdfLabel(), value: crNoteVal.toFixed(2), isBold: false },
+                { label: "TAXABLE AMOUNT", value: taxableAmountVal.toFixed(2), isBold: false },
+                { label: "CGST AMOUNT (2.5%)", value: cgstVal.toFixed(2), isBold: false },
+                { label: "SGST AMOUNT (2.5%)", value: sgstVal.toFixed(2), isBold: false },
+                { label: "SUB TOTAL", value: subTotalVal.toFixed(2), isBold: false },
+                { label: "ROUNDING OFF", value: roundingVal.toFixed(2), isBold: false },
+                { label: "NET AMOUNT", value: netAmountVal.toFixed(2), isBold: true }
+            ];
+
+            // Whiteout the entire calculation column with background color or white
+            firstPage.drawRectangle({
+                x: labelX - 10,
+                y: bottomY - 6,
+                width: (valueRightX - labelX) + 20,
+                height: (topY - bottomY) + 18,
+                color: rgb(1, 1, 1),
+                borderWidth: 0
+            });
+
+            const numRows = rowsToDraw.length;
+            const stepY = (topY - bottomY) / (numRows - 1);
+            
+            for (let i = 0; i < numRows; i++) {
+                const row = rowsToDraw[i];
+                const rowY = topY - i * stepY;
+                const font = row.isBold ? helveticaBoldFont : helveticaFont;
+                const size = row.isBold ? 9.0 : 8.0;
+                
+                // Draw label
+                firstPage.drawText(row.label + " :", {
+                    x: labelX,
+                    y: rowY,
+                    font: font,
+                    size: size,
+                    color: rgb(0, 0, 0)
+                });
+                
+                // Draw value (right-aligned)
+                const textWidth = font.widthOfTextAtSize(row.value, size);
+                firstPage.drawText(row.value, {
+                    x: valueRightX - textWidth,
+                    y: rowY,
+                    font: font,
+                    size: size,
+                    color: rgb(0, 0, 0)
+                });
+            }
+
+            // Let's get all firstPage text items from PDFJS for table row replacement & bottom block matches
+            const pdfDocJs = await pdfjsLib.getDocument({ data: pdfBytes }).promise;
+            const pageJs = await pdfDocJs.getPage(1);
+            const textContentJs = await pageJs.getTextContent();
+            const firstPageItems = textContentJs.items.map((item: any) => {
+                const transform = item.transform;
+                return {
+                    str: item.str,
+                    x: transform[4],
+                    y: transform[5],
+                    width: item.width,
+                    height: item.height || transform[3]
+                };
+            });
+
+            // 1. Update Tax Summary Row cell values!
+            const hsnItem = firstPageItems.find((item: any) => /^\s*\d{6,10}\s*$/.test(item.str));
+            if (hsnItem) {
+                const tableRowItems = firstPageItems.filter((item: any) => Math.abs(item.y - hsnItem.y) < 4);
+                tableRowItems.sort((a, b) => a.x - b.x);
+                
+                const origTaxable = detectedData.taxableAmount.value || grossAmountVal;
+                const origCgst = detectedData.cgstAmount.value || (origTaxable * 0.025);
+                const origSgst = detectedData.sgstAmount.value || (origTaxable * 0.025);
+
+                const taxableCell = tableRowItems.find((item: any) => {
+                    const val = parseFloat(item.str);
+                    return !isNaN(val) && Math.abs(val - origTaxable) < 0.10 && item.x > hsnItem.x;
+                });
+
+                const cgstCell = taxableCell ? tableRowItems.find((item: any) => {
+                    const val = parseFloat(item.str);
+                    return !isNaN(val) && Math.abs(val - origCgst) < 0.10 && item.x > taxableCell.x + 30;
+                }) : null;
+
+                const sgstCell = cgstCell ? tableRowItems.find((item: any) => {
+                    const val = parseFloat(item.str);
+                    return !isNaN(val) && Math.abs(val - origSgst) < 0.10 && item.x > cgstCell.x + 10;
+                }) : null;
+
+                const drawTableValue = async (item: any, newValue: string) => {
+                    if (!item) return;
                     firstPage.drawRectangle({
-                        x: lx - 1,
-                        y: ly - 0.5,
-                        width: lwidth + 6,
-                        height: lheight + 1,
+                        x: item.x - 1,
+                        y: item.y - 0.5,
+                        width: item.width + 2,
+                        height: item.height + 1,
                         color: rgb(1, 1, 1),
                         borderWidth: 0
                     });
 
-                    firstPage.drawText(combinedText, {
-                        x: lx,
-                        y: ly,
-                        size: labelItem.height || 9,
+                    const fontSize = item.height || 8;
+                    const textWidth = helveticaFont.widthOfTextAtSize(newValue, fontSize);
+                    const origRightEdge = item.x + item.width;
+                    firstPage.drawText(newValue, {
+                        x: origRightEdge - textWidth,
+                        y: item.y,
+                        size: fontSize,
                         font: helveticaFont,
                         color: rgb(0, 0, 0)
                     });
-                } else {
-                    // Separate label and value items
-                    // Standard value rendering
-                    if (valueItem) {
-                        const vx = valueItem.x;
-                        const vy = valueItem.y;
-                        const vwidth = valueItem.width || 60;
-                        const vheight = valueItem.height || 10;
-                        
-                        firstPage.drawRectangle({
-                            x: vx - 1,
-                            y: vy - 0.5,
-                            width: vwidth + 2,
-                            height: vheight + 1,
-                            color: rgb(1, 1, 1),
-                            borderWidth: 0
-                        });
+                };
 
-                        const newValueStr = crNoteVal.toFixed(2);
-                        const origRightEdge = vx + vwidth;
-                        const newTextWidth = helveticaFont.widthOfTextAtSize(newValueStr, vheight || 11);
-                        firstPage.drawText(newValueStr, {
-                            x: origRightEdge - newTextWidth,
-                            y: vy,
-                            size: vheight || 9,
-                            font: helveticaFont,
-                            color: rgb(0, 0, 0)
-                        });
-                    }
+                if (taxableCell) await drawTableValue(taxableCell, taxableAmountVal.toFixed(2));
+                if (cgstCell) await drawTableValue(cgstCell, cgstVal.toFixed(2));
+                if (sgstCell) await drawTableValue(sgstCell, sgstVal.toFixed(2));
+            }
 
-                    // Handle label item
-                    if (labelItem) {
-                        const lx = labelItem.x;
-                        const ly = labelItem.y;
-                        const lwidth = labelItem.width || 120;
-                        const lheight = labelItem.height || 10;
+            // 2. Update Bottom Summary line labels in the left section!
+            const summaryRowItems = firstPageItems.filter((item: any) => {
+                const text = item.str.toUpperCase();
+                return item.y < 350 && item.y > 200 && item.x < 420 && 
+                       (text.includes("SCHEME:") || text.includes("SCHEME :") || text.includes("TAXABLE AMOUNT") || text.includes("TAXABLE :"));
+            });
 
-                        firstPage.drawRectangle({
-                            x: lx - 1,
-                            y: ly - 0.5,
-                            width: lwidth + 6,
-                            height: lheight + 1,
-                            color: rgb(1, 1, 1),
-                            borderWidth: 0
-                        });
+            for (const item of summaryRowItems) {
+                const text = item.str.toUpperCase();
+                let newStr = item.str;
 
-                        const customLabelText = `${useSchemeLabel ? getCrNotePdfLabel() : (labelItem.str.split(':')[0] || "CR NOTE AMOUNT")} :`;
-                        firstPage.drawText(customLabelText, {
-                            x: lx,
-                            y: ly,
-                            size: labelItem.height || 9,
-                            font: helveticaFont,
-                            color: rgb(0, 0, 0)
-                        });
-                    }
+                if (text.includes("SCHEME")) {
+                    newStr = item.str.replace(/(SCHEME\s*:\s*)-?\d+\.\d+/gi, `$1${crNoteVal.toFixed(2)}`);
+                    newStr = newStr.replace(/(SCHEME\s*)-?\d+\.\d+/gi, `$1: ${crNoteVal.toFixed(2)}`);
                 }
-            }
+                if (text.includes("TAXABLE AMOUNT")) {
+                    newStr = item.str.replace(/(TAXABLE AMOUNT\s*:\s*)-?\d+\.\d+/gi, `$1${taxableAmountVal.toFixed(2)}`);
+                    newStr = newStr.replace(/(TAXABLE AMOUNT\s*)-?\d+\.\d+/gi, `$1: ${taxableAmountVal.toFixed(2)}`);
+                }
 
-            // 2. Redact & write Rounding Amount
-            if (detectedData.rounding.labelItem || detectedData.rounding.valueItem) {
-                const roundingStr = roundingVal.toFixed(2);
-                await applyWhiteoutAndWrite(
-                    firstPage,
-                    detectedData.rounding.labelItem,
-                    detectedData.rounding.valueItem,
-                    roundingStr,
-                    helveticaFont,
-                    detectedData.rounding.valueItem?.height || detectedData.rounding.labelItem?.height || 9
-                );
-            }
+                if (newStr !== item.str) {
+                    firstPage.drawRectangle({
+                        x: item.x - 1,
+                        y: item.y - 0.5,
+                        width: item.width + 10,
+                        height: item.height + 1,
+                        color: rgb(1, 1, 1),
+                        borderWidth: 0
+                    });
 
-            // 3. Redact & write Net Amount
-            if (detectedData.netAmount.labelItem || detectedData.netAmount.valueItem) {
-                await applyWhiteoutAndWrite(
-                    firstPage,
-                    detectedData.netAmount.labelItem,
-                    detectedData.netAmount.valueItem,
-                    netAmountVal.toFixed(2),
-                    helveticaBoldFont, // Bold Net Amount
-                    detectedData.netAmount.valueItem?.height || detectedData.netAmount.labelItem?.height || 9
-                );
+                    firstPage.drawText(newStr, {
+                        x: item.x,
+                        y: item.y,
+                        size: item.height || 8,
+                        font: helveticaFont,
+                        color: rgb(0, 0, 0)
+                    });
+                }
             }
 
             // 4. Redact & write Words representation
@@ -787,21 +898,21 @@ const CNDeductor = ({ isMobile }) => {
                                 </div>
                                 
                                 <div style={styles.comparisonRow}>
-                                    <span style={styles.fieldTitle}>Sub Total</span>
-                                    <span style={styles.fieldValOriginal}>{(detectedData.subTotal.value || 0).toFixed(2)}</span>
+                                    <span style={styles.fieldTitle}>Gross Amount</span>
+                                    <span style={styles.fieldValOriginal}>{(detectedData.taxableAmount.value || (detectedData.subTotal.value / 1.05) || 1815.72).toFixed(2)}</span>
                                     <span style={styles.fieldValTarget}>
                                         <input 
                                             type="number" 
                                             step="0.01"
-                                            value={subTotalVal} 
-                                            onChange={(e) => handleValueChange('subtotal', parseFloat(e.target.value) || 0)} 
+                                            value={grossAmountVal} 
+                                            onChange={(e) => handleValueChange('gross', parseFloat(e.target.value) || 0)} 
                                             style={styles.inlineInput}
                                         />
                                     </span>
                                 </div>
 
                                 <div style={styles.comparisonRow}>
-                                    <span style={styles.fieldTitle}>CR Note Amt</span>
+                                    <span style={styles.fieldTitle}>CR Note Amt (Scheme)</span>
                                     <span style={{ ...styles.fieldValOriginal, color: 'var(--brand-color)' }}>{(detectedData.crNote.value || 0).toFixed(2)}</span>
                                     <span style={styles.fieldValTarget}>
                                         <input 
@@ -815,10 +926,10 @@ const CNDeductor = ({ isMobile }) => {
                                 </div>
 
                                 <div style={styles.comparisonRow}>
-                                    <span style={styles.fieldTitle}>CR Note %</span>
+                                    <span style={styles.fieldTitle}>CR Note % (Scheme %)</span>
                                     <span style={{ ...styles.fieldValOriginal, color: 'var(--text-tertiary)' }}>
-                                        {detectedData.subTotal.value && detectedData.subTotal.value > 0
-                                            ? ((detectedData.crNote.value / detectedData.subTotal.value) * 100).toFixed(2) + '%'
+                                        {detectedData.taxableAmount.value && detectedData.taxableAmount.value > 0
+                                            ? ((detectedData.crNote.value / detectedData.taxableAmount.value) * 100).toFixed(2) + '%'
                                             : '0.00%'}
                                     </span>
                                     <span style={styles.fieldValTarget}>
@@ -853,6 +964,38 @@ const CNDeductor = ({ isMobile }) => {
                                     </span>
                                     <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--brand-color)', textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                         {useSchemeLabel ? getCrNotePdfLabel() : "CR NOTE AMOUNT"}
+                                    </span>
+                                </div>
+
+                                <div style={styles.comparisonRow}>
+                                    <span style={styles.fieldTitle}>Taxable Amount</span>
+                                    <span style={styles.fieldValOriginal}>{(detectedData.taxableAmount.value || (detectedData.subTotal.value / 1.05) || 1815.72).toFixed(2)}</span>
+                                    <span style={styles.fieldValTarget}>
+                                        <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>{taxableAmountVal.toFixed(2)}</span>
+                                    </span>
+                                </div>
+
+                                <div style={styles.comparisonRow}>
+                                    <span style={styles.fieldTitle}>CGST (2.5%)</span>
+                                    <span style={styles.fieldValOriginal}>{(detectedData.cgstAmount.value || ((detectedData.taxableAmount.value || 1815.72) * 0.025)).toFixed(2)}</span>
+                                    <span style={styles.fieldValTarget}>
+                                        <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>{cgstVal.toFixed(2)}</span>
+                                    </span>
+                                </div>
+
+                                <div style={styles.comparisonRow}>
+                                    <span style={styles.fieldTitle}>SGST (2.5%)</span>
+                                    <span style={styles.fieldValOriginal}>{(detectedData.sgstAmount.value || ((detectedData.taxableAmount.value || 1815.72) * 0.025)).toFixed(2)}</span>
+                                    <span style={styles.fieldValTarget}>
+                                        <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>{sgstVal.toFixed(2)}</span>
+                                    </span>
+                                </div>
+
+                                <div style={styles.comparisonRow}>
+                                    <span style={styles.fieldTitle}>Sub Total</span>
+                                    <span style={styles.fieldValOriginal}>{(detectedData.subTotal.value || 1906.56).toFixed(2)}</span>
+                                    <span style={styles.fieldValTarget}>
+                                        <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>{subTotalVal.toFixed(2)}</span>
                                     </span>
                                 </div>
 
