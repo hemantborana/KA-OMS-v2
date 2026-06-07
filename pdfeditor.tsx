@@ -61,9 +61,21 @@ const CNDeductor = ({ isMobile }) => {
     const [subTotalVal, setSubTotalVal] = useState<number>(0);
     const [crNoteVal, setCrNoteVal] = useState<number>(0); // Target CR Note - default is 0.00
     const [crNotePercentVal, setCrNotePercentVal] = useState<number>(0); // Target CR Note % of subtotal
+    const [useSchemeLabel, setUseSchemeLabel] = useState<boolean>(false); // Toggle to use Scheme label
     const [roundingVal, setRoundingVal] = useState<number>(0); // Editable rounding off adjustment
     const [netAmountVal, setNetAmountVal] = useState<number>(0); // Computed
     const [wordsVal, setWordsVal] = useState<string>(''); // Computed Net Amount in words
+
+    const getCrNotePdfLabel = (): string => {
+        if (!useSchemeLabel) {
+            return "CR NOTE AMOUNT";
+        }
+        if (crNotePercentVal > 0) {
+            const pctFormatted = crNotePercentVal % 1 === 0 ? crNotePercentVal.toFixed(0) : crNotePercentVal.toFixed(2);
+            return `SCHEME (${pctFormatted}%)`;
+        }
+        return "SCHEME";
+    };
 
     // PDF raw bytes states (original & modified) to feed renderers
     const [originalBytes, setOriginalBytes] = useState<Uint8Array | null>(null);
@@ -171,6 +183,7 @@ const CNDeductor = ({ isMobile }) => {
             const uploadedFile = files[0];
             setFile(uploadedFile);
             setModifiedBytes(null); // Reset modified states
+            setUseSchemeLabel(false); // Reset scheme label toggle
             await extractAndAnalyze(uploadedFile);
         }
     };
@@ -474,16 +487,94 @@ const CNDeductor = ({ isMobile }) => {
                 }
             };
 
-            // 1. Redact & write CR Note Amount
+            // 1. Redact & write CR Note Amount / Scheme Amount
             if (detectedData.crNote.labelItem || detectedData.crNote.valueItem) {
-                await applyWhiteoutAndWrite(
-                    firstPage,
-                    detectedData.crNote.labelItem,
-                    detectedData.crNote.valueItem,
-                    crNoteVal.toFixed(2),
-                    helveticaFont,
-                    detectedData.crNote.valueItem?.height || detectedData.crNote.labelItem?.height || 9
-                );
+                const labelItem = detectedData.crNote.labelItem;
+                const valueItem = detectedData.crNote.valueItem;
+                const isInline = !valueItem || valueItem === labelItem;
+
+                if (isInline && labelItem) {
+                    // Combine label and value in one line
+                    const labelText = useSchemeLabel ? getCrNotePdfLabel() : (labelItem.str.split(':')[0] || "CR NOTE AMOUNT");
+                    const combinedText = `${labelText} :   ${crNoteVal.toFixed(2)}`;
+                    
+                    const lx = labelItem.x;
+                    const ly = labelItem.y;
+                    const lwidth = labelItem.width || 180;
+                    const lheight = labelItem.height || 10;
+                    
+                    firstPage.drawRectangle({
+                        x: lx - 1,
+                        y: ly - 0.5,
+                        width: lwidth + 6,
+                        height: lheight + 1,
+                        color: rgb(1, 1, 1),
+                        borderWidth: 0
+                    });
+
+                    firstPage.drawText(combinedText, {
+                        x: lx,
+                        y: ly,
+                        size: labelItem.height || 9,
+                        font: helveticaFont,
+                        color: rgb(0, 0, 0)
+                    });
+                } else {
+                    // Separate label and value items
+                    // Standard value rendering
+                    if (valueItem) {
+                        const vx = valueItem.x;
+                        const vy = valueItem.y;
+                        const vwidth = valueItem.width || 60;
+                        const vheight = valueItem.height || 10;
+                        
+                        firstPage.drawRectangle({
+                            x: vx - 1,
+                            y: vy - 0.5,
+                            width: vwidth + 2,
+                            height: vheight + 1,
+                            color: rgb(1, 1, 1),
+                            borderWidth: 0
+                        });
+
+                        const newValueStr = crNoteVal.toFixed(2);
+                        const origRightEdge = vx + vwidth;
+                        const newTextWidth = helveticaFont.widthOfTextAtSize(newValueStr, vheight || 11);
+                        firstPage.drawText(newValueStr, {
+                            x: origRightEdge - newTextWidth,
+                            y: vy,
+                            size: vheight || 9,
+                            font: helveticaFont,
+                            color: rgb(0, 0, 0)
+                        });
+                    }
+
+                    // Handle label item
+                    if (labelItem) {
+                        const lx = labelItem.x;
+                        const ly = labelItem.y;
+                        const lwidth = labelItem.width || 120;
+                        const lheight = labelItem.height || 10;
+
+                        firstPage.drawRectangle({
+                            x: lx - 1,
+                            y: ly - 0.5,
+                            width: lwidth + 6,
+                            height: lheight + 1,
+                            color: rgb(1, 1, 1),
+                            borderWidth: 0
+                        });
+
+                        const customLabelText = `${useSchemeLabel ? getCrNotePdfLabel() : (labelItem.str.split(':')[0] || "CR NOTE AMOUNT")} :`;
+                        firstPage.drawText(customLabelText, {
+                            x: lx,
+                            y: ly,
+                            size: labelItem.height || 9,
+                            font: helveticaFont,
+                            color: rgb(0, 0, 0)
+                        });
+                    }
+                }
             }
 
             // 2. Redact & write Rounding Amount
@@ -741,6 +832,27 @@ const CNDeductor = ({ isMobile }) => {
                                             />
                                             <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-tertiary)' }}>%</span>
                                         </div>
+                                    </span>
+                                </div>
+
+                                <div style={{ ...styles.comparisonRow, backgroundColor: 'rgba(59, 130, 246, 0.05)', borderRadius: '6px', padding: '0.4rem 0.5rem', marginTop: '0.2rem', marginBottom: '0.2rem' }}>
+                                    <span style={{ ...styles.fieldTitle, display: 'flex', alignItems: 'center', gap: '6px', gridColumn: 'span 1' }}>
+                                        <input 
+                                            id="scheme-toggle" 
+                                            type="checkbox" 
+                                            checked={useSchemeLabel} 
+                                            onChange={(e) => setUseSchemeLabel(e.target.checked)}
+                                            style={{ cursor: 'pointer', width: '15px', height: '15px', accentColor: 'var(--brand-color)' }}
+                                        />
+                                        <label htmlFor="scheme-toggle" style={{ fontWeight: 600, cursor: 'pointer', userSelect: 'none', fontSize: '0.82rem' }}>
+                                            Use Scheme
+                                        </label>
+                                    </span>
+                                    <span style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', fontWeight: 500 }}>
+                                        Label on PDF:
+                                    </span>
+                                    <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--brand-color)', textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                        {useSchemeLabel ? getCrNotePdfLabel() : "CR NOTE AMOUNT"}
                                     </span>
                                 </div>
 
