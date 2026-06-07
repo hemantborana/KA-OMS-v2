@@ -56,6 +56,7 @@ const CNDeductor = ({ isMobile }) => {
 
     // Auto-parsed properties
     const [detectedData, setDetectedData] = useState<any>(null);
+    const [calculationPageNum, setCalculationPageNum] = useState<number>(1);
 
     // Editing states for values
     const [grossAmountVal, setGrossAmountVal] = useState<number>(0);
@@ -143,14 +144,15 @@ const CNDeductor = ({ isMobile }) => {
     };
 
     // Helper to render page preview on canvas
-    const renderPdfPreview = async (pdfBytes: Uint8Array, canvasEl: HTMLCanvasElement) => {
+    const renderPdfPreview = async (pdfBytes: Uint8Array, canvasEl: HTMLCanvasElement, pageNum: number = 1) => {
         try {
             if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
                 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js`;
             }
             const loadingTask = pdfjsLib.getDocument({ data: pdfBytes });
             const pdf = await loadingTask.promise;
-            const page = await pdf.getPage(1);
+            const actualPageNum = Math.min(Math.max(1, pageNum), pdf.numPages);
+            const page = await pdf.getPage(actualPageNum);
             const viewport = page.getViewport({ scale: 1.3 });
 
             const context = canvasEl.getContext('2d');
@@ -171,15 +173,15 @@ const CNDeductor = ({ isMobile }) => {
 
     useEffect(() => {
         if (originalBytes && cnOriginalCanvasRef.current) {
-            renderPdfPreview(originalBytes, cnOriginalCanvasRef.current);
+            renderPdfPreview(originalBytes, cnOriginalCanvasRef.current, calculationPageNum);
         }
-    }, [originalBytes, cnSubTab]);
+    }, [originalBytes, cnSubTab, calculationPageNum]);
 
     useEffect(() => {
         if (modifiedBytes && cnModifiedCanvasRef.current) {
-            renderPdfPreview(modifiedBytes, cnModifiedCanvasRef.current);
+            renderPdfPreview(modifiedBytes, cnModifiedCanvasRef.current, calculationPageNum);
         }
-    }, [modifiedBytes, cnSubTab]);
+    }, [modifiedBytes, cnSubTab, calculationPageNum]);
 
     const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const files = event.target.files;
@@ -212,7 +214,8 @@ const CNDeductor = ({ isMobile }) => {
             const totalPages = pdf.numPages;
 
             const extractedPages: { pageNum: number; text: string }[] = [];
-            let firstPageItems: any[] = [];
+            let targetPageNum = 1;
+            let targetPageItems: any[] = [];
 
             for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
                 const page = await pdf.getPage(pageNum);
@@ -222,20 +225,30 @@ const CNDeductor = ({ isMobile }) => {
                 const pageFullText = textItems.join(' ');
                 extractedPages.push({ pageNum, text: pageFullText });
 
-                if (pageNum === 1) {
-                    firstPageItems = textContent.items.map((item: any) => {
-                        const transform = item.transform; // [scaleX, skewX, skewY, scaleY, x, y]
-                        return {
-                            str: item.str,
-                            x: transform[4],
-                            y: transform[5],
-                            width: item.width,
-                            height: item.height || transform[3]
-                        };
-                    });
+                const pageItems = textContent.items.map((item: any) => {
+                    const transform = item.transform; // [scaleX, skewX, skewY, scaleY, x, y]
+                    return {
+                        str: item.str,
+                        x: transform[4],
+                        y: transform[5],
+                        width: item.width,
+                        height: item.height || transform[3]
+                    };
+                });
+
+                if (pageFullText.toUpperCase().includes("SUB TOTAL") && targetPageNum === 1) {
+                    targetPageNum = pageNum;
+                    targetPageItems = pageItems;
+                }
+                
+                if (pageNum === 1 && targetPageItems.length === 0) {
+                    targetPageItems = pageItems;
                 }
             }
-
+            
+            setCalculationPageNum(targetPageNum);
+            const firstPageItems = targetPageItems;
+            
             setPagesText(extractedPages);
 
             // Auto parse labels and identify billing records coordinates
@@ -482,7 +495,8 @@ const CNDeductor = ({ isMobile }) => {
             const arrayBuffer = await file.arrayBuffer();
             const pdfBytes = new Uint8Array(arrayBuffer);
             const pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
-            const firstPage = pdfDoc.getPages()[0];
+            const actualPageIdx = Math.min(Math.max(1, calculationPageNum), pdfDoc.getPageCount()) - 1;
+            const firstPage = pdfDoc.getPages()[actualPageIdx];
             
             const { rgb, StandardFonts } = PDFLib;
             const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
@@ -549,11 +563,41 @@ const CNDeductor = ({ isMobile }) => {
             };
 
             // Render the unified calculation block
-            const topY = detectedData.subTotal?.labelItem?.y || 160;
+            const topY = Math.max(
+                detectedData.taxableAmount?.labelItem?.y || 0,
+                detectedData.cgstAmount?.labelItem?.y || 0,
+                detectedData.sgstAmount?.labelItem?.y || 0,
+                detectedData.subTotal?.labelItem?.y || 0,
+                160
+            );
             const bottomY = detectedData.netAmount?.labelItem?.y || 90;
-            const labelX = detectedData.subTotal?.labelItem?.x || 420;
-            const valueItem = detectedData.subTotal?.valueItem || detectedData.netAmount?.valueItem;
-            const valueRightX = valueItem ? (valueItem.x + (valueItem.width || 60)) : 570;
+            
+            const detectedLabelX = [
+                detectedData.taxableAmount?.labelItem?.x,
+                detectedData.cgstAmount?.labelItem?.x,
+                detectedData.sgstAmount?.labelItem?.x,
+                detectedData.subTotal?.labelItem?.x,
+                detectedData.rounding?.labelItem?.x,
+                detectedData.netAmount?.labelItem?.x
+            ].filter((x: any) => x !== undefined && x !== null && x > 200 && x < 500);
+
+            const labelX = detectedLabelX.length > 0 ? Math.min(...detectedLabelX) : 420;
+
+            const valueItems = [
+                detectedData.taxableAmount?.valueItem,
+                detectedData.cgstAmount?.valueItem,
+                detectedData.sgstAmount?.valueItem,
+                detectedData.subTotal?.valueItem,
+                detectedData.rounding?.valueItem,
+                detectedData.netAmount?.valueItem,
+                detectedData.crNote?.valueItem
+            ].filter((item: any) => item !== undefined && item !== null && item.x > 450);
+
+            let valueRightX = 570;
+            if (valueItems.length > 0) {
+                const rightCoords = valueItems.map((item: any) => item.x + (item.width || 60));
+                valueRightX = Math.max(...rightCoords);
+            }
 
             const rowsToDraw = [
                 { label: "GROSS AMOUNT", value: grossAmountVal.toFixed(2), isBold: false },
@@ -607,7 +651,8 @@ const CNDeductor = ({ isMobile }) => {
 
             // Let's get all firstPage text items from PDFJS for table row replacement & bottom block matches
             const pdfDocJs = await pdfjsLib.getDocument({ data: pdfBytes }).promise;
-            const pageJs = await pdfDocJs.getPage(1);
+            const actualPageNumForJs = Math.min(Math.max(1, calculationPageNum), pdfDocJs.numPages);
+            const pageJs = await pdfDocJs.getPage(actualPageNumForJs);
             const textContentJs = await pageJs.getTextContent();
             const firstPageItems = textContentJs.items.map((item: any) => {
                 const transform = item.transform;
