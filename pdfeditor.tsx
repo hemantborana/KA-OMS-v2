@@ -610,28 +610,63 @@ const CNDeductor = ({ isMobile }) => {
                 { label: "NET AMOUNT", value: netAmountVal.toFixed(2), isBold: true }
             ];
 
-            // Whiteout the entire calculation column with background color or white
+            // 1. Precise whiteout of coordinates of individual pre-existing labels & values to guarantee no remnants peer through
+            const whiteoutItem = (item: any) => {
+                if (!item) return;
+                firstPage.drawRectangle({
+                    x: item.x - 2,
+                    y: item.y - 1,
+                    width: item.width + 4,
+                    height: item.height + 2,
+                    color: rgb(1, 1, 1),
+                    borderWidth: 0
+                });
+            };
+
+            whiteoutItem(detectedData.taxableAmount?.labelItem);
+            whiteoutItem(detectedData.taxableAmount?.valueItem);
+            whiteoutItem(detectedData.cgstAmount?.labelItem);
+            whiteoutItem(detectedData.cgstAmount?.valueItem);
+            whiteoutItem(detectedData.sgstAmount?.labelItem);
+            whiteoutItem(detectedData.sgstAmount?.valueItem);
+            whiteoutItem(detectedData.subTotal?.labelItem);
+            whiteoutItem(detectedData.subTotal?.valueItem);
+            whiteoutItem(detectedData.rounding?.labelItem);
+            whiteoutItem(detectedData.rounding?.valueItem);
+            whiteoutItem(detectedData.netAmount?.labelItem);
+            whiteoutItem(detectedData.netAmount?.valueItem);
+            whiteoutItem(detectedData.crNote?.labelItem);
+            whiteoutItem(detectedData.crNote?.valueItem);
+
+            // 2. Compute safe layout coordinates that will never overlap with left-column elements like CASH DISC/SPL DISC
+            const finalLabelX = Math.max(labelX, 422);
+            const drawTopY = topY + 4;
+            const drawBottomY = bottomY - 6;
+            const finalValueRightX = Math.min(valueRightX, 580);
+
+            // 3. Draw a tighter, clean, column-specific whiteout rectangle restricted only to the right summary column bounds
             firstPage.drawRectangle({
-                x: labelX - 10,
-                y: bottomY - 6,
-                width: (valueRightX - labelX) + 20,
-                height: (topY - bottomY) + 18,
+                x: finalLabelX - 4,
+                y: drawBottomY - 4,
+                width: (finalValueRightX - finalLabelX) + 12,
+                height: (drawTopY - drawBottomY) + 8,
                 color: rgb(1, 1, 1),
                 borderWidth: 0
             });
 
+            // 4. Render rows with comfortable vertical line spacing (wider budget height)
             const numRows = rowsToDraw.length;
-            const stepY = (topY - bottomY) / (numRows - 1);
+            const stepY = (drawTopY - drawBottomY) / (numRows - 1);
             
             for (let i = 0; i < numRows; i++) {
                 const row = rowsToDraw[i];
-                const rowY = topY - i * stepY;
+                const rowY = drawTopY - i * stepY;
                 const font = row.isBold ? helveticaBoldFont : helveticaFont;
                 const size = row.isBold ? 9.0 : 8.0;
                 
                 // Draw label
                 firstPage.drawText(row.label + " :", {
-                    x: labelX,
+                    x: finalLabelX,
                     y: rowY,
                     font: font,
                     size: size,
@@ -641,7 +676,7 @@ const CNDeductor = ({ isMobile }) => {
                 // Draw value (right-aligned)
                 const textWidth = font.widthOfTextAtSize(row.value, size);
                 firstPage.drawText(row.value, {
-                    x: valueRightX - textWidth,
+                    x: finalValueRightX - textWidth,
                     y: rowY,
                     font: font,
                     size: size,
