@@ -60,6 +60,7 @@ const CNDeductor = ({ isMobile }) => {
     // Editing states for values
     const [subTotalVal, setSubTotalVal] = useState<number>(0);
     const [crNoteVal, setCrNoteVal] = useState<number>(0); // Target CR Note - default is 0.00
+    const [crNotePercentVal, setCrNotePercentVal] = useState<number>(0); // Target CR Note % of subtotal
     const [roundingVal, setRoundingVal] = useState<number>(0); // Editable rounding off adjustment
     const [netAmountVal, setNetAmountVal] = useState<number>(0); // Computed
     const [wordsVal, setWordsVal] = useState<string>(''); // Computed Net Amount in words
@@ -324,6 +325,7 @@ const CNDeductor = ({ isMobile }) => {
             
             // Rule #1: MAKE CR AMOUNT ZERO (explicit rule)
             setCrNoteVal(0.00);
+            setCrNotePercentVal(0.00);
             
             // Rule #2: Compute nearest rounding off adjustment dynamically
             const defaultRounding = Number((Math.round(detectedSub) - detectedSub).toFixed(2));
@@ -353,17 +355,40 @@ const CNDeductor = ({ isMobile }) => {
     };
 
     // Calculate live dynamic formulas reactively
-    const handleValueChange = (field: 'subtotal' | 'crnote' | 'rounding', value: number) => {
+    const handleValueChange = (field: 'subtotal' | 'crnote' | 'crnotepercent' | 'rounding', value: number) => {
         if (field === 'subtotal') {
             setSubTotalVal(value);
             const computedRounding = Number((Math.round(value) - value).toFixed(2));
             setRoundingVal(computedRounding);
-            const net = Number((value + computedRounding - crNoteVal).toFixed(2));
+            
+            // Recalculate CR Note value based on Percentage if non-zero
+            let newCrNote = crNoteVal;
+            if (crNotePercentVal > 0) {
+                newCrNote = Number(((value * crNotePercentVal) / 100).toFixed(2));
+                setCrNoteVal(newCrNote);
+            } else {
+                // Otherwise update the percentage based on the new subtotal
+                const p = value ? Number(((crNoteVal / value) * 100).toFixed(2)) : 0;
+                setCrNotePercentVal(p);
+            }
+            
+            const net = Number((value + computedRounding - newCrNote).toFixed(2));
             setNetAmountVal(net);
             setWordsVal(numberToWords(net));
         } else if (field === 'crnote') {
             setCrNoteVal(value);
+            const p = subTotalVal ? Number(((value / subTotalVal) * 100).toFixed(2)) : 0;
+            setCrNotePercentVal(p);
+            
             const net = Number((subTotalVal + roundingVal - value).toFixed(2));
+            setNetAmountVal(net);
+            setWordsVal(numberToWords(net));
+        } else if (field === 'crnotepercent') {
+            setCrNotePercentVal(value);
+            const amt = Number(((subTotalVal * value) / 100).toFixed(2));
+            setCrNoteVal(amt);
+            
+            const net = Number((subTotalVal + roundingVal - amt).toFixed(2));
             setNetAmountVal(net);
             setWordsVal(numberToWords(net));
         } else if (field === 'rounding') {
@@ -695,6 +720,27 @@ const CNDeductor = ({ isMobile }) => {
                                             onChange={(e) => handleValueChange('crnote', parseFloat(e.target.value) || 0)} 
                                             style={{ ...styles.inlineInput, color: 'var(--green)', fontWeight: 'bold' }}
                                         />
+                                    </span>
+                                </div>
+
+                                <div style={styles.comparisonRow}>
+                                    <span style={styles.fieldTitle}>CR Note %</span>
+                                    <span style={{ ...styles.fieldValOriginal, color: 'var(--text-tertiary)' }}>
+                                        {detectedData.subTotal.value && detectedData.subTotal.value > 0
+                                            ? ((detectedData.crNote.value / detectedData.subTotal.value) * 100).toFixed(2) + '%'
+                                            : '0.00%'}
+                                    </span>
+                                    <span style={styles.fieldValTarget}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                            <input 
+                                                type="number" 
+                                                step="0.01"
+                                                value={crNotePercentVal} 
+                                                onChange={(e) => handleValueChange('crnotepercent', parseFloat(e.target.value) || 0)} 
+                                                style={{ ...styles.inlineInput, color: 'var(--brand-color)', fontWeight: 'bold', width: '100%' }}
+                                            />
+                                            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-tertiary)' }}>%</span>
+                                        </div>
                                     </span>
                                 </div>
 
