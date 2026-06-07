@@ -42,12 +42,229 @@ if (!firebase.apps.some(app => app.name === 'pdfEditorApp')) {
 }
 const pdfEditorDatabase = pdfEditorApp.database();
 
-const CNDeductor = () => (
-    <div style={styles.placeholderContainer}>
-        <h3 style={styles.placeholderTitle}>CN Deductor</h3>
-        <p style={styles.placeholderText}>This feature is currently under development and will be available soon.</p>
-    </div>
-);
+const CNDeductor = ({ isMobile }) => {
+    const [file, setFile] = useState<File | null>(null);
+    const [isExtracting, setIsExtracting] = useState(false);
+    const [pagesText, setPagesText] = useState<{ pageNum: number; text: string }[]>([]);
+    const [statusMessage, setStatusMessage] = useState('Upload a Credit Note PDF to extract and view text.');
+    const [searchTerm, setSearchTerm] = useState('');
+    const [copiedPage, setCopiedPage] = useState<number | null>(null);
+
+    const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const files = event.target.files;
+        if (files && files.length > 0) {
+            const uploadedFile = files[0];
+            setFile(uploadedFile);
+            await extractText(uploadedFile);
+        }
+    };
+
+    const extractText = async (pdfFile: File) => {
+        setIsExtracting(true);
+        setPagesText([]);
+        setStatusMessage('Reading PDF file...');
+        try {
+            const arrayBuffer = await pdfFile.arrayBuffer();
+            const fileBytes = new Uint8Array(arrayBuffer);
+            
+            if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
+                pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js`;
+            }
+
+            setStatusMessage('Loading PDF document...');
+            const loadingTask = pdfjsLib.getDocument({ data: fileBytes });
+            const pdf = await loadingTask.promise;
+            const totalPages = pdf.numPages;
+
+            const extractedPages: { pageNum: number; text: string }[] = [];
+
+            for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+                setStatusMessage(`Extracting text from page ${pageNum} of ${totalPages}...`);
+                const page = await pdf.getPage(pageNum);
+                const textContent = await page.getTextContent();
+                
+                const textItems = textContent.items.map((item: any) => item.str);
+                const pageFullText = textItems.join(' ');
+                extractedPages.push({ pageNum, text: pageFullText });
+            }
+
+            setPagesText(extractedPages);
+            setStatusMessage(`Successfully extracted text from ${totalPages} page(s).`);
+        } catch (error: any) {
+            console.error('Failed to extract text from PDF:', error);
+            setStatusMessage(`Error: ${error.message || 'Failed to extract text'}`);
+        } finally {
+            setIsExtracting(false);
+        }
+    };
+
+    const handleCopyText = (text: string, pageNum: number) => {
+        navigator.clipboard.writeText(text);
+        setCopiedPage(pageNum);
+        setTimeout(() => setCopiedPage(null), 2000);
+    };
+
+    const handleCopyAll = () => {
+        const fullText = pagesText.map(p => `--- Page ${p.pageNum} ---\n${p.text}`).join('\n\n');
+        navigator.clipboard.writeText(fullText);
+        alert('All extracted text copied to clipboard!');
+    };
+
+    const filteredPages = useMemo(() => {
+        if (!searchTerm) return pagesText;
+        return pagesText.map(page => {
+            const lowerSearch = searchTerm.toLowerCase();
+            const containsTerm = page.text.toLowerCase().includes(lowerSearch);
+            return containsTerm ? page : null;
+        }).filter((p): p is { pageNum: number; text: string } => p !== null);
+    }, [pagesText, searchTerm]);
+
+    const highlightText = (text: string, highlight: string) => {
+        if (!highlight.trim()) return text;
+        const parts = text.split(new RegExp(`(${highlight})`, 'gi'));
+        return (
+            <>
+                {parts.map((part, i) => 
+                    part.toLowerCase() === highlight.toLowerCase() ? (
+                        <mark key={i} style={{ backgroundColor: 'rgba(241, 196, 15, 0.4)', color: 'var(--dark-grey)', padding: '0 2px', borderRadius: '2px' }}>{part}</mark>
+                    ) : part
+                )}
+            </>
+        );
+    };
+
+    const cnGridLayout = {
+        ...styles.cnGridLayout,
+        ...(isMobile && {
+            gridTemplateColumns: '1fr',
+            gap: '1.5rem',
+        })
+    };
+
+    return (
+        <div style={styles.cnDeductorContainer}>
+            <div style={styles.cnHeaderCard}>
+                <h2 style={styles.cnTitle}>CN Deductor — Text Extractor</h2>
+                <p style={styles.cnSubtitle}>Upload your Credit Note or Deductions PDF to parse all text data and prepare for deduction checks.</p>
+            </div>
+
+            <div style={cnGridLayout}>
+                {/* Left Control Panel */}
+                <div style={styles.cnLeftPanel}>
+                    <div style={styles.inputCard}>
+                        <label style={styles.label}>Upload PDF File</label>
+                        <label htmlFor="cn-pdf-upload" style={{
+                            ...styles.uploadButton,
+                            borderColor: file ? 'var(--green)' : 'var(--separator-color)',
+                            backgroundColor: 'var(--card-bg)'
+                        }}>
+                            <FileIcon />
+                            <span style={{ fontSize: '0.9rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {file ? file.name : 'Choose Credit Note PDF'}
+                            </span>
+                        </label>
+                        <input id="cn-pdf-upload" type="file" accept=".pdf" onChange={handleFileChange} style={{ display: 'none' }} disabled={isExtracting} />
+                        
+                        <p style={{ ...styles.statusMessage, color: pagesText.length > 0 ? 'var(--green)' : 'var(--text-color)' }}>
+                            {statusMessage}
+                        </p>
+
+                        {isExtracting && (
+                            <div style={{ display: 'flex', justifyContent: 'center', margin: '1rem 0' }}>
+                                <div style={styles.spinner}></div>
+                            </div>
+                        )}
+                    </div>
+
+                    {pagesText.length > 0 && (
+                        <div style={styles.statsCard}>
+                            <h4 style={{ ...styles.detailsHeader, borderBottom: '1px solid var(--separator-color)', paddingBottom: '0.5rem' }}>Document Stats</h4>
+                            <div style={styles.statRow}>
+                                <span style={styles.statLabel}>Total Pages:</span>
+                                <span style={styles.statValue}>{pagesText.length}</span>
+                            </div>
+                            <div style={styles.statRow}>
+                                <span style={styles.statLabel}>Total Characters:</span>
+                                <span style={styles.statValue}>{pagesText.reduce((acc, p) => acc + p.text.length, 0).toLocaleString()}</span>
+                            </div>
+                            <div style={styles.statRow}>
+                                <span style={styles.statLabel}>Estimated Words:</span>
+                                <span style={styles.statValue}>{pagesText.reduce((acc, p) => acc + p.text.split(/\s+/).filter(Boolean).length, 0).toLocaleString()}</span>
+                            </div>
+
+                            <button onClick={handleCopyAll} style={{ ...styles.actionButton, marginTop: '1.5rem', width: '100%', gap: '8px' }}>
+                                Copy All Text
+                            </button>
+                        </div>
+                    )}
+                </div>
+
+                {/* Right Text Viewer Panel */}
+                <div style={styles.cnRightPanel}>
+                    {pagesText.length > 0 ? (
+                        <div style={styles.textViewerCard}>
+                            <div style={styles.viewerHeader}>
+                                <h3 style={{ ...styles.previewTitle, margin: 0 }}>Extracted Text Content</h3>
+                                <div style={styles.searchBarContainer}>
+                                    <SearchIcon />
+                                    <input 
+                                        type="text" 
+                                        placeholder="Search in extracted text..." 
+                                        value={searchTerm} 
+                                        onChange={e => setSearchTerm(e.target.value)}
+                                        style={styles.cnSearchInput}
+                                    />
+                                    {searchTerm && (
+                                        <button onClick={() => setSearchTerm('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-color)', display: 'flex', alignItems: 'center' }}>
+                                            <XIcon size={16} />
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+
+                            {filteredPages.length === 0 ? (
+                                <div style={styles.emptyView}>
+                                    No matches found for "{searchTerm}" in the extracted text.
+                                </div>
+                            ) : (
+                                <div style={styles.pagesContainer}>
+                                    {filteredPages.map(page => (
+                                        <div key={page.pageNum} style={styles.pageTextBlock}>
+                                            <div style={styles.pageBlockHeader}>
+                                                <span style={styles.pageNumberBadge}>Page {page.pageNum} of {pagesText.length}</span>
+                                                <button 
+                                                    onClick={() => handleCopyText(page.text, page.pageNum)} 
+                                                    style={{
+                                                        ...styles.copyPageButton,
+                                                        backgroundColor: copiedPage === page.pageNum ? 'var(--green)' : 'rgba(0,0,0,0.05)',
+                                                        color: copiedPage === page.pageNum ? '#fff' : 'var(--dark-grey)'
+                                                    }}
+                                                >
+                                                    {copiedPage === page.pageNum ? 'Copied ✓' : 'Copy Page Text'}
+                                                </button>
+                                            </div>
+                                            <div style={styles.extractedTextParagraph}>
+                                                {highlightText(page.text, searchTerm)}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        <div style={styles.emptyTextViewer}>
+                            <UploadCloudIcon />
+                            <h4 style={{ marginTop: '1rem', color: 'var(--dark-grey)', fontWeight: 600 }}>No PDF Extracted</h4>
+                            <p style={{ color: 'var(--text-color)', fontSize: '0.9rem', maxWidth: '300px', textAlign: 'center' }}>
+                                Upload a PDF on the left panel to begin text extraction processes automatically.
+                            </p>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
 
 // --- INDEXEDDB CACHE FOR PDF WORK ---
 const pdfCache = {
@@ -1019,7 +1236,7 @@ export const PDFEditor = () => {
             </div>
             <div style={styles.contentContainer}>
                 {activeTab === 'partyChange' && <PartyNameChanger isMobile={isMobile} />}
-                {activeTab === 'cnDeductor' && <CNDeductor />}
+                {activeTab === 'cnDeductor' && <CNDeductor isMobile={isMobile} />}
             </div>
         </div>
     );
@@ -1130,6 +1347,46 @@ const styles: { [key: string]: React.CSSProperties } = {
     
     manageButton: { background: 'none', border: 'none', color: 'var(--brand-color)', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer', textDecoration: 'underline' },
     iconButton: { background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '4px', transition: 'background-color 0.2s' },
+
+    // CN Deductor Styles
+    cnDeductorContainer: { display: 'flex', flexDirection: 'column', gap: '1.5rem', height: '100%' },
+    cnHeaderCard: { backgroundColor: 'var(--card-bg)', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' },
+    cnTitle: { margin: 0, fontSize: '1.4rem', fontWeight: 700, color: 'var(--dark-grey)', marginBottom: '0.25rem' },
+    cnSubtitle: { margin: 0, fontSize: '0.95rem', color: 'var(--text-color)' },
+    cnGridLayout: { display: 'grid', gridTemplateColumns: '320px 1fr', gap: '1.5rem' },
+    cnLeftPanel: { display: 'flex', flexDirection: 'column', gap: '1.5rem' },
+    cnRightPanel: { display: 'flex', flexDirection: 'column', height: '100%', minHeight: '400px' },
+    inputCard: { backgroundColor: 'var(--card-bg)', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', gap: '1rem' },
+    statsCard: { backgroundColor: 'var(--card-bg)', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', gap: '0.75rem' },
+    statRow: { display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', borderBottom: '1px solid var(--separator-color)', paddingBottom: '0.5rem', color: 'var(--text-color)' },
+    statLabel: { fontWeight: 500 },
+    statValue: { fontWeight: 600, color: 'var(--dark-grey)' },
+    statusMessage: { margin: 0, fontSize: '0.85rem', color: 'var(--text-color)', lineHeight: '1.4' },
+    textViewerCard: { backgroundColor: 'var(--card-bg)', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', height: '100%' },
+    viewerHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--separator-color)', gap: '1rem', flexWrap: 'wrap' },
+    searchBarContainer: { display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.75rem', border: '1px solid var(--separator-color)', borderRadius: '8px', width: '280px', backgroundColor: 'var(--light-grey)' },
+    cnSearchInput: { border: 'none', background: 'transparent', outline: 'none', fontSize: '0.9rem', color: 'var(--dark-grey)', width: '100%' },
+    pagesContainer: { padding: '1.5rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1.5rem', maxHeight: '550px' },
+    pageTextBlock: { border: '1px solid var(--separator-color)', borderRadius: '8px', padding: '1.25rem', backgroundColor: 'var(--light-grey)', display: 'flex', flexDirection: 'column', gap: '0.75rem' },
+    pageBlockHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+    pageNumberBadge: { fontSize: '0.8rem', fontWeight: 600, backgroundColor: 'var(--brand-color)', color: '#fff', padding: '2px 8px', borderRadius: '4px' },
+    copyPageButton: { padding: '4px 12px', borderRadius: '6px', border: 'none', fontSize: '0.8rem', fontWeight: 500, cursor: 'pointer', transition: 'all 0.2s ease' },
+    extractedTextParagraph: { fontSize: '0.9rem', color: 'var(--dark-grey)', lineHeight: '1.6', whiteSpace: 'pre-wrap', maxHeight: '300px', overflowY: 'auto', backgroundColor: '#fff', padding: '1rem', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.05)', fontFamily: 'var(--font-mono)' },
+    emptyView: { display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'var(--text-tertiary)', padding: '3rem', fontSize: '1rem' },
+    emptyTextViewer: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        textAlign: 'center',
+        padding: '2rem',
+        border: '2px dashed var(--separator-color)',
+        borderRadius: '12px',
+        color: 'var(--text-tertiary)',
+        minHeight: '400px',
+        width: '100%',
+        backgroundColor: 'var(--card-bg)',
+        flexDirection: 'column',
+    }
 };
 
 const styleSheet = document.createElement("style");

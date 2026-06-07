@@ -44,6 +44,7 @@ interface StockItem { id: number; style: string; color: string; size: string; st
 
 const PENDING_ORDERS_REF = 'Pending_Order_V2';
 const BILLING_ORDERS_REF = 'Ready_For_Billing_V2';
+const BILLED_ORDERS_REF = 'Billed_Orders_V2';
 const DELETED_ORDERS_REF = 'Deleted_Orders_V2';
 const EXPIRED_ORDERS_REF = 'Expired_Orders_V2';
 const CUSTOM_TAGS_REF = 'Custom_Tags_V2';
@@ -1310,49 +1311,111 @@ const DirectBillingModal = ({ isOpen, onClose, order, processingQty, onConfirm, 
 
     return (
         <div style={{...styles.modalOverlay, zIndex: 11000, animation: isClosing ? 'overlayOut 0.3s forwards' : 'overlayIn 0.3s forwards', opacity: 1}} onClick={handleClose}>
-            <div style={{...styles.modalContent, maxWidth: '500px', animation: isClosing ? 'modalOut 0.3s forwards' : 'modalIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards', opacity: 1}} onClick={(e) => e.stopPropagation()}>
-                <h3 style={{...styles.modalTitle, textAlign: 'center', marginBottom: '0.5rem', fontSize: '1.2rem'}}>Confirm Direct Billing</h3>
-                <p style={{...styles.modalSubtitleText, textAlign: 'center', marginBottom: '1rem'}}>
-                    You are billing <strong>{totalBilledPcs}</strong> items for <strong>{order.partyName}</strong> (Order #{order.orderNumber}). Please review the quantities below:
+            <div style={{...styles.modalContent, maxWidth: '500px', padding: '1.5rem', borderRadius: '16px', animation: isClosing ? 'modalOut 0.3s forwards' : 'modalIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards', opacity: 1}} onClick={(e) => e.stopPropagation()}>
+                <h3 style={{...styles.modalTitle, textAlign: 'center', marginBottom: '0.25rem', fontSize: '1.25rem', fontWeight: 700}}>Billing Options</h3>
+                <p style={{...styles.modalSubtitleText, textAlign: 'center', marginBottom: '1.25rem', color: 'var(--text-color)', fontSize: '0.9rem', lineHeight: '1.4'}}>
+                    Select billing path for <strong>{totalBilledPcs}</strong> items of <strong>{order.partyName}</strong> (Order #{order.orderNumber}):
                 </p>
                 <div style={{
-                    maxHeight: '250px',
+                    maxHeight: '180px',
                     overflowY: 'auto',
                     border: '1px solid var(--separator-color)',
-                    borderRadius: '8px',
+                    borderRadius: '10px',
                     padding: '0.5rem',
                     backgroundColor: 'var(--light-grey)',
-                    marginBottom: '1rem'
+                    marginBottom: '1.25rem'
                 }}>
                     <table style={{width: '100%', borderCollapse: 'collapse'}}>
                         <thead>
                             <tr style={{borderBottom: '1px solid var(--separator-color)'}}>
-                                <th style={{textAlign: 'left', padding: '6px', fontSize: '0.8rem', color: 'var(--text-color)'}}>Item</th>
-                                <th style={{textAlign: 'center', padding: '6px', fontSize: '0.8rem', color: 'var(--text-color)'}}>Size</th>
-                                <th style={{textAlign: 'right', padding: '6px', fontSize: '0.8rem', color: 'var(--text-color)'}}>Bill Qty</th>
+                                <th style={{textAlign: 'left', padding: '6px', fontSize: '0.75rem', color: 'var(--dark-grey)', fontWeight: 600}}>Item</th>
+                                <th style={{textAlign: 'center', padding: '6px', fontSize: '0.75rem', color: 'var(--dark-grey)', fontWeight: 600}}>Size</th>
+                                <th style={{textAlign: 'right', padding: '6px', fontSize: '0.75rem', color: 'var(--dark-grey)', fontWeight: 600}}>Qty</th>
                             </tr>
                         </thead>
                         <tbody>
                             {billedItems.map((item, idx) => (
                                 <tr key={item.id} style={{borderBottom: idx === billedItems.length - 1 ? 'none' : '1px solid rgba(0,0,0,0.05)'}}>
-                                    <td style={{padding: '8px 6px', fontSize: '0.85rem', color: 'var(--dark-grey)', fontWeight: 500}}>
+                                    <td style={{padding: '6px 6px', fontSize: '0.8rem', color: 'var(--dark-grey)', fontWeight: 500}}>
                                         {item.fullItemData?.Style} - {item.fullItemData?.Color}
                                     </td>
-                                    <td style={{padding: '8px 6px', textAlign: 'center', fontSize: '0.85rem', color: 'var(--dark-grey)'}}>
+                                    <td style={{padding: '6px 6px', textAlign: 'center', fontSize: '0.8rem', color: 'var(--dark-grey)'}}>
                                         {item.fullItemData?.Size}
                                     </td>
-                                    <td style={{padding: '8px 6px', textAlign: 'right', fontSize: '0.85rem', color: 'var(--brand-color)', fontWeight: 600}}>
-                                        {processingQty[item.id]} / {item.quantity}
+                                    <td style={{padding: '6px 6px', textAlign: 'right', fontSize: '0.8rem', color: 'var(--brand-color)', fontWeight: 700}}>
+                                        {processingQty[item.id]}
                                     </td>
                                 </tr>
                             ))}
                         </tbody>
                     </table>
                 </div>
-                <div style={styles.iosModalActions}>
-                    <button onClick={handleClose} style={styles.iosModalButtonSecondary} disabled={isProcessing}>Cancel</button>
-                    <button onClick={onConfirm} style={{...styles.iosModalButtonPrimary, color: 'var(--green)'}} disabled={isProcessing}>
-                        {isProcessing ? <SmallSpinner /> : 'Direct Bill'}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%' }}>
+                    <button 
+                        onClick={() => onConfirm(true)} 
+                        style={{
+                            width: '100%',
+                            backgroundColor: 'var(--green)',
+                            color: '#fff',
+                            border: 'none',
+                            borderRadius: '12px',
+                            padding: '12px',
+                            fontWeight: 600,
+                            fontSize: '0.95rem',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px',
+                            boxShadow: '0 4px 12px rgba(46, 204, 113, 0.15)',
+                            transition: 'all 0.2s ease',
+                        }} 
+                        disabled={isProcessing}
+                    >
+                        {isProcessing ? <SmallSpinner /> : <>⚡ DIRECT BILL (Skip Ready to Bill)</>}
+                    </button>
+                    
+                    <button 
+                        onClick={() => onConfirm(false)} 
+                        style={{
+                            width: '100%',
+                            backgroundColor: 'var(--brand-color)',
+                            color: '#fff',
+                            border: 'none',
+                            borderRadius: '12px',
+                            padding: '12px',
+                            fontWeight: 600,
+                            fontSize: '0.95rem',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px',
+                            boxShadow: '0 4px 12px rgba(97, 85, 245, 0.15)',
+                            transition: 'all 0.2s ease',
+                        }} 
+                        disabled={isProcessing}
+                    >
+                        {isProcessing ? <SmallSpinner /> : <>📋 SEND TO READY TO BILL</>}
+                    </button>
+                    
+                    <button 
+                        onClick={handleClose} 
+                        style={{
+                            width: '100%',
+                            backgroundColor: 'transparent',
+                            color: 'var(--dark-grey)',
+                            border: 'none',
+                            borderRadius: '12px',
+                            padding: '10px',
+                            fontWeight: 500,
+                            fontSize: '0.95rem',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                        }} 
+                        disabled={isProcessing}
+                    >
+                        Cancel
                     </button>
                 </div>
             </div>
@@ -1624,7 +1687,7 @@ export const PendingOrders = ({ onNavigate }) => {
     };
 
 
-    const handleProcessOrder = useCallback(async (order: Order, quantitiesToProcess: Record<string, number>) => {
+    const handleProcessOrder = useCallback(async (order: Order, quantitiesToProcess: Record<string, number>, isDirectBill: boolean = false) => {
         setProcessingOrder(order.orderNumber);
         try {
             const updates = {};
@@ -1644,53 +1707,97 @@ export const PendingOrders = ({ onNavigate }) => {
     
             const now = new Date();
             const processingDate = now.toISOString();
-            const processingDateKey = now.toISOString().split('T')[0].replace(/-/g, ''); // YYYYMMDD
-    
-            const billingOrderKey = `${order.orderNumber}_${processingDateKey}`;
-            const billingOrderRefPath = `${BILLING_ORDERS_REF}/${billingOrderKey}`;
+            const totalProcessedQty = itemsToProcess.reduce((sum, i) => sum + i.quantity, 0);
             const pendingOrderRefPath = `${PENDING_ORDERS_REF}/${order.orderNumber}`;
     
-            const totalProcessedQty = itemsToProcess.reduce((sum, i) => sum + i.quantity, 0);
-            const newHistoryEvent = {
-                timestamp: processingDate,
-                event: 'System',
-                details: `Processed ${itemsToProcess.length} item types. Total Qty: ${totalProcessedQty}.`
-            };
-            const updatedHistory = [...(order.history || []), newHistoryEvent];
-            
-            const existingBillingSnap = await firebase.database().ref(billingOrderRefPath).once('value');
-            const existingBillingOrder = existingBillingSnap.val() as Order | null;
-            
-            const finalBillingItemsMap = new Map(existingBillingOrder?.items.map(i => [i.id, i]) || []);
-            
-            itemsToProcess.forEach(newItem => {
-                const existingItem = finalBillingItemsMap.get(newItem.id);
-                if (existingItem) { 
-                    existingItem.quantity += newItem.quantity; 
-                } else { 
-                    finalBillingItemsMap.set(newItem.id, newItem); 
-                }
-            });
-            
-            const finalBillingItems = Array.from(finalBillingItemsMap.values());
-            updates[billingOrderRefPath] = { 
-                ...order, 
-                items: finalBillingItems, 
-                totalQuantity: finalBillingItems.reduce((sum, i) => sum + i.quantity, 0), 
-                totalValue: finalBillingItems.reduce((sum, i) => sum + (i.quantity * i.price), 0), 
-                history: updatedHistory,
-                processedDate: processingDate 
-            };
-            updates[pendingOrderRefPath] = itemsRemainingInPending.length > 0 ? { 
-                ...order, 
-                items: itemsRemainingInPending, 
-                totalQuantity: itemsRemainingInPending.reduce((sum, i) => sum + i.quantity, 0), 
-                totalValue: itemsRemainingInPending.reduce((sum, i) => sum + (i.quantity * i.price), 0), 
-                history: updatedHistory 
-            } : null;
-            
-            await firebase.database().ref().update(updates);
-            showToast(`Processed items for ${order.orderNumber}.`, 'success');
+            if (isDirectBill) {
+                const newHistoryEvent = {
+                    timestamp: processingDate,
+                    event: 'System',
+                    details: `Directly Billed. Processed ${itemsToProcess.length} item types. Total Qty: ${totalProcessedQty}.`
+                };
+                const updatedHistory = [...(order.history || []), newHistoryEvent];
+    
+                const billedOrderRefPath = `${BILLED_ORDERS_REF}/${order.orderNumber}`;
+                const existingBilledOrderSnap = await firebase.database().ref(billedOrderRefPath).once('value');
+                const existingBilledOrder = existingBilledOrderSnap.val() as Order | null;
+    
+                const finalBilledItemsMap = new Map(existingBilledOrder?.items.map(i => [i.id, i]) || []);
+                itemsToProcess.forEach(newItem => {
+                    const existingItem = finalBilledItemsMap.get(newItem.id);
+                    if (existingItem) { 
+                        existingItem.quantity += newItem.quantity; 
+                    } else { 
+                        finalBilledItemsMap.set(newItem.id, newItem); 
+                    }
+                });
+                const finalBilledItems = Array.from(finalBilledItemsMap.values());
+    
+                updates[billedOrderRefPath] = { 
+                    ...order, 
+                    items: finalBilledItems, 
+                    totalQuantity: finalBilledItems.reduce((sum, i) => sum + i.quantity, 0), 
+                    totalValue: finalBilledItems.reduce((sum, i) => sum + (i.quantity * i.price), 0), 
+                    status: 'Billed',
+                    billedTimestamp: processingDate,
+                    history: updatedHistory 
+                };
+                updates[pendingOrderRefPath] = itemsRemainingInPending.length > 0 ? { 
+                    ...order, 
+                    items: itemsRemainingInPending, 
+                    totalQuantity: itemsRemainingInPending.reduce((sum, i) => sum + i.quantity, 0), 
+                    totalValue: itemsRemainingInPending.reduce((sum, i) => sum + (i.quantity * i.price), 0), 
+                    history: updatedHistory 
+                } : null;
+    
+                await firebase.database().ref().update(updates);
+                showToast(`Directly billed items for ${order.orderNumber}.`, 'success');
+            } else {
+                const processingDateKey = now.toISOString().split('T')[0].replace(/-/g, ''); // YYYYMMDD
+                const billingOrderKey = `${order.orderNumber}_${processingDateKey}`;
+                const billingOrderRefPath = `${BILLING_ORDERS_REF}/${billingOrderKey}`;
+    
+                const newHistoryEvent = {
+                    timestamp: processingDate,
+                    event: 'System',
+                    details: `Processed ${itemsToProcess.length} item types. Total Qty: ${totalProcessedQty}.`
+                };
+                const updatedHistory = [...(order.history || []), newHistoryEvent];
+                
+                const existingBillingSnap = await firebase.database().ref(billingOrderRefPath).once('value');
+                const existingBillingOrder = existingBillingSnap.val() as Order | null;
+                
+                const finalBillingItemsMap = new Map(existingBillingOrder?.items.map(i => [i.id, i]) || []);
+                
+                itemsToProcess.forEach(newItem => {
+                    const existingItem = finalBillingItemsMap.get(newItem.id);
+                    if (existingItem) { 
+                        existingItem.quantity += newItem.quantity; 
+                    } else { 
+                        finalBillingItemsMap.set(newItem.id, newItem); 
+                    }
+                });
+                
+                const finalBillingItems = Array.from(finalBillingItemsMap.values());
+                updates[billingOrderRefPath] = { 
+                    ...order, 
+                    items: finalBillingItems, 
+                    totalQuantity: finalBillingItems.reduce((sum, i) => sum + i.quantity, 0), 
+                    totalValue: finalBillingItems.reduce((sum, i) => sum + (i.quantity * i.price), 0), 
+                    history: updatedHistory,
+                    processedDate: processingDate 
+                };
+                updates[pendingOrderRefPath] = itemsRemainingInPending.length > 0 ? { 
+                    ...order, 
+                    items: itemsRemainingInPending, 
+                    totalQuantity: itemsRemainingInPending.reduce((sum, i) => sum + i.quantity, 0), 
+                    totalValue: itemsRemainingInPending.reduce((sum, i) => sum + (i.quantity * i.price), 0), 
+                    history: updatedHistory 
+                } : null;
+                
+                await firebase.database().ref().update(updates);
+                showToast(`Sent items to ready to bill for ${order.orderNumber}.`, 'success');
+            }
             setExpandedDetailed(null);
             setActiveOrder(null);
         } catch(e) {
@@ -2330,9 +2437,9 @@ export const PendingOrders = ({ onNavigate }) => {
                     onClose={() => setIsDirectBillModalOpen(false)}
                     order={currentlyActiveOrder}
                     processingQty={processingQty}
-                    onConfirm={() => {
+                    onConfirm={(isDirectBill) => {
                         if (currentlyActiveOrder) {
-                            handleProcessOrder(currentlyActiveOrder, processingQty);
+                            handleProcessOrder(currentlyActiveOrder, processingQty, isDirectBill);
                             setIsDirectBillModalOpen(false);
                         }
                     }}
