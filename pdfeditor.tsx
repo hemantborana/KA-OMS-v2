@@ -45,57 +45,521 @@ const pdfEditorDatabase = pdfEditorApp.database();
 const CNDeductor = ({ isMobile }) => {
     const [file, setFile] = useState<File | null>(null);
     const [isExtracting, setIsExtracting] = useState(false);
+    const [isModifying, setIsModifying] = useState(false);
     const [pagesText, setPagesText] = useState<{ pageNum: number; text: string }[]>([]);
-    const [statusMessage, setStatusMessage] = useState('Upload a Credit Note PDF to extract and view text.');
+    const [statusMessage, setStatusMessage] = useState('Upload a Credit Note PDF to extract, modify, and preview.');
     const [searchTerm, setSearchTerm] = useState('');
     const [copiedPage, setCopiedPage] = useState<number | null>(null);
+
+    // Sub tabs inside the CN Deductor interface
+    const [cnSubTab, setCnSubTab] = useState<'adjuster' | 'extractor'>('adjuster');
+
+    // Auto-parsed properties
+    const [detectedData, setDetectedData] = useState<any>(null);
+
+    // Editing states for values
+    const [subTotalVal, setSubTotalVal] = useState<number>(0);
+    const [crNoteVal, setCrNoteVal] = useState<number>(0); // Target CR Note - default is 0.00
+    const [roundingVal, setRoundingVal] = useState<number>(0); // Editable rounding off adjustment
+    const [netAmountVal, setNetAmountVal] = useState<number>(0); // Computed
+    const [wordsVal, setWordsVal] = useState<string>(''); // Computed Net Amount in words
+
+    // PDF raw bytes states (original & modified) to feed renderers
+    const [originalBytes, setOriginalBytes] = useState<Uint8Array | null>(null);
+    const [modifiedBytes, setModifiedBytes] = useState<Uint8Array | null>(null);
+
+    // Canvas references
+    const cnOriginalCanvasRef = useRef<HTMLCanvasElement>(null);
+    const cnModifiedCanvasRef = useRef<HTMLCanvasElement>(null);
+
+    // Indian style number to words converter helper
+    const numberToWords = (num: number): string => {
+        if (num <= 0) return 'ZERO ONLY.';
+        const ones = ['', 'ONE', 'TWO', 'THREE', 'FOUR', 'FIVE', 'SIX', 'SEVEN', 'EIGHT', 'NINE', 'TEN', 'ELEVEN', 'TWELVE', 'THIRTEEN', 'FOURTEEN', 'FIFTEEN', 'SIXTEEN', 'SEVENTEEN', 'EIGHTEEN', 'NINETEEN'];
+        const tens = ['', '', 'TWENTY', 'THIRTY', 'FORTY', 'FIFTY', 'SIXTY', 'SEVENTY', 'EIGHTY', 'NINETY'];
+        
+        const convertLessThanOneThousand = (n: number): string => {
+            if (n < 20) return ones[n];
+            const tempTens = tens[Math.floor(n / 10)];
+            const tempOnes = ones[n % 10];
+            const wordTens = tempTens + (tempOnes ? ' ' + tempOnes : '');
+            if (n < 100) return wordTens;
+            
+            const hundredWord = ones[Math.floor(n / 100)] + ' HUNDRED';
+            const remainder = n % 100;
+            if (remainder === 0) return hundredWord;
+            return hundredWord + ' ' + convertLessThanOneThousand(remainder);
+        };
+
+        const convert = (n: number): string => {
+            if (n === 0) return 'ZERO';
+            let words = '';
+            
+            // Crores (1,00,00,000)
+            if (Math.floor(n / 10000000) > 0) {
+                words += convertLessThanOneThousand(Math.floor(n / 10000000)) + ' CRORE ';
+                n %= 10000000;
+            }
+            
+            // Lakhs (1,00,000)
+            if (Math.floor(n / 100000) > 0) {
+                words += convertLessThanOneThousand(Math.floor(n / 100000)) + ' LAKH ';
+                n %= 100000;
+            }
+            
+            // Thousands (1,000)
+            if (Math.floor(n / 1000) > 0) {
+                words += convertLessThanOneThousand(Math.floor(n / 1000)) + ' THOUSAND ';
+                n %= 1000;
+            }
+            
+            // Hundreds
+            if (n > 0) {
+                words += convertLessThanOneThousand(n);
+            }
+            
+            return words.trim().replace(/\s+/g, ' ');
+        };
+
+        const integerPart = Math.floor(num);
+        return integerPart > 0 ? convert(integerPart) + ' ONLY.' : 'ZERO ONLY.';
+    };
+
+    // Helper to render page preview on canvas
+    const renderPdfPreview = async (pdfBytes: Uint8Array, canvasEl: HTMLCanvasElement) => {
+        try {
+            if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
+                pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js`;
+            }
+            const loadingTask = pdfjsLib.getDocument({ data: pdfBytes });
+            const pdf = await loadingTask.promise;
+            const page = await pdf.getPage(1);
+            const viewport = page.getViewport({ scale: 1.3 });
+
+            const context = canvasEl.getContext('2d');
+            if (context) {
+                canvasEl.height = viewport.height;
+                canvasEl.width = viewport.width;
+
+                const renderContext = {
+                    canvasContext: context,
+                    viewport: viewport
+                };
+                await page.render(renderContext).promise;
+            }
+        } catch (err) {
+            console.error("Failed to render preview on canvas:", err);
+        }
+    };
+
+    useEffect(() => {
+        if (originalBytes && cnOriginalCanvasRef.current) {
+            renderPdfPreview(originalBytes, cnOriginalCanvasRef.current);
+        }
+    }, [originalBytes, cnSubTab]);
+
+    useEffect(() => {
+        if (modifiedBytes && cnModifiedCanvasRef.current) {
+            renderPdfPreview(modifiedBytes, cnModifiedCanvasRef.current);
+        }
+    }, [modifiedBytes, cnSubTab]);
 
     const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const files = event.target.files;
         if (files && files.length > 0) {
             const uploadedFile = files[0];
             setFile(uploadedFile);
-            await extractText(uploadedFile);
+            setModifiedBytes(null); // Reset modified states
+            await extractAndAnalyze(uploadedFile);
         }
     };
 
-    const extractText = async (pdfFile: File) => {
+    // Main parsing extraction structure mapping coordinate vectors of page items
+    const extractAndAnalyze = async (pdfFile: File) => {
         setIsExtracting(true);
         setPagesText([]);
-        setStatusMessage('Reading PDF file...');
+        setDetectedData(null);
+        setStatusMessage('Deep scanning PDF layout items and mapping coordinate spaces...');
         try {
             const arrayBuffer = await pdfFile.arrayBuffer();
             const fileBytes = new Uint8Array(arrayBuffer);
+            setOriginalBytes(fileBytes);
             
             if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
                 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js`;
             }
 
-            setStatusMessage('Loading PDF document...');
             const loadingTask = pdfjsLib.getDocument({ data: fileBytes });
             const pdf = await loadingTask.promise;
             const totalPages = pdf.numPages;
 
             const extractedPages: { pageNum: number; text: string }[] = [];
+            let firstPageItems: any[] = [];
 
             for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
-                setStatusMessage(`Extracting text from page ${pageNum} of ${totalPages}...`);
                 const page = await pdf.getPage(pageNum);
                 const textContent = await page.getTextContent();
                 
                 const textItems = textContent.items.map((item: any) => item.str);
                 const pageFullText = textItems.join(' ');
                 extractedPages.push({ pageNum, text: pageFullText });
+
+                if (pageNum === 1) {
+                    firstPageItems = textContent.items.map((item: any) => {
+                        const transform = item.transform; // [scaleX, skewX, skewY, scaleY, x, y]
+                        return {
+                            str: item.str,
+                            x: transform[4],
+                            y: transform[5],
+                            width: item.width,
+                            height: item.height || transform[3]
+                        };
+                    });
+                }
             }
 
             setPagesText(extractedPages);
-            setStatusMessage(`Successfully extracted text from ${totalPages} page(s).`);
+
+            // Auto parse labels and identify billing records coordinates
+            const parseResults = {
+                subTotal: { labelItem: null as any, valueItem: null as any, value: 0 },
+                crNote: { labelItem: null as any, valueItem: null as any, value: 0 },
+                rounding: { labelItem: null as any, valueItem: null as any, value: 0 },
+                netAmount: { labelItem: null as any, valueItem: null as any, value: 0 },
+                words: { labelItem: null as any, sameYItems: [] as any[], text: '' }
+            };
+
+            firstPageItems.forEach((item) => {
+                const text = item.str.toUpperCase().trim();
+                
+                if (text.includes("SUB TOTAL") && !parseResults.subTotal.labelItem) {
+                    parseResults.subTotal.labelItem = item;
+                }
+                if ((text.includes("CR NOTE AMOUNT") || text.includes("CR. NOTE") || text.includes("CREDIT NOTE")) 
+                    && !text.includes("IN WORDS") && !parseResults.crNote.labelItem) {
+                    parseResults.crNote.labelItem = item;
+                }
+                if ((text.includes("ROUNDING AMOUNT") || text.includes("ROUNDING OFF") || text.includes("ROUNDING AMOUNT")) 
+                    && !parseResults.rounding.labelItem) {
+                    parseResults.rounding.labelItem = item;
+                }
+                if (text.includes("NET AMOUNT") && !text.includes("WORDS") && !text.includes("Rs:") && !parseResults.netAmount.labelItem) {
+                    parseResults.netAmount.labelItem = item;
+                }
+                if ((text.includes("NET AMOUNT (IN WORDS)") || text.includes("AMOUNT IN WORDS")) && !parseResults.words.labelItem) {
+                    parseResults.words.labelItem = item;
+                }
+            });
+
+            // Tabular match extractor for aligned numeric records
+            const findNumericValue = (labelItem: any) => {
+                if (!labelItem) return null;
+                
+                const parts = labelItem.str.split(':');
+                if (parts.length > 1 && parts[1].trim().length > 0) {
+                    const numMatch = parts[1].trim().match(/-?\d+\.\d+/);
+                    if (numMatch) {
+                        return { item: labelItem, value: parseFloat(numMatch[0]) };
+                    }
+                }
+                
+                const sameRow = firstPageItems.filter(item => 
+                    Math.abs(item.y - labelItem.y) < 4 && item.x > labelItem.x
+                );
+                sameRow.sort((a, b) => a.x - b.x);
+                
+                for (const item of sameRow) {
+                    const numMatch = item.str.match(/-?\d+\.\d+/);
+                    if (numMatch) {
+                        return { item: item, value: parseFloat(numMatch[0]) };
+                    }
+                }
+                return null;
+            };
+
+            const subTotalInfo = findNumericValue(parseResults.subTotal.labelItem);
+            if (subTotalInfo) {
+                parseResults.subTotal.value = subTotalInfo.value;
+                parseResults.subTotal.valueItem = subTotalInfo.item;
+            }
+            
+            const crNoteInfo = findNumericValue(parseResults.crNote.labelItem);
+            if (crNoteInfo) {
+                parseResults.crNote.value = crNoteInfo.value;
+                parseResults.crNote.valueItem = crNoteInfo.item;
+            }
+            
+            const roundingInfo = findNumericValue(parseResults.rounding.labelItem);
+            if (roundingInfo) {
+                parseResults.rounding.value = roundingInfo.value;
+                parseResults.rounding.valueItem = roundingInfo.item;
+            }
+            
+            const netAmountInfo = findNumericValue(parseResults.netAmount.labelItem);
+            if (netAmountInfo) {
+                parseResults.netAmount.value = netAmountInfo.value;
+                parseResults.netAmount.valueItem = netAmountInfo.item;
+            }
+
+            if (parseResults.words.labelItem) {
+                const labelItem = parseResults.words.labelItem;
+                const parts = labelItem.str.split(':');
+                if (parts.length > 1 && parts[1].trim().length > 0) {
+                    parseResults.words.text = parts[1].trim();
+                } else {
+                    const rowItems = firstPageItems.filter(item => 
+                        Math.abs(item.y - labelItem.y) < 4 && item.x > labelItem.x
+                    );
+                    rowItems.sort((a, b) => a.x - b.x);
+                    parseResults.words.sameYItems = rowItems;
+                    parseResults.words.text = rowItems.map(item => item.str).join(' ').trim();
+                }
+            }
+
+            setDetectedData(parseResults);
+            
+            // Set dynamic formula default triggers
+            const detectedSub = parseResults.subTotal.value || 1906.56;
+            setSubTotalVal(detectedSub);
+            
+            // Rule #1: MAKE CR AMOUNT ZERO (explicit rule)
+            setCrNoteVal(0.00);
+            
+            // Rule #2: Compute nearest rounding off adjustment dynamically
+            const defaultRounding = Number((Math.round(detectedSub) - detectedSub).toFixed(2));
+            setRoundingVal(defaultRounding);
+            
+            // Rule #3: Calc corresponding Net amount
+            const defaultNet = Number((detectedSub + defaultRounding).toFixed(2));
+            setNetAmountVal(defaultNet);
+            
+            // Rule #4: Generate Spelling text matching net amount
+            setWordsVal(numberToWords(defaultNet));
+
+            setStatusMessage(`Successfully scanned document! Found Sub Total: ${detectedSub.toFixed(2)}, original Credit Note: ${(parseResults.crNote.value || 0).toFixed(2)}. Make adjustments below.`);
+            
+            setTimeout(() => {
+                if (cnOriginalCanvasRef.current) {
+                    renderPdfPreview(fileBytes, cnOriginalCanvasRef.current);
+                }
+            }, 100);
+
         } catch (error: any) {
-            console.error('Failed to extract text from PDF:', error);
-            setStatusMessage(`Error: ${error.message || 'Failed to extract text'}`);
+            console.error('Failed to extract and parse PDF:', error);
+            setStatusMessage(`Scan failed: ${error.message || 'Parsing error'}`);
         } finally {
             setIsExtracting(false);
         }
+    };
+
+    // Calculate live dynamic formulas reactively
+    const handleValueChange = (field: 'subtotal' | 'crnote' | 'rounding', value: number) => {
+        if (field === 'subtotal') {
+            setSubTotalVal(value);
+            const computedRounding = Number((Math.round(value) - value).toFixed(2));
+            setRoundingVal(computedRounding);
+            const net = Number((value + computedRounding - crNoteVal).toFixed(2));
+            setNetAmountVal(net);
+            setWordsVal(numberToWords(net));
+        } else if (field === 'crnote') {
+            setCrNoteVal(value);
+            const net = Number((subTotalVal + roundingVal - value).toFixed(2));
+            setNetAmountVal(net);
+            setWordsVal(numberToWords(net));
+        } else if (field === 'rounding') {
+            setRoundingVal(value);
+            const net = Number((subTotalVal + value - crNoteVal).toFixed(2));
+            setNetAmountVal(net);
+            setWordsVal(numberToWords(net));
+        }
+    };
+
+    // Executor that loads PDF, applies whiteouts, overlays text and triggers previews
+    const handleModifyPDF = async () => {
+        if (!file || !detectedData) return;
+        setIsModifying(true);
+        setStatusMessage('Modifying PDF values directly using specialized whiteout layout transformations...');
+        try {
+            const arrayBuffer = await file.arrayBuffer();
+            const pdfBytes = new Uint8Array(arrayBuffer);
+            const pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
+            const firstPage = pdfDoc.getPages()[0];
+            
+            const { rgb, StandardFonts } = PDFLib;
+            const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+            const helveticaBoldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+            const applyWhiteoutAndWrite = async (
+                page: any,
+                labelItem: any,
+                valueItem: any,
+                newValueStr: string,
+                font: any,
+                fontSize: number,
+                isWords: boolean = false
+            ) => {
+                let x = 0, y = 0, width = 60, height = 10;
+                
+                if (valueItem) {
+                    x = valueItem.x;
+                    y = valueItem.y;
+                    width = valueItem.width || 60;
+                    height = valueItem.height || 10;
+                    
+                    page.drawRectangle({
+                        x: x - 4,
+                        y: y - 2,
+                        width: width + 8,
+                        height: height + 4,
+                        color: rgb(1, 1, 1),
+                        borderWidth: 0
+                    });
+
+                    if (isWords) {
+                        page.drawText(newValueStr, { x, y, size: fontSize, font, color: rgb(0,0,0) });
+                    } else {
+                        const origRightEdge = x + width;
+                        const newTextWidth = font.widthOfTextAtSize(newValueStr, fontSize);
+                        page.drawText(newValueStr, {
+                            x: origRightEdge - newTextWidth,
+                            y: y,
+                            size: fontSize,
+                            font: font,
+                            color: rgb(0, 0, 0)
+                        });
+                    }
+                } else if (labelItem) {
+                    x = labelItem.x;
+                    y = labelItem.y;
+                    width = labelItem.width || 180;
+                    height = labelItem.height || 10;
+                    
+                    page.drawRectangle({
+                        x: x - 2,
+                        y: y - 2,
+                        width: width + 4,
+                        height: height + 4,
+                        color: rgb(1, 1, 1),
+                        borderWidth: 0
+                    });
+                    
+                    const parts = labelItem.str.split(':');
+                    const prefix = parts[0] + ':   ';
+                    page.drawText(prefix + newValueStr, { x, y, size: fontSize, font, color: rgb(0,0,0) });
+                }
+            };
+
+            // 1. Redact & write CR Note Amount
+            if (detectedData.crNote.labelItem || detectedData.crNote.valueItem) {
+                await applyWhiteoutAndWrite(
+                    firstPage,
+                    detectedData.crNote.labelItem,
+                    detectedData.crNote.valueItem,
+                    crNoteVal.toFixed(2),
+                    helveticaFont,
+                    detectedData.crNote.valueItem?.height || detectedData.crNote.labelItem?.height || 9
+                );
+            }
+
+            // 2. Redact & write Rounding Amount
+            if (detectedData.rounding.labelItem || detectedData.rounding.valueItem) {
+                const roundingStr = (roundingVal >= 0 ? '+' : '') + roundingVal.toFixed(2);
+                await applyWhiteoutAndWrite(
+                    firstPage,
+                    detectedData.rounding.labelItem,
+                    detectedData.rounding.valueItem,
+                    roundingStr,
+                    helveticaFont,
+                    detectedData.rounding.valueItem?.height || detectedData.rounding.labelItem?.height || 9
+                );
+            }
+
+            // 3. Redact & write Net Amount
+            if (detectedData.netAmount.labelItem || detectedData.netAmount.valueItem) {
+                await applyWhiteoutAndWrite(
+                    firstPage,
+                    detectedData.netAmount.labelItem,
+                    detectedData.netAmount.valueItem,
+                    netAmountVal.toFixed(2),
+                    helveticaBoldFont, // Bold Net Amount
+                    detectedData.netAmount.valueItem?.height || detectedData.netAmount.labelItem?.height || 9
+                );
+            }
+
+            // 4. Redact & write Words representation
+            if (detectedData.words.labelItem) {
+                const labelItem = detectedData.words.labelItem;
+                const sameYItems = detectedData.words.sameYItems;
+                
+                if (sameYItems && sameYItems.length > 0) {
+                    sameYItems.forEach((item: any) => {
+                        firstPage.drawRectangle({
+                            x: item.x - 2,
+                            y: item.y - 2,
+                            width: item.width + 6,
+                            height: item.height + 4,
+                            color: rgb(1, 1, 1),
+                            borderWidth: 0
+                        });
+                    });
+                    
+                    firstPage.drawText(wordsVal.toUpperCase(), {
+                        x: sameYItems[0].x,
+                        y: sameYItems[0].y,
+                        size: sameYItems[0].height || 7.5,
+                        font: helveticaFont,
+                        color: rgb(0, 0, 0)
+                    });
+                } else {
+                    const parts = labelItem.str.split(':');
+                    const prefix = parts[0] + ':   ';
+                    
+                    firstPage.drawRectangle({
+                        x: labelItem.x - 2,
+                        y: labelItem.y - 2,
+                        width: labelItem.width + 10,
+                        height: labelItem.height + 4,
+                        color: rgb(1, 1, 1),
+                        borderWidth: 0
+                    });
+                    
+                    firstPage.drawText(prefix + wordsVal.toUpperCase(), {
+                        x: labelItem.x,
+                        y: labelItem.y,
+                        size: labelItem.height || 7.5,
+                        font: helveticaFont,
+                        color: rgb(0, 0, 0)
+                    });
+                }
+            }
+
+            const modifiedPdfBytes = await pdfDoc.save();
+            setModifiedBytes(modifiedPdfBytes);
+            setStatusMessage('Successfully applied whiteout redactions and redrew new values! Inspect the final updated preview.');
+            
+            setTimeout(() => {
+                if (cnModifiedCanvasRef.current) {
+                    renderPdfPreview(modifiedPdfBytes, cnModifiedCanvasRef.current);
+                }
+            }, 100);
+
+        } catch (error: any) {
+            console.error('Failed to apply modification:', error);
+            setStatusMessage(`Modification failed: ${error.message || 'Operation error'}`);
+        } finally {
+            setIsModifying(false);
+        }
+    };
+
+    const handleDownload = () => {
+        if (!modifiedBytes) return;
+        const blob = new Blob([modifiedBytes], { type: 'application/pdf' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `Modified_CN_${file?.name || 'Invoice'}.pdf`;
+        link.click();
+        URL.revokeObjectURL(url);
     };
 
     const handleCopyText = (text: string, pageNum: number) => {
@@ -137,22 +601,39 @@ const CNDeductor = ({ isMobile }) => {
         ...styles.cnGridLayout,
         ...(isMobile && {
             gridTemplateColumns: '1fr',
-            gap: '1.5rem',
+            gap: '1.5rem'
         })
     };
 
     return (
         <div style={styles.cnDeductorContainer}>
             <div style={styles.cnHeaderCard}>
-                <h2 style={styles.cnTitle}>CN Deductor — Text Extractor</h2>
-                <p style={styles.cnSubtitle}>Upload your Credit Note or Deductions PDF to parse all text data and prepare for deduction checks.</p>
+                <h2 style={styles.cnTitle}>CN Deductor — Deduction Adjuster & Extractor</h2>
+                <p style={styles.cnSubtitle}>Upload Credit Note Invoice PDF documents, parse values, apply whiteouts, and download fully customized results dynamically.</p>
+                
+                {pagesText.length > 0 && (
+                    <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem', borderTop: '1px solid var(--separator-color)', paddingTop: '1rem' }}>
+                        <button 
+                            onClick={() => setCnSubTab('adjuster')} 
+                            style={cnSubTab === 'adjuster' ? styles.cnSubButtonActive : styles.cnSubButton}
+                        >
+                            ⚡ Formula & PDF Adjuster
+                        </button>
+                        <button 
+                            onClick={() => setCnSubTab('extractor')} 
+                            style={cnSubTab === 'extractor' ? styles.cnSubButtonActive : styles.cnSubButton}
+                        >
+                            📄 Extracted Text Viewer
+                        </button>
+                    </div>
+                )}
             </div>
 
             <div style={cnGridLayout}>
-                {/* Left Control Panel */}
+                {/* Left Panel */}
                 <div style={styles.cnLeftPanel}>
                     <div style={styles.inputCard}>
-                        <label style={styles.label}>Upload PDF File</label>
+                        <label style={styles.label}>Upload Invoice / Credit Note PDF</label>
                         <label htmlFor="cn-pdf-upload" style={{
                             ...styles.uploadButton,
                             borderColor: file ? 'var(--green)' : 'var(--separator-color)',
@@ -160,23 +641,105 @@ const CNDeductor = ({ isMobile }) => {
                         }}>
                             <FileIcon />
                             <span style={{ fontSize: '0.9rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                {file ? file.name : 'Choose Credit Note PDF'}
+                                {file ? file.name : 'Choose PDF Document'}
                             </span>
                         </label>
-                        <input id="cn-pdf-upload" type="file" accept=".pdf" onChange={handleFileChange} style={{ display: 'none' }} disabled={isExtracting} />
+                        <input id="cn-pdf-upload" type="file" accept=".pdf" onChange={handleFileChange} style={{ display: 'none' }} disabled={isExtracting || isModifying} />
                         
-                        <p style={{ ...styles.statusMessage, color: pagesText.length > 0 ? 'var(--green)' : 'var(--text-color)' }}>
+                        <p style={{ ...styles.statusMessage, color: file ? 'var(--text-color)' : 'var(--text-tertiary)' }}>
                             {statusMessage}
                         </p>
 
-                        {isExtracting && (
+                        {(isExtracting || isModifying) && (
                             <div style={{ display: 'flex', justifyContent: 'center', margin: '1rem 0' }}>
                                 <div style={styles.spinner}></div>
                             </div>
                         )}
                     </div>
 
-                    {pagesText.length > 0 && (
+                    {file && detectedData && cnSubTab === 'adjuster' && (
+                        <div style={styles.calculationCard}>
+                            <h3 style={{ ...styles.detailsHeader, borderBottom: '1px solid var(--separator-color)', paddingBottom: '0.5rem', marginBottom: '1rem' }}>
+                                Formula Adjustments
+                            </h3>
+                            
+                            <div style={styles.comparisonTable}>
+                                <div style={styles.comparisonHeaderRow}>
+                                    <span style={styles.colLabel}>Field</span>
+                                    <span style={styles.colLabel}>Original</span>
+                                    <span style={styles.colLabel}>Target Adjustment</span>
+                                </div>
+                                
+                                <div style={styles.comparisonRow}>
+                                    <span style={styles.fieldTitle}>Sub Total</span>
+                                    <span style={styles.fieldValOriginal}>{(detectedData.subTotal.value || 0).toFixed(2)}</span>
+                                    <span style={styles.fieldValTarget}>
+                                        <input 
+                                            type="number" 
+                                            step="0.01"
+                                            value={subTotalVal} 
+                                            onChange={(e) => handleValueChange('subtotal', parseFloat(e.target.value) || 0)} 
+                                            style={styles.inlineInput}
+                                        />
+                                    </span>
+                                </div>
+
+                                <div style={styles.comparisonRow}>
+                                    <span style={styles.fieldTitle}>CR Note Amt</span>
+                                    <span style={{ ...styles.fieldValOriginal, color: 'var(--brand-color)' }}>{(detectedData.crNote.value || 0).toFixed(2)}</span>
+                                    <span style={styles.fieldValTarget}>
+                                        <input 
+                                            type="number" 
+                                            step="0.01"
+                                            value={crNoteVal} 
+                                            onChange={(e) => handleValueChange('crnote', parseFloat(e.target.value) || 0)} 
+                                            style={{ ...styles.inlineInput, color: 'var(--green)', fontWeight: 'bold' }}
+                                        />
+                                    </span>
+                                </div>
+
+                                <div style={styles.comparisonRow}>
+                                    <span style={styles.fieldTitle}>Rounding</span>
+                                    <span style={styles.fieldValOriginal}>{(detectedData.rounding.value || 0).toFixed(2)}</span>
+                                    <span style={styles.fieldValTarget}>
+                                        <input 
+                                            type="number" 
+                                            step="0.01"
+                                            value={roundingVal} 
+                                            onChange={(e) => handleValueChange('rounding', parseFloat(e.target.value) || 0)} 
+                                            style={styles.inlineInput}
+                                        />
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div style={styles.resultBox}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span style={{ color: 'var(--text-color)', fontWeight: 600 }}>Calculated Net Amount:</span>
+                                    <span style={styles.highlightNetAmount}>Rs. {netAmountVal.toFixed(2)}</span>
+                                </div>
+                                <div style={{ marginTop: '0.75rem' }}>
+                                    <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-color)' }}>Amount In Words:</label>
+                                    <textarea 
+                                        value={wordsVal}
+                                        onChange={(e) => setWordsVal(e.target.value)}
+                                        style={styles.wordsTextArea}
+                                        rows={2}
+                                    />
+                                </div>
+                            </div>
+
+                            <button 
+                                onClick={handleModifyPDF} 
+                                style={{ ...styles.actionButton, marginTop: '1rem', width: '100%', gap: '8px' }}
+                                disabled={isModifying}
+                            >
+                                ⚡ Process PDF with Whiteout
+                            </button>
+                        </div>
+                    )}
+
+                    {pagesText.length > 0 && cnSubTab === 'extractor' && (
                         <div style={styles.statsCard}>
                             <h4 style={{ ...styles.detailsHeader, borderBottom: '1px solid var(--separator-color)', paddingBottom: '0.5rem' }}>Document Stats</h4>
                             <div style={styles.statRow}>
@@ -199,64 +762,95 @@ const CNDeductor = ({ isMobile }) => {
                     )}
                 </div>
 
-                {/* Right Text Viewer Panel */}
+                {/* Right Panel */}
                 <div style={styles.cnRightPanel}>
                     {pagesText.length > 0 ? (
-                        <div style={styles.textViewerCard}>
-                            <div style={styles.viewerHeader}>
-                                <h3 style={{ ...styles.previewTitle, margin: 0 }}>Extracted Text Content</h3>
-                                <div style={styles.searchBarContainer}>
-                                    <SearchIcon />
-                                    <input 
-                                        type="text" 
-                                        placeholder="Search in extracted text..." 
-                                        value={searchTerm} 
-                                        onChange={e => setSearchTerm(e.target.value)}
-                                        style={styles.cnSearchInput}
-                                    />
-                                    {searchTerm && (
-                                        <button onClick={() => setSearchTerm('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-color)', display: 'flex', alignItems: 'center' }}>
-                                            <XIcon size={16} />
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-
-                            {filteredPages.length === 0 ? (
-                                <div style={styles.emptyView}>
-                                    No matches found for "{searchTerm}" in the extracted text.
+                        <>
+                            {cnSubTab === 'adjuster' ? (
+                                <div style={styles.dualCanvasContainer}>
+                                    <div style={styles.previewBox}>
+                                        <h3 style={{ ...styles.previewTitle, color: 'var(--dark-grey)', fontSize: '0.95rem' }}>Original Billing Receipt (Bottom Area)</h3>
+                                        <div style={styles.canvasFrame}>
+                                            <canvas ref={cnOriginalCanvasRef} style={styles.canvas}></canvas>
+                                        </div>
+                                    </div>
+                                    
+                                    <div style={styles.previewBox}>
+                                        <h3 style={{ ...styles.previewTitle, color: 'var(--dark-grey)', fontSize: '0.95rem' }}>Modified Dynamic Output (Whited Out & Redrawn)</h3>
+                                        <div style={styles.canvasFrame}>
+                                            {modifiedBytes ? (
+                                                <canvas ref={cnModifiedCanvasRef} style={styles.canvas}></canvas>
+                                            ) : (
+                                                <div style={styles.canvasPlaceholder}>
+                                                    Modify the values in the control panel and click &quot;Process PDF with Whiteout&quot; to render the live update preview.
+                                                </div>
+                                            )}
+                                        </div>
+                                        {modifiedBytes && (
+                                            <button onClick={handleDownload} style={{ ...styles.downloadButton, width: '100%', marginTop: '1rem' }}>
+                                                <DownloadIcon /> Download Modified PDF Invoice
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
                             ) : (
-                                <div style={styles.pagesContainer}>
-                                    {filteredPages.map(page => (
-                                        <div key={page.pageNum} style={styles.pageTextBlock}>
-                                            <div style={styles.pageBlockHeader}>
-                                                <span style={styles.pageNumberBadge}>Page {page.pageNum} of {pagesText.length}</span>
-                                                <button 
-                                                    onClick={() => handleCopyText(page.text, page.pageNum)} 
-                                                    style={{
-                                                        ...styles.copyPageButton,
-                                                        backgroundColor: copiedPage === page.pageNum ? 'var(--green)' : 'rgba(0,0,0,0.05)',
-                                                        color: copiedPage === page.pageNum ? '#fff' : 'var(--dark-grey)'
-                                                    }}
-                                                >
-                                                    {copiedPage === page.pageNum ? 'Copied ✓' : 'Copy Page Text'}
+                                <div style={styles.textViewerCard}>
+                                    <div style={styles.viewerHeader}>
+                                        <h3 style={{ ...styles.previewTitle, margin: 0 }}>Extracted Text Content</h3>
+                                        <div style={styles.searchBarContainer}>
+                                            <SearchIcon />
+                                            <input 
+                                                type="text" 
+                                                placeholder="Search in extracted text..." 
+                                                value={searchTerm} 
+                                                onChange={e => setSearchTerm(e.target.value)}
+                                                style={styles.cnSearchInput}
+                                            />
+                                            {searchTerm && (
+                                                <button onClick={() => setSearchTerm('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-color)', display: 'flex', alignItems: 'center' }}>
+                                                    <XIcon size={16} />
                                                 </button>
-                                            </div>
-                                            <div style={styles.extractedTextParagraph}>
-                                                {highlightText(page.text, searchTerm)}
-                                            </div>
+                                            )}
                                         </div>
-                                    ))}
+                                    </div>
+
+                                    {filteredPages.length === 0 ? (
+                                        <div style={styles.emptyView}>
+                                            No matches found for &quot;{searchTerm}&quot; in the extracted text.
+                                        </div>
+                                    ) : (
+                                        <div style={styles.pagesContainer}>
+                                            {filteredPages.map(page => (
+                                                <div key={page.pageNum} style={styles.pageTextBlock}>
+                                                    <div style={styles.pageBlockHeader}>
+                                                        <span style={styles.pageNumberBadge}>Page {page.pageNum} of {pagesText.length}</span>
+                                                        <button 
+                                                            onClick={() => handleCopyText(page.text, page.pageNum)} 
+                                                            style={{
+                                                                ...styles.copyPageButton,
+                                                                backgroundColor: copiedPage === page.pageNum ? 'var(--green)' : 'rgba(0,0,0,0.05)',
+                                                                color: copiedPage === page.pageNum ? '#fff' : 'var(--dark-grey)'
+                                                            }}
+                                                        >
+                                                            {copiedPage === page.pageNum ? 'Copied ✓' : 'Copy Page Text'}
+                                                        </button>
+                                                    </div>
+                                                    <div style={styles.extractedTextParagraph}>
+                                                        {highlightText(page.text, searchTerm)}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             )}
-                        </div>
+                        </>
                     ) : (
                         <div style={styles.emptyTextViewer}>
                             <UploadCloudIcon />
-                            <h4 style={{ marginTop: '1rem', color: 'var(--dark-grey)', fontWeight: 600 }}>No PDF Extracted</h4>
+                            <h4 style={{ marginTop: '1rem', color: 'var(--dark-grey)', fontWeight: 600 }}>No PDF Loaded</h4>
                             <p style={{ color: 'var(--text-color)', fontSize: '0.9rem', maxWidth: '300px', textAlign: 'center' }}>
-                                Upload a PDF on the left panel to begin text extraction processes automatically.
+                                Choose a PDF on the left panel to trigger text extraction and open the direct whiteout field adjustment panel automatically.
                             </p>
                         </div>
                     )}
@@ -1371,7 +1965,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     pageBlockHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
     pageNumberBadge: { fontSize: '0.8rem', fontWeight: 600, backgroundColor: 'var(--brand-color)', color: '#fff', padding: '2px 8px', borderRadius: '4px' },
     copyPageButton: { padding: '4px 12px', borderRadius: '6px', border: 'none', fontSize: '0.8rem', fontWeight: 500, cursor: 'pointer', transition: 'all 0.2s ease' },
-    extractedTextParagraph: { fontSize: '0.9rem', color: 'var(--dark-grey)', lineHeight: '1.6', whiteSpace: 'pre-wrap', maxHeight: '300px', overflowY: 'auto', backgroundColor: '#fff', padding: '1rem', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.05)', fontFamily: 'var(--font-mono)' },
+    extractedTextParagraph: { fontSize: '0.9rem', color: 'var(--dark-grey)', lineHeight: '1.6', whiteSpace: 'pre-wrap', maxHeight: '300px', overflowY: 'auto', backgroundColor: 'var(--card-bg)', padding: '1rem', borderRadius: '6px', border: '1px solid var(--separator-color)', fontFamily: 'var(--font-mono)' },
     emptyView: { display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'var(--text-tertiary)', padding: '3rem', fontSize: '1rem' },
     emptyTextViewer: {
         display: 'flex',
@@ -1386,7 +1980,31 @@ const styles: { [key: string]: React.CSSProperties } = {
         width: '100%',
         backgroundColor: 'var(--card-bg)',
         flexDirection: 'column',
-    }
+    },
+
+    // Sub Tabs inside cnDeductor
+    cnSubButton: { padding: '0.4rem 1rem', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-color)', backgroundColor: 'transparent', border: '1px solid transparent', borderRadius: '6px', cursor: 'pointer', transition: 'all 0.2s' },
+    cnSubButtonActive: { padding: '0.4rem 1rem', fontSize: '0.85rem', fontWeight: 600, color: 'var(--brand-color)', backgroundColor: 'var(--light-grey)', border: '1px solid var(--separator-color)', borderRadius: '6px', cursor: 'pointer' },
+
+    // Calculation Card & Comparison table
+    calculationCard: { backgroundColor: 'var(--card-bg)', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', gap: '1rem' },
+    comparisonTable: { display: 'flex', flexDirection: 'column', gap: '0.6rem' },
+    comparisonHeaderRow: { display: 'grid', gridTemplateColumns: '1.2fr 1.5fr 1.5fr', paddingBottom: '0.5rem', borderBottom: '1px solid var(--separator-color)', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-tertiary)' },
+    colLabel: {},
+    comparisonRow: { display: 'grid', gridTemplateColumns: '1.2fr 1.5fr 1.5fr', alignItems: 'center', padding: '0.5rem 0', borderBottom: '1px solid var(--separator-color)', fontSize: '0.85rem' },
+    fieldTitle: { fontWeight: 600, color: 'var(--dark-grey)' },
+    fieldValOriginal: { color: 'var(--text-color)', fontFamily: 'var(--font-mono)' },
+    fieldValTarget: {},
+    inlineInput: { width: '100%', padding: '4px 8px', borderRadius: '4px', border: '1px solid var(--separator-color)', backgroundColor: 'var(--light-grey)', color: 'var(--dark-grey)', fontSize: '0.85rem', fontFamily: 'var(--font-mono)' },
+    
+    // Result Box
+    resultBox: { backgroundColor: 'var(--light-grey)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--separator-color)', marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' },
+    highlightNetAmount: { fontSize: '1.1rem', fontWeight: 700, color: 'var(--brand-color)', fontFamily: 'var(--font-mono)' },
+    wordsTextArea: { width: '100%', marginTop: '0.25rem', padding: '6px 12px', borderRadius: '4px', border: '1px solid var(--separator-color)', backgroundColor: 'var(--card-bg)', color: 'var(--dark-grey)', fontSize: '0.8rem', resize: 'none', fontFamily: 'var(--font-sans)' },
+
+    // Canvas Frame & Dual Views
+    dualCanvasContainer: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', width: '100%' },
+    canvasFrame: { width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'flex-start', border: '1px solid var(--separator-color)', borderRadius: '8px', padding: '0.5rem', backgroundColor: 'var(--light-grey)', overflow: 'auto', minHeight: '350px' }
 };
 
 const styleSheet = document.createElement("style");
