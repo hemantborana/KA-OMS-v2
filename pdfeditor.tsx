@@ -407,10 +407,10 @@ const CNDeductor = ({ isMobile }) => {
                     height = valueItem.height || 10;
                     
                     page.drawRectangle({
-                        x: x - 4,
-                        y: y - 2,
-                        width: width + 8,
-                        height: height + 4,
+                        x: x - 1,
+                        y: y - 0.5,
+                        width: width + 2,
+                        height: height + 1,
                         color: rgb(1, 1, 1),
                         borderWidth: 0
                     });
@@ -435,10 +435,10 @@ const CNDeductor = ({ isMobile }) => {
                     height = labelItem.height || 10;
                     
                     page.drawRectangle({
-                        x: x - 2,
-                        y: y - 2,
-                        width: width + 4,
-                        height: height + 4,
+                        x: x - 1,
+                        y: y - 0.5,
+                        width: width + 2,
+                        height: height + 1,
                         color: rgb(1, 1, 1),
                         borderWidth: 0
                     });
@@ -463,7 +463,7 @@ const CNDeductor = ({ isMobile }) => {
 
             // 2. Redact & write Rounding Amount
             if (detectedData.rounding.labelItem || detectedData.rounding.valueItem) {
-                const roundingStr = (roundingVal >= 0 ? '+' : '') + roundingVal.toFixed(2);
+                const roundingStr = roundingVal.toFixed(2);
                 await applyWhiteoutAndWrite(
                     firstPage,
                     detectedData.rounding.labelItem,
@@ -494,10 +494,10 @@ const CNDeductor = ({ isMobile }) => {
                 if (sameYItems && sameYItems.length > 0) {
                     sameYItems.forEach((item: any) => {
                         firstPage.drawRectangle({
-                            x: item.x - 2,
-                            y: item.y - 2,
-                            width: item.width + 6,
-                            height: item.height + 4,
+                            x: item.x - 1,
+                            y: item.y - 0.5,
+                            width: item.width + 2,
+                            height: item.height + 1,
                             color: rgb(1, 1, 1),
                             borderWidth: 0
                         });
@@ -515,10 +515,10 @@ const CNDeductor = ({ isMobile }) => {
                     const prefix = parts[0] + ':   ';
                     
                     firstPage.drawRectangle({
-                        x: labelItem.x - 2,
-                        y: labelItem.y - 2,
-                        width: labelItem.width + 10,
-                        height: labelItem.height + 4,
+                        x: labelItem.x - 1,
+                        y: labelItem.y - 0.5,
+                        width: labelItem.width + 2,
+                        height: labelItem.height + 1,
                         color: rgb(1, 1, 1),
                         borderWidth: 0
                     });
