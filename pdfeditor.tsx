@@ -640,9 +640,16 @@ const CNDeductor = ({ isMobile }) => {
 
             // 2. Compute safe layout coordinates that will never overlap with left-column elements like CASH DISC/SPL DISC
             const finalLabelX = Math.max(labelX, 422);
-            const drawTopY = topY + 4;
-            const drawBottomY = bottomY - 6;
-            const finalValueRightX = Math.min(valueRightX, 580);
+            
+            // Align "GROSS AMOUNT" perfectly on the line of the left-side "ROSS AMT" row baselines (usually ~detectedData.taxableAmount.labelItem.y or 157-160)
+            const baselineY = detectedData.taxableAmount?.labelItem?.y || 160;
+            // Move whole calc block down slightly so the top row (GROSS AMOUNT) sits perfectly between those horizontal partition lines
+            const drawTopY = baselineY - 2.5; 
+            // Give 10 units of extra room downwards below the net amount line to improve vertical line spacing of the entire block
+            const drawBottomY = (detectedData.netAmount?.labelItem?.y || 90) - 10;
+            
+            // Increase finalValueRightX to decrease padding from the right (moving value labels closer to the right vertical page border of the box)
+            const finalValueRightX = Math.min(valueRightX + 7, 587);
 
             // 3. Draw a tighter, clean, column-specific whiteout rectangle restricted only to the right summary column bounds
             firstPage.drawRectangle({
