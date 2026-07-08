@@ -495,6 +495,14 @@ const CNDeductor = ({ isMobile }) => {
             const arrayBuffer = await file.arrayBuffer();
             const pdfBytes = new Uint8Array(arrayBuffer);
             const pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
+            
+            // Add 1cm padding on top of all pages (1cm = 28.35 points)
+            const pages = pdfDoc.getPages();
+            for (const page of pages) {
+                const { width, height } = page.getSize();
+                page.setSize(width, height + 28.35);
+            }
+            
             const actualPageIdx = Math.min(Math.max(1, calculationPageNum), pdfDoc.getPageCount()) - 1;
             const firstPage = pdfDoc.getPages()[actualPageIdx];
             
